@@ -9,27 +9,34 @@ export default {
   schema: {
     type: 'object',
     properties: {
-      name: {
+      title: {
         type: 'string',
         title: 'Name',
+        maxLength: 100,
+      },
+      slug: {
+        type: 'slug',
+        title: 'URL Slug',
         maxLength: 100,
       },
       url: {
         type: 'url',
         title: 'URL',
         helpText: 'Website URL of this publication',
+        default: '',
       },
       image: {
         type: 'media',
         title: 'Image',
         helpText: 'Logo or cover image',
+        default: '',
       },
     },
-    required: ['name'],
+    required: ['title'],
   },
 
-  listFields: ['name', 'url'],
-  searchFields: ['name'],
-  defaultSort: 'name',
+  listFields: ['title', 'url'],
+  searchFields: ['title'],
+  defaultSort: 'title',
   defaultSortOrder: 'asc',
 } satisfies CollectionConfig

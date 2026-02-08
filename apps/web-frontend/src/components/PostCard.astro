@@ -1,0 +1,55 @@
+---
+import type { Post } from '@hotmetal/content-core';
+import { formatDate } from '../lib/format';
+
+interface Props {
+  post: Post;
+}
+
+const { post } = Astro.props;
+
+const date = post.publishedAt ? formatDate(post.publishedAt) : null;
+
+const PREVIEW_LENGTH = 180;
+
+function getPreviewText(post: Post): string | null {
+  if (post.hook) return post.hook;
+  if (post.excerpt) return post.excerpt;
+  if (!post.content) return null;
+  const plain = post.content.replace(/<[^>]*>/g, '').trim();
+  if (!plain) return null;
+  if (plain.length <= PREVIEW_LENGTH) return plain;
+  return plain.slice(0, PREVIEW_LENGTH).trimEnd() + '...';
+}
+
+const preview = getPreviewText(post);
+---
+
+<article class="animate-on-scroll group">
+  <a href={`/posts/${post.slug}`} class="block">
+    {post.featuredImage && (
+      <div class="aspect-[16/10] overflow-hidden rounded-lg mb-4 bg-bg-card">
+        <img
+          src={post.featuredImage}
+          alt={post.title}
+          class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+          loading="lazy"
+        />
+      </div>
+    )}
+
+    <div class="space-y-2">
+      {date && post.publishedAt && (
+        <time datetime={post.publishedAt} class="text-sm text-text-muted">{date}</time>
+      )}
+      <h2 class="text-xl font-bold leading-snug group-hover:text-accent transition-colors">
+        {post.title}
+      </h2>
+      {preview && (
+        <p class="text-text-muted leading-relaxed line-clamp-3">
+          {preview}
+        </p>
+      )}
+    </div>
+  </a>
+</article>
