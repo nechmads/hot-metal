@@ -35,7 +35,7 @@
 
 ## Upcoming
 
-- [ ] Writer Agent — Phase 2: Research integration (connect `search_web` and `lookup_source` tools to real APIs)
+- [x] Writer Agent — Phase 2: Research integration (Alexander AI: crawl_url, research_topic, search_web, search_news, ask_question)
 - [ ] Writer Agent — Phase 2: Voice input (transcription in `input-processor.ts`)
 - [ ] Writer Agent — Phase 2: D1 session sync (synchronize DO state back to D1 for listing accuracy)
 - [ ] Multi-blog support (Phase 4) — Add `blogId` field to posts and renditions

@@ -39,8 +39,9 @@
 	// Environment variables (non-secret)
 	"vars": {
 		"CMS_URL": "http://localhost:8787",
+		"ALEXANDER_API_URL": "https://alexanderai.farfarawaylabs.com",
 	},
 
 	// Secrets (set via `wrangler secret put`):
-	// ANTHROPIC_API_KEY, CMS_API_KEY, WRITER_API_KEY
+	// ANTHROPIC_API_KEY, CMS_API_KEY, WRITER_API_KEY, ALEXANDER_API_KEY
 }

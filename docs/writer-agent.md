@@ -37,7 +37,10 @@ Configure secrets in `services/writer-agent/.dev.vars`:
 ANTHROPIC_API_KEY=your-key-here
 CMS_API_KEY=test-cms-api-key
 WRITER_API_KEY=test-writer-api-key
+ALEXANDER_API_KEY=your-alexander-key-here
 ```
+
+The `ALEXANDER_API_URL` is configured in `wrangler.jsonc` (defaults to `https://alexanderai.farfarawaylabs.com`). The `ALEXANDER_API_KEY` must be set as a secret locally via `.dev.vars` and in production via `wrangler secret put ALEXANDER_API_KEY`.
 
 ## REST API
 
@@ -103,8 +106,23 @@ Tools available to the LLM during conversation:
 | `get_current_draft` | Retrieve latest draft for review |
 | `list_drafts` | List all draft versions with metadata |
 | `publish_to_cms` | Push final draft to CMS as published post |
-| `search_web` | **Stub** — web search for research |
-| `lookup_source` | **Stub** — URL parsing for citations |
+| `search_web` | Web search via Alexander AI — quick fact-finding and source discovery |
+| `search_news` | News search via Alexander AI — current events and trending topics |
+| `ask_question` | Fast Q&A via Alexander AI (Perplexity-backed) — fact-checking and definitions |
+| `research_topic` | Deep multi-source research via Alexander AI — comprehensive analysis with citations (1-2 min) |
+| `crawl_url` | Fetch and parse a URL via Alexander AI — extract content for citation |
+
+## Research Capabilities
+
+The agent uses [Alexander AI](https://alexanderai.farfarawaylabs.com) for production research. The research workflow typically follows this pattern:
+
+1. **Quick context** — During the interview phase, the agent may use `search_news` or `ask_question` to gather background on the topic.
+2. **Broad exploration** — `search_web` discovers relevant sources and angles.
+3. **Deep research** — `research_topic` performs multi-source research with full citations (takes 1-2 minutes).
+4. **Source verification** — `crawl_url` fetches specific URLs to verify information before citing.
+5. **Findings review** — The agent shares research results with the user before incorporating them into a draft.
+
+All research tools return structured results. If a tool fails, the agent explains the error and suggests alternatives.
 
 ## Writing Phases
 
@@ -117,7 +135,7 @@ The agent tracks a `writingPhase` that adapts the system prompt:
 5. `revising` — Iterating based on feedback
 6. `published` — Post published to CMS
 
-Phase transitions: `idle` → `interviewing` (auto on first message), `interviewing` → `revising` (on first `save_draft`), `revising` → `published` (on `publish_to_cms`).
+Phase transitions: `idle` → `interviewing` (auto on first message), `interviewing` → `researching` (auto when research tool used), `interviewing`/`researching` → `revising` (on first `save_draft`), `revising` → `published` (on `publish_to_cms`).
 
 ## System Prompt
 
@@ -125,7 +143,7 @@ The system prompt is composable: `baseIdentity + styleProfile + phaseInstruction
 
 ## Shared Dependencies
 
-The CMS API client (`CmsApi`, `CmsApiError`) lives in `@hotmetal/shared` and is used by both the publisher and writer-agent services.
+The CMS API client (`CmsApi`, `CmsApiError`) and Alexander AI client (`AlexanderApi`, `AlexanderApiError`) live in `@hotmetal/shared` and are used by the publisher and writer-agent services.
 
 ## File Structure
 
@@ -149,7 +167,7 @@ services/writer-agent/
       index.ts            # Tool registry factory
       draft-management.ts # save_draft, get/list drafts
       cms-publish.ts      # publish_to_cms
-      research.ts         # Stubs: search_web, lookup_source
+      research.ts         # Alexander AI: crawl_url, research_topic, search_web, search_news, ask_question
     middleware/
       api-key-auth.ts     # X-API-Key validation
       error-handler.ts    # Error handler

@@ -7,4 +7,6 @@ export interface WriterAgentEnv {
   CMS_URL: string
   CMS_API_KEY: string
   WRITER_API_KEY: string
+  ALEXANDER_API_URL: string
+  ALEXANDER_API_KEY: string
 }

@@ -7,6 +7,6 @@ export function createToolSet(agent: WriterAgent) {
   return {
     ...createDraftTools(agent),
     ...createPublishTools(agent),
-    ...createResearchTools(),
+    ...createResearchTools(agent),
   }
 }
