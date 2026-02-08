@@ -21,6 +21,7 @@ bucket_name = "hotmetal-cms-bucket"
 # Environment variables
 [vars]
 ENVIRONMENT = "development"
+# CMS_API_KEY is set as a secret via `wrangler secret put CMS_API_KEY`
 
 # Production environment
 [env.production]
