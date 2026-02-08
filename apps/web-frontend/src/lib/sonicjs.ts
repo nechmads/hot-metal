@@ -5,21 +5,56 @@ const API_URL =
 
 const SLUG_PATTERN = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 
-interface SonicJSResponse<T> {
-  data: T[];
-  total: number;
+interface SonicJSContentItem {
+  id: string;
+  title: string;
+  slug: string;
+  status: string;
+  collectionId: string;
+  data: Record<string, unknown>;
+  created_at: number;
+  updated_at: number;
+}
+
+interface SonicJSResponse {
+  data: SonicJSContentItem[];
+  meta?: unknown;
+}
+
+/** Map a SonicJS content item to our Post type. */
+function mapToPost(item: SonicJSContentItem): Post {
+  const d = item.data;
+  return {
+    id: item.id,
+    title: item.title,
+    subtitle: (d.subtitle as string) || undefined,
+    slug: item.slug,
+    hook: (d.hook as string) || undefined,
+    content: (d.content as string) || '',
+    excerpt: (d.excerpt as string) || undefined,
+    featuredImage: (d.featuredImage as string) || undefined,
+    status: (d.status as Post['status']) || 'draft',
+    tags: (d.tags as string) || undefined,
+    topics: (d.topics as string) || undefined,
+    seoTitle: (d.seoTitle as string) || undefined,
+    seoDescription: (d.seoDescription as string) || undefined,
+    canonicalUrl: (d.canonicalUrl as string) || undefined,
+    ogImage: (d.ogImage as string) || undefined,
+    author: (d.author as string) || 'Unknown',
+    publishedAt: (d.publishedAt as string) || undefined,
+    scheduledAt: (d.scheduledAt as string) || undefined,
+    createdAt: String(item.created_at),
+    updatedAt: String(item.updated_at),
+  };
 }
 
 /**
- * Fetch all published posts, sorted by publishedAt descending.
+ * Fetch all published posts, sorted by created_at descending.
  */
 export async function fetchPosts(): Promise<Post[]> {
-  const url = new URL('/api/posts', API_URL);
-  url.searchParams.set('sort', '-publishedAt');
-  url.searchParams.set('where[status][equals]', 'published');
-  url.searchParams.set('limit', '50');
+  const url = `${API_URL}/api/collections/posts/content?filter[status][equals]=published&limit=50`;
 
-  const res = await fetch(url.toString(), {
+  const res = await fetch(url, {
     signal: AbortSignal.timeout(5000),
   });
 
@@ -31,8 +66,9 @@ export async function fetchPosts(): Promise<Post[]> {
     return [];
   }
 
-  const json = (await res.json()) as SonicJSResponse<Post>;
-  return json.data ?? [];
+  const json = (await res.json()) as SonicJSResponse;
+  const items = json.data ?? [];
+  return items.map(mapToPost);
 }
 
 /**
@@ -45,11 +81,9 @@ export async function fetchPostBySlug(
     return null;
   }
 
-  const url = new URL('/api/posts', API_URL);
-  url.searchParams.set('where[slug][equals]', slug);
-  url.searchParams.set('limit', '1');
+  const url = `${API_URL}/api/collections/posts/content?filter[data.slug][equals]=${encodeURIComponent(slug)}&limit=1`;
 
-  const res = await fetch(url.toString(), {
+  const res = await fetch(url, {
     signal: AbortSignal.timeout(5000),
   });
 
@@ -61,6 +95,7 @@ export async function fetchPostBySlug(
     return null;
   }
 
-  const json = (await res.json()) as SonicJSResponse<Post>;
-  return json.data?.[0] ?? null;
+  const json = (await res.json()) as SonicJSResponse;
+  const item = json.data?.[0];
+  return item ? mapToPost(item) : null;
 }

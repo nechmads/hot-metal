@@ -1,6 +1,7 @@
 export interface Publication {
   id: string
-  name: string
+  title: string
+  slug?: string
   url?: string
   image?: string
   createdAt: string
