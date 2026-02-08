@@ -1,8 +1,8 @@
 const LINKEDIN_AUTH_URL = 'https://www.linkedin.com/oauth/v2/authorization'
 const LINKEDIN_TOKEN_URL = 'https://www.linkedin.com/oauth/v2/accessToken'
-const LINKEDIN_ME_URL = 'https://api.linkedin.com/v2/me'
+const LINKEDIN_USERINFO_URL = 'https://api.linkedin.com/v2/userinfo'
 
-const SCOPES = ['w_member_social']
+const SCOPES = ['openid', 'profile', 'w_member_social']
 
 export function buildAuthorizeUrl(
   clientId: string,
@@ -58,16 +58,16 @@ export async function exchangeCodeForToken(
 }
 
 export async function fetchPersonUrn(accessToken: string): Promise<string> {
-  const res = await fetch(LINKEDIN_ME_URL, {
+  const res = await fetch(LINKEDIN_USERINFO_URL, {
     headers: { Authorization: `Bearer ${accessToken}` },
     signal: AbortSignal.timeout(10_000),
   })
 
   if (!res.ok) {
     const text = await res.text().catch(() => '')
-    throw new Error(`LinkedIn /v2/me failed: ${res.status} ${text}`)
+    throw new Error(`LinkedIn /v2/userinfo failed: ${res.status} ${text}`)
   }
 
-  const data = (await res.json()) as { id: string }
-  return `urn:li:person:${data.id}`
+  const data = (await res.json()) as { sub: string }
+  return `urn:li:person:${data.sub}`
 }

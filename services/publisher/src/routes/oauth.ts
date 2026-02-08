@@ -9,7 +9,7 @@ import {
 
 const oauth = new Hono<{ Bindings: PublisherEnv }>()
 
-/** Start LinkedIn OAuth flow — redirects to LinkedIn authorize URL. */
+/** Start LinkedIn OAuth flow — returns the authorize URL to open in a browser. */
 oauth.get('/oauth/linkedin', async (c) => {
   const state = crypto.randomUUID()
 
@@ -21,7 +21,7 @@ oauth.get('/oauth/linkedin', async (c) => {
     state,
   )
 
-  return c.redirect(authorizeUrl)
+  return c.json({ authorizeUrl })
 })
 
 /** LinkedIn OAuth callback — exchanges code for token and stores it. */

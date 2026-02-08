@@ -14,15 +14,15 @@ function timingSafeEqual(a: string, b: string): boolean {
 }
 
 /**
- * Validates the X-API-Key header against the CMS_API_KEY env var.
+ * Validates the X-API-Key header against the PUBLISHER_API_KEY env var.
  * Used to protect publish endpoints from unauthorized access.
  */
 export async function publisherApiKeyAuth(c: Context<{ Bindings: PublisherEnv }>, next: Next) {
   const apiKey = c.req.header('X-API-Key')
-  const expected = c.env.CMS_API_KEY
+  const expected = c.env.PUBLISHER_API_KEY
 
   if (!expected) {
-    console.error('CMS_API_KEY environment variable is not configured')
+    console.error('PUBLISHER_API_KEY environment variable is not configured')
     return c.json({ error: 'Internal server error' }, 500)
   }
 

@@ -2,6 +2,7 @@ export interface PublisherEnv {
   PUBLISHER_DB: D1Database
   CMS_URL: string
   CMS_API_KEY: string
+  PUBLISHER_API_KEY: string
   BLOG_BASE_URL: string
   LINKEDIN_CLIENT_ID: string
   LINKEDIN_CLIENT_SECRET: string

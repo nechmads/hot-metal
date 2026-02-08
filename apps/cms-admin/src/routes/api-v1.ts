@@ -4,10 +4,13 @@ import type { Post, Rendition, Citation, Outlet, PostStatus, RenditionStatus } f
 
 /**
  * SonicJS stores content in a `content` table with this shape:
- *   id, title, slug, status, collectionId, data (JSON), created_at, updated_at
+ *   id, title, slug, status, collection_id, author_id, data (JSON), created_at, updated_at
  *
  * Custom fields live inside the `data` JSON column.
  * This API translates between flat Post/Rendition types and the SonicJS internal format.
+ *
+ * collection_id references the `collections` table — values like 'col-posts-xxxx'.
+ * author_id references the `users` table and is NOT NULL.
  */
 
 interface SonicJSRow {
@@ -15,10 +18,34 @@ interface SonicJSRow {
   title: string
   slug: string
   status: string
-  collectionId: string
+  collection_id: string
+  author_id: string
   data: string // JSON string
   created_at: number
   updated_at: number
+}
+
+/**
+ * Resolves a collection name (e.g. 'posts') to its actual collection_id
+ * in the SonicJS collections table (e.g. 'col-posts-e1c685ee').
+ */
+async function resolveCollectionId(db: D1Database, name: string): Promise<string | null> {
+  const row = await db
+    .prepare('SELECT id FROM collections WHERE name = ?')
+    .bind(name)
+    .first<{ id: string }>()
+  return row?.id ?? null
+}
+
+/**
+ * Returns the default author_id from the users table (first user).
+ * In a multi-user setup this should be based on the authenticated user.
+ */
+async function getDefaultAuthorId(db: D1Database): Promise<string | null> {
+  const row = await db
+    .prepare('SELECT id FROM users LIMIT 1')
+    .first<{ id: string }>()
+  return row?.id ?? null
 }
 
 // --- Helpers ---
@@ -124,8 +151,13 @@ apiV1.get('/posts', async (c) => {
   const limit = Math.max(1, Math.min(parseInt(c.req.query('limit') || '50', 10) || 50, 100))
   const offset = Math.max(0, parseInt(c.req.query('offset') || '0', 10) || 0)
 
-  let query = 'SELECT * FROM content WHERE collectionId = ? '
-  const params: unknown[] = ['posts']
+  const collectionId = await resolveCollectionId(db, 'posts')
+  if (!collectionId) {
+    return c.json({ error: 'Posts collection not found. Run CMS migrations first.' }, 500)
+  }
+
+  let query = 'SELECT * FROM content WHERE collection_id = ? '
+  const params: unknown[] = [collectionId]
 
   if (status) {
     query += "AND json_extract(data, '$.status') = ? "
@@ -145,9 +177,14 @@ apiV1.get('/posts/:id', async (c) => {
   const db = (c.env as Record<string, unknown>).DB as D1Database
   const id = c.req.param('id')
 
+  const collectionId = await resolveCollectionId(db, 'posts')
+  if (!collectionId) {
+    return c.json({ error: 'Posts collection not found. Run CMS migrations first.' }, 500)
+  }
+
   const row = await db
-    .prepare('SELECT * FROM content WHERE id = ? AND collectionId = ?')
-    .bind(id, 'posts')
+    .prepare('SELECT * FROM content WHERE id = ? AND collection_id = ?')
+    .bind(id, collectionId)
     .first<SonicJSRow>()
 
   if (!row) {
@@ -163,6 +200,16 @@ apiV1.post('/posts', async (c) => {
 
   if (!isNonEmptyString(body.title) || !isNonEmptyString(body.slug) || !isNonEmptyString(body.content)) {
     return c.json({ error: 'title, slug, and content are required and must be strings' }, 400)
+  }
+
+  const collectionId = await resolveCollectionId(db, 'posts')
+  if (!collectionId) {
+    return c.json({ error: 'Posts collection not found. Run CMS migrations first.' }, 500)
+  }
+
+  const authorId = await getDefaultAuthorId(db)
+  if (!authorId) {
+    return c.json({ error: 'No users found. Create an admin user first.' }, 500)
   }
 
   const id = generateId()
@@ -191,9 +238,9 @@ apiV1.post('/posts', async (c) => {
 
   await db
     .prepare(
-      'INSERT INTO content (id, title, slug, status, collectionId, data, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)'
+      'INSERT INTO content (id, title, slug, status, collection_id, author_id, data, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)'
     )
-    .bind(id, body.title, body.slug, postStatus, 'posts', JSON.stringify(data), now, now)
+    .bind(id, body.title, body.slug, postStatus, collectionId, authorId, JSON.stringify(data), now, now)
     .run()
 
   const row = await db.prepare('SELECT * FROM content WHERE id = ?').bind(id).first<SonicJSRow>()
@@ -208,9 +255,14 @@ apiV1.put('/posts/:id', async (c) => {
   const id = c.req.param('id')
   const body = await c.req.json<Record<string, unknown>>()
 
+  const collectionId = await resolveCollectionId(db, 'posts')
+  if (!collectionId) {
+    return c.json({ error: 'Posts collection not found. Run CMS migrations first.' }, 500)
+  }
+
   const existing = await db
-    .prepare('SELECT * FROM content WHERE id = ? AND collectionId = ?')
-    .bind(id, 'posts')
+    .prepare('SELECT * FROM content WHERE id = ? AND collection_id = ?')
+    .bind(id, collectionId)
     .first<SonicJSRow>()
 
   if (!existing) {
@@ -271,8 +323,13 @@ apiV1.get('/renditions', async (c) => {
   const limit = Math.max(1, Math.min(parseInt(c.req.query('limit') || '50', 10) || 50, 100))
   const offset = Math.max(0, parseInt(c.req.query('offset') || '0', 10) || 0)
 
-  let query = 'SELECT * FROM content WHERE collectionId = ? '
-  const params: unknown[] = ['renditions']
+  const collectionId = await resolveCollectionId(db, 'renditions')
+  if (!collectionId) {
+    return c.json({ error: 'Renditions collection not found. Run CMS migrations first.' }, 500)
+  }
+
+  let query = 'SELECT * FROM content WHERE collection_id = ? '
+  const params: unknown[] = [collectionId]
 
   if (postId) {
     query += "AND json_extract(data, '$.post') = ? "
@@ -300,6 +357,16 @@ apiV1.post('/renditions', async (c) => {
     return c.json({ error: 'postId, outlet, and content are required and must be strings' }, 400)
   }
 
+  const collectionId = await resolveCollectionId(db, 'renditions')
+  if (!collectionId) {
+    return c.json({ error: 'Renditions collection not found. Run CMS migrations first.' }, 500)
+  }
+
+  const authorId = await getDefaultAuthorId(db)
+  if (!authorId) {
+    return c.json({ error: 'No users found. Create an admin user first.' }, 500)
+  }
+
   const id = generateId()
   const now = nowUnix()
   const renditionStatus = isNonEmptyString(body.status) ? body.status : 'draft'
@@ -323,9 +390,9 @@ apiV1.post('/renditions', async (c) => {
 
   await db
     .prepare(
-      'INSERT INTO content (id, title, slug, status, collectionId, data, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)'
+      'INSERT INTO content (id, title, slug, status, collection_id, author_id, data, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)'
     )
-    .bind(id, title, slug, renditionStatus, 'renditions', JSON.stringify(data), now, now)
+    .bind(id, title, slug, renditionStatus, collectionId, authorId, JSON.stringify(data), now, now)
     .run()
 
   const row = await db.prepare('SELECT * FROM content WHERE id = ?').bind(id).first<SonicJSRow>()
@@ -340,9 +407,14 @@ apiV1.put('/renditions/:id', async (c) => {
   const id = c.req.param('id')
   const body = await c.req.json<Record<string, unknown>>()
 
+  const collectionId = await resolveCollectionId(db, 'renditions')
+  if (!collectionId) {
+    return c.json({ error: 'Renditions collection not found. Run CMS migrations first.' }, 500)
+  }
+
   const existing = await db
-    .prepare('SELECT * FROM content WHERE id = ? AND collectionId = ?')
-    .bind(id, 'renditions')
+    .prepare('SELECT * FROM content WHERE id = ? AND collection_id = ?')
+    .bind(id, collectionId)
     .first<SonicJSRow>()
 
   if (!existing) {
