@@ -9,11 +9,20 @@
     "dev": "astro dev",
     "build": "astro build",
     "preview": "astro preview",
-    "astro": "astro"
+    "astro": "astro",
+    "typecheck": "astro check"
   },
   "dependencies": {
     "@astrojs/cloudflare": "13.0.0-beta.5",
+    "@hotmetal/content-core": "workspace:*",
     "astro": "^6.0.0-beta.6",
+    "sanitize-html": "^2.17.0",
     "wrangler": "^4.63.0"
+  },
+  "devDependencies": {
+    "@astrojs/check": "^0.9.6",
+    "@tailwindcss/vite": "^4.1.18",
+    "@types/sanitize-html": "^2.16.0",
+    "tailwindcss": "^4.1.18"
   }
 }

@@ -1,0 +1,58 @@
+---
+import PageLayout from '../layouts/PageLayout.astro';
+import Illustration from '../components/Illustration.astro';
+---
+
+<PageLayout title="About" description="About Shahar — technology leader, builder, and writer behind Looking Ahead.">
+  <section class="py-16 md:py-24 px-6">
+    <div class="mx-auto max-w-[var(--max-width-prose)]">
+      <h1 class="text-4xl md:text-5xl font-black tracking-tight leading-[1.15] mb-8">
+        About
+      </h1>
+
+      <Illustration class="w-full max-w-xs text-text mb-12" />
+
+      {/* Author photo placeholder */}
+      <div class="w-24 h-24 rounded-full bg-bg-card mb-8 flex items-center justify-center">
+        <svg class="w-10 h-10 text-text-muted/30" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 6a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0ZM4.501 20.118a7.5 7.5 0 0 1 14.998 0A17.933 17.933 0 0 1 12 21.75c-2.676 0-5.216-.584-7.499-1.632Z" />
+        </svg>
+      </div>
+
+      <div class="prose">
+        <p class="text-lg leading-relaxed">
+          Hi, I'm <strong>Shahar</strong> — a technology leader passionate about building products
+          that make a difference. I write about technology, leadership, and what's coming next.
+        </p>
+
+        <p>
+          With years of experience in software engineering and product leadership, I've learned
+          that the most interesting stories live at the intersection of technology and human impact.
+          This blog is where I explore those intersections.
+        </p>
+
+        <h2>What I Write About</h2>
+
+        <p>
+          <strong>Looking Ahead</strong> covers the topics I find myself thinking about most:
+          emerging technologies, the craft of building software, leadership lessons learned the
+          hard way, and perspectives on where our industry is heading.
+        </p>
+
+        <p>
+          Whether it's a deep dive into a technical challenge, reflections on leading engineering
+          teams, or observations about trends shaping our future — I aim to share insights that
+          are honest, practical, and worth your time.
+        </p>
+
+        <h2>Get in Touch</h2>
+
+        <p>
+          I enjoy connecting with fellow builders, thinkers, and curious minds.
+          Feel free to reach out through the <a href="/contact">contact page</a> or
+          connect with me on LinkedIn.
+        </p>
+      </div>
+    </div>
+  </section>
+</PageLayout>

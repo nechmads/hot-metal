@@ -1,0 +1,96 @@
+---
+interface Props {
+  navLinks: readonly { readonly href: string; readonly label: string }[];
+  currentPath: string;
+}
+
+const { navLinks, currentPath } = Astro.props;
+---
+
+<div
+  id="mobile-menu"
+  role="dialog"
+  aria-label="Navigation menu"
+  aria-modal="true"
+  class="fixed inset-0 z-40 bg-white transform translate-x-full transition-transform duration-300 ease-in-out md:hidden"
+>
+  <div class="flex items-center justify-between px-6 py-4 border-b border-border">
+    <a href="/" class="text-xl font-bold tracking-tight text-text">
+      Looking Ahead
+    </a>
+    <button
+      id="menu-close"
+      class="p-2 -mr-2 text-text"
+      aria-label="Close menu"
+    >
+      <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+      </svg>
+    </button>
+  </div>
+
+  <ul class="px-6 py-8 space-y-6">
+    {navLinks.map(({ href, label }) => (
+      <li>
+        <a
+          href={href}
+          class:list={[
+            'block text-2xl font-semibold transition-colors',
+            currentPath === href
+              ? 'text-accent'
+              : 'text-text hover:text-accent',
+          ]}
+        >
+          {label}
+        </a>
+      </li>
+    ))}
+  </ul>
+</div>
+
+<script>
+  function initMobileMenu() {
+    const toggle = document.getElementById('menu-toggle');
+    const close = document.getElementById('menu-close');
+    const menu = document.getElementById('mobile-menu');
+
+    if (!toggle || !close || !menu) return;
+
+    // Capture narrowed references for use in closures
+    const menuRef = menu;
+    const toggleRef = toggle;
+
+    function handleEscape(e: KeyboardEvent) {
+      if (e.key === 'Escape') closeMenu();
+    }
+
+    function openMenu() {
+      menuRef.classList.remove('translate-x-full');
+      menuRef.classList.add('translate-x-0');
+      toggleRef.setAttribute('aria-expanded', 'true');
+      document.body.style.overflow = 'hidden';
+      document.addEventListener('keydown', handleEscape);
+      const firstLink = menuRef.querySelector('a');
+      firstLink?.focus();
+    }
+
+    function closeMenu() {
+      menuRef.classList.remove('translate-x-0');
+      menuRef.classList.add('translate-x-full');
+      toggleRef.setAttribute('aria-expanded', 'false');
+      document.body.style.overflow = '';
+      document.removeEventListener('keydown', handleEscape);
+      toggleRef.focus();
+    }
+
+    toggle.addEventListener('click', openMenu);
+    close.addEventListener('click', closeMenu);
+
+    menuRef.querySelectorAll('a').forEach((link) => {
+      link.addEventListener('click', closeMenu);
+    });
+  }
+
+  initMobileMenu();
+  document.addEventListener('astro:after-swap', initMobileMenu);
+</script>

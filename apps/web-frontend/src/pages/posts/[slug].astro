@@ -1,0 +1,125 @@
+---
+import PageLayout from '../../layouts/PageLayout.astro';
+import Illustration from '../../components/Illustration.astro';
+import { fetchPostBySlug } from '../../lib/sonicjs';
+import { sanitizeCmsContent } from '../../lib/sanitize';
+import { formatDate } from '../../lib/format';
+
+const { slug } = Astro.params;
+
+if (!slug) {
+  return new Response(null, { status: 404, statusText: 'Not Found' });
+}
+
+const post = await fetchPostBySlug(slug);
+
+if (!post) {
+  return new Response(null, { status: 404, statusText: 'Not Found' });
+}
+
+const title = post.seoTitle ?? post.title;
+const description = post.seoDescription ?? post.excerpt ?? post.hook ?? '';
+const ogImage = post.ogImage ?? post.featuredImage;
+const canonicalUrl = post.canonicalUrl;
+
+const date = post.publishedAt ? formatDate(post.publishedAt) : null;
+
+const sanitizedContent = sanitizeCmsContent(post.content);
+
+const tags = post.tags
+  ? post.tags.split(',').map((t) => t.trim()).filter(Boolean)
+  : [];
+
+const topics = post.topics
+  ? post.topics.split(',').map((t) => t.trim()).filter(Boolean)
+  : [];
+
+const allLabels = [...topics, ...tags];
+---
+
+<PageLayout
+  title={title}
+  description={description}
+  ogImage={ogImage}
+  canonicalUrl={canonicalUrl}
+>
+  <article class="py-12 md:py-20">
+    {/* Featured image */}
+    {post.featuredImage && (
+      <div class="mx-auto max-w-[var(--max-width-wide)] px-6 mb-10">
+        <img
+          src={post.featuredImage}
+          alt={post.title}
+          class="w-full rounded-xl object-cover max-h-[480px]"
+        />
+      </div>
+    )}
+
+    {/* Header */}
+    <header class="mx-auto max-w-[var(--max-width-prose)] px-6 mb-12">
+      <h1 class="text-4xl md:text-5xl font-black tracking-tight leading-[1.15] mb-4">
+        {post.title}
+      </h1>
+
+      {post.subtitle && (
+        <p class="text-xl text-text-muted leading-relaxed mb-6">
+          {post.subtitle}
+        </p>
+      )}
+
+      <div class="flex items-center gap-3 text-sm text-text-muted">
+        <span class="font-medium text-text">{post.author}</span>
+        {date && post.publishedAt && (
+          <>
+            <span aria-hidden="true">&middot;</span>
+            <time datetime={post.publishedAt}>{date}</time>
+          </>
+        )}
+      </div>
+    </header>
+
+    {/* Content */}
+    <div
+      class="prose mx-auto max-w-[var(--max-width-prose)] px-6"
+      set:html={sanitizedContent}
+    />
+
+    {/* Citations */}
+    {post.citations && post.citations.length > 0 && (
+      <aside class="mx-auto max-w-[var(--max-width-prose)] px-6 mt-16">
+        <Illustration class="w-full max-w-xs text-text mb-8" />
+        <h2 class="text-lg font-bold mb-4">Sources & Citations</h2>
+        <ol class="list-decimal list-inside space-y-3 text-sm text-text-muted">
+          {post.citations.map((citation) => (
+            <li>
+              <a
+                href={citation.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                class="text-accent hover:text-accent-hover underline underline-offset-2"
+              >
+                {citation.title}
+              </a>
+              {citation.publisher && (
+                <span> — {citation.publisher}</span>
+              )}
+            </li>
+          ))}
+        </ol>
+      </aside>
+    )}
+
+    {/* Tags / Topics */}
+    {allLabels.length > 0 && (
+      <div class="mx-auto max-w-[var(--max-width-prose)] px-6 mt-12">
+        <div class="flex flex-wrap gap-2">
+          {allLabels.map((label) => (
+            <span class="px-3 py-1 text-xs font-medium rounded-full bg-bg-card text-text-muted">
+              {label}
+            </span>
+          ))}
+        </div>
+      </div>
+    )}
+  </article>
+</PageLayout>
