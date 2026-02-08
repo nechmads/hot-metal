@@ -2,6 +2,7 @@ export type {
   PostStatus,
   Citation,
   Post,
+  Publication,
   Outlet,
   RenditionStatus,
   PublishResult,

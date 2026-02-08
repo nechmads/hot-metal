@@ -8,8 +8,13 @@ export default {
 
   schema: {
     type: 'object',
-    // TODO: Add blogId field when multi-blog support is implemented (Phase 4)
     properties: {
+      publication: {
+        type: 'reference',
+        title: 'Publication',
+        collection: 'publications',
+        helpText: 'Which publication this post belongs to',
+      },
       title: {
         type: 'string',
         title: 'Title',
@@ -64,7 +69,7 @@ export default {
         helpText: 'Comma-separated topics',
       },
       citations: {
-        type: 'json',
+        type: 'textarea',
         title: 'Citations',
         helpText: 'JSON array of { url, title, publisher, accessedAt, excerpt }',
       },

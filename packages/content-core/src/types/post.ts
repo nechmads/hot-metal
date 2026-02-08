@@ -19,7 +19,7 @@ export interface Citation {
 
 export interface Post {
   id: string
-  // TODO: Add blogId when multi-blog support is implemented (Phase 4)
+  publicationId?: string
   title: string
   subtitle?: string
   slug: string
