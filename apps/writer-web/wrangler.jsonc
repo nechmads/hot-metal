@@ -1,0 +1,27 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "hotmetal-writer-web",
+  "main": "src/server.ts",
+  "compatibility_date": "2025-12-17",
+  "compatibility_flags": ["nodejs_compat"],
+  "observability": {
+    "enabled": true,
+  },
+
+  "dev": {
+    "port": 5173
+  },
+
+  // Environment variables (non-secret)
+  "vars": {
+    "WRITER_AGENT_URL": "http://localhost:8789",
+  },
+
+  // SPA fallback — serve index.html for unmatched routes (client-side routing)
+  "assets": {
+    "not_found_handling": "single-page-application"
+  },
+
+  // Secrets (set via `wrangler secret put`):
+  // WRITER_API_KEY
+}

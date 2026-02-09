@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      name="description"
+      content="Hot Metal Writer — AI-powered writing assistant"
+    />
+    <meta name="theme-color" content="#ffffff" />
+
+    <title>Hot Metal Writer</title>
+
+    <!-- Light mode by default to match the blog -->
+    <script>
+      if (localStorage.theme === "dark") {
+        document.documentElement.classList.add("dark");
+      }
+    </script>
+
+    <!-- Favicon support -->
+    <link rel="icon" href="/favicon.ico" />
+
+    <!-- Preload fonts if any -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+
+    <!-- Prevent flash of unstyled content -->
+    <style>
+      html {
+        background: #ffffff;
+      }
+      html.dark {
+        background: #0a0a0a;
+      }
+    </style>
+  </head>
+  <body>
+    <noscript>You need to enable JavaScript to run this app.</noscript>
+    <div id="app"></div>
+    <script type="module" src="/src/client.tsx"></script>
+  </body>
+</html>

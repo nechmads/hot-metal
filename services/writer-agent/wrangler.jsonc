@@ -8,6 +8,10 @@
 		"enabled": true,
 	},
 
+	"dev": {
+		"port": 8789
+	},
+
 	// Durable Objects — one WriterAgent instance per writing session
 	"durable_objects": {
 		"bindings": [

@@ -33,6 +33,25 @@
 
 - [x] **Writer Agent — Non-Streaming Chat Endpoint** — Added `POST /api/v1/sessions/:id/chat` for synchronous (non-streaming) AI conversation. Uses `generateText` instead of `streamText`, same tools/prompt/state transitions. Includes session existence validation, JSON parse error handling, and extracted shared `prepareLlmCall()` helper to reduce duplication between streaming and non-streaming paths. Updated docs and Postman collection.
 
+- [x] **Writer Web Frontend — Chat-Based Writing Workspace** — Built the writer-web frontend (`apps/writer-web`) as a React SPA with two screens:
+  - **Sessions page** (`/`): Session list with create/archive, empty state, loading state, confirmation modals
+  - **Workspace page** (`/session/:id`): Two-panel layout with ChatPanel (left) + DraftPanel (right)
+  - Resizable divider (drag + keyboard, 30-70% clamp, localStorage persistence)
+  - Mobile responsive: stacked layout with tab toggle at < 768px
+  - Hot Metal design tokens (amber accent, Inter font, prose styles matching web-frontend)
+  - API client for all writer-agent endpoints (sessions CRUD, chat, drafts)
+  - Removed `/v1/` prefix from writer-agent routes for simpler proxy
+  - Existing component library reused: Button, Card, Modal, Input, Loader, MemoizedMarkdown
+
+- [x] **Writer Web — Streaming Chat & Tool Invocations** — Replaced HTTP non-streaming chat with WebSocket-based streaming using Cloudflare Agents SDK:
+  - WebSocket proxy in `server.ts` for `/agents/*` paths (bidirectional message pipe with error handling)
+  - `useWriterChat` hook wrapping `useAgent` + `useAgentChat` from agents SDK
+  - Streaming text display with real-time token rendering
+  - `ToolCallIndicator` component showing agent tool activity (researching, saving draft, etc.) with friendly labels and progress
+  - Stop button to cancel in-flight generation
+  - Agent state updates trigger draft panel refresh when `currentDraftVersion` changes
+  - AI SDK v6 `UIMessage` parts rendering (text, tool invocations)
+
 ## Upcoming
 
 - [x] Writer Agent — Phase 2: Research integration (Alexander AI: crawl_url, research_topic, search_web, search_news, ask_question)
