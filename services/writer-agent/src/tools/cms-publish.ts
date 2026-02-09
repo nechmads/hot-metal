@@ -7,7 +7,7 @@ export function createPublishTools(agent: WriterAgent) {
   const publish_to_cms = tool({
     description:
       'Publish the accepted draft to the CMS as a blog post. Only use this when the user explicitly confirms they want to publish. This creates a new post in the CMS with the final draft content.',
-    parameters: z.object({
+    inputSchema: z.object({
       slug: z.string().describe('URL-friendly slug for the post (e.g., "my-first-post")'),
       author: z.string().default('Shahar').describe('Author name'),
       tags: z.string().optional().describe('Comma-separated tags'),

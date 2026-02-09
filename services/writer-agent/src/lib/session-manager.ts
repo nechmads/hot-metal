@@ -38,19 +38,20 @@ function rowToSession(row: SessionRow): Session {
 export class SessionManager {
   constructor(private db: D1Database) {}
 
-  async create(id: string, userId: string): Promise<Session> {
+  async create(id: string, userId: string, title?: string): Promise<Session> {
     const now = Math.floor(Date.now() / 1000)
+    const sessionTitle = title?.trim() || null
     await this.db
       .prepare(
-        'INSERT INTO sessions (id, user_id, status, current_draft_version, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?)',
+        'INSERT INTO sessions (id, user_id, title, status, current_draft_version, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?)',
       )
-      .bind(id, userId, 'active', 0, now, now)
+      .bind(id, userId, sessionTitle, 'active', 0, now, now)
       .run()
 
     return {
       id,
       userId,
-      title: null,
+      title: sessionTitle,
       status: 'active',
       currentDraftVersion: 0,
       cmsPostId: null,

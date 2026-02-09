@@ -4,5 +4,8 @@
   "compatibility_flags": ["nodejs_compat"],
   "observability": {
     "enabled": true
+  },
+  "dev": {
+    "port": 4321
   }
 }

@@ -8,6 +8,10 @@
 		"enabled": true
 	},
 
+	"dev": {
+		"port": 8788
+	},
+
 	// D1 Database for publisher state (tokens, audit logs)
 	"d1_databases": [
 		{

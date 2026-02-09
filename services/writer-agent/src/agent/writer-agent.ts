@@ -1,12 +1,13 @@
 import { AIChatAgent } from 'agents/ai-chat-agent'
 import { anthropic } from '@ai-sdk/anthropic'
-import { generateText, streamText, appendResponseMessages, type StreamTextOnFinishCallback, type ToolSet } from 'ai'
+import { convertToModelMessages, createUIMessageStream, createUIMessageStreamResponse, generateText, streamText, stepCountIs, type StreamTextOnFinishCallback, type ToolSet } from 'ai'
 import type { Connection, WSMessage } from 'partyserver'
 import type { WriterAgentEnv } from '../env'
 import { type WriterAgentState, type WritingPhase, INITIAL_STATE } from './state'
 import { initAgentSqlite } from './sqlite-schema'
 import { buildSystemPrompt } from '../prompts/system-prompt'
 import { createToolSet } from '../tools'
+import { cleanupMessages } from './message-utils'
 
 export interface DraftRow {
   id: string
@@ -76,11 +77,11 @@ export class WriterAgent extends AIChatAgent<WriterAgentEnv, WriterAgentState> {
       }
 
       // Plain text or unrecognised JSON — wrap as a chat message
-      const content = parsed?.content ? String(parsed.content) : message
+      const text = parsed?.content ? String(parsed.content) : message
       const userMessage = {
         id: crypto.randomUUID(),
         role: 'user' as const,
-        content,
+        parts: [{ type: 'text' as const, text }],
       }
       const allMessages = [...this.messages, userMessage]
 
@@ -119,36 +120,44 @@ export class WriterAgent extends AIChatAgent<WriterAgentEnv, WriterAgentState> {
     return { systemPrompt, tools }
   }
 
-  async onChatMessage(onFinish: StreamTextOnFinishCallback<ToolSet>) {
+  async onChatMessage(
+    onFinish: StreamTextOnFinishCallback<ToolSet>,
+    options?: { abortSignal?: AbortSignal },
+  ) {
     const { systemPrompt, tools } = this.prepareLlmCall()
+    const cleaned = cleanupMessages(this.messages)
 
-    const result = streamText({
-      model: anthropic('claude-sonnet-4-5-20250929', {
-        cacheControl: true,
-      }),
-      system: systemPrompt,
-      messages: this.messages,
-      tools,
-      maxSteps: 5,
-      onFinish: async (event) => {
-        this.setState({
-          ...this.state,
-          isGenerating: false,
+    const stream = createUIMessageStream({
+      execute: async ({ writer }) => {
+        const result = streamText({
+          model: anthropic('claude-sonnet-4-5-20250929'),
+          system: systemPrompt,
+          messages: await convertToModelMessages(cleaned),
+          tools,
+          stopWhen: stepCountIs(20),
+          abortSignal: options?.abortSignal,
+          onFinish: async (event) => {
+            this.setState({
+              ...this.state,
+              isGenerating: false,
+            })
+            await (onFinish as unknown as StreamTextOnFinishCallback<typeof tools>)(event)
+          },
+          onError: (error) => {
+            console.error('Stream error:', error)
+            this.setState({
+              ...this.state,
+              isGenerating: false,
+              lastError: error instanceof Error ? error.message : 'Unknown error',
+            })
+          },
         })
-        // Cast needed: streamText's generic toolset differs from the ToolSet base type
-        await (onFinish as StreamTextOnFinishCallback<typeof tools>)(event)
-      },
-      onError: (error) => {
-        console.error('Stream error:', error)
-        this.setState({
-          ...this.state,
-          isGenerating: false,
-          lastError: error instanceof Error ? error.message : 'Unknown error',
-        })
+
+        writer.merge(result.toUIMessageStream())
       },
     })
 
-    return result.toDataStreamResponse()
+    return createUIMessageStreamResponse({ stream })
   }
 
   async onRequest(request: Request): Promise<Response> {
@@ -176,32 +185,30 @@ export class WriterAgent extends AIChatAgent<WriterAgentEnv, WriterAgentState> {
       return this.handleChat(body.message.trim())
     }
 
-    return new Response('Not found', { status: 404 })
+    // Delegate to AIChatAgent base (handles /get-messages, etc.)
+    return super.onRequest(request)
   }
 
   async handleChat(userMessage: string): Promise<Response> {
     const { systemPrompt, tools } = this.prepareLlmCall()
 
-    const userMsg = { id: crypto.randomUUID(), role: 'user' as const, content: userMessage }
+    const userMsg = {
+      id: crypto.randomUUID(),
+      role: 'user' as const,
+      parts: [{ type: 'text' as const, text: userMessage }],
+    }
     const currentMessages = [...this.messages, userMsg]
     await this.persistMessages(currentMessages)
 
     try {
+      const modelMessages = await convertToModelMessages(currentMessages)
       const result = await generateText({
-        model: anthropic('claude-sonnet-4-5-20250929', {
-          cacheControl: true,
-        }),
+        model: anthropic('claude-sonnet-4-5-20250929'),
         system: systemPrompt,
-        messages: currentMessages,
+        messages: modelMessages,
         tools,
-        maxSteps: 5,
+        stopWhen: stepCountIs(20),
       })
-
-      const finalMessages = appendResponseMessages({
-        messages: currentMessages,
-        responseMessages: result.response.messages,
-      })
-      await this.persistMessages(finalMessages)
 
       this.setState({ ...this.state, isGenerating: false })
 
@@ -250,6 +257,11 @@ export class WriterAgent extends AIChatAgent<WriterAgentEnv, WriterAgentState> {
 
   getCurrentDraft(): DraftRow | null {
     const rows = this.sql<DraftRow>`SELECT * FROM drafts ORDER BY version DESC LIMIT 1`
+    return rows.length > 0 ? rows[0] : null
+  }
+
+  getDraftByVersion(version: number): DraftRow | null {
+    const rows = this.sql<DraftRow>`SELECT * FROM drafts WHERE version = ${version}`
     return rows.length > 0 ? rows[0] : null
   }
 

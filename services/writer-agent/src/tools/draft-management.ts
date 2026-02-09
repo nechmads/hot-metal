@@ -6,7 +6,7 @@ export function createDraftTools(agent: WriterAgent) {
   const save_draft = tool({
     description:
       'Save a new draft version of the blog post. Use this after writing or significantly revising content. Increments the version number automatically.',
-    parameters: z.object({
+    inputSchema: z.object({
       title: z.string().describe('The title of the blog post'),
       content: z.string().describe('The full content of the blog post in Markdown format'),
       citations: z
@@ -41,7 +41,7 @@ export function createDraftTools(agent: WriterAgent) {
   const get_current_draft = tool({
     description:
       'Get the latest draft version. Use this to review the current state of the post before making changes.',
-    parameters: z.object({}),
+    inputSchema: z.object({}),
     execute: async () => {
       const draft = agent.getCurrentDraft()
       if (!draft) {
@@ -60,9 +60,33 @@ export function createDraftTools(agent: WriterAgent) {
     },
   })
 
+  const get_draft = tool({
+    description:
+      'Get a specific draft version by its version number. Use this when the user refers to an earlier draft, e.g. "take the intro from draft 1". Use list_drafts first if you need to know which versions exist.',
+    inputSchema: z.object({
+      version: z.number().int().positive().describe('The draft version number to retrieve'),
+    }),
+    execute: async ({ version }) => {
+      const draft = agent.getDraftByVersion(version)
+      if (!draft) {
+        return { found: false, message: `Draft version ${version} does not exist.` }
+      }
+
+      return {
+        found: true,
+        version: draft.version,
+        title: draft.title,
+        content: draft.content,
+        wordCount: draft.word_count,
+        citations: draft.citations ? JSON.parse(draft.citations) : [],
+        isFinal: draft.is_final === 1,
+      }
+    },
+  })
+
   const list_drafts = tool({
     description: 'List all draft versions with their metadata. Use this to show draft history.',
-    parameters: z.object({}),
+    inputSchema: z.object({}),
     execute: async () => {
       const drafts = agent.listDrafts()
       return {
@@ -78,5 +102,5 @@ export function createDraftTools(agent: WriterAgent) {
     },
   })
 
-  return { save_draft, get_current_draft, list_drafts }
+  return { save_draft, get_current_draft, get_draft, list_drafts }
 }

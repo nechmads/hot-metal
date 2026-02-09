@@ -7,10 +7,10 @@ import { writerApiKeyAuth } from '../middleware/api-key-auth'
 
 const drafts = new Hono<{ Bindings: WriterAgentEnv }>()
 
-drafts.use('/api/v1/sessions/:sessionId/drafts*', writerApiKeyAuth)
+drafts.use('/api/sessions/:sessionId/drafts*', writerApiKeyAuth)
 
 /** List draft versions for a session — proxied to agent DO. */
-drafts.get('/api/v1/sessions/:sessionId/drafts', async (c) => {
+drafts.get('/api/sessions/:sessionId/drafts', async (c) => {
   const sessionId = c.req.param('sessionId')
   const agent = await getAgentByName<WriterAgentEnv, WriterAgent>(c.env.WRITER_AGENT, sessionId)
 
@@ -24,7 +24,7 @@ drafts.get('/api/v1/sessions/:sessionId/drafts', async (c) => {
 })
 
 /** Get a specific draft version for a session — proxied to agent DO. */
-drafts.get('/api/v1/sessions/:sessionId/drafts/:version', async (c) => {
+drafts.get('/api/sessions/:sessionId/drafts/:version', async (c) => {
   const sessionId = c.req.param('sessionId')
   const version = c.req.param('version')
   const agent = await getAgentByName<WriterAgentEnv, WriterAgent>(c.env.WRITER_AGENT, sessionId)

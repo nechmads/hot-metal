@@ -11,12 +11,12 @@ function isValidStatus(value: string): value is SessionStatus {
 
 const sessions = new Hono<{ Bindings: WriterAgentEnv }>()
 
-sessions.use('/api/v1/sessions/*', writerApiKeyAuth)
-sessions.use('/api/v1/sessions', writerApiKeyAuth)
+sessions.use('/api/sessions/*', writerApiKeyAuth)
+sessions.use('/api/sessions', writerApiKeyAuth)
 
 /** Create a new writing session. */
-sessions.post('/api/v1/sessions', async (c) => {
-  const body = await c.req.json<{ userId?: string }>()
+sessions.post('/api/sessions', async (c) => {
+  const body = await c.req.json<{ userId?: string; title?: string }>()
 
   if (!body.userId || typeof body.userId !== 'string') {
     return c.json({ error: 'userId is required' }, 400)
@@ -24,13 +24,13 @@ sessions.post('/api/v1/sessions', async (c) => {
 
   const sessionId = crypto.randomUUID()
   const manager = new SessionManager(c.env.WRITER_DB)
-  const session = await manager.create(sessionId, body.userId)
+  const session = await manager.create(sessionId, body.userId, body.title)
 
   return c.json(session, 201)
 })
 
 /** List sessions with optional filters. */
-sessions.get('/api/v1/sessions', async (c) => {
+sessions.get('/api/sessions', async (c) => {
   const userId = c.req.query('userId')
   const statusParam = c.req.query('status')
 
@@ -48,7 +48,7 @@ sessions.get('/api/v1/sessions', async (c) => {
 })
 
 /** Get a single session by ID. */
-sessions.get('/api/v1/sessions/:id', async (c) => {
+sessions.get('/api/sessions/:id', async (c) => {
   const manager = new SessionManager(c.env.WRITER_DB)
   const session = await manager.getById(c.req.param('id'))
 
@@ -60,7 +60,7 @@ sessions.get('/api/v1/sessions/:id', async (c) => {
 })
 
 /** Update session metadata. */
-sessions.patch('/api/v1/sessions/:id', async (c) => {
+sessions.patch('/api/sessions/:id', async (c) => {
   const manager = new SessionManager(c.env.WRITER_DB)
   const existing = await manager.getById(c.req.param('id'))
 

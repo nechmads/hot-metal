@@ -6,6 +6,9 @@ compatibility_flags = ["nodejs_compat"]
 # Cloudflare Workers settings
 workers_dev = true
 
+[dev]
+port = 8787
+
 # D1 Database
 [[d1_databases]]
 binding = "DB"

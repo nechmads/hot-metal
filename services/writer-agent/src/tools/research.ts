@@ -16,7 +16,7 @@ export function createResearchTools(agent: WriterAgent) {
   const crawl_url = tool({
     description:
       'Fetch and parse a specific URL to extract its content for citation. Returns the page title, description, and a content excerpt. Use this to verify sources or extract information from a specific webpage.',
-    parameters: z.object({
+    inputSchema: z.object({
       url: z.string().url().describe('The URL to crawl and extract content from'),
     }),
     execute: async ({ url }) => {
@@ -50,7 +50,7 @@ export function createResearchTools(agent: WriterAgent) {
   const research_topic = tool({
     description:
       'Perform deep multi-source research on a topic. This is the most thorough research tool — it searches multiple sources, synthesizes findings, and returns an answer with citations. Takes 1-2 minutes to complete. Use for comprehensive research when the user wants well-sourced, in-depth content.',
-    parameters: z.object({
+    inputSchema: z.object({
       question: z.string().describe('The research question to investigate'),
       level: z.enum(['basic', 'standard', 'deep']).default('standard').describe('Research depth: basic (quick), standard (balanced), deep (thorough)'),
       seedUrls: z.array(z.string()).optional().describe('Optional seed URLs to include in research'),
@@ -90,7 +90,7 @@ export function createResearchTools(agent: WriterAgent) {
   const search_web = tool({
     description:
       'Search the web for information relevant to the blog post topic. Returns search results with titles, URLs, and snippets. Use for quick fact-finding and discovering relevant sources.',
-    parameters: z.object({
+    inputSchema: z.object({
       query: z.string().describe('The search query'),
       maxResults: z.number().default(5).describe('Maximum number of results to return'),
       recency: z.enum(['day', 'week', 'month', 'year']).optional().describe('Filter results by recency'),
@@ -126,7 +126,7 @@ export function createResearchTools(agent: WriterAgent) {
   const search_news = tool({
     description:
       'Search for recent news articles on a topic. Use this for time-sensitive topics, current events, and when the user wants up-to-date information.',
-    parameters: z.object({
+    inputSchema: z.object({
       query: z.string().describe('The news search query'),
       maxResults: z.number().default(5).describe('Maximum number of results to return'),
       recency: z.enum(['day', 'week', 'month', 'year']).optional().describe('Filter by recency'),
@@ -168,7 +168,7 @@ export function createResearchTools(agent: WriterAgent) {
   const ask_question = tool({
     description:
       'Ask a factual question and get a concise answer with sources. Backed by Perplexity AI. Use for quick fact-checking, definitions, and straightforward questions that need a direct answer.',
-    parameters: z.object({
+    inputSchema: z.object({
       question: z.string().describe('The question to ask'),
       context: z.string().optional().describe('Optional context to help refine the answer'),
     }),
