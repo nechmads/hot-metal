@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { useParams, useNavigate } from 'react-router'
 import { toast } from 'sonner'
 import {
@@ -117,7 +117,6 @@ export function PublicationSettingsPage() {
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [success, setSuccess] = useState<string | null>(null)
 
   // Form state
   const [name, setName] = useState('')
@@ -189,19 +188,10 @@ export function PublicationSettingsPage() {
     loadPublication()
   }, [loadPublication])
 
-  const successTimerRef = useRef<ReturnType<typeof setTimeout>>(null)
-
-  useEffect(() => {
-    return () => {
-      if (successTimerRef.current) clearTimeout(successTimerRef.current)
-    }
-  }, [])
-
   const handleSave = async () => {
     if (!id || saving || !name.trim()) return
     setSaving(true)
     setError(null)
-    setSuccess(null)
     try {
       const scoutSchedule = buildSchedule(scheduleType, scheduleHour, scheduleCount, scheduleDays)
       const updated = await updatePublication(id, {
@@ -216,9 +206,7 @@ export function PublicationSettingsPage() {
       })
       setPublication(updated)
       setNextScoutAt(updated.nextScoutAt)
-      setSuccess('Settings saved')
-      if (successTimerRef.current) clearTimeout(successTimerRef.current)
-      successTimerRef.current = setTimeout(() => setSuccess(null), 2000)
+      toast.success('Settings saved')
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to save')
     } finally {
@@ -363,11 +351,6 @@ export function PublicationSettingsPage() {
       {error && (
         <div className="mb-4 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">
           {error}
-        </div>
-      )}
-      {success && (
-        <div className="mb-4 rounded-lg border border-green-200 bg-green-50 p-3 text-sm text-green-700">
-          {success}
         </div>
       )}
 
@@ -607,7 +590,7 @@ export function PublicationSettingsPage() {
           disabled={saving || !name.trim()}
           className="flex items-center gap-2 rounded-lg bg-[var(--color-accent)] px-5 py-2 text-sm font-medium text-white transition-colors hover:bg-[var(--color-accent-hover)] disabled:opacity-50"
         >
-          <FloppyDiskIcon size={16} />
+          {saving ? <Loader size={16} /> : <FloppyDiskIcon size={16} />}
           {saving ? 'Saving...' : 'Save Settings'}
         </button>
       </div>
