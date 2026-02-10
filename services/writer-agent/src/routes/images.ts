@@ -1,11 +1,10 @@
 import { getAgentByName } from 'agents'
 import { Hono } from 'hono'
-import { generateText } from 'ai'
-import { anthropic } from '@ai-sdk/anthropic'
 import type { WriterAgentEnv } from '../env'
 import type { WriterAgent } from '../agent/writer-agent'
 import { SessionManager } from '../lib/session-manager'
 import { writerApiKeyAuth } from '../middleware/api-key-auth'
+import { createImagePrompt } from '../lib/writing'
 
 const images = new Hono<{ Bindings: WriterAgentEnv }>()
 
@@ -35,28 +34,13 @@ images.post('/api/sessions/:sessionId/generate-image-prompt', async (c) => {
   }
 
   const draft = await contentRes.json() as { title: string | null; content: string }
-  const contentPreview = draft.content.length > 3000
-    ? draft.content.slice(0, 3000) + '\n\n[truncated]'
-    : draft.content
 
-  try {
-    const result = await generateText({
-      model: anthropic('claude-haiku-4-5-20251001'),
-      system: `You are an expert at creating image generation prompts. Given a blog post, generate a single descriptive prompt for an AI image generator (Flux) that would create a compelling featured image for the post. The prompt should describe a visually striking scene or concept that captures the essence of the article. Keep it under 200 words. Be specific about style, colors, composition. Respond with ONLY the prompt text, no explanation.`,
-      messages: [
-        {
-          role: 'user',
-          content: `Title: ${draft.title || 'Untitled'}\n\n${contentPreview}`,
-        },
-      ],
-    })
-
-    return c.json({ prompt: result.text.trim() })
-  } catch (err) {
-    console.error('generate-image-prompt error:', err)
-    const message = err instanceof Error ? err.message : 'Failed to generate prompt'
-    return c.json({ error: message }, 502)
+  const prompt = await createImagePrompt(draft)
+  if (!prompt) {
+    return c.json({ error: 'Failed to generate prompt' }, 502)
   }
+
+  return c.json({ prompt })
 })
 
 /** Generate 4 images from a prompt using Workers AI Flux model. */

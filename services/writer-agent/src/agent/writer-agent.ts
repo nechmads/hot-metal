@@ -10,6 +10,7 @@ import { createToolSet } from '../tools'
 import { cleanupMessages } from './message-utils'
 import { CmsApi } from '@hotmetal/shared'
 import { marked } from 'marked'
+import { createHook, createSeoMeta, type DraftInput } from '../lib/writing'
 
 export interface DraftRow {
   id: string
@@ -275,48 +276,27 @@ export class WriterAgent extends AIChatAgent<WriterAgentEnv, WriterAgentState> {
       return Response.json({ error: 'No draft exists.' }, { status: 400 })
     }
 
-    // Truncate content to avoid using too many tokens
-    const contentPreview = draft.content.length > 4000
-      ? draft.content.slice(0, 4000) + '\n\n[truncated]'
-      : draft.content
+    const draftInput: DraftInput = { title: draft.title, content: draft.content }
 
-    try {
-      const result = await generateText({
-        model: anthropic('claude-haiku-4-5-20251001'),
-        system: `You are an SEO expert for a technology blog. Given a blog post, generate:
-1. A hook — a short, engaging opening paragraph (1-3 sentences) that grabs the reader's attention and makes them want to read the full article. It should NOT repeat the title.
-2. An SEO-optimized excerpt (1-2 sentences, max 160 characters, compelling and descriptive)
-3. Relevant tags (3-6 tags, comma-separated, lowercase)
+    // Run hook (Sonnet) and SEO meta (Haiku) generation in parallel
+    const [hookResult, seoResult] = await Promise.allSettled([
+      createHook(draftInput),
+      createSeoMeta(draftInput),
+    ])
 
-Respond in JSON format only:
-{"hook": "...", "excerpt": "...", "tags": "tag1, tag2, tag3"}`,
-        messages: [
-          {
-            role: 'user',
-            content: `Title: ${draft.title || 'Untitled'}\n\n${contentPreview}`,
-          },
-        ],
-      })
+    const hook = hookResult.status === 'fulfilled' ? hookResult.value : ''
+    const { excerpt, tags } = seoResult.status === 'fulfilled'
+      ? seoResult.value
+      : { excerpt: '', tags: '' }
 
-      const text = result.text.trim()
-      // Extract JSON from the response (handle potential markdown code blocks)
-      const jsonMatch = text.match(/\{[\s\S]*\}/)
-      if (!jsonMatch) {
-        return Response.json({ error: 'Failed to parse SEO suggestions' }, { status: 502 })
-      }
-
-      const seo = JSON.parse(jsonMatch[0]) as { hook?: string; excerpt?: string; tags?: string }
-
-      return Response.json({
-        hook: seo.hook || '',
-        excerpt: seo.excerpt || '',
-        tags: seo.tags || '',
-      })
-    } catch (err) {
-      console.error('generate-seo error:', err)
-      const message = err instanceof Error ? err.message : 'Failed to generate SEO data'
-      return Response.json({ error: message }, { status: 502 })
+    if (hookResult.status === 'rejected') {
+      console.error('Hook generation failed:', hookResult.reason)
     }
+    if (seoResult.status === 'rejected') {
+      console.error('SEO meta generation failed:', seoResult.reason)
+    }
+
+    return Response.json({ hook, excerpt, tags })
   }
 
   async handlePublishToCms(request: Request): Promise<Response> {
