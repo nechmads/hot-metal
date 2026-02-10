@@ -95,9 +95,13 @@ images.post('/api/sessions/:sessionId/generate-images', async (c) => {
         const id = crypto.randomUUID()
         const key = `images/sessions/${sessionId}/${id}.png`
 
-        // Flux returns a ReadableStream
-        await c.env.IMAGE_BUCKET.put(key, result as ReadableStream, {
-          httpMetadata: { contentType: 'image/png' },
+        // Flux returns { image: string } where image is base64-encoded JPEG
+        const base64 = (result as { image: string }).image
+        const binaryString = atob(base64)
+        const bytes = Uint8Array.from(binaryString, (ch) => ch.codePointAt(0)!)
+
+        await c.env.IMAGE_BUCKET.put(key, bytes, {
+          httpMetadata: { contentType: 'image/jpeg' },
         })
 
         return { id, url: `${origin}/api/images/${key}` }
@@ -163,7 +167,7 @@ images.get('/api/images/*', async (c) => {
 
   return new Response(object.body, {
     headers: {
-      'Content-Type': object.httpMetadata?.contentType || 'image/png',
+      'Content-Type': object.httpMetadata?.contentType || 'image/jpeg',
       'Cache-Control': 'public, max-age=31536000, immutable',
     },
   })
