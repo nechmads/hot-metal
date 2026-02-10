@@ -9,6 +9,4 @@ export interface WriterAgentEnv {
   WRITER_API_KEY: string
   ALEXANDER_API_URL: string
   ALEXANDER_API_KEY: string
-  CONTENT_SCOUT_URL: string
-  CONTENT_SCOUT_API_KEY: string
 }

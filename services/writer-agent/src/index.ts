@@ -2,7 +2,7 @@ import { routeAgentRequest } from 'agents'
 import { Hono } from 'hono'
 import type { WriterAgentEnv } from './env'
 import { errorHandler } from './middleware/error-handler'
-import { healthRoutes, sessionRoutes, draftRoutes, chatRoutes, publishRoutes, publicationRoutes, topicRoutes, ideaRoutes, scoutRoutes, activityRoutes } from './routes'
+import { healthRoutes, sessionRoutes, draftRoutes, chatRoutes, publishRoutes, publicationRoutes, topicRoutes, ideaRoutes, activityRoutes } from './routes'
 
 // Re-export WriterAgent so Wrangler registers the Durable Object
 export { WriterAgent } from './agent/writer-agent'
@@ -18,7 +18,6 @@ app.route('/', publishRoutes)
 app.route('/', publicationRoutes)
 app.route('/', topicRoutes)
 app.route('/', ideaRoutes)
-app.route('/', scoutRoutes)
 app.route('/', activityRoutes)
 
 export default {

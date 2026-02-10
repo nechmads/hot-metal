@@ -5,12 +5,13 @@
 The blog automation system has 3 services working together:
 
 ```
-writer-web (port 5173) --> writer-agent (port 8789) --> content-scout (port 8790)
-      UI proxy               REST API + AI agent         Scout pipeline
+writer-web (port 5173) --> writer-agent (port 8789)     REST API + AI agent
+                       \-> content-scout (port 8790)     Scout pipeline
+      UI proxy (BFF)
 ```
 
-- **writer-web** — React SPA + thin CF Worker proxy. All `/api/*` requests are proxied to writer-agent with `X-API-Key` header injection.
-- **writer-agent** — Main backend. Manages publications, topics, ideas, sessions, drafts. Has a proxy endpoint `/api/publications/:id/scout` that forwards to content-scout.
+- **writer-web** — React SPA + thin CF Worker proxy (BFF). Routes `/api/*` requests to writer-agent and `/api/publications/:id/scout` directly to content-scout.
+- **writer-agent** — Main backend. Manages publications, topics, ideas, sessions, drafts.
 - **content-scout** — Durable pipeline worker. Cron + Queue + Workflow. Discovers trending stories, generates ideas via LLM, stores to D1, and optionally auto-writes.
 
 All three services share the same D1 database (`hotmetal-writer-db`).
@@ -58,10 +59,7 @@ npx wrangler secret put WRITER_API_KEY --local     # API key for incoming reques
 npx wrangler secret put ANTHROPIC_API_KEY --local   # Claude API key for AI drafting
 npx wrangler secret put CMS_API_KEY --local         # CMS API key for publishing
 npx wrangler secret put ALEXANDER_API_KEY --local   # Alexander API key for research
-npx wrangler secret put CONTENT_SCOUT_API_KEY --local  # NEW: key to call content-scout
 ```
-
-For the `CONTENT_SCOUT_API_KEY`, use the same value you'll set as `API_KEY` on the content-scout.
 
 ### content-scout secrets
 
@@ -74,7 +72,7 @@ npx wrangler secret put ANTHROPIC_API_KEY --local      # Claude API for idea gen
 npx wrangler secret put WRITER_AGENT_API_KEY --local   # Key to call writer-agent (for auto-write)
 ```
 
-> **Important**: `API_KEY` on content-scout must match `CONTENT_SCOUT_API_KEY` on writer-agent (writer-agent sends it as a Bearer token). `WRITER_AGENT_API_KEY` on content-scout must match `WRITER_API_KEY` on writer-agent (content-scout uses it to call writer-agent for auto-write).
+> **Important**: `API_KEY` on content-scout must match `SCOUT_API_KEY` on writer-web (writer-web sends it as a Bearer token). `WRITER_AGENT_API_KEY` on content-scout must match `WRITER_API_KEY` on writer-agent (content-scout uses it to call writer-agent for auto-write).
 
 ### writer-web secrets
 
@@ -82,6 +80,7 @@ npx wrangler secret put WRITER_AGENT_API_KEY --local   # Key to call writer-agen
 cd apps/writer-web
 
 npx wrangler secret put WRITER_API_KEY --local   # Same as writer-agent's WRITER_API_KEY
+npx wrangler secret put SCOUT_API_KEY --local    # Must match API_KEY on content-scout
 ```
 
 ---
@@ -313,16 +312,16 @@ For production, you'll need to:
    npx wrangler secret put WRITER_AGENT_API_KEY
    ```
 
-3. **Set production secrets on writer-agent** (the new one):
+3. **Set production secrets on writer-web** (the new one):
    ```bash
-   cd services/writer-agent
-   npx wrangler secret put CONTENT_SCOUT_API_KEY
+   cd apps/writer-web
+   npx wrangler secret put SCOUT_API_KEY
    ```
 
-4. **Update writer-agent production vars** in wrangler.jsonc:
+4. **Update writer-web production vars** in wrangler.jsonc:
    - Change `CONTENT_SCOUT_URL` from `http://localhost:8790` to `https://hotmetal-content-scout.shahar-nechmad.workers.dev`
 
-5. **Redeploy writer-agent**:
+5. **Redeploy writer-web**:
    ```bash
    npx wrangler deploy
    ```

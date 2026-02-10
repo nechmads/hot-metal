@@ -44,10 +44,8 @@
 	"vars": {
 		"CMS_URL": "http://localhost:8787",
 		"ALEXANDER_API_URL": "https://alexanderai.farfarawaylabs.com",
-		"CONTENT_SCOUT_URL": "http://localhost:8790",
 	},
 
 	// Secrets (set via `wrangler secret put`):
 	// ANTHROPIC_API_KEY, CMS_API_KEY, WRITER_API_KEY, ALEXANDER_API_KEY
-	// CONTENT_SCOUT_API_KEY — must match API_KEY on the content-scout worker
 }

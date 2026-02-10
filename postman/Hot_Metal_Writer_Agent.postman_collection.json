@@ -1179,7 +1179,7 @@
 		},
 		{
 			"name": "Scout",
-			"description": "Trigger the content scout to discover new blog post ideas for a publication. The scout analyzes the publication's topics and searches the web for relevant content, generating ideas with angles, summaries, and source citations.\n\nThe scout runs asynchronously — the endpoint returns immediately with a confirmation, and ideas will appear in the Ideas list as they are discovered.\n\nAll endpoints require `X-API-Key` authentication.",
+			"description": "Trigger the content scout to discover new blog post ideas for a publication. The scout analyzes the publication's topics and searches the web for relevant content, generating ideas with angles, summaries, and source citations.\n\nThe scout runs asynchronously — the endpoint returns immediately with a confirmation, and ideas will appear in the Ideas list as they are discovered.\n\nThis request is routed by writer-web directly to the content-scout service (not through writer-agent). No `X-API-Key` header is needed — writer-web injects the scout credentials automatically.",
 			"item": [
 				{
 					"name": "Trigger Content Scout",
