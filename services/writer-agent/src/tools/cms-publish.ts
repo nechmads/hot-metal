@@ -56,6 +56,7 @@ export function createPublishTools(agent: WriterAgent) {
           hook,
           citations: parsedCitations as undefined,
           publishedAt: new Date().toISOString(),
+          publicationId: agent.state.publicationId ?? undefined,
         })
 
         agent.finalizeDraft(post.id)

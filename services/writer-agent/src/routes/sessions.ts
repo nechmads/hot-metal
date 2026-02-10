@@ -16,7 +16,13 @@ sessions.use('/api/sessions', writerApiKeyAuth)
 
 /** Create a new writing session. */
 sessions.post('/api/sessions', async (c) => {
-  const body = await c.req.json<{ userId?: string; title?: string }>()
+  const body = await c.req.json<{
+    userId?: string
+    title?: string
+    publicationId?: string
+    ideaId?: string
+    seedContext?: string
+  }>()
 
   if (!body.userId || typeof body.userId !== 'string') {
     return c.json({ error: 'userId is required' }, 400)
@@ -24,7 +30,11 @@ sessions.post('/api/sessions', async (c) => {
 
   const sessionId = crypto.randomUUID()
   const manager = new SessionManager(c.env.WRITER_DB)
-  const session = await manager.create(sessionId, body.userId, body.title)
+  const session = await manager.create(sessionId, body.userId, body.title, {
+    publicationId: body.publicationId,
+    ideaId: body.ideaId,
+    seedContext: body.seedContext,
+  })
 
   return c.json(session, 201)
 })

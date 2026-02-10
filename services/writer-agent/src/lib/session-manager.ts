@@ -7,6 +7,9 @@ export interface Session {
   status: SessionStatus
   currentDraftVersion: number
   cmsPostId: string | null
+  publicationId: string | null
+  ideaId: string | null
+  seedContext: string | null
   createdAt: number
   updatedAt: number
 }
@@ -18,6 +21,9 @@ interface SessionRow {
   status: string
   current_draft_version: number
   cms_post_id: string | null
+  publication_id: string | null
+  idea_id: string | null
+  seed_context: string | null
   created_at: number
   updated_at: number
 }
@@ -30,6 +36,9 @@ function rowToSession(row: SessionRow): Session {
     status: row.status as SessionStatus,
     currentDraftVersion: row.current_draft_version,
     cmsPostId: row.cms_post_id,
+    publicationId: row.publication_id,
+    ideaId: row.idea_id,
+    seedContext: row.seed_context,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   }
@@ -38,14 +47,23 @@ function rowToSession(row: SessionRow): Session {
 export class SessionManager {
   constructor(private db: D1Database) {}
 
-  async create(id: string, userId: string, title?: string): Promise<Session> {
+  async create(
+    id: string,
+    userId: string,
+    title?: string,
+    options?: { publicationId?: string; ideaId?: string; seedContext?: string },
+  ): Promise<Session> {
     const now = Math.floor(Date.now() / 1000)
     const sessionTitle = title?.trim() || null
+    const pubId = options?.publicationId ?? null
+    const ideaId = options?.ideaId ?? null
+    const seedCtx = options?.seedContext ?? null
+
     await this.db
       .prepare(
-        'INSERT INTO sessions (id, user_id, title, status, current_draft_version, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?)',
+        'INSERT INTO sessions (id, user_id, title, status, current_draft_version, publication_id, idea_id, seed_context, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
       )
-      .bind(id, userId, sessionTitle, 'active', 0, now, now)
+      .bind(id, userId, sessionTitle, 'active', 0, pubId, ideaId, seedCtx, now, now)
       .run()
 
     return {
@@ -55,6 +73,9 @@ export class SessionManager {
       status: 'active',
       currentDraftVersion: 0,
       cmsPostId: null,
+      publicationId: pubId,
+      ideaId,
+      seedContext: seedCtx,
       createdAt: now,
       updatedAt: now,
     }
@@ -97,7 +118,7 @@ export class SessionManager {
 
   async update(
     id: string,
-    data: Partial<Pick<Session, 'title' | 'status' | 'currentDraftVersion' | 'cmsPostId'>>,
+    data: Partial<Pick<Session, 'title' | 'status' | 'currentDraftVersion' | 'cmsPostId' | 'publicationId' | 'ideaId' | 'seedContext'>>,
   ): Promise<Session | null> {
     const sets: string[] = []
     const bindings: (string | number | null)[] = []
@@ -117,6 +138,18 @@ export class SessionManager {
     if (data.cmsPostId !== undefined) {
       sets.push('cms_post_id = ?')
       bindings.push(data.cmsPostId)
+    }
+    if (data.publicationId !== undefined) {
+      sets.push('publication_id = ?')
+      bindings.push(data.publicationId)
+    }
+    if (data.ideaId !== undefined) {
+      sets.push('idea_id = ?')
+      bindings.push(data.ideaId)
+    }
+    if (data.seedContext !== undefined) {
+      sets.push('seed_context = ?')
+      bindings.push(data.seedContext)
     }
 
     if (sets.length === 0) return this.getById(id)

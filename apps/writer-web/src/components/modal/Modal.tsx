@@ -16,6 +16,8 @@ export const Modal = ({
   onClose
 }: ModalProps) => {
   const modalRef = useRef<HTMLDivElement>(null);
+  const onCloseRef = useRef(onClose);
+  onCloseRef.current = onClose;
 
   // Stop site overflow when modal is open
   useEffect(() => {
@@ -30,7 +32,7 @@ export const Modal = ({
     };
   }, [isOpen]);
 
-  // Tab focus trap + Escape to close
+  // Tab focus trap + Escape to close — only re-runs when isOpen changes
   useEffect(() => {
     if (!isOpen || !modalRef.current) return;
 
@@ -58,7 +60,7 @@ export const Modal = ({
         }
       }
       if (e.key === "Escape") {
-        onClose();
+        onCloseRef.current();
       }
     };
 
@@ -66,7 +68,7 @@ export const Modal = ({
     return () => {
       document.removeEventListener("keydown", handleKeyDown);
     };
-  }, [isOpen, onClose]);
+  }, [isOpen]);
 
   if (!isOpen) return null;
 

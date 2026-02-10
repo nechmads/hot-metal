@@ -32,9 +32,9 @@ export function SessionCard({ session, onDelete }: SessionCardProps) {
     <div className="group rounded-xl border border-[#e5e7eb] bg-white p-4 transition-shadow hover:shadow-md dark:border-[#374151] dark:bg-[#1a1a1a]">
       <div
         className="cursor-pointer"
-        onClick={() => navigate(`/session/${session.id}`)}
+        onClick={() => navigate(`/writing/${session.id}`)}
         onKeyDown={(e) => {
-          if (e.key === 'Enter') navigate(`/session/${session.id}`)
+          if (e.key === 'Enter') navigate(`/writing/${session.id}`)
         }}
         role="button"
         tabIndex={0}

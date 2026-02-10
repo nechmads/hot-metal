@@ -1,0 +1,75 @@
+{
+	"$schema": "node_modules/wrangler/config-schema.json",
+	"name": "hotmetal-content-scout",
+	"main": "src/index.ts",
+	"compatibility_date": "2025-12-17",
+	"compatibility_flags": ["nodejs_compat"],
+	"observability": {
+		"enabled": true,
+	},
+
+	"dev": {
+		"port": 8790,
+	},
+
+	// Cron trigger — daily at 7 AM UTC
+	"triggers": {
+		"crons": ["0 7 * * *"],
+	},
+
+	// Durable workflow for multi-step scout pipeline
+	"workflows": [
+		{
+			"name": "scout-workflow",
+			"binding": "SCOUT_WORKFLOW",
+			"class_name": "ScoutWorkflow",
+		},
+	],
+
+	// Queue: fan-out 1 message per publication
+	"queues": {
+		"producers": [
+			{
+				"queue": "hotmetal-scout-queue",
+				"binding": "SCOUT_QUEUE",
+			},
+		],
+		"consumers": [
+			{
+				"queue": "hotmetal-scout-queue",
+				"max_batch_size": 1,
+				"max_retries": 3,
+				"dead_letter_queue": "hotmetal-scout-dlq",
+			},
+		],
+	},
+
+	// KV namespace for Alexander API search result caching (24h TTL)
+	"kv_namespaces": [
+		{
+			"binding": "SCOUT_CACHE",
+			"id": "86047743f8c04bd398a79e94ed30d8d1",
+		},
+	],
+
+	// Shared D1 database (same as writer-agent)
+	"d1_databases": [
+		{
+			"binding": "WRITER_DB",
+			"database_name": "hotmetal-writer-db",
+			"database_id": "5fc8f7a4-e05f-47ce-b638-f78a90057f43",
+		},
+	],
+
+	// Non-secret environment variables
+	"vars": {
+		"ALEXANDER_API_URL": "https://alexanderai.farfarawaylabs.com",
+		"WRITER_AGENT_URL": "https://hotmetal-writer-agent.shahar-nechmad.workers.dev",
+	},
+
+	// Secrets (set via `wrangler secret put`):
+	// API_KEY              — authenticates incoming requests to this service
+	// ALEXANDER_API_KEY    — Alexander trend search API
+	// ANTHROPIC_API_KEY    — Claude API for idea generation
+	// WRITER_AGENT_API_KEY — key to call writer-agent (for auto-write)
+}

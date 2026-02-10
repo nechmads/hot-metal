@@ -40,7 +40,7 @@ export function SessionsPage() {
       const session = await createSession(newTitle.trim() || undefined)
       setShowCreateModal(false)
       setNewTitle('')
-      navigate(`/session/${session.id}`)
+      navigate(`/writing/${session.id}`)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to create session')
     } finally {

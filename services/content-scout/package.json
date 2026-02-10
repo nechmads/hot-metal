@@ -1,0 +1,29 @@
+{
+	"name": "@hotmetal/content-scout",
+	"version": "0.0.0",
+	"private": true,
+	"type": "module",
+	"scripts": {
+		"deploy": "wrangler deploy",
+		"dev": "wrangler dev --persist-to ../../.wrangler/shared-state",
+		"start": "wrangler dev",
+		"test": "vitest",
+		"cf-typegen": "wrangler types",
+		"build": "wrangler deploy --dry-run --outdir=dist",
+		"typecheck": "tsc --noEmit",
+		"db:migrate:local": "wrangler d1 migrations apply WRITER_DB --local --persist-to ../../.wrangler/shared-state"
+	},
+	"dependencies": {
+		"@ai-sdk/anthropic": "^3.0.39",
+		"@hotmetal/shared": "workspace:*",
+		"ai": "^6.0.77",
+		"hono": "^4.11.8"
+	},
+	"devDependencies": {
+		"@cloudflare/vitest-pool-workers": "^0.12.4",
+		"@types/node": "^25.2.2",
+		"typescript": "^5.5.2",
+		"vitest": "~3.2.0",
+		"wrangler": "^4.63.0"
+	}
+}

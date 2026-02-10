@@ -42,9 +42,9 @@ export class WriterAgent extends AIChatAgent<WriterAgentEnv, WriterAgentState> {
     if (!this.state.sessionId) {
       const sessionId = this.name
       const row = await this.env.WRITER_DB
-        .prepare('SELECT id, user_id, title, status, current_draft_version, cms_post_id FROM sessions WHERE id = ?')
+        .prepare('SELECT id, user_id, title, status, current_draft_version, cms_post_id, publication_id, seed_context FROM sessions WHERE id = ?')
         .bind(sessionId)
-        .first<{ id: string; user_id: string; title: string | null; current_draft_version: number; cms_post_id: string | null }>()
+        .first<{ id: string; user_id: string; title: string | null; current_draft_version: number; cms_post_id: string | null; publication_id: string | null; seed_context: string | null }>()
 
       if (row) {
         this.setState({
@@ -54,6 +54,8 @@ export class WriterAgent extends AIChatAgent<WriterAgentEnv, WriterAgentState> {
           title: row.title,
           currentDraftVersion: row.current_draft_version ?? 0,
           cmsPostId: row.cms_post_id,
+          publicationId: row.publication_id,
+          seedContext: row.seed_context,
         })
       }
     }
@@ -115,6 +117,7 @@ export class WriterAgent extends AIChatAgent<WriterAgentEnv, WriterAgentState> {
       phase: this.state.writingPhase,
       sessionTitle: this.state.title,
       currentDraftVersion: this.state.currentDraftVersion,
+      seedContext: this.state.seedContext,
     })
 
     const tools = createToolSet(this)
@@ -358,6 +361,7 @@ Respond in JSON format only:
         hook,
         citations: parsedCitations as undefined,
         publishedAt: new Date().toISOString(),
+        publicationId: this.state.publicationId ?? undefined,
       })
 
       this.finalizeDraft(post.id)

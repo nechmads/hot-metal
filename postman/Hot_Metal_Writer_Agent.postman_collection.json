@@ -1,7 +1,7 @@
 {
 	"info": {
 		"name": "Hot Metal — Writer Agent",
-		"description": "# Hot Metal Writer Agent Service\n\nThe Writer Agent is an AI-powered writing assistant built on Cloudflare Workers with the Agents SDK. It provides a conversational interface for drafting, revising, and publishing blog posts.\n\n## Architecture\n\n- **REST API (Hono)** — Session and draft management\n- **WebSocket (Agents SDK)** — Real-time AI conversation via Durable Objects\n\nEach writing session is backed by its own Durable Object instance with embedded SQLite for drafts and conversation history. Cross-session metadata (listing, search) lives in D1.\n\n## Authentication\n\nAll `/api/v1/*` endpoints require an `X-API-Key` header.\n\nThe health endpoint and WebSocket connections are unauthenticated.\n\n## Endpoints Overview\n\n### Sessions\n| Method | Path | Auth | Description |\n|--------|------|------|-------------|\n| POST | `/api/v1/sessions` | API Key | Create a new writing session |\n| GET | `/api/v1/sessions` | API Key | List sessions (filterable) |\n| GET | `/api/v1/sessions/:id` | API Key | Get session details |\n| PATCH | `/api/v1/sessions/:id` | API Key | Update session title or status |\n\n### Drafts\n| Method | Path | Auth | Description |\n|--------|------|------|-------------|\n| GET | `/api/v1/sessions/:id/drafts` | API Key | List all draft versions |\n| GET | `/api/v1/sessions/:id/drafts/:version` | API Key | Get a specific draft |\n\n### Chat\n| Method | Path | Auth | Description |\n|--------|------|------|-------------|\n| POST | `/api/v1/sessions/:id/chat` | API Key | Send message, get full AI response (non-streaming) |\n\n### WebSocket\n| URL | Description |\n|-----|-------------|\n| `ws://host/agents/writer-agent/:sessionId` | Connect to a writing session |\n\n### Health\n| Method | Path | Auth | Description |\n|--------|------|------|-------------|\n| GET | `/health` | None | Service health check |\n\n## Environment Variables\n\nThis collection uses variables from the Postman environment:\n- `WRITER_BASE_URL` — Base URL of the writer agent (e.g. `http://localhost:8789`)\n- `WRITER_API_KEY` — API key for authentication\n\nSelect the **Hot Metal — Local Development** environment before sending requests.",
+		"description": "# Hot Metal Writer Agent Service\n\nThe Writer Agent is an AI-powered writing assistant built on Cloudflare Workers with the Agents SDK. It provides a conversational interface for drafting, revising, and publishing blog posts, along with a full blog automation pipeline (publications, topics, content scouting, and idea management).\n\n## Architecture\n\n- **REST API (Hono)** — Session, draft, publication, topic, idea, and activity management\n- **WebSocket (Agents SDK)** — Real-time AI conversation via Durable Objects\n\nEach writing session is backed by its own Durable Object instance with embedded SQLite for drafts and conversation history. Cross-session metadata (listing, search) lives in D1.\n\n## Authentication\n\nAll `/api/*` endpoints require an `X-API-Key` header.\n\nThe health endpoint and WebSocket connections are unauthenticated.\n\n## Endpoints Overview\n\n### Sessions\n| Method | Path | Auth | Description |\n|--------|------|------|-------------|\n| POST | `/api/sessions` | API Key | Create a new writing session |\n| GET | `/api/sessions` | API Key | List sessions (filterable) |\n| GET | `/api/sessions/:id` | API Key | Get session details |\n| PATCH | `/api/sessions/:id` | API Key | Update session title or status |\n\n### Drafts\n| Method | Path | Auth | Description |\n|--------|------|------|-------------|\n| GET | `/api/sessions/:id/drafts` | API Key | List all draft versions |\n| GET | `/api/sessions/:id/drafts/:version` | API Key | Get a specific draft |\n\n### Chat\n| Method | Path | Auth | Description |\n|--------|------|------|-------------|\n| POST | `/api/sessions/:id/chat` | API Key | Send message, get full AI response (non-streaming) |\n\n### Publications\n| Method | Path | Auth | Description |\n|--------|------|------|-------------|\n| POST | `/api/publications` | API Key | Create a new publication |\n| GET | `/api/publications` | API Key | List publications (optionally filtered by userId) |\n| GET | `/api/publications/:id` | API Key | Get publication with its topics |\n| PATCH | `/api/publications/:id` | API Key | Update publication settings |\n| DELETE | `/api/publications/:id` | API Key | Delete a publication |\n\n### Topics\n| Method | Path | Auth | Description |\n|--------|------|------|-------------|\n| POST | `/api/publications/:pubId/topics` | API Key | Create a topic for a publication |\n| GET | `/api/publications/:pubId/topics` | API Key | List topics for a publication |\n| PATCH | `/api/topics/:id` | API Key | Update a topic |\n| DELETE | `/api/topics/:id` | API Key | Delete a topic |\n\n### Ideas\n| Method | Path | Auth | Description |\n|--------|------|------|-------------|\n| GET | `/api/publications/:pubId/ideas` | API Key | List ideas for a publication |\n| GET | `/api/ideas/:id` | API Key | Get idea detail |\n| PATCH | `/api/ideas/:id` | API Key | Update idea status |\n| POST | `/api/ideas/:id/promote` | API Key | Promote idea to a writing session |\n\n### Scout\n| Method | Path | Auth | Description |\n|--------|------|------|-------------|\n| POST | `/api/publications/:id/scout` | API Key | Trigger content scout for a publication |\n\n### Activity\n| Method | Path | Auth | Description |\n|--------|------|------|-------------|\n| GET | `/api/activity` | API Key | Get recent session activity |\n\n### WebSocket\n| URL | Description |\n|-----|-------------|\n| `ws://host/agents/writer-agent/:sessionId` | Connect to a writing session |\n\n### Health\n| Method | Path | Auth | Description |\n|--------|------|------|-------------|\n| GET | `/health` | None | Service health check |\n\n## Environment Variables\n\nThis collection uses variables from the Postman environment:\n- `WRITER_BASE_URL` — Base URL of the writer agent (e.g. `http://localhost:8789`)\n- `WRITER_API_KEY` — API key for authentication\n\nSelect the **Hot Metal — Local Development** environment before sending requests.",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
 	},
 	"variable": [
@@ -10,6 +10,24 @@
 			"value": "",
 			"type": "string",
 			"description": "Session ID for chaining requests — auto-set when creating a session"
+		},
+		{
+			"key": "publicationId",
+			"value": "",
+			"type": "string",
+			"description": "Publication ID — auto-set when creating a publication"
+		},
+		{
+			"key": "topicId",
+			"value": "",
+			"type": "string",
+			"description": "Topic ID — auto-set when creating a topic"
+		},
+		{
+			"key": "ideaId",
+			"value": "",
+			"type": "string",
+			"description": "Idea ID — for testing idea endpoints"
 		}
 	],
 	"item": [
@@ -76,9 +94,9 @@
 							"raw": "{\n  \"userId\": \"shahar\"\n}"
 						},
 						"url": {
-							"raw": "{{WRITER_BASE_URL}}/api/v1/sessions",
+							"raw": "{{WRITER_BASE_URL}}/api/sessions",
 							"host": ["{{WRITER_BASE_URL}}"],
-							"path": ["api", "v1", "sessions"]
+							"path": ["api", "sessions"]
 						}
 					},
 					"response": [
@@ -120,9 +138,9 @@
 							{ "key": "X-API-Key", "value": "{{WRITER_API_KEY}}" }
 						],
 						"url": {
-							"raw": "{{WRITER_BASE_URL}}/api/v1/sessions?userId=shahar&status=active",
+							"raw": "{{WRITER_BASE_URL}}/api/sessions?userId=shahar&status=active",
 							"host": ["{{WRITER_BASE_URL}}"],
-							"path": ["api", "v1", "sessions"],
+							"path": ["api", "sessions"],
 							"query": [
 								{
 									"key": "userId",
@@ -177,9 +195,9 @@
 							{ "key": "X-API-Key", "value": "{{WRITER_API_KEY}}" }
 						],
 						"url": {
-							"raw": "{{WRITER_BASE_URL}}/api/v1/sessions",
+							"raw": "{{WRITER_BASE_URL}}/api/sessions",
 							"host": ["{{WRITER_BASE_URL}}"],
-							"path": ["api", "v1", "sessions"]
+							"path": ["api", "sessions"]
 						}
 					},
 					"response": [
@@ -203,9 +221,9 @@
 							{ "key": "X-API-Key", "value": "{{WRITER_API_KEY}}" }
 						],
 						"url": {
-							"raw": "{{WRITER_BASE_URL}}/api/v1/sessions/{{sessionId}}",
+							"raw": "{{WRITER_BASE_URL}}/api/sessions/{{sessionId}}",
 							"host": ["{{WRITER_BASE_URL}}"],
-							"path": ["api", "v1", "sessions", "{{sessionId}}"]
+							"path": ["api", "sessions", "{{sessionId}}"]
 						}
 					},
 					"response": [
@@ -243,9 +261,9 @@
 							"raw": "{\n  \"title\": \"Why Edge Functions Matter\"\n}"
 						},
 						"url": {
-							"raw": "{{WRITER_BASE_URL}}/api/v1/sessions/{{sessionId}}",
+							"raw": "{{WRITER_BASE_URL}}/api/sessions/{{sessionId}}",
 							"host": ["{{WRITER_BASE_URL}}"],
-							"path": ["api", "v1", "sessions", "{{sessionId}}"]
+							"path": ["api", "sessions", "{{sessionId}}"]
 						}
 					},
 					"response": [
@@ -283,9 +301,9 @@
 							"raw": "{\n  \"status\": \"completed\"\n}"
 						},
 						"url": {
-							"raw": "{{WRITER_BASE_URL}}/api/v1/sessions/{{sessionId}}",
+							"raw": "{{WRITER_BASE_URL}}/api/sessions/{{sessionId}}",
 							"host": ["{{WRITER_BASE_URL}}"],
-							"path": ["api", "v1", "sessions", "{{sessionId}}"]
+							"path": ["api", "sessions", "{{sessionId}}"]
 						}
 					},
 					"response": [
@@ -323,9 +341,9 @@
 							"raw": "{\n  \"status\": \"archived\"\n}"
 						},
 						"url": {
-							"raw": "{{WRITER_BASE_URL}}/api/v1/sessions/{{sessionId}}",
+							"raw": "{{WRITER_BASE_URL}}/api/sessions/{{sessionId}}",
 							"host": ["{{WRITER_BASE_URL}}"],
-							"path": ["api", "v1", "sessions", "{{sessionId}}"]
+							"path": ["api", "sessions", "{{sessionId}}"]
 						}
 					},
 					"response": [
@@ -354,9 +372,9 @@
 							"raw": "{\n  \"title\": \"Final: Why Edge Functions Matter\",\n  \"status\": \"completed\"\n}"
 						},
 						"url": {
-							"raw": "{{WRITER_BASE_URL}}/api/v1/sessions/{{sessionId}}",
+							"raw": "{{WRITER_BASE_URL}}/api/sessions/{{sessionId}}",
 							"host": ["{{WRITER_BASE_URL}}"],
-							"path": ["api", "v1", "sessions", "{{sessionId}}"]
+							"path": ["api", "sessions", "{{sessionId}}"]
 						}
 					},
 					"response": [
@@ -386,9 +404,9 @@
 							{ "key": "X-API-Key", "value": "{{WRITER_API_KEY}}" }
 						],
 						"url": {
-							"raw": "{{WRITER_BASE_URL}}/api/v1/sessions/{{sessionId}}/drafts",
+							"raw": "{{WRITER_BASE_URL}}/api/sessions/{{sessionId}}/drafts",
 							"host": ["{{WRITER_BASE_URL}}"],
-							"path": ["api", "v1", "sessions", "{{sessionId}}", "drafts"]
+							"path": ["api", "sessions", "{{sessionId}}", "drafts"]
 						}
 					},
 					"response": [
@@ -421,9 +439,9 @@
 							{ "key": "X-API-Key", "value": "{{WRITER_API_KEY}}" }
 						],
 						"url": {
-							"raw": "{{WRITER_BASE_URL}}/api/v1/sessions/{{sessionId}}/drafts/1",
+							"raw": "{{WRITER_BASE_URL}}/api/sessions/{{sessionId}}/drafts/1",
 							"host": ["{{WRITER_BASE_URL}}"],
-							"path": ["api", "v1", "sessions", "{{sessionId}}", "drafts", "1"]
+							"path": ["api", "sessions", "{{sessionId}}", "drafts", "1"]
 						}
 					},
 					"response": [
@@ -465,9 +483,9 @@
 							{ "key": "X-API-Key", "value": "{{WRITER_API_KEY}}" }
 						],
 						"url": {
-							"raw": "{{WRITER_BASE_URL}}/api/v1/sessions/{{sessionId}}/drafts/3",
+							"raw": "{{WRITER_BASE_URL}}/api/sessions/{{sessionId}}/drafts/3",
 							"host": ["{{WRITER_BASE_URL}}"],
-							"path": ["api", "v1", "sessions", "{{sessionId}}", "drafts", "3"]
+							"path": ["api", "sessions", "{{sessionId}}", "drafts", "3"]
 						}
 					},
 					"response": [
@@ -502,9 +520,9 @@
 							"raw": "{\n  \"message\": \"I want to write a blog post about AI replacing jobs\"\n}"
 						},
 						"url": {
-							"raw": "{{WRITER_BASE_URL}}/api/v1/sessions/{{sessionId}}/chat",
+							"raw": "{{WRITER_BASE_URL}}/api/sessions/{{sessionId}}/chat",
 							"host": ["{{WRITER_BASE_URL}}"],
-							"path": ["api", "v1", "sessions", "{{sessionId}}", "chat"]
+							"path": ["api", "sessions", "{{sessionId}}", "chat"]
 						}
 					},
 					"response": [
@@ -551,9 +569,9 @@
 							"raw": "{\n  \"message\": \"Target audience is tech professionals. I want a balanced take with real examples.\"\n}"
 						},
 						"url": {
-							"raw": "{{WRITER_BASE_URL}}/api/v1/sessions/{{sessionId}}/chat",
+							"raw": "{{WRITER_BASE_URL}}/api/sessions/{{sessionId}}/chat",
 							"host": ["{{WRITER_BASE_URL}}"],
-							"path": ["api", "v1", "sessions", "{{sessionId}}", "chat"]
+							"path": ["api", "sessions", "{{sessionId}}", "chat"]
 						}
 					},
 					"response": [
@@ -571,12 +589,709 @@
 			]
 		},
 		{
+			"name": "Publications",
+			"description": "Manage publication configurations. A publication represents a blog or content outlet with its own writing tone, cadence, and topic set.\n\nPublications are the top-level organizational unit for the blog automation pipeline. Each publication can have multiple topics, and the content scout generates ideas for each publication's topics.\n\n### PublicationConfig Object\n\n| Field | Type | Description |\n|-------|------|-------------|\n| `id` | string | UUID of the publication |\n| `userId` | string | ID of the user who owns the publication |\n| `cmsPublicationId` | string \\| null | Linked CMS publication ID |\n| `name` | string | Display name of the publication |\n| `slug` | string | URL-friendly slug |\n| `description` | string \\| null | Description of the publication's focus |\n| `writingTone` | string \\| null | Tone guidance for AI-generated content |\n| `defaultAuthor` | string \\| null | Default author name for posts |\n| `autoPublishMode` | string | Publishing mode: `draft`, `review`, or `auto` |\n| `cadencePostsPerWeek` | number | Target number of posts per week |\n| `createdAt` | number | Unix timestamp (seconds) |\n| `updatedAt` | number | Unix timestamp (seconds) |\n\nAll endpoints require `X-API-Key` authentication.",
+			"item": [
+				{
+					"name": "Create Publication",
+					"description": "Create a new publication configuration.\n\n### Request Body\n\n| Field | Type | Required | Description |\n|-------|------|----------|-------------|\n| `userId` | string | **Yes** | Identifier for the user creating the publication |\n| `name` | string | **Yes** | Display name of the publication |\n| `slug` | string | **Yes** | URL-friendly slug (must be unique) |\n| `description` | string | No | Description of the publication's focus and audience |\n| `writingTone` | string | No | Tone guidance for AI content generation |\n| `defaultAuthor` | string | No | Default author name for posts |\n| `autoPublishMode` | string | No | Publishing mode: `draft` (default), `review`, or `auto` |\n| `cadencePostsPerWeek` | number | No | Target posts per week (default: 3) |\n\n### Response — PublicationConfig (201 Created)\n\n```json\n{\n  \"id\": \"f47ac10b-58cc-4372-a567-0e02b2c3d479\",\n  \"userId\": \"default\",\n  \"cmsPublicationId\": null,\n  \"name\": \"Looking Ahead\",\n  \"slug\": \"looking-ahead\",\n  \"description\": \"A technology blog covering AI, software engineering, and developer tools.\",\n  \"writingTone\": \"Skeptical tech analyst. Conversational but data-driven.\",\n  \"defaultAuthor\": \"Shahar\",\n  \"autoPublishMode\": \"draft\",\n  \"cadencePostsPerWeek\": 3,\n  \"createdAt\": 1707350400,\n  \"updatedAt\": 1707350400\n}\n```\n\n### Possible Errors\n\n- `400` — Missing required fields or invalid values\n- `401` — Missing or invalid API key\n- `409` — Slug already in use",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"if (pm.response.code === 201) {",
+									"    var jsonData = pm.response.json();",
+									"    pm.collectionVariables.set('publicationId', jsonData.id);",
+									"    console.log('Publication ID saved:', jsonData.id);",
+									"}"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{ "key": "X-API-Key", "value": "{{WRITER_API_KEY}}" },
+							{ "key": "Content-Type", "value": "application/json" }
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"userId\": \"default\",\n  \"name\": \"Looking Ahead\",\n  \"slug\": \"looking-ahead\",\n  \"description\": \"A technology blog covering AI, software engineering, and developer tools.\",\n  \"writingTone\": \"Skeptical tech analyst. Conversational but data-driven.\",\n  \"defaultAuthor\": \"Shahar\",\n  \"autoPublishMode\": \"draft\",\n  \"cadencePostsPerWeek\": 3\n}"
+						},
+						"url": {
+							"raw": "{{WRITER_BASE_URL}}/api/publications",
+							"host": ["{{WRITER_BASE_URL}}"],
+							"path": ["api", "publications"]
+						}
+					},
+					"response": [
+						{
+							"name": "201 — Publication created",
+							"status": "Created",
+							"code": 201,
+							"header": [
+								{ "key": "Content-Type", "value": "application/json" }
+							],
+							"body": "{\n  \"id\": \"f47ac10b-58cc-4372-a567-0e02b2c3d479\",\n  \"userId\": \"default\",\n  \"cmsPublicationId\": null,\n  \"name\": \"Looking Ahead\",\n  \"slug\": \"looking-ahead\",\n  \"description\": \"A technology blog covering AI, software engineering, and developer tools.\",\n  \"writingTone\": \"Skeptical tech analyst. Conversational but data-driven.\",\n  \"defaultAuthor\": \"Shahar\",\n  \"autoPublishMode\": \"draft\",\n  \"cadencePostsPerWeek\": 3,\n  \"createdAt\": 1707350400,\n  \"updatedAt\": 1707350400\n}"
+						},
+						{
+							"name": "400 — Missing required fields",
+							"status": "Bad Request",
+							"code": 400,
+							"header": [
+								{ "key": "Content-Type", "value": "application/json" }
+							],
+							"body": "{\n  \"error\": \"name and slug are required\"\n}"
+						},
+						{
+							"name": "401 — Unauthorized",
+							"status": "Unauthorized",
+							"code": 401,
+							"header": [
+								{ "key": "Content-Type", "value": "application/json" }
+							],
+							"body": "{\n  \"error\": \"Unauthorized\"\n}"
+						}
+					]
+				},
+				{
+					"name": "List Publications",
+					"description": "List all publications, optionally filtered by user ID.\n\n### Query Parameters\n\n| Parameter | Type | Required | Description |\n|-----------|--------|----------|------------------------------------------|\n| `userId` | string | No | Filter publications by user ID. Exact match. |\n\n### Response — Publication List\n\n```json\n{\n  \"data\": [\n    {\n      \"id\": \"f47ac10b-58cc-4372-a567-0e02b2c3d479\",\n      \"userId\": \"default\",\n      \"cmsPublicationId\": null,\n      \"name\": \"Looking Ahead\",\n      \"slug\": \"looking-ahead\",\n      \"description\": \"A technology blog covering AI, software engineering, and developer tools.\",\n      \"writingTone\": \"Skeptical tech analyst. Conversational but data-driven.\",\n      \"defaultAuthor\": \"Shahar\",\n      \"autoPublishMode\": \"draft\",\n      \"cadencePostsPerWeek\": 3,\n      \"createdAt\": 1707350400,\n      \"updatedAt\": 1707350400\n    }\n  ]\n}\n```\n\n### Possible Errors\n\n- `401` — Missing or invalid API key",
+					"request": {
+						"method": "GET",
+						"header": [
+							{ "key": "X-API-Key", "value": "{{WRITER_API_KEY}}" }
+						],
+						"url": {
+							"raw": "{{WRITER_BASE_URL}}/api/publications?userId=default",
+							"host": ["{{WRITER_BASE_URL}}"],
+							"path": ["api", "publications"],
+							"query": [
+								{
+									"key": "userId",
+									"value": "default",
+									"description": "Filter by user ID. Exact match. Omit to list all users' publications.",
+									"disabled": false
+								}
+							]
+						}
+					},
+					"response": [
+						{
+							"name": "200 — Publications listed",
+							"status": "OK",
+							"code": 200,
+							"header": [
+								{ "key": "Content-Type", "value": "application/json" }
+							],
+							"body": "{\n  \"data\": [\n    {\n      \"id\": \"f47ac10b-58cc-4372-a567-0e02b2c3d479\",\n      \"userId\": \"default\",\n      \"cmsPublicationId\": null,\n      \"name\": \"Looking Ahead\",\n      \"slug\": \"looking-ahead\",\n      \"description\": \"A technology blog covering AI, software engineering, and developer tools.\",\n      \"writingTone\": \"Skeptical tech analyst. Conversational but data-driven.\",\n      \"defaultAuthor\": \"Shahar\",\n      \"autoPublishMode\": \"draft\",\n      \"cadencePostsPerWeek\": 3,\n      \"createdAt\": 1707350400,\n      \"updatedAt\": 1707350400\n    }\n  ]\n}"
+						},
+						{
+							"name": "200 — Empty list",
+							"status": "OK",
+							"code": 200,
+							"header": [
+								{ "key": "Content-Type", "value": "application/json" }
+							],
+							"body": "{\n  \"data\": []\n}"
+						}
+					]
+				},
+				{
+					"name": "Get Publication by ID",
+					"description": "Get full details of a single publication, including its associated topics.\n\n### Path Parameters\n\n| Parameter | Type | Required | Description |\n|-----------|--------|----------|-------------------------------|\n| `id` | string | **Yes** | UUID of the publication |\n\n### Response — Publication with Topics\n\nReturns the full publication object plus a `topics` array containing all topics for this publication.\n\n```json\n{\n  \"id\": \"f47ac10b-58cc-4372-a567-0e02b2c3d479\",\n  \"userId\": \"default\",\n  \"cmsPublicationId\": null,\n  \"name\": \"Looking Ahead\",\n  \"slug\": \"looking-ahead\",\n  \"description\": \"A technology blog covering AI, software engineering, and developer tools.\",\n  \"writingTone\": \"Skeptical tech analyst. Conversational but data-driven.\",\n  \"defaultAuthor\": \"Shahar\",\n  \"autoPublishMode\": \"draft\",\n  \"cadencePostsPerWeek\": 3,\n  \"createdAt\": 1707350400,\n  \"updatedAt\": 1707350400,\n  \"topics\": [\n    {\n      \"id\": \"c1d2e3f4-a5b6-7890-cdef-1234567890ab\",\n      \"publicationId\": \"f47ac10b-58cc-4372-a567-0e02b2c3d479\",\n      \"name\": \"AI in Software Engineering\",\n      \"description\": \"Focus on practical implications for working developers.\",\n      \"priority\": 2,\n      \"isActive\": true,\n      \"createdAt\": 1707350400,\n      \"updatedAt\": 1707350400\n    }\n  ]\n}\n```\n\n### Possible Errors\n\n- `401` — Missing or invalid API key\n- `404` — Publication not found",
+					"request": {
+						"method": "GET",
+						"header": [
+							{ "key": "X-API-Key", "value": "{{WRITER_API_KEY}}" }
+						],
+						"url": {
+							"raw": "{{WRITER_BASE_URL}}/api/publications/{{publicationId}}",
+							"host": ["{{WRITER_BASE_URL}}"],
+							"path": ["api", "publications", "{{publicationId}}"]
+						}
+					},
+					"response": [
+						{
+							"name": "200 — Publication with topics",
+							"status": "OK",
+							"code": 200,
+							"header": [
+								{ "key": "Content-Type", "value": "application/json" }
+							],
+							"body": "{\n  \"id\": \"f47ac10b-58cc-4372-a567-0e02b2c3d479\",\n  \"userId\": \"default\",\n  \"cmsPublicationId\": null,\n  \"name\": \"Looking Ahead\",\n  \"slug\": \"looking-ahead\",\n  \"description\": \"A technology blog covering AI, software engineering, and developer tools.\",\n  \"writingTone\": \"Skeptical tech analyst. Conversational but data-driven.\",\n  \"defaultAuthor\": \"Shahar\",\n  \"autoPublishMode\": \"draft\",\n  \"cadencePostsPerWeek\": 3,\n  \"createdAt\": 1707350400,\n  \"updatedAt\": 1707350400,\n  \"topics\": [\n    {\n      \"id\": \"c1d2e3f4-a5b6-7890-cdef-1234567890ab\",\n      \"publicationId\": \"f47ac10b-58cc-4372-a567-0e02b2c3d479\",\n      \"name\": \"AI in Software Engineering\",\n      \"description\": \"Focus on practical implications for working developers.\",\n      \"priority\": 2,\n      \"isActive\": true,\n      \"createdAt\": 1707350400,\n      \"updatedAt\": 1707350400\n    }\n  ]\n}"
+						},
+						{
+							"name": "404 — Publication not found",
+							"status": "Not Found",
+							"code": 404,
+							"header": [
+								{ "key": "Content-Type", "value": "application/json" }
+							],
+							"body": "{\n  \"error\": \"Publication not found\"\n}"
+						}
+					]
+				},
+				{
+					"name": "Update Publication",
+					"description": "Update a publication's configuration. All fields are optional — only include the fields you want to change.\n\n### Path Parameters\n\n| Parameter | Type | Required | Description |\n|-----------|--------|----------|-------------------------------|\n| `id` | string | **Yes** | UUID of the publication to update |\n\n### Request Body\n\nAll fields are optional. Only include the fields you want to change.\n\n| Field | Type | Required | Description |\n|-------|------|----------|-------------|\n| `name` | string | No | Display name |\n| `slug` | string | No | URL-friendly slug |\n| `description` | string | No | Publication description |\n| `writingTone` | string | No | Tone guidance for AI |\n| `defaultAuthor` | string | No | Default author name |\n| `autoPublishMode` | string | No | Publishing mode: `draft`, `review`, or `auto` |\n| `cadencePostsPerWeek` | number | No | Target posts per week |\n| `cmsPublicationId` | string | No | Linked CMS publication ID |\n\n### Response — Updated PublicationConfig\n\nReturns the full publication object with updated fields and a new `updatedAt` timestamp.\n\n### Possible Errors\n\n- `400` — Invalid field values\n- `401` — Missing or invalid API key\n- `404` — Publication not found",
+					"request": {
+						"method": "PATCH",
+						"header": [
+							{ "key": "X-API-Key", "value": "{{WRITER_API_KEY}}" },
+							{ "key": "Content-Type", "value": "application/json" }
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"description\": \"Updated description for the publication.\",\n  \"cadencePostsPerWeek\": 5\n}"
+						},
+						"url": {
+							"raw": "{{WRITER_BASE_URL}}/api/publications/{{publicationId}}",
+							"host": ["{{WRITER_BASE_URL}}"],
+							"path": ["api", "publications", "{{publicationId}}"]
+						}
+					},
+					"response": [
+						{
+							"name": "200 — Publication updated",
+							"status": "OK",
+							"code": 200,
+							"header": [
+								{ "key": "Content-Type", "value": "application/json" }
+							],
+							"body": "{\n  \"id\": \"f47ac10b-58cc-4372-a567-0e02b2c3d479\",\n  \"userId\": \"default\",\n  \"cmsPublicationId\": null,\n  \"name\": \"Looking Ahead\",\n  \"slug\": \"looking-ahead\",\n  \"description\": \"Updated description for the publication.\",\n  \"writingTone\": \"Skeptical tech analyst. Conversational but data-driven.\",\n  \"defaultAuthor\": \"Shahar\",\n  \"autoPublishMode\": \"draft\",\n  \"cadencePostsPerWeek\": 5,\n  \"createdAt\": 1707350400,\n  \"updatedAt\": 1707436800\n}"
+						},
+						{
+							"name": "404 — Publication not found",
+							"status": "Not Found",
+							"code": 404,
+							"header": [
+								{ "key": "Content-Type", "value": "application/json" }
+							],
+							"body": "{\n  \"error\": \"Publication not found\"\n}"
+						}
+					]
+				},
+				{
+					"name": "Delete Publication",
+					"description": "Delete a publication and all its associated topics and ideas.\n\n### Path Parameters\n\n| Parameter | Type | Required | Description |\n|-----------|--------|----------|-------------------------------|\n| `id` | string | **Yes** | UUID of the publication to delete |\n\n### Response — Deletion Confirmation\n\n```json\n{\n  \"deleted\": true\n}\n```\n\n### Possible Errors\n\n- `401` — Missing or invalid API key\n- `404` — Publication not found",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{ "key": "X-API-Key", "value": "{{WRITER_API_KEY}}" }
+						],
+						"url": {
+							"raw": "{{WRITER_BASE_URL}}/api/publications/{{publicationId}}",
+							"host": ["{{WRITER_BASE_URL}}"],
+							"path": ["api", "publications", "{{publicationId}}"]
+						}
+					},
+					"response": [
+						{
+							"name": "200 — Publication deleted",
+							"status": "OK",
+							"code": 200,
+							"header": [
+								{ "key": "Content-Type", "value": "application/json" }
+							],
+							"body": "{\n  \"deleted\": true\n}"
+						},
+						{
+							"name": "404 — Publication not found",
+							"status": "Not Found",
+							"code": 404,
+							"header": [
+								{ "key": "Content-Type", "value": "application/json" }
+							],
+							"body": "{\n  \"error\": \"Publication not found\"\n}"
+						}
+					]
+				}
+			]
+		},
+		{
+			"name": "Topics",
+			"description": "Manage topics within a publication. Topics define the content areas that the content scout will search for ideas.\n\nEach topic belongs to a publication and has a priority level that influences how frequently the scout generates ideas for it.\n\n### Topic Object\n\n| Field | Type | Description |\n|-------|------|-------------|\n| `id` | string | UUID of the topic |\n| `publicationId` | string | UUID of the parent publication |\n| `name` | string | Topic name |\n| `description` | string \\| null | Detailed description of the topic focus |\n| `priority` | number | Priority level (higher = more frequent scouting) |\n| `isActive` | boolean | Whether the topic is actively scouted |\n| `createdAt` | number | Unix timestamp (seconds) |\n| `updatedAt` | number | Unix timestamp (seconds) |\n\nAll endpoints require `X-API-Key` authentication.",
+			"item": [
+				{
+					"name": "Create Topic",
+					"description": "Create a new topic for a publication.\n\n### Path Parameters\n\n| Parameter | Type | Required | Description |\n|-----------|--------|----------|-------------------------------|\n| `pubId` | string | **Yes** | UUID of the publication |\n\n### Request Body\n\n| Field | Type | Required | Description |\n|-------|------|----------|-------------|\n| `name` | string | **Yes** | Topic name |\n| `description` | string | No | Detailed description of the topic focus |\n| `priority` | number | No | Priority level (default: 1). Higher = more frequent scouting |\n\n### Response — Topic (201 Created)\n\n```json\n{\n  \"id\": \"c1d2e3f4-a5b6-7890-cdef-1234567890ab\",\n  \"publicationId\": \"f47ac10b-58cc-4372-a567-0e02b2c3d479\",\n  \"name\": \"AI in Software Engineering\",\n  \"description\": \"Focus on practical implications for working developers.\",\n  \"priority\": 2,\n  \"isActive\": true,\n  \"createdAt\": 1707350400,\n  \"updatedAt\": 1707350400\n}\n```\n\n### Possible Errors\n\n- `400` — Missing required fields\n- `401` — Missing or invalid API key\n- `404` — Publication not found",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"if (pm.response.code === 201) {",
+									"    var jsonData = pm.response.json();",
+									"    pm.collectionVariables.set('topicId', jsonData.id);",
+									"    console.log('Topic ID saved:', jsonData.id);",
+									"}"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{ "key": "X-API-Key", "value": "{{WRITER_API_KEY}}" },
+							{ "key": "Content-Type", "value": "application/json" }
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"name\": \"AI in Software Engineering\",\n  \"description\": \"Focus on practical implications for working developers.\",\n  \"priority\": 2\n}"
+						},
+						"url": {
+							"raw": "{{WRITER_BASE_URL}}/api/publications/{{publicationId}}/topics",
+							"host": ["{{WRITER_BASE_URL}}"],
+							"path": ["api", "publications", "{{publicationId}}", "topics"]
+						}
+					},
+					"response": [
+						{
+							"name": "201 — Topic created",
+							"status": "Created",
+							"code": 201,
+							"header": [
+								{ "key": "Content-Type", "value": "application/json" }
+							],
+							"body": "{\n  \"id\": \"c1d2e3f4-a5b6-7890-cdef-1234567890ab\",\n  \"publicationId\": \"f47ac10b-58cc-4372-a567-0e02b2c3d479\",\n  \"name\": \"AI in Software Engineering\",\n  \"description\": \"Focus on practical implications for working developers.\",\n  \"priority\": 2,\n  \"isActive\": true,\n  \"createdAt\": 1707350400,\n  \"updatedAt\": 1707350400\n}"
+						},
+						{
+							"name": "400 — Missing name",
+							"status": "Bad Request",
+							"code": 400,
+							"header": [
+								{ "key": "Content-Type", "value": "application/json" }
+							],
+							"body": "{\n  \"error\": \"name is required\"\n}"
+						},
+						{
+							"name": "404 — Publication not found",
+							"status": "Not Found",
+							"code": 404,
+							"header": [
+								{ "key": "Content-Type", "value": "application/json" }
+							],
+							"body": "{\n  \"error\": \"Publication not found\"\n}"
+						}
+					]
+				},
+				{
+					"name": "List Topics for Publication",
+					"description": "List all topics for a publication.\n\n### Path Parameters\n\n| Parameter | Type | Required | Description |\n|-----------|--------|----------|-------------------------------|\n| `pubId` | string | **Yes** | UUID of the publication |\n\n### Response — Topic List\n\n```json\n{\n  \"data\": [\n    {\n      \"id\": \"c1d2e3f4-a5b6-7890-cdef-1234567890ab\",\n      \"publicationId\": \"f47ac10b-58cc-4372-a567-0e02b2c3d479\",\n      \"name\": \"AI in Software Engineering\",\n      \"description\": \"Focus on practical implications for working developers.\",\n      \"priority\": 2,\n      \"isActive\": true,\n      \"createdAt\": 1707350400,\n      \"updatedAt\": 1707350400\n    },\n    {\n      \"id\": \"d2e3f4a5-b6c7-8901-def0-234567890abc\",\n      \"publicationId\": \"f47ac10b-58cc-4372-a567-0e02b2c3d479\",\n      \"name\": \"Developer Tools & Productivity\",\n      \"description\": \"Reviews and analysis of tools that improve developer workflow.\",\n      \"priority\": 1,\n      \"isActive\": true,\n      \"createdAt\": 1707350400,\n      \"updatedAt\": 1707350400\n    }\n  ]\n}\n```\n\n### Possible Errors\n\n- `401` — Missing or invalid API key\n- `404` — Publication not found",
+					"request": {
+						"method": "GET",
+						"header": [
+							{ "key": "X-API-Key", "value": "{{WRITER_API_KEY}}" }
+						],
+						"url": {
+							"raw": "{{WRITER_BASE_URL}}/api/publications/{{publicationId}}/topics",
+							"host": ["{{WRITER_BASE_URL}}"],
+							"path": ["api", "publications", "{{publicationId}}", "topics"]
+						}
+					},
+					"response": [
+						{
+							"name": "200 — Topics listed",
+							"status": "OK",
+							"code": 200,
+							"header": [
+								{ "key": "Content-Type", "value": "application/json" }
+							],
+							"body": "{\n  \"data\": [\n    {\n      \"id\": \"c1d2e3f4-a5b6-7890-cdef-1234567890ab\",\n      \"publicationId\": \"f47ac10b-58cc-4372-a567-0e02b2c3d479\",\n      \"name\": \"AI in Software Engineering\",\n      \"description\": \"Focus on practical implications for working developers.\",\n      \"priority\": 2,\n      \"isActive\": true,\n      \"createdAt\": 1707350400,\n      \"updatedAt\": 1707350400\n    },\n    {\n      \"id\": \"d2e3f4a5-b6c7-8901-def0-234567890abc\",\n      \"publicationId\": \"f47ac10b-58cc-4372-a567-0e02b2c3d479\",\n      \"name\": \"Developer Tools & Productivity\",\n      \"description\": \"Reviews and analysis of tools that improve developer workflow.\",\n      \"priority\": 1,\n      \"isActive\": true,\n      \"createdAt\": 1707350400,\n      \"updatedAt\": 1707350400\n    }\n  ]\n}"
+						},
+						{
+							"name": "200 — Empty list",
+							"status": "OK",
+							"code": 200,
+							"header": [
+								{ "key": "Content-Type", "value": "application/json" }
+							],
+							"body": "{\n  \"data\": []\n}"
+						}
+					]
+				},
+				{
+					"name": "Update Topic",
+					"description": "Update a topic's configuration.\n\n### Path Parameters\n\n| Parameter | Type | Required | Description |\n|-----------|--------|----------|-------------------------------|\n| `id` | string | **Yes** | UUID of the topic to update |\n\n### Request Body\n\nAll fields are optional. Only include the fields you want to change.\n\n| Field | Type | Required | Description |\n|-------|------|----------|-------------|\n| `name` | string | No | Topic name |\n| `description` | string | No | Detailed description |\n| `priority` | number | No | Priority level |\n| `isActive` | boolean | No | Whether the topic is actively scouted |\n\n### Response — Updated Topic\n\nReturns the full topic object with updated fields and a new `updatedAt` timestamp.\n\n### Possible Errors\n\n- `400` — Invalid field values\n- `401` — Missing or invalid API key\n- `404` — Topic not found",
+					"request": {
+						"method": "PATCH",
+						"header": [
+							{ "key": "X-API-Key", "value": "{{WRITER_API_KEY}}" },
+							{ "key": "Content-Type", "value": "application/json" }
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"priority\": 3,\n  \"description\": \"Updated focus on LLM-powered developer tools and their impact.\"\n}"
+						},
+						"url": {
+							"raw": "{{WRITER_BASE_URL}}/api/topics/{{topicId}}",
+							"host": ["{{WRITER_BASE_URL}}"],
+							"path": ["api", "topics", "{{topicId}}"]
+						}
+					},
+					"response": [
+						{
+							"name": "200 — Topic updated",
+							"status": "OK",
+							"code": 200,
+							"header": [
+								{ "key": "Content-Type", "value": "application/json" }
+							],
+							"body": "{\n  \"id\": \"c1d2e3f4-a5b6-7890-cdef-1234567890ab\",\n  \"publicationId\": \"f47ac10b-58cc-4372-a567-0e02b2c3d479\",\n  \"name\": \"AI in Software Engineering\",\n  \"description\": \"Updated focus on LLM-powered developer tools and their impact.\",\n  \"priority\": 3,\n  \"isActive\": true,\n  \"createdAt\": 1707350400,\n  \"updatedAt\": 1707436800\n}"
+						},
+						{
+							"name": "404 — Topic not found",
+							"status": "Not Found",
+							"code": 404,
+							"header": [
+								{ "key": "Content-Type", "value": "application/json" }
+							],
+							"body": "{\n  \"error\": \"Topic not found\"\n}"
+						}
+					]
+				},
+				{
+					"name": "Delete Topic",
+					"description": "Delete a topic. Ideas associated with this topic are not deleted but will no longer be linked to an active topic.\n\n### Path Parameters\n\n| Parameter | Type | Required | Description |\n|-----------|--------|----------|-------------------------------|\n| `id` | string | **Yes** | UUID of the topic to delete |\n\n### Response — Deletion Confirmation\n\n```json\n{\n  \"deleted\": true\n}\n```\n\n### Possible Errors\n\n- `401` — Missing or invalid API key\n- `404` — Topic not found",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{ "key": "X-API-Key", "value": "{{WRITER_API_KEY}}" }
+						],
+						"url": {
+							"raw": "{{WRITER_BASE_URL}}/api/topics/{{topicId}}",
+							"host": ["{{WRITER_BASE_URL}}"],
+							"path": ["api", "topics", "{{topicId}}"]
+						}
+					},
+					"response": [
+						{
+							"name": "200 — Topic deleted",
+							"status": "OK",
+							"code": 200,
+							"header": [
+								{ "key": "Content-Type", "value": "application/json" }
+							],
+							"body": "{\n  \"deleted\": true\n}"
+						},
+						{
+							"name": "404 — Topic not found",
+							"status": "Not Found",
+							"code": 404,
+							"header": [
+								{ "key": "Content-Type", "value": "application/json" }
+							],
+							"body": "{\n  \"error\": \"Topic not found\"\n}"
+						}
+					]
+				}
+			]
+		},
+		{
+			"name": "Ideas",
+			"description": "Manage content ideas generated by the content scout. Ideas are potential blog post topics discovered from web sources, tied to a publication's topics.\n\nIdeas flow through a lifecycle: `new` (just discovered) -> `reviewed` (seen by user) -> `promoted` (turned into a writing session) or `dismissed` (rejected).\n\n### Idea Object\n\n| Field | Type | Description |\n|-------|------|-------------|\n| `id` | string | UUID of the idea |\n| `publicationId` | string | UUID of the parent publication |\n| `topicId` | string | UUID of the topic this idea relates to |\n| `title` | string | Proposed blog post title |\n| `angle` | string | The specific angle or thesis |\n| `summary` | string | Brief summary of the proposed content |\n| `sources` | array | Array of source objects (url, title, snippet) |\n| `status` | string | Idea status: `new`, `reviewed`, `promoted`, `dismissed` |\n| `sessionId` | string \\| null | Writing session ID (set when promoted) |\n| `relevanceScore` | number | AI-assigned relevance score (0-1) |\n| `createdAt` | number | Unix timestamp (seconds) |\n| `updatedAt` | number | Unix timestamp (seconds) |\n\n### Source Object (inside `sources` array)\n\n| Field | Type | Description |\n|-------|------|-------------|\n| `url` | string | Source URL |\n| `title` | string | Source article title |\n| `snippet` | string | Relevant quote or excerpt |\n\nAll endpoints require `X-API-Key` authentication.",
+			"item": [
+				{
+					"name": "List Ideas for Publication",
+					"description": "List all ideas for a publication, optionally filtered by status.\n\n### Path Parameters\n\n| Parameter | Type | Required | Description |\n|-----------|--------|----------|-------------------------------|\n| `pubId` | string | **Yes** | UUID of the publication |\n\n### Query Parameters\n\n| Parameter | Type | Required | Description |\n|-----------|--------|----------|------------------------------------------|\n| `status` | string | No | Filter by status. Must be one of: `new`, `reviewed`, `promoted`, `dismissed`. |\n\n### Response — Idea List\n\n```json\n{\n  \"data\": [\n    {\n      \"id\": \"a1b2c3d4-e5f6-7890-abcd-ef1234567890\",\n      \"publicationId\": \"f47ac10b-58cc-4372-a567-0e02b2c3d479\",\n      \"topicId\": \"c1d2e3f4-a5b6-7890-cdef-1234567890ab\",\n      \"title\": \"Why AI Code Assistants Are Changing Pair Programming\",\n      \"angle\": \"AI assistants aren't replacing pair programming — they're evolving it.\",\n      \"summary\": \"A deep dive into how AI tools are reshaping collaborative coding practices.\",\n      \"sources\": [{\"url\": \"https://example.com\", \"title\": \"Source Article\", \"snippet\": \"Relevant quote...\"}],\n      \"status\": \"new\",\n      \"sessionId\": null,\n      \"relevanceScore\": 0.85,\n      \"createdAt\": 1707350400,\n      \"updatedAt\": 1707350400\n    }\n  ]\n}\n```\n\n### Possible Errors\n\n- `400` — Invalid `status` value\n- `401` — Missing or invalid API key\n- `404` — Publication not found",
+					"request": {
+						"method": "GET",
+						"header": [
+							{ "key": "X-API-Key", "value": "{{WRITER_API_KEY}}" }
+						],
+						"url": {
+							"raw": "{{WRITER_BASE_URL}}/api/publications/{{publicationId}}/ideas?status=new",
+							"host": ["{{WRITER_BASE_URL}}"],
+							"path": ["api", "publications", "{{publicationId}}", "ideas"],
+							"query": [
+								{
+									"key": "status",
+									"value": "new",
+									"description": "Filter by status. Must be: new, reviewed, promoted, or dismissed. Omit to list all statuses.",
+									"disabled": false
+								}
+							]
+						}
+					},
+					"response": [
+						{
+							"name": "200 — Ideas listed",
+							"status": "OK",
+							"code": 200,
+							"header": [
+								{ "key": "Content-Type", "value": "application/json" }
+							],
+							"body": "{\n  \"data\": [\n    {\n      \"id\": \"a1b2c3d4-e5f6-7890-abcd-ef1234567890\",\n      \"publicationId\": \"f47ac10b-58cc-4372-a567-0e02b2c3d479\",\n      \"topicId\": \"c1d2e3f4-a5b6-7890-cdef-1234567890ab\",\n      \"title\": \"Why AI Code Assistants Are Changing Pair Programming\",\n      \"angle\": \"AI assistants aren't replacing pair programming — they're evolving it.\",\n      \"summary\": \"A deep dive into how AI tools are reshaping collaborative coding practices.\",\n      \"sources\": [{\"url\": \"https://example.com\", \"title\": \"Source Article\", \"snippet\": \"Relevant quote...\"}],\n      \"status\": \"new\",\n      \"sessionId\": null,\n      \"relevanceScore\": 0.85,\n      \"createdAt\": 1707350400,\n      \"updatedAt\": 1707350400\n    },\n    {\n      \"id\": \"b2c3d4e5-f6a7-8901-bcde-f12345678901\",\n      \"publicationId\": \"f47ac10b-58cc-4372-a567-0e02b2c3d479\",\n      \"topicId\": \"c1d2e3f4-a5b6-7890-cdef-1234567890ab\",\n      \"title\": \"The Hidden Cost of AI-Generated Tests\",\n      \"angle\": \"AI test generation looks productive but may hide architectural problems.\",\n      \"summary\": \"An analysis of how blindly accepting AI-generated tests can mask deeper design issues.\",\n      \"sources\": [{\"url\": \"https://example.com/testing\", \"title\": \"Testing with AI\", \"snippet\": \"A recent study found...\"}],\n      \"status\": \"new\",\n      \"sessionId\": null,\n      \"relevanceScore\": 0.78,\n      \"createdAt\": 1707350400,\n      \"updatedAt\": 1707350400\n    }\n  ]\n}"
+						},
+						{
+							"name": "200 — Empty list",
+							"status": "OK",
+							"code": 200,
+							"header": [
+								{ "key": "Content-Type", "value": "application/json" }
+							],
+							"body": "{\n  \"data\": []\n}"
+						},
+						{
+							"name": "400 — Invalid status",
+							"status": "Bad Request",
+							"code": 400,
+							"header": [
+								{ "key": "Content-Type", "value": "application/json" }
+							],
+							"body": "{\n  \"error\": \"Invalid status. Must be one of: new, reviewed, promoted, dismissed\"\n}"
+						}
+					]
+				},
+				{
+					"name": "Get Idea by ID",
+					"description": "Get full details of a single idea, including its parsed `sources` array.\n\n### Path Parameters\n\n| Parameter | Type | Required | Description |\n|-----------|--------|----------|-------------------------------|\n| `id` | string | **Yes** | UUID of the idea |\n\n### Response — Idea\n\nReturns the full idea object with `sources` as a parsed JSON array.\n\n```json\n{\n  \"id\": \"a1b2c3d4-e5f6-7890-abcd-ef1234567890\",\n  \"publicationId\": \"f47ac10b-58cc-4372-a567-0e02b2c3d479\",\n  \"topicId\": \"c1d2e3f4-a5b6-7890-cdef-1234567890ab\",\n  \"title\": \"Why AI Code Assistants Are Changing Pair Programming\",\n  \"angle\": \"AI assistants aren't replacing pair programming — they're evolving it.\",\n  \"summary\": \"A deep dive into how AI tools are reshaping collaborative coding practices.\",\n  \"sources\": [\n    {\"url\": \"https://example.com\", \"title\": \"Source Article\", \"snippet\": \"Relevant quote...\"}\n  ],\n  \"status\": \"new\",\n  \"sessionId\": null,\n  \"relevanceScore\": 0.85,\n  \"createdAt\": 1707350400,\n  \"updatedAt\": 1707350400\n}\n```\n\n### Possible Errors\n\n- `401` — Missing or invalid API key\n- `404` — Idea not found",
+					"request": {
+						"method": "GET",
+						"header": [
+							{ "key": "X-API-Key", "value": "{{WRITER_API_KEY}}" }
+						],
+						"url": {
+							"raw": "{{WRITER_BASE_URL}}/api/ideas/{{ideaId}}",
+							"host": ["{{WRITER_BASE_URL}}"],
+							"path": ["api", "ideas", "{{ideaId}}"]
+						}
+					},
+					"response": [
+						{
+							"name": "200 — Idea found",
+							"status": "OK",
+							"code": 200,
+							"header": [
+								{ "key": "Content-Type", "value": "application/json" }
+							],
+							"body": "{\n  \"id\": \"a1b2c3d4-e5f6-7890-abcd-ef1234567890\",\n  \"publicationId\": \"f47ac10b-58cc-4372-a567-0e02b2c3d479\",\n  \"topicId\": \"c1d2e3f4-a5b6-7890-cdef-1234567890ab\",\n  \"title\": \"Why AI Code Assistants Are Changing Pair Programming\",\n  \"angle\": \"AI assistants aren't replacing pair programming — they're evolving it.\",\n  \"summary\": \"A deep dive into how AI tools are reshaping collaborative coding practices.\",\n  \"sources\": [\n    {\"url\": \"https://example.com\", \"title\": \"Source Article\", \"snippet\": \"Relevant quote...\"}\n  ],\n  \"status\": \"new\",\n  \"sessionId\": null,\n  \"relevanceScore\": 0.85,\n  \"createdAt\": 1707350400,\n  \"updatedAt\": 1707350400\n}"
+						},
+						{
+							"name": "404 — Idea not found",
+							"status": "Not Found",
+							"code": 404,
+							"header": [
+								{ "key": "Content-Type", "value": "application/json" }
+							],
+							"body": "{\n  \"error\": \"Idea not found\"\n}"
+						}
+					]
+				},
+				{
+					"name": "Update Idea Status",
+					"description": "Update an idea's status. Use this to mark ideas as reviewed or dismissed.\n\n### Path Parameters\n\n| Parameter | Type | Required | Description |\n|-----------|--------|----------|-------------------------------|\n| `id` | string | **Yes** | UUID of the idea to update |\n\n### Request Body\n\n| Field | Type | Required | Description |\n|-------|------|----------|-------------|\n| `status` | string | **Yes** | New status. Must be one of: `new`, `reviewed`, `promoted`, `dismissed` |\n\n### Response — Updated Idea\n\nReturns the full idea object with updated status and a new `updatedAt` timestamp.\n\n### Possible Errors\n\n- `400` — Missing or invalid `status` value\n- `401` — Missing or invalid API key\n- `404` — Idea not found",
+					"request": {
+						"method": "PATCH",
+						"header": [
+							{ "key": "X-API-Key", "value": "{{WRITER_API_KEY}}" },
+							{ "key": "Content-Type", "value": "application/json" }
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"status\": \"reviewed\"\n}"
+						},
+						"url": {
+							"raw": "{{WRITER_BASE_URL}}/api/ideas/{{ideaId}}",
+							"host": ["{{WRITER_BASE_URL}}"],
+							"path": ["api", "ideas", "{{ideaId}}"]
+						}
+					},
+					"response": [
+						{
+							"name": "200 — Idea status updated",
+							"status": "OK",
+							"code": 200,
+							"header": [
+								{ "key": "Content-Type", "value": "application/json" }
+							],
+							"body": "{\n  \"id\": \"a1b2c3d4-e5f6-7890-abcd-ef1234567890\",\n  \"publicationId\": \"f47ac10b-58cc-4372-a567-0e02b2c3d479\",\n  \"topicId\": \"c1d2e3f4-a5b6-7890-cdef-1234567890ab\",\n  \"title\": \"Why AI Code Assistants Are Changing Pair Programming\",\n  \"angle\": \"AI assistants aren't replacing pair programming — they're evolving it.\",\n  \"summary\": \"A deep dive into how AI tools are reshaping collaborative coding practices.\",\n  \"sources\": [{\"url\": \"https://example.com\", \"title\": \"Source Article\", \"snippet\": \"Relevant quote...\"}],\n  \"status\": \"reviewed\",\n  \"sessionId\": null,\n  \"relevanceScore\": 0.85,\n  \"createdAt\": 1707350400,\n  \"updatedAt\": 1707436800\n}"
+						},
+						{
+							"name": "400 — Invalid status",
+							"status": "Bad Request",
+							"code": 400,
+							"header": [
+								{ "key": "Content-Type", "value": "application/json" }
+							],
+							"body": "{\n  \"error\": \"Invalid status. Must be one of: new, reviewed, promoted, dismissed\"\n}"
+						},
+						{
+							"name": "404 — Idea not found",
+							"status": "Not Found",
+							"code": 404,
+							"header": [
+								{ "key": "Content-Type", "value": "application/json" }
+							],
+							"body": "{\n  \"error\": \"Idea not found\"\n}"
+						}
+					]
+				},
+				{
+					"name": "Promote Idea to Session",
+					"description": "Promote an idea to a writing session. This creates a new writing session pre-populated with the idea's title and context, and updates the idea's status to `promoted` with the new session ID.\n\n### Path Parameters\n\n| Parameter | Type | Required | Description |\n|-----------|--------|----------|-------------------------------|\n| `id` | string | **Yes** | UUID of the idea to promote |\n\n### Response — Session\n\nReturns the newly created writing session.\n\n```json\n{\n  \"id\": \"e5f6a7b8-c9d0-1234-ef56-7890abcdef12\",\n  \"userId\": \"default\",\n  \"title\": \"Why AI Code Assistants Are Changing Pair Programming\",\n  \"status\": \"active\",\n  \"currentDraftVersion\": 0,\n  \"cmsPostId\": null,\n  \"createdAt\": 1707436800,\n  \"updatedAt\": 1707436800\n}\n```\n\nAfter promotion, the idea's `status` is set to `promoted` and its `sessionId` is set to the new session's ID.\n\n### Possible Errors\n\n- `400` — Idea has already been promoted\n- `401` — Missing or invalid API key\n- `404` — Idea not found",
+					"request": {
+						"method": "POST",
+						"header": [
+							{ "key": "X-API-Key", "value": "{{WRITER_API_KEY}}" }
+						],
+						"url": {
+							"raw": "{{WRITER_BASE_URL}}/api/ideas/{{ideaId}}/promote",
+							"host": ["{{WRITER_BASE_URL}}"],
+							"path": ["api", "ideas", "{{ideaId}}", "promote"]
+						}
+					},
+					"response": [
+						{
+							"name": "200 — Idea promoted to session",
+							"status": "OK",
+							"code": 200,
+							"header": [
+								{ "key": "Content-Type", "value": "application/json" }
+							],
+							"body": "{\n  \"id\": \"e5f6a7b8-c9d0-1234-ef56-7890abcdef12\",\n  \"userId\": \"default\",\n  \"title\": \"Why AI Code Assistants Are Changing Pair Programming\",\n  \"status\": \"active\",\n  \"currentDraftVersion\": 0,\n  \"cmsPostId\": null,\n  \"createdAt\": 1707436800,\n  \"updatedAt\": 1707436800\n}"
+						},
+						{
+							"name": "400 — Already promoted",
+							"status": "Bad Request",
+							"code": 400,
+							"header": [
+								{ "key": "Content-Type", "value": "application/json" }
+							],
+							"body": "{\n  \"error\": \"Idea has already been promoted\"\n}"
+						},
+						{
+							"name": "404 — Idea not found",
+							"status": "Not Found",
+							"code": 404,
+							"header": [
+								{ "key": "Content-Type", "value": "application/json" }
+							],
+							"body": "{\n  \"error\": \"Idea not found\"\n}"
+						}
+					]
+				}
+			]
+		},
+		{
+			"name": "Scout",
+			"description": "Trigger the content scout to discover new blog post ideas for a publication. The scout analyzes the publication's topics and searches the web for relevant content, generating ideas with angles, summaries, and source citations.\n\nThe scout runs asynchronously — the endpoint returns immediately with a confirmation, and ideas will appear in the Ideas list as they are discovered.\n\nThis request is routed by writer-web directly to the content-scout service (not through writer-agent). No `X-API-Key` header is needed — writer-web injects the scout credentials automatically.",
+			"item": [
+				{
+					"name": "Trigger Content Scout",
+					"description": "Trigger the content scout for a publication. The scout will analyze the publication's active topics and search for relevant content to generate new blog post ideas.\n\n### Path Parameters\n\n| Parameter | Type | Required | Description |\n|-----------|--------|----------|-------------------------------|\n| `id` | string | **Yes** | UUID of the publication |\n\n### Response — Queue Confirmation (200)\n\n```json\n{\n  \"queued\": true,\n  \"publicationId\": \"f47ac10b-58cc-4372-a567-0e02b2c3d479\"\n}\n```\n\nThe scout runs asynchronously. Poll the Ideas endpoint to see newly discovered ideas.\n\n### Possible Errors\n\n- `401` — Missing or invalid API key\n- `404` — Publication not found\n- `409` — Scout is already running for this publication",
+					"request": {
+						"method": "POST",
+						"header": [
+							{ "key": "X-API-Key", "value": "{{WRITER_API_KEY}}" }
+						],
+						"url": {
+							"raw": "{{WRITER_BASE_URL}}/api/publications/{{publicationId}}/scout",
+							"host": ["{{WRITER_BASE_URL}}"],
+							"path": ["api", "publications", "{{publicationId}}", "scout"]
+						}
+					},
+					"response": [
+						{
+							"name": "200 — Scout queued",
+							"status": "OK",
+							"code": 200,
+							"header": [
+								{ "key": "Content-Type", "value": "application/json" }
+							],
+							"body": "{\n  \"queued\": true,\n  \"publicationId\": \"f47ac10b-58cc-4372-a567-0e02b2c3d479\"\n}"
+						},
+						{
+							"name": "404 — Publication not found",
+							"status": "Not Found",
+							"code": 404,
+							"header": [
+								{ "key": "Content-Type", "value": "application/json" }
+							],
+							"body": "{\n  \"error\": \"Publication not found\"\n}"
+						},
+						{
+							"name": "409 — Scout already running",
+							"status": "Conflict",
+							"code": 409,
+							"header": [
+								{ "key": "Content-Type", "value": "application/json" }
+							],
+							"body": "{\n  \"error\": \"Scout is already running for this publication\"\n}"
+						}
+					]
+				}
+			]
+		},
+		{
+			"name": "Activity",
+			"description": "View recent session activity across all publications. Provides a high-level overview of writing sessions and their current status.\n\nAll endpoints require `X-API-Key` authentication.",
+			"item": [
+				{
+					"name": "Get Recent Activity",
+					"description": "Get recent writing session activity. Returns sessions ordered by most recently updated.\n\n### Query Parameters\n\n| Parameter | Type | Required | Description |\n|-----------|--------|----------|------------------------------------------|\n| `days` | number | No | Number of days to look back (default: 30, max: 90) |\n\n### Response — Activity List\n\n```json\n{\n  \"data\": [\n    {\n      \"id\": \"a1b2c3d4-e5f6-7890-abcd-ef1234567890\",\n      \"title\": \"Why Edge Functions Matter\",\n      \"status\": \"completed\",\n      \"publicationId\": \"f47ac10b-58cc-4372-a567-0e02b2c3d479\",\n      \"publicationName\": \"Looking Ahead\",\n      \"cmsPostId\": \"cms-post-abc123\",\n      \"createdAt\": 1707350400,\n      \"updatedAt\": 1707523200\n    },\n    {\n      \"id\": \"b2c3d4e5-f6a7-8901-bcde-f12345678901\",\n      \"title\": \"The Hidden Cost of AI-Generated Tests\",\n      \"status\": \"active\",\n      \"publicationId\": \"f47ac10b-58cc-4372-a567-0e02b2c3d479\",\n      \"publicationName\": \"Looking Ahead\",\n      \"cmsPostId\": null,\n      \"createdAt\": 1707436800,\n      \"updatedAt\": 1707436800\n    }\n  ]\n}\n```\n\n### ActivityItem Object\n\n| Field | Type | Description |\n|-------|------|-------------|\n| `id` | string | Session UUID |\n| `title` | string | Session/post title |\n| `status` | string | Session status: `active`, `completed`, `archived` |\n| `publicationId` | string | UUID of the associated publication |\n| `publicationName` | string | Display name of the associated publication |\n| `cmsPostId` | string \\| null | CMS post ID (if published) |\n| `createdAt` | number | Unix timestamp (seconds) |\n| `updatedAt` | number | Unix timestamp (seconds) |\n\n### Possible Errors\n\n- `400` — Invalid `days` value (must be 1-90)\n- `401` — Missing or invalid API key",
+					"request": {
+						"method": "GET",
+						"header": [
+							{ "key": "X-API-Key", "value": "{{WRITER_API_KEY}}" }
+						],
+						"url": {
+							"raw": "{{WRITER_BASE_URL}}/api/activity?days=30",
+							"host": ["{{WRITER_BASE_URL}}"],
+							"path": ["api", "activity"],
+							"query": [
+								{
+									"key": "days",
+									"value": "30",
+									"description": "Number of days to look back. Default: 30, max: 90.",
+									"disabled": false
+								}
+							]
+						}
+					},
+					"response": [
+						{
+							"name": "200 — Activity listed",
+							"status": "OK",
+							"code": 200,
+							"header": [
+								{ "key": "Content-Type", "value": "application/json" }
+							],
+							"body": "{\n  \"data\": [\n    {\n      \"id\": \"a1b2c3d4-e5f6-7890-abcd-ef1234567890\",\n      \"title\": \"Why Edge Functions Matter\",\n      \"status\": \"completed\",\n      \"publicationId\": \"f47ac10b-58cc-4372-a567-0e02b2c3d479\",\n      \"publicationName\": \"Looking Ahead\",\n      \"cmsPostId\": \"cms-post-abc123\",\n      \"createdAt\": 1707350400,\n      \"updatedAt\": 1707523200\n    },\n    {\n      \"id\": \"b2c3d4e5-f6a7-8901-bcde-f12345678901\",\n      \"title\": \"The Hidden Cost of AI-Generated Tests\",\n      \"status\": \"active\",\n      \"publicationId\": \"f47ac10b-58cc-4372-a567-0e02b2c3d479\",\n      \"publicationName\": \"Looking Ahead\",\n      \"cmsPostId\": null,\n      \"createdAt\": 1707436800,\n      \"updatedAt\": 1707436800\n    }\n  ]\n}"
+						},
+						{
+							"name": "200 — Empty activity",
+							"status": "OK",
+							"code": 200,
+							"header": [
+								{ "key": "Content-Type", "value": "application/json" }
+							],
+							"body": "{\n  \"data\": []\n}"
+						},
+						{
+							"name": "400 — Invalid days",
+							"status": "Bad Request",
+							"code": 400,
+							"header": [
+								{ "key": "Content-Type", "value": "application/json" }
+							],
+							"body": "{\n  \"error\": \"days must be between 1 and 90\"\n}"
+						}
+					]
+				}
+			]
+		},
+		{
 			"name": "WebSocket (Reference)",
-			"description": "## WebSocket Connection\n\nThe AI conversation happens over WebSocket, not REST. This folder documents the connection details for reference.\n\n### Connection URL\n\n```\nws://localhost:8789/agents/writer-agent/{sessionId}\n```\n\nReplace `{sessionId}` with the session ID from `POST /api/v1/sessions`.\n\n### Protocol\n\nThe WebSocket uses the Cloudflare Agents SDK protocol. Messages are JSON with these types:\n\n**Client → Agent:**\n```json\n{\n  \"type\": \"cf_agent_use_chat_request\",\n  \"id\": \"unique-message-id\",\n  \"init\": {\n    \"method\": \"POST\",\n    \"body\": \"{\\\"messages\\\": [{\\\"role\\\": \\\"user\\\", \\\"content\\\": \\\"Write a blog post about edge functions\\\"}]}\"\n  }\n}\n```\n\n**Agent → Client (streaming):**\n```json\n{\n  \"type\": \"cf_agent_use_chat_response\",\n  \"id\": \"unique-message-id\",\n  \"body\": \"data chunk...\",\n  \"done\": false\n}\n```\n\n**Agent → Client (state update):**\nState changes are automatically broadcast to all connected clients.\n\n### State Object\n\nThe agent maintains reactive state that clients receive:\n\n```json\n{\n  \"sessionId\": \"\",\n  \"userId\": \"\",\n  \"title\": \"Why Edge Functions Matter\",\n  \"writingPhase\": \"revising\",\n  \"currentDraftVersion\": 2,\n  \"isGenerating\": false,\n  \"lastError\": null,\n  \"cmsPostId\": null\n}\n```\n\n### Writing Phases\n\n| Phase | Description |\n|-------|-------------|\n| `idle` | Initial — agent greets the user |\n| `interviewing` | Gathering topic, audience, key points |\n| `researching` | Using search/lookup tools |\n| `drafting` | Writing initial content |\n| `revising` | Iterating based on feedback |\n| `published` | Post pushed to CMS |\n\n### Agent Tools (called by LLM)\n\nDuring conversation, the LLM can call these tools:\n\n| Tool | Description |\n|------|-------------|\n| `save_draft` | Save content as a new draft version |\n| `get_current_draft` | Retrieve the latest draft |\n| `list_drafts` | List all draft versions |\n| `publish_to_cms` | Push final draft to CMS |\n| `search_web` | Web search (stub) |\n| `lookup_source` | URL lookup for citations (stub) |\n\n### Testing with wscat\n\n```bash\n# Install wscat\nnpm install -g wscat\n\n# Connect to a session\nwscat -c ws://localhost:8789/agents/writer-agent/{sessionId}\n```\n\n**Note:** Postman does not natively support the Agents SDK WebSocket protocol. Use `wscat` or a custom WebSocket client for testing.",
+			"description": "## WebSocket Connection\n\nThe AI conversation happens over WebSocket, not REST. This folder documents the connection details for reference.\n\n### Connection URL\n\n```\nws://localhost:8789/agents/writer-agent/{sessionId}\n```\n\nReplace `{sessionId}` with the session ID from `POST /api/sessions`.\n\n### Protocol\n\nThe WebSocket uses the Cloudflare Agents SDK protocol. Messages are JSON with these types:\n\n**Client → Agent:**\n```json\n{\n  \"type\": \"cf_agent_use_chat_request\",\n  \"id\": \"unique-message-id\",\n  \"init\": {\n    \"method\": \"POST\",\n    \"body\": \"{\\\"messages\\\": [{\\\"role\\\": \\\"user\\\", \\\"content\\\": \\\"Write a blog post about edge functions\\\"}]}\"\n  }\n}\n```\n\n**Agent → Client (streaming):**\n```json\n{\n  \"type\": \"cf_agent_use_chat_response\",\n  \"id\": \"unique-message-id\",\n  \"body\": \"data chunk...\",\n  \"done\": false\n}\n```\n\n**Agent → Client (state update):**\nState changes are automatically broadcast to all connected clients.\n\n### State Object\n\nThe agent maintains reactive state that clients receive:\n\n```json\n{\n  \"sessionId\": \"\",\n  \"userId\": \"\",\n  \"title\": \"Why Edge Functions Matter\",\n  \"writingPhase\": \"revising\",\n  \"currentDraftVersion\": 2,\n  \"isGenerating\": false,\n  \"lastError\": null,\n  \"cmsPostId\": null\n}\n```\n\n### Writing Phases\n\n| Phase | Description |\n|-------|-------------|\n| `idle` | Initial — agent greets the user |\n| `interviewing` | Gathering topic, audience, key points |\n| `researching` | Using search/lookup tools |\n| `drafting` | Writing initial content |\n| `revising` | Iterating based on feedback |\n| `published` | Post pushed to CMS |\n\n### Agent Tools (called by LLM)\n\nDuring conversation, the LLM can call these tools:\n\n| Tool | Description |\n|------|-------------|\n| `save_draft` | Save content as a new draft version |\n| `get_current_draft` | Retrieve the latest draft |\n| `list_drafts` | List all draft versions |\n| `publish_to_cms` | Push final draft to CMS |\n| `search_web` | Web search (stub) |\n| `lookup_source` | URL lookup for citations (stub) |\n\n### Testing with wscat\n\n```bash\n# Install wscat\nnpm install -g wscat\n\n# Connect to a session\nwscat -c ws://localhost:8789/agents/writer-agent/{sessionId}\n```\n\n**Note:** Postman does not natively support the Agents SDK WebSocket protocol. Use `wscat` or a custom WebSocket client for testing.",
 			"item": [
 				{
 					"name": "WebSocket Connection Info",
-					"description": "This is a placeholder request to document the WebSocket endpoint. **Do not send this as HTTP** — it's a WebSocket connection.\n\n### How to Connect\n\n1. Create a session via `POST /api/v1/sessions`\n2. Copy the `id` from the response\n3. Connect with wscat:\n   ```\n   wscat -c ws://localhost:8789/agents/writer-agent/{id}\n   ```\n4. Send a message to start the conversation",
+					"description": "This is a placeholder request to document the WebSocket endpoint. **Do not send this as HTTP** — it's a WebSocket connection.\n\n### How to Connect\n\n1. Create a session via `POST /api/sessions`\n2. Copy the `id` from the response\n3. Connect with wscat:\n   ```\n   wscat -c ws://localhost:8789/agents/writer-agent/{id}\n   ```\n4. Send a message to start the conversation",
 					"request": {
 						"method": "GET",
 						"header": [],

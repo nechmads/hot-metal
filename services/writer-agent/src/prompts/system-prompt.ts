@@ -93,10 +93,11 @@ export interface SystemPromptOptions {
   styleProfile?: StyleProfile
   sessionTitle?: string | null
   currentDraftVersion?: number
+  seedContext?: string | null
 }
 
 export function buildSystemPrompt(options: SystemPromptOptions): string {
-  const { phase, styleProfile = defaultStyleProfile, sessionTitle, currentDraftVersion } = options
+  const { phase, styleProfile = defaultStyleProfile, sessionTitle, currentDraftVersion, seedContext } = options
 
   const parts = [BASE_IDENTITY]
 
@@ -118,6 +119,16 @@ export function buildSystemPrompt(options: SystemPromptOptions): string {
     if (currentDraftVersion && currentDraftVersion > 0) {
       parts.push(`- Current draft version: v${currentDraftVersion}`)
     }
+  }
+
+  // Seed context from promoted idea
+  if (seedContext) {
+    parts.push('')
+    parts.push('## Research Context')
+    parts.push('')
+    parts.push('This session was created from an AI-generated idea with pre-researched context. Use this material as a starting point — you already have the topic, angle, and source material.')
+    parts.push('')
+    parts.push(seedContext)
   }
 
   // Tool guidelines

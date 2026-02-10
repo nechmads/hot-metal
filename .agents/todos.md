@@ -52,9 +52,24 @@
   - Agent state updates trigger draft panel refresh when `currentDraftVersion` changes
   - AI SDK v6 `UIMessage` parts rendering (text, tool invocations)
 
+- [x] **Writer Web — Publish Flow** — End-to-end publishing from the UI. PublishModal with outlet selector (blog/LinkedIn), auto-generated slug, author, tags, excerpt fields. Backend: `/publish` and `/generate-seo` routes on writer-agent, D1 session status update on success. Markdown-to-HTML conversion via `marked` before CMS publish. Slug validation, concurrency guard ('publishing' phase), safe JSON.parse for citations.
+
+- [x] **Writer Web — AI-Generated SEO Fields** — When publish modal opens, calls Claude Haiku to generate SEO excerpt and tags from draft content. Auto-fills form fields with loading states and AI badge indicator. User can edit before publishing.
+
+- [x] **Blog Frontend — Fix Post Routing & Query Filters** — Fixed SonicJS query API: replaced unsupported `filter[field][operator]` syntax with `where` JSON parameter for slug lookup and direct `status` parameter for post listing.
+
 ## Upcoming
 
-- [x] Writer Agent — Phase 2: Research integration (Alexander AI: crawl_url, research_topic, search_web, search_news, ask_question)
+- [x] **Blog Automation** — Full automation system. See `.agents/plans/blog-automation.md` and `.agents/plans/scout.md` for detailed plans. Phases:
+  - [x] Phase 1: Data model & users (D1 migration: users, publications, topics, ideas tables)
+  - [x] Phase 2: API endpoints (CRUD for publications, topics, ideas)
+  - [x] Phase 8 (partial): Writer-agent updates (publication-aware sessions, seed context, publicationId in publish)
+  - [x] Phase 3: Left nav restructure (sidebar layout with Ideas/Writing/Schedule centers)
+  - [x] Phase 4: Publication & topics management UI (SchedulePage, PublicationSettingsPage with topics CRUD, auto-publish mode, cadence)
+  - [x] Phase 6: Ideas center UI (IdeasPage with filters, IdeaDetailPage with promote/dismiss, shared constants)
+  - [x] Phase 5: Content Scout worker (CF Queue + Workflow + KV cache, Alexander API, LLM idea generation, auto-write pipeline)
+  - [x] Phase 7: Schedule & auto-publish config (content calendar, manual scout trigger, "Run Scout Now" button, activity timeline)
+- [x] **Scout Notification Badge + Polling** — Added Legend State V3 observable store to coordinate scout polling. After "Run Scout Now", polls `GET /api/publications/:pubId/ideas/count` every 10s until new ideas detected (or 3min timeout). Shows notification badge on Ideas nav item. Auto-refreshes IdeasPage when new ideas arrive while user is on that page. Includes cancelled-request safety, accessibility attributes on badge, and publication-aware refresh logic.
+- [x] **Fix D1 Concurrent Access Errors** — Root cause: miniflare sets busy_timeout=0 on the shared SQLite file, causing SQLITE_BUSY when writer-agent and content-scout both access D1. Fixed by: (1) replacing batch() with sequential run() per-INSERT to reduce lock duration, (2) adding runWithRetry() utility with exponential backoff (100/200/400ms) for all D1 ops, (3) using deterministic IDs + INSERT OR IGNORE for idempotent workflow retries, (4) fixing content-scout db:migrate:local to use --persist-to flag.
 - [ ] Writer Agent — Phase 2: Voice input (transcription in `input-processor.ts`)
 - [ ] Writer Agent — Phase 2: D1 session sync (synchronize DO state back to D1 for listing accuracy)
-- [ ] Multi-blog support (Phase 4) — Add `blogId` field to posts and renditions

@@ -9,19 +9,24 @@
   },
 
   "dev": {
-    "port": 5173
+    "port": 5173,
   },
 
   // Environment variables (non-secret)
   "vars": {
     "WRITER_AGENT_URL": "http://localhost:8789",
+    "CONTENT_SCOUT_URL": "http://localhost:8790",
   },
 
   // SPA fallback — serve index.html for unmatched routes (client-side routing)
+  // run_worker_first sends only matching paths to the Worker; everything else
+  // is served from the static asset pipeline (or falls back to index.html).
   "assets": {
-    "not_found_handling": "single-page-application"
+    "not_found_handling": "single-page-application",
+    "run_worker_first": ["/api/*", "/agents/*", "/health"],
   },
 
   // Secrets (set via `wrangler secret put`):
-  // WRITER_API_KEY
+  // WRITER_API_KEY  — authenticates requests to writer-agent
+  // SCOUT_API_KEY   — authenticates requests to content-scout (must match API_KEY on scout)
 }

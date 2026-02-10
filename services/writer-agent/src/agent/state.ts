@@ -9,6 +9,8 @@ export interface WriterAgentState {
   isGenerating: boolean
   lastError: string | null
   cmsPostId: string | null
+  publicationId: string | null
+  seedContext: string | null
 }
 
 export const INITIAL_STATE: WriterAgentState = {
@@ -20,4 +22,6 @@ export const INITIAL_STATE: WriterAgentState = {
   isGenerating: false,
   lastError: null,
   cmsPostId: null,
+  publicationId: null,
+  seedContext: null,
 }
