@@ -7,7 +7,7 @@ const app = new Hono<{ Bindings: ScoutEnv }>()
 // API key auth middleware for manual trigger routes
 app.use('/api/*', async (c, next) => {
   const authHeader = c.req.header('Authorization')
-  const expected = c.env.WRITER_AGENT_API_KEY
+  const expected = c.env.API_KEY
   if (!expected || !authHeader || authHeader !== `Bearer ${expected}`) {
     return c.json({ error: 'Unauthorized' }, 401)
   }

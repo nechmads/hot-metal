@@ -3,6 +3,7 @@
 
 export interface ScoutEnv extends Env {
   // Secrets (set via `wrangler secret put`)
+  API_KEY: string
   ALEXANDER_API_KEY: string
   ANTHROPIC_API_KEY: string
   WRITER_AGENT_API_KEY: string

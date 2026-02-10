@@ -62,4 +62,10 @@
 		"ALEXANDER_API_URL": "https://alexanderai.farfarawaylabs.com",
 		"WRITER_AGENT_URL": "https://hotmetal-writer-agent.shahar-nechmad.workers.dev"
 	}
+
+	// Secrets (set via `wrangler secret put`):
+	// API_KEY              — authenticates incoming requests to this service
+	// ALEXANDER_API_KEY    — Alexander trend search API
+	// ANTHROPIC_API_KEY    — Claude API for idea generation
+	// WRITER_AGENT_API_KEY — key to call writer-agent (for auto-write)
 }

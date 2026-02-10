@@ -61,19 +61,20 @@ npx wrangler secret put ALEXANDER_API_KEY --local   # Alexander API key for rese
 npx wrangler secret put CONTENT_SCOUT_API_KEY --local  # NEW: key to call content-scout
 ```
 
-For the `CONTENT_SCOUT_API_KEY`, use the same value you'll set as `WRITER_AGENT_API_KEY` on the content-scout (they share a symmetric key).
+For the `CONTENT_SCOUT_API_KEY`, use the same value you'll set as `API_KEY` on the content-scout.
 
 ### content-scout secrets
 
 ```bash
 cd services/content-scout
 
+npx wrangler secret put API_KEY --local                # Authenticates incoming requests to this service
 npx wrangler secret put ALEXANDER_API_KEY --local      # Alexander API for trend search
 npx wrangler secret put ANTHROPIC_API_KEY --local      # Claude API for idea generation
 npx wrangler secret put WRITER_AGENT_API_KEY --local   # Key to call writer-agent (for auto-write)
 ```
 
-> **Important**: The `WRITER_AGENT_API_KEY` on content-scout must match the `WRITER_API_KEY` on writer-agent (content-scout uses it to call writer-agent's REST API). The `CONTENT_SCOUT_API_KEY` on writer-agent must match whatever Bearer token the content-scout expects (currently the content-scout uses `WRITER_AGENT_API_KEY` for its own auth).
+> **Important**: `API_KEY` on content-scout must match `CONTENT_SCOUT_API_KEY` on writer-agent (writer-agent sends it as a Bearer token). `WRITER_AGENT_API_KEY` on content-scout must match `WRITER_API_KEY` on writer-agent (content-scout uses it to call writer-agent for auto-write).
 
 ### writer-web secrets
 
@@ -306,6 +307,7 @@ For production, you'll need to:
 
 2. **Set production secrets on content-scout**:
    ```bash
+   npx wrangler secret put API_KEY
    npx wrangler secret put ALEXANDER_API_KEY
    npx wrangler secret put ANTHROPIC_API_KEY
    npx wrangler secret put WRITER_AGENT_API_KEY

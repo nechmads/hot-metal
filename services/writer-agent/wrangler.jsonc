@@ -48,5 +48,6 @@
 	},
 
 	// Secrets (set via `wrangler secret put`):
-	// ANTHROPIC_API_KEY, CMS_API_KEY, WRITER_API_KEY, ALEXANDER_API_KEY, CONTENT_SCOUT_API_KEY
+	// ANTHROPIC_API_KEY, CMS_API_KEY, WRITER_API_KEY, ALEXANDER_API_KEY
+	// CONTENT_SCOUT_API_KEY — must match API_KEY on the content-scout worker
 }
