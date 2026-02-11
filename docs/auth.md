@@ -125,14 +125,13 @@ The `request()` helper automatically injects the Bearer token on every API call.
 - **Future**: Clerk `user.created` webhook for proactive sync (not implemented yet)
 - **Data model**: User ID is Clerk's `sub` claim (e.g., `user_2x...`)
 
-## Default User Migration
+## Dev Seed Script
 
-The database was seeded with `userId = 'default'` during single-user development. On the first real Clerk sign-in, the `ensureUser` middleware automatically migrates all of default's data:
+For local development, run `pnpm dal:seed:dev` (or `pnpm dal:reset:local` which includes it) to seed the local D1 database with a real Clerk user.
 
-1. `ensureUser` detects the new user ID is not in D1
-2. Calls `DAL.migrateDefaultUser(clerkUserId, email, name)`
-3. DAL atomically updates all FK references (`sessions`, `publications`, `social_connections`) and the `users` PK
-4. Safety: only runs if `'default'` is the sole user in the system (conditional WHERE + count subquery)
-5. Falls back to normal `createUser()` if migration doesn't apply
+The script (`scripts/seed-dev-user.sh`):
+1. Reads `CLERK_SECRET_KEY` from the root `.dev.vars` file
+2. Calls the Clerk Backend API to fetch the first user in your instance
+3. Inserts (or replaces) that user into the local D1 database via `wrangler d1 execute`
 
-This is a one-time operation. Once complete, the `'default'` user ID no longer exists and the migration code becomes a no-op.
+Setup: copy `.dev.vars.example` to `.dev.vars` at the repo root and fill in your Clerk secret key.

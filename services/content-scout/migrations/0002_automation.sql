@@ -1,7 +1,7 @@
 -- Blog automation tables: users, publications, topics, ideas
 -- Plus session alterations for publication awareness
 
--- Users table (multi-user ready, single user for now)
+-- Users table (multi-user, keyed by Clerk user ID)
 CREATE TABLE IF NOT EXISTS users (
   id TEXT PRIMARY KEY,
   email TEXT NOT NULL UNIQUE,
@@ -9,9 +9,6 @@ CREATE TABLE IF NOT EXISTS users (
   created_at INTEGER DEFAULT (unixepoch()),
   updated_at INTEGER DEFAULT (unixepoch())
 );
-
--- Seed default user
-INSERT INTO users (id, email, name) VALUES ('default', 'shahar@hotmetalapp.com', 'Shahar');
 
 -- Publication automation config (links to CMS publication by ID)
 CREATE TABLE IF NOT EXISTS publications (

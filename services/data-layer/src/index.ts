@@ -63,7 +63,6 @@ export interface DataLayerApi {
 	createUser(data: CreateUserInput): Promise<User>
 	updateUser(id: string, data: UpdateUserInput): Promise<User | null>
 	listUsers(): Promise<User[]>
-	migrateDefaultUser(newUserId: string, email: string, name: string): Promise<boolean>
 
 	// Sessions
 	createSession(data: CreateSessionInput): Promise<Session>
@@ -150,7 +149,6 @@ export class DataLayer extends WorkerEntrypoint<Env> {
 	createUser(data: CreateUserInput) { return users.createUser(this.env.DB, data) }
 	updateUser(id: string, data: UpdateUserInput) { return users.updateUser(this.env.DB, id, data) }
 	listUsers() { return users.listUsers(this.env.DB) }
-	migrateDefaultUser(newUserId: string, email: string, name: string) { return users.migrateDefaultUser(this.env.DB, newUserId, email, name) }
 
 	// ─── Sessions ──────────────────────────────────────────────────────
 	createSession(data: CreateSessionInput) { return sessions.createSession(this.env.DB, data) }

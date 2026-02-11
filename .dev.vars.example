@@ -1,0 +1,4 @@
+# Root-level dev secrets (used by scripts/seed-dev-user.sh)
+# Copy to .dev.vars and fill in real values.
+
+CLERK_SECRET_KEY=sk_test_REPLACE_ME
