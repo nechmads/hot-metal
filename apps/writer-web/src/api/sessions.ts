@@ -1,10 +1,11 @@
 import { Hono } from 'hono'
+import type { AppEnv } from '../server'
 
-const sessions = new Hono<{ Bindings: Env }>()
+const sessions = new Hono<AppEnv>()
 
-/** List sessions with optional filters. */
+/** List sessions for the authenticated user. */
 sessions.get('/sessions', async (c) => {
-  const userId = c.req.query('userId') || undefined
+  const userId = c.get('userId')
   const status = c.req.query('status') || undefined
   const result = await c.env.DAL.listSessions({
     userId,
@@ -17,6 +18,10 @@ sessions.get('/sessions', async (c) => {
 sessions.get('/sessions/:id', async (c) => {
   const session = await c.env.DAL.getSessionById(c.req.param('id'))
   if (!session) return c.json({ error: 'Session not found' }, 404)
+  // Ensure the session belongs to the authenticated user
+  if (session.userId !== c.get('userId')) {
+    return c.json({ error: 'Session not found' }, 404)
+  }
   return c.json(session)
 })
 

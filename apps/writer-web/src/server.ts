@@ -1,20 +1,39 @@
 /**
  * Writer Web — backend Worker
  *
+ * All /api/* and /agents/* routes require Clerk JWT authentication.
  * Data reads (GET) are served directly via the DAL service binding.
  * Writes, AI operations, and WebSocket connections proxy to writer-agent.
  * Scout triggers proxy directly to content-scout.
  */
 
 import { Hono } from 'hono'
+import type { Context } from 'hono'
 
+import { clerkAuth, type AuthVariables } from './middleware/clerk-auth'
+import { ensureUser } from './middleware/ensure-user'
+import { verifyPublicationOwnership } from './middleware/ownership'
 import sessions from './api/sessions'
 import publications from './api/publications'
 import topics from './api/topics'
 import ideas from './api/ideas'
 import activity from './api/activity'
 
-const app = new Hono<{ Bindings: Env }>()
+export type AppEnv = {
+  Bindings: Env
+  Variables: AuthVariables
+}
+
+const app = new Hono<AppEnv>()
+
+// ─── Health check (public, before auth middleware) ──────────────────
+
+app.get('/health', (c) => c.json({ status: 'ok', service: 'writer-web' }))
+
+// ─── Auth: Clerk JWT + user sync on all protected routes ────────────
+
+app.use('/api/*', clerkAuth, ensureUser)
+app.use('/agents/*', clerkAuth)
 
 // ─── DAL direct reads ───────────────────────────────────────────────
 
@@ -27,6 +46,10 @@ app.route('/api', activity)
 // ─── Scout trigger (proxied to content-scout) ───────────────────────
 
 app.post('/api/publications/:pubId/scout', async (c) => {
+  // Verify the user owns this publication
+  const pub = await verifyPublicationOwnership(c, c.req.param('pubId'))
+  if (!pub) return c.json({ error: 'Publication not found' }, 404)
+
   if (!c.env.CONTENT_SCOUT_URL || !c.env.SCOUT_API_KEY) {
     return c.json({ error: 'Scout service not configured' }, 503)
   }
@@ -62,6 +85,7 @@ app.get('/agents/*', async (c) => {
     headers: {
       Upgrade: 'websocket',
       'X-API-Key': c.env.WRITER_API_KEY,
+      'X-User-Id': c.get('userId') || '',
     },
   })
 
@@ -105,23 +129,25 @@ app.get('/agents/*', async (c) => {
 app.all('/agents/*', proxyToWriterAgent)
 app.all('/api/*', proxyToWriterAgent)
 
-// ─── Health check ───────────────────────────────────────────────────
-
-app.get('/health', (c) => c.json({ status: 'ok', service: 'writer-web' }))
-
 // ─── Export ─────────────────────────────────────────────────────────
 
 export default app
 
 // ─── Writer-agent proxy helper ──────────────────────────────────────
 
-import type { Context } from 'hono'
-
-async function proxyToWriterAgent(c: Context<{ Bindings: Env }>): Promise<Response> {
+async function proxyToWriterAgent(c: Context<AppEnv>): Promise<Response> {
   const url = new URL(c.req.url)
   const target = `${c.env.WRITER_AGENT_URL}${url.pathname}${url.search}`
   const headers = new Headers(c.req.raw.headers)
   headers.set('X-API-Key', c.env.WRITER_API_KEY)
+  // Don't forward end-user's Clerk JWT to internal services
+  headers.delete('Authorization')
+
+  // Forward authenticated user ID to downstream services
+  const userId = c.get('userId')
+  if (userId) {
+    headers.set('X-User-Id', userId)
+  }
 
   const res = await fetch(target, {
     method: c.req.method,

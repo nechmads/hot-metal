@@ -102,7 +102,7 @@ export interface DataLayerApi {
 	getRecentIdeasByPublication(pubId: string, sinceDays?: number): Promise<Idea[]>
 
 	// Activity
-	getRecentActivity(cutoffDays?: number): Promise<ActivityEntry[]>
+	getRecentActivity(cutoffDays?: number, userId?: string): Promise<ActivityEntry[]>
 
 	// Audit Logs
 	writeAuditLog(entry: AuditLogInput): Promise<void>
@@ -188,7 +188,7 @@ export class DataLayer extends WorkerEntrypoint<Env> {
 	getRecentIdeasByPublication(pubId: string, sinceDays?: number) { return ideas.getRecentIdeasByPublication(this.env.DB, pubId, sinceDays) }
 
 	// ─── Activity ──────────────────────────────────────────────────────
-	getRecentActivity(cutoffDays?: number) { return activity.getRecentActivity(this.env.DB, cutoffDays) }
+	getRecentActivity(cutoffDays?: number, userId?: string) { return activity.getRecentActivity(this.env.DB, cutoffDays, userId) }
 
 	// ─── Audit Logs ────────────────────────────────────────────────────
 	writeAuditLog(entry: AuditLogInput) { return auditLogs.writeAuditLog(this.env.DB, entry) }

@@ -5,10 +5,40 @@ import type {
 } from './types'
 
 const JSON_HEADERS = { 'Content-Type': 'application/json' }
-const DEFAULT_USER_ID = 'default'
+
+/**
+ * Set by the auth layer once Clerk provides a session token.
+ * All API requests include this as a Bearer token.
+ */
+let authToken: string | null = null
+
+export function setAuthToken(token: string | null) {
+  authToken = token
+}
+
+export function getAuthToken(): string | null {
+  return authToken
+}
+
+function authHeaders(): Record<string, string> {
+  if (!authToken) return {}
+  return { Authorization: `Bearer ${authToken}` }
+}
 
 async function request<T>(url: string, init?: RequestInit): Promise<T> {
-  const res = await fetch(url, init)
+  const headers = new Headers(init?.headers)
+  // Merge auth header
+  const auth = authHeaders()
+  for (const [k, v] of Object.entries(auth)) {
+    if (!headers.has(k)) headers.set(k, v)
+  }
+
+  const res = await fetch(url, { ...init, headers })
+
+  if (res.status === 401) {
+    // Token expired or invalid — let Clerk handle re-auth
+    throw new Error('Unauthorized')
+  }
 
   if (!res.ok) {
     const body = await res.json().catch(() => ({ error: 'Request failed' }))
@@ -27,7 +57,7 @@ export async function createSession(title?: string): Promise<Session> {
   return request<Session>('/api/sessions', {
     method: 'POST',
     headers: JSON_HEADERS,
-    body: JSON.stringify({ userId: DEFAULT_USER_ID, title }),
+    body: JSON.stringify({ title }),
   })
 }
 
@@ -138,7 +168,7 @@ export async function createPublication(data: {
   return request<PublicationConfig>('/api/publications', {
     method: 'POST',
     headers: JSON_HEADERS,
-    body: JSON.stringify({ ...data, userId: DEFAULT_USER_ID }),
+    body: JSON.stringify(data),
   })
 }
 

@@ -1,6 +1,8 @@
 import { useCallback, useRef } from 'react'
 import { useAgent } from 'agents/react'
 import { useAgentChat } from '@cloudflare/ai-chat/react'
+import { useAuth } from '@clerk/clerk-react'
+import { TOKEN_REFRESH_INTERVAL_MS } from '@/lib/auth-config'
 import type { WriterAgentState } from './useWriterState'
 
 export type { WriterAgentState }
@@ -14,6 +16,8 @@ interface UseWriterChatOptions {
 }
 
 export function useWriterChat({ sessionId, onStateUpdate }: UseWriterChatOptions) {
+  const { getToken } = useAuth()
+
   // Stabilize the callback via ref to prevent reconnection loops
   const onStateUpdateRef = useRef(onStateUpdate)
   onStateUpdateRef.current = onStateUpdate
@@ -26,6 +30,13 @@ export function useWriterChat({ sessionId, onStateUpdate }: UseWriterChatOptions
     agent: 'writer-agent',
     name: sessionId,
     onStateUpdate: stableOnStateUpdate,
+    // Pass auth token as query param for WebSocket authentication
+    query: async () => {
+      const token = await getToken()
+      return { token: token ?? null }
+    },
+    queryDeps: [],
+    cacheTtl: TOKEN_REFRESH_INTERVAL_MS,
   })
 
   const chat = useAgentChat({

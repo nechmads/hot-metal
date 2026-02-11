@@ -37,7 +37,7 @@ export async function getUserByEmail(db: D1Database, email: string): Promise<Use
 export async function createUser(db: D1Database, data: CreateUserInput): Promise<User> {
 	const now = Math.floor(Date.now() / 1000)
 	await db
-		.prepare('INSERT INTO users (id, email, name, created_at, updated_at) VALUES (?, ?, ?, ?, ?)')
+		.prepare('INSERT OR IGNORE INTO users (id, email, name, created_at, updated_at) VALUES (?, ?, ?, ?, ?)')
 		.bind(data.id, data.email, data.name, now, now)
 		.run()
 

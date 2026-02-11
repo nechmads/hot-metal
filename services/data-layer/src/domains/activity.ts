@@ -24,21 +24,27 @@ function mapRow(row: ActivityRow): ActivityEntry {
 	}
 }
 
-export async function getRecentActivity(db: D1Database, cutoffDays: number = 30): Promise<ActivityEntry[]> {
+export async function getRecentActivity(db: D1Database, cutoffDays: number = 30, userId?: string): Promise<ActivityEntry[]> {
 	const days = Math.max(1, Math.min(cutoffDays, 90))
 	const cutoff = Math.floor(Date.now() / 1000) - days * 86400
 
+	let query = `SELECT s.id, s.title, s.status, s.publication_id, s.cms_post_id,
+		        s.created_at, s.updated_at, p.name as publication_name
+		 FROM sessions s
+		 LEFT JOIN publications p ON s.publication_id = p.id
+		 WHERE s.status IN ('active', 'completed') AND s.updated_at >= ?`
+	const bindings: (string | number)[] = [cutoff]
+
+	if (userId) {
+		query += ' AND s.user_id = ?'
+		bindings.push(userId)
+	}
+
+	query += ' ORDER BY s.updated_at DESC LIMIT 100'
+
 	const result = await db
-		.prepare(
-			`SELECT s.id, s.title, s.status, s.publication_id, s.cms_post_id,
-			        s.created_at, s.updated_at, p.name as publication_name
-			 FROM sessions s
-			 LEFT JOIN publications p ON s.publication_id = p.id
-			 WHERE s.status IN ('active', 'completed') AND s.updated_at >= ?
-			 ORDER BY s.updated_at DESC
-			 LIMIT 100`
-		)
-		.bind(cutoff)
+		.prepare(query)
+		.bind(...bindings)
 		.all<ActivityRow>()
 
 	return (result.results ?? []).map(mapRow)
