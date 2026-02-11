@@ -12,6 +12,15 @@
     "port": 5173,
   },
 
+  // Data Access Layer — direct reads bypass writer-agent proxy
+  "services": [
+    {
+      "binding": "DAL",
+      "service": "hotmetal-data-layer",
+      "entrypoint": "DataLayer",
+    },
+  ],
+
   // Environment variables (non-secret)
   "vars": {
     "WRITER_AGENT_URL": "https://agent.hotmetalapp.com",

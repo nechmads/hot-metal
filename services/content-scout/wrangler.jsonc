@@ -57,6 +57,7 @@
 		{
 			"binding": "DAL",
 			"service": "hotmetal-data-layer",
+			"entrypoint": "DataLayer",
 		},
 	],
 	"routes": [

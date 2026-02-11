@@ -140,7 +140,7 @@ export interface DataLayerApi {
  * methods instead of accessing D1 directly.
  */
 // Compile-time check: DataLayer must satisfy DataLayerApi
-const _typeCheck: DataLayerApi = {} as DataLayer
+void ({} as DataLayer satisfies DataLayerApi)
 
 export class DataLayer extends WorkerEntrypoint<Env> {
 	// ─── Users ─────────────────────────────────────────────────────────

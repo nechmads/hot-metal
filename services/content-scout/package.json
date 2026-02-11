@@ -10,9 +10,7 @@
 		"test": "vitest",
 		"cf-typegen": "wrangler types",
 		"build": "wrangler deploy --dry-run --outdir=dist",
-		"typecheck": "tsc --noEmit",
-		"db:migrate:local": "echo 'Migrations now managed by @hotmetal/data-layer'",
-		"db:migrate:remote": "echo 'Migrations now managed by @hotmetal/data-layer'"
+		"typecheck": "tsc --noEmit"
 	},
 	"dependencies": {
 		"@ai-sdk/anthropic": "^3.0.39",

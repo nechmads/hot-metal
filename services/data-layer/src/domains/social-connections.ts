@@ -38,7 +38,7 @@ function mapRow(row: SocialConnectionRow): SocialConnection {
 
 async function importKey(hexKey: string): Promise<CryptoKey> {
 	const bytes = hexToBytes(hexKey)
-	return crypto.subtle.importKey('raw', bytes, { name: 'AES-GCM' }, false, ['encrypt', 'decrypt'])
+	return crypto.subtle.importKey('raw', bytes.buffer as ArrayBuffer, { name: 'AES-GCM' }, false, ['encrypt', 'decrypt'])
 }
 
 async function encrypt(plaintext: string, encryptionKeyHex: string): Promise<string> {
@@ -55,7 +55,7 @@ async function decrypt(stored: string, encryptionKeyHex: string): Promise<string
 	if (!ivHex || !ciphertextHex) throw new Error('Invalid encrypted token format')
 	const iv = hexToBytes(ivHex)
 	const ciphertext = hexToBytes(ciphertextHex)
-	const plaintext = await crypto.subtle.decrypt({ name: 'AES-GCM', iv }, key, ciphertext)
+	const plaintext = await crypto.subtle.decrypt({ name: 'AES-GCM', iv: iv.buffer as ArrayBuffer }, key, ciphertext.buffer as ArrayBuffer)
 	return new TextDecoder().decode(plaintext)
 }
 

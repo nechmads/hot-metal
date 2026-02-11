@@ -24,6 +24,7 @@
     "wrangler": "4.63.0"
   },
   "dependencies": {
+    "@hotmetal/data-layer": "workspace:*",
     "@ai-sdk/react": "^3.0.79",
     "@cloudflare/ai-chat": "^0.0.6",
     "@legendapp/state": "3.0.0-beta.43",
