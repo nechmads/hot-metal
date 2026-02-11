@@ -28,7 +28,7 @@
     "deploy:scout": "pnpm --filter @hotmetal/content-scout run deploy",
     "deploy:publisher": "pnpm --filter @hotmetal/publisher run deploy",
     "deploy:web": "pnpm --filter @hotmetal/writer-web run deploy",
-    "deploy:all": "pnpm deploy:cms && pnpm deploy:writer && pnpm deploy:scout && pnpm deploy:publisher && pnpm deploy:writer-web",
+    "deploy:all": "pnpm deploy:cms && pnpm deploy:writer && pnpm deploy:scout && pnpm deploy:publisher && pnpm deploy:web",
     "dev:cms": "pnpm --filter @hotmetal/cms-admin dev",
     "dev:web": "pnpm --filter @hotmetal/web-frontend dev",
     "dev:writer": "pnpm --filter @hotmetal/writer-agent dev",

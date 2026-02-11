@@ -45,6 +45,13 @@
 		"CMS_URL": "https://cms.hotmetalapp.com",
 		"ALEXANDER_API_URL": "https://alexanderai.farfarawaylabs.com",
 	},
+	"routes": [
+		{
+			"pattern": "agent.hotmetalapp.com",
+			"zone_name": "hotmetalapp.com",
+			"custom_domain": true,
+		},
+	],
 
 	// Workers AI binding (for image generation)
 	"ai": { "binding": "AI" },
