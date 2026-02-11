@@ -1,5 +1,6 @@
 import { NavLink } from 'react-router'
 import { LightbulbIcon, PencilLineIcon, CalendarDotsIcon, ListIcon, XIcon } from '@phosphor-icons/react'
+import { UserButton } from '@clerk/clerk-react'
 import { useValue } from '@legendapp/state/react'
 import { scoutStore$ } from '@/stores/scout-store'
 
@@ -85,6 +86,20 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
             ))}
           </ul>
         </nav>
+
+        {/* User menu */}
+        <div className="border-t border-[var(--color-border-default)] px-4 py-3">
+          <UserButton
+            afterSignOutUrl="/"
+            appearance={{
+              elements: {
+                rootBox: 'w-full',
+                userButtonTrigger: 'w-full justify-start gap-2',
+              },
+            }}
+            showName
+          />
+        </div>
       </aside>
     </>
   )

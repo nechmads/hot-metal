@@ -53,14 +53,48 @@ The writer-web proxy:
 
 ## Frontend Auth
 
-### Provider Setup (`src/providers/AuthProvider.tsx`)
+### Provider Hierarchy
 
-`ClerkProvider` wraps the entire app. When signed out, users are redirected to Clerk's sign-in page. When signed in, the `TokenSync` component keeps the API client's Bearer token refreshed.
+```
+<AuthProvider>           -- ClerkProvider with appearance config
+  <BrowserRouter>
+    <Routes>
+      /              -- LandingPage (public, redirects signed-in users)
+      /sign-in/*     -- Clerk <SignIn /> component
+      /sign-up/*     -- Clerk <SignUp /> component
+      /waitlist/*    -- Clerk <Waitlist /> component
+      <ProtectedRoute>   -- SignedIn guard + TokenSync
+        <AppLayout>      -- Sidebar (with UserButton) + content
+          /ideas, /writing, /schedule, ...
+        </AppLayout>
+      </ProtectedRoute>
+    </Routes>
+  </BrowserRouter>
+</AuthProvider>
+```
+
+### AuthProvider (`src/providers/AuthProvider.tsx`)
+
+Wraps the entire app with `ClerkProvider`. Configures:
+- **Appearance**: Amber-themed Clerk components matching Hot Metal's design tokens
+- **Dark mode**: Reactive detection via `useSyncExternalStore` + `MutationObserver` on `<html>` class
+- **Routing**: `signInUrl`, `signUpUrl`, `waitlistUrl`, `afterSignOutUrl` for Clerk's internal navigation
+
+### ProtectedRoute (`src/components/auth/ProtectedRoute.tsx`)
+
+Wraps authenticated routes. When signed in, `TokenSync` fetches the first Clerk token before rendering children (loading gate prevents 401s on initial API calls). When signed out, redirects to sign-in.
+
+### Clerk UI Components
+
+- **`<SignIn />`** at `/sign-in/*` — handles sign-in, MFA, verification flows
+- **`<SignUp />`** at `/sign-up/*` — handles registration flow
+- **`<Waitlist />`** at `/waitlist/*` — join-the-waitlist form (requires Clerk Dashboard setup)
+- **`<UserButton />`** in `Sidebar` — avatar, account management, sign-out
 
 ### Token Flow
 
 1. User signs in via Clerk UI
-2. `TokenSync` calls `getToken()` and sets it on the API client
+2. `TokenSync` calls `getToken()` and sets it on the API client (blocks rendering until first token)
 3. All `fetch()` calls include `Authorization: Bearer <token>`
 4. Token is refreshed every 50s (before Clerk's 60s default expiry)
 5. WebSocket connections pass the token as a `?token=` query parameter
