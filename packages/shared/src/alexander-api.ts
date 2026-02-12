@@ -195,6 +195,6 @@ export class AlexanderApi {
   }
 
   async toneGuide(params: ToneGuideParams): Promise<ToneGuideResponse> {
-    return this.request('POST', '/writing/tone-guide', params, 120_000)
+    return this.request('POST', '/writing/tone-guide', params, 300_000)
   }
 }

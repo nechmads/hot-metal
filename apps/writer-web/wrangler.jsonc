@@ -25,7 +25,7 @@
   "vars": {
     "WRITER_AGENT_URL": "https://agent.hotmetalapp.com",
     "CONTENT_SCOUT_URL": "https://scout.hotmetalapp.com",
-    "ALEXANDER_API_URL": "https://alexander.hotmetalapp.com",
+    "ALEXANDER_API_URL": "https://alexanderai.farfarawaylabs.com",
     "CLERK_PUBLISHABLE_KEY": "pk_test_dHJ1c3RlZC13aGFsZS05Ni5jbGVyay5hY2NvdW50cy5kZXYk",
     "CLERK_ISSUER": "https://trusted-whale-96.clerk.accounts.dev",
   },

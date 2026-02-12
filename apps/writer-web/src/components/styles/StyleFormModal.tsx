@@ -4,13 +4,25 @@ import { Loader } from '@/components/loader/Loader'
 import { analyzeStyleUrl } from '@/lib/api'
 import type { WritingStyle } from '@/lib/types'
 
-const LOADING_MESSAGES = [
+const ANALYSIS_MESSAGES = [
   'Reading blog posts...',
-  'Analyzing writing patterns...',
-  'Identifying tone and voice...',
-  'Generating style profile...',
-  'Almost there...',
+  'Scanning for writing patterns...',
+  'Studying sentence structure...',
+  'Analyzing vocabulary choices...',
+  'Mapping tone and voice...',
+  'Detecting stylistic quirks...',
+  'Comparing paragraph rhythms...',
+  'Examining word frequency...',
+  'Profiling the authorial voice...',
+  'Building your style DNA...',
 ]
+
+const ALMOST_THERE = 'Almost there, hang tight...'
+
+function pickRandomMessage(exclude: string): string {
+  const candidates = ANALYSIS_MESSAGES.filter((m) => m !== exclude)
+  return candidates[Math.floor(Math.random() * candidates.length)]
+}
 
 interface StyleFormModalProps {
   isOpen: boolean
@@ -30,7 +42,7 @@ export function StyleFormModal({ isOpen, onClose, onSave, editingStyle }: StyleF
   const [url, setUrl] = useState('')
   const [analyzing, setAnalyzing] = useState(false)
   const [analyzeError, setAnalyzeError] = useState<string | null>(null)
-  const [loadingMsgIndex, setLoadingMsgIndex] = useState(0)
+  const [loadingMsg, setLoadingMsg] = useState(ANALYSIS_MESSAGES[0])
   const [toneGuide, setToneGuide] = useState<string | null>(null)
   const [sourceUrl, setSourceUrl] = useState<string | null>(null)
   const [sampleText, setSampleText] = useState<string | null>(null)
@@ -64,13 +76,20 @@ export function StyleFormModal({ isOpen, onClose, onSave, editingStyle }: StyleF
     }
   }, [isOpen, editingStyle])
 
-  // Cycle loading messages during analysis
+  // Cycle loading messages during analysis: random every 4s, "almost there" every 5th
   useEffect(() => {
     if (analyzing) {
-      setLoadingMsgIndex(0)
+      const first = ANALYSIS_MESSAGES[Math.floor(Math.random() * ANALYSIS_MESSAGES.length)]
+      setLoadingMsg(first)
+      let tickCount = 0
       intervalRef.current = setInterval(() => {
-        setLoadingMsgIndex((prev) => Math.min(prev + 1, LOADING_MESSAGES.length - 1))
-      }, 15_000)
+        tickCount++
+        if (tickCount % 5 === 0) {
+          setLoadingMsg(ALMOST_THERE)
+        } else {
+          setLoadingMsg((prev) => pickRandomMessage(prev))
+        }
+      }, 4_000)
     } else {
       if (intervalRef.current) {
         clearInterval(intervalRef.current)
@@ -167,7 +186,7 @@ export function StyleFormModal({ isOpen, onClose, onSave, editingStyle }: StyleF
         {activeTab === 'url' && (
           <div className="space-y-3">
             <p className="text-xs text-[var(--color-text-muted)]">
-              Enter a blog URL and we'll analyze the writing style to create a matching profile. This typically takes 30-90 seconds.
+              Enter a blog URL and we'll analyze the writing style to create a matching profile. This can take a few minutes depending on the site.
             </p>
 
             <div className="flex gap-2">
@@ -193,7 +212,7 @@ export function StyleFormModal({ isOpen, onClose, onSave, editingStyle }: StyleF
               <div className="flex items-center gap-2 rounded-lg border border-[var(--color-border-default)] bg-[var(--color-bg-card)] p-3">
                 <Loader size={16} />
                 <span className="text-sm text-[var(--color-text-muted)]">
-                  {LOADING_MESSAGES[loadingMsgIndex]}
+                  {loadingMsg}
                 </span>
               </div>
             )}
