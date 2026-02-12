@@ -45,7 +45,7 @@ export function ChatInput({ onSend, disabled, onStop }: ChatInputProps) {
         placeholder="Describe your blog post idea..."
         disabled={disabled}
         rows={1}
-        className="flex-1 resize-none rounded-lg border border-[#e5e7eb] bg-white px-3 py-2 text-sm text-[#0a0a0a] placeholder:text-[#6b7280] focus:border-[#d97706] focus:outline-none focus:ring-1 focus:ring-[#d97706] disabled:opacity-50 dark:border-[#374151] dark:bg-[#1a1a1a] dark:text-[#fafafa]"
+        className="flex-1 resize-none rounded-lg border border-[#e5e7eb] bg-white px-3 py-2 text-base text-[#0a0a0a] placeholder:text-[#6b7280] focus:border-[#d97706] focus:outline-none focus:ring-1 focus:ring-[#d97706] disabled:opacity-50 dark:border-[#374151] dark:bg-[#1a1a1a] dark:text-[#fafafa]"
       />
       {onStop ? (
         <button

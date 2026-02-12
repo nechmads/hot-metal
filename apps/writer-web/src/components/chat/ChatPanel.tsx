@@ -91,10 +91,10 @@ export function ChatPanel({ sessionId, seedContext, sessionTitle, onAssistantRes
       <div ref={scrollRef} className="flex-1 space-y-3 overflow-y-auto p-4">
         {messages.length === 0 && !isPending && (
           <div className="flex h-full flex-col items-center justify-center text-center">
-            <p className="font-semibold text-[#0a0a0a] dark:text-[#fafafa]">
+            <p className="text-lg font-semibold text-[#0a0a0a] dark:text-[#fafafa]">
               Start the conversation
             </p>
-            <p className="mt-1 text-sm text-[#6b7280]">
+            <p className="mt-1 text-base text-[#6b7280]">
               Describe your blog post idea, and the AI writer will help you
               draft it.
             </p>
@@ -106,14 +106,14 @@ export function ChatPanel({ sessionId, seedContext, sessionTitle, onAssistantRes
         ))}
 
         {showThinking && (
-          <div className="flex items-center gap-2 text-sm text-[#6b7280]">
+          <div className="flex items-center gap-2 text-base text-[#6b7280]">
             <Loader size={16} />
             <span>Thinking...</span>
           </div>
         )}
 
         {error && (
-          <div className="rounded-lg border border-red-200 bg-red-50 p-2 text-sm text-red-700">
+          <div className="rounded-lg border border-red-200 bg-red-50 p-2 text-base text-red-700">
             {error.message || 'Something went wrong'}
           </div>
         )}

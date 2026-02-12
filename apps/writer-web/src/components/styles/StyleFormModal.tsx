@@ -161,7 +161,7 @@ export function StyleFormModal({ isOpen, onClose, onSave, editingStyle }: StyleF
           <button
             type="button"
             onClick={() => setActiveTab('prompt')}
-            className={`flex-1 rounded-md px-3 py-1.5 text-sm font-medium transition-colors ${
+            className={`flex-1 rounded-md px-3 py-2 text-base font-medium transition-colors ${
               activeTab === 'prompt'
                 ? 'bg-[var(--color-accent-light)] text-[var(--color-accent)]'
                 : 'text-[var(--color-text-muted)] hover:bg-[var(--color-bg-card)]'
@@ -172,7 +172,7 @@ export function StyleFormModal({ isOpen, onClose, onSave, editingStyle }: StyleF
           <button
             type="button"
             onClick={() => setActiveTab('url')}
-            className={`flex-1 rounded-md px-3 py-1.5 text-sm font-medium transition-colors ${
+            className={`flex-1 rounded-md px-3 py-2 text-base font-medium transition-colors ${
               activeTab === 'url'
                 ? 'bg-[var(--color-accent-light)] text-[var(--color-accent)]'
                 : 'text-[var(--color-text-muted)] hover:bg-[var(--color-bg-card)]'
@@ -185,7 +185,7 @@ export function StyleFormModal({ isOpen, onClose, onSave, editingStyle }: StyleF
         {/* URL tab */}
         {activeTab === 'url' && (
           <div className="space-y-3">
-            <p className="text-xs text-[var(--color-text-muted)]">
+            <p className="text-sm text-[var(--color-text-muted)]">
               Enter a blog URL and we'll analyze the writing style to create a matching profile. This can take a few minutes depending on the site.
             </p>
 
@@ -196,13 +196,13 @@ export function StyleFormModal({ isOpen, onClose, onSave, editingStyle }: StyleF
                 onChange={(e) => setUrl(e.target.value)}
                 placeholder="https://example.com/blog"
                 disabled={analyzing}
-                className="flex-1 rounded-lg border border-[var(--color-border-default)] bg-[var(--color-bg-primary)] px-3 py-2 text-sm focus:border-[var(--color-accent)] focus:outline-none focus:ring-1 focus:ring-[var(--color-accent)] disabled:opacity-50"
+                className="flex-1 rounded-lg border border-[var(--color-border-default)] bg-[var(--color-bg-primary)] px-3 py-2 text-base focus:border-[var(--color-accent)] focus:outline-none focus:ring-1 focus:ring-[var(--color-accent)] disabled:opacity-50"
               />
               <button
                 type="button"
                 onClick={handleAnalyze}
                 disabled={analyzing || !url.trim()}
-                className="rounded-lg bg-[var(--color-accent)] px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-[var(--color-accent-hover)] disabled:opacity-50"
+                className="rounded-lg bg-[var(--color-accent)] px-4 py-2 text-base font-medium text-white transition-colors hover:bg-[var(--color-accent-hover)] disabled:opacity-50"
               >
                 {analyzing ? 'Analyzing...' : 'Analyze'}
               </button>
@@ -210,15 +210,15 @@ export function StyleFormModal({ isOpen, onClose, onSave, editingStyle }: StyleF
 
             {analyzing && (
               <div className="flex items-center gap-2 rounded-lg border border-[var(--color-border-default)] bg-[var(--color-bg-card)] p-3">
-                <Loader size={16} />
-                <span className="text-sm text-[var(--color-text-muted)]">
+                <Loader size={18} />
+                <span className="text-base text-[var(--color-text-muted)]">
                   {loadingMsg}
                 </span>
               </div>
             )}
 
             {analyzeError && (
-              <div className="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">
+              <div className="rounded-lg border border-red-200 bg-red-50 p-3 text-base text-red-700">
                 {analyzeError}
               </div>
             )}
@@ -229,38 +229,38 @@ export function StyleFormModal({ isOpen, onClose, onSave, editingStyle }: StyleF
         {activeTab === 'prompt' && (
           <div className="space-y-3">
             <div>
-              <label className="mb-1 block text-sm font-medium">Name</label>
+              <label className="mb-1 block text-base font-medium">Name</label>
               <input
                 type="text"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 placeholder="e.g., My Blog Voice"
-                className="w-full rounded-lg border border-[var(--color-border-default)] bg-[var(--color-bg-primary)] px-3 py-2 text-sm focus:border-[var(--color-accent)] focus:outline-none focus:ring-1 focus:ring-[var(--color-accent)]"
+                className="w-full rounded-lg border border-[var(--color-border-default)] bg-[var(--color-bg-primary)] px-3 py-2 text-base focus:border-[var(--color-accent)] focus:outline-none focus:ring-1 focus:ring-[var(--color-accent)]"
                 autoFocus
               />
             </div>
 
             <div>
-              <label className="mb-1 block text-sm font-medium">Description</label>
+              <label className="mb-1 block text-base font-medium">Description</label>
               <input
                 type="text"
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
                 placeholder="Brief description of this style"
-                className="w-full rounded-lg border border-[var(--color-border-default)] bg-[var(--color-bg-primary)] px-3 py-2 text-sm focus:border-[var(--color-accent)] focus:outline-none focus:ring-1 focus:ring-[var(--color-accent)]"
+                className="w-full rounded-lg border border-[var(--color-border-default)] bg-[var(--color-bg-primary)] px-3 py-2 text-base focus:border-[var(--color-accent)] focus:outline-none focus:ring-1 focus:ring-[var(--color-accent)]"
               />
             </div>
 
             <div>
-              <label className="mb-1 block text-sm font-medium">System Prompt</label>
+              <label className="mb-1 block text-base font-medium">System Prompt</label>
               <textarea
                 value={systemPrompt}
                 onChange={(e) => setSystemPrompt(e.target.value)}
                 rows={8}
                 placeholder="Instructions for the AI writer. Describe the tone, voice, vocabulary, sentence structure, and any patterns to follow or avoid."
-                className="w-full rounded-lg border border-[var(--color-border-default)] bg-[var(--color-bg-primary)] px-3 py-2 text-sm focus:border-[var(--color-accent)] focus:outline-none focus:ring-1 focus:ring-[var(--color-accent)]"
+                className="w-full rounded-lg border border-[var(--color-border-default)] bg-[var(--color-bg-primary)] px-3 py-2 text-base focus:border-[var(--color-accent)] focus:outline-none focus:ring-1 focus:ring-[var(--color-accent)]"
               />
-              <p className="mt-1 text-xs text-[var(--color-text-muted)]">
+              <p className="mt-1 text-sm text-[var(--color-text-muted)]">
                 This prompt will be injected into the AI writer's system prompt to control writing style.
               </p>
             </div>
@@ -272,7 +272,7 @@ export function StyleFormModal({ isOpen, onClose, onSave, editingStyle }: StyleF
           <button
             type="button"
             onClick={onClose}
-            className="rounded-lg border border-[var(--color-border-default)] px-4 py-2 text-sm font-medium transition-colors hover:bg-[var(--color-bg-card)]"
+            className="rounded-lg border border-[var(--color-border-default)] px-4 py-2 text-base font-medium transition-colors hover:bg-[var(--color-bg-card)]"
           >
             Cancel
           </button>
@@ -280,7 +280,7 @@ export function StyleFormModal({ isOpen, onClose, onSave, editingStyle }: StyleF
             type="button"
             onClick={handleSave}
             disabled={saving || !name.trim() || !systemPrompt.trim()}
-            className="rounded-lg bg-[var(--color-accent)] px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-[var(--color-accent-hover)] disabled:opacity-50"
+            className="rounded-lg bg-[var(--color-accent)] px-4 py-2 text-base font-medium text-white transition-colors hover:bg-[var(--color-accent-hover)] disabled:opacity-50"
           >
             {saving ? 'Saving...' : editingStyle ? 'Update' : 'Create'}
           </button>

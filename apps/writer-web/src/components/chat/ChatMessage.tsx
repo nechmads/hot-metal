@@ -13,7 +13,7 @@ export function ChatMessage({ message }: ChatMessageProps) {
     const text = getTextFromParts(message)
     return (
       <div className="flex justify-end">
-        <div className="max-w-[85%] rounded-2xl bg-[#d97706] px-4 py-2.5 text-sm leading-relaxed text-white">
+        <div className="max-w-[85%] rounded-2xl bg-[#d97706] px-4 py-2.5 text-base leading-relaxed text-white">
           <p className="whitespace-pre-wrap">{text}</p>
         </div>
       </div>
@@ -30,7 +30,7 @@ export function ChatMessage({ message }: ChatMessageProps) {
             return (
               <div
                 key={i}
-                className="rounded-2xl border border-[#e5e7eb] bg-[#f5f5f5] px-4 py-2.5 text-sm leading-relaxed text-[#0a0a0a] dark:border-[#374151] dark:bg-[#1a1a1a] dark:text-[#fafafa]"
+                className="rounded-2xl border border-[#e5e7eb] bg-[#f5f5f5] px-4 py-2.5 text-base leading-relaxed text-[#0a0a0a] dark:border-[#374151] dark:bg-[#1a1a1a] dark:text-[#fafafa]"
               >
                 <div className="prose max-w-none">
                   <MemoizedMarkdown content={part.text} id={`msg-${message.id}-${i}`} />

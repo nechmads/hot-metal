@@ -131,14 +131,14 @@ export function StylesPage() {
       <div className="mb-6 flex items-center justify-between">
         <div>
           <h2 className="text-xl font-bold">Writing Styles</h2>
-          <p className="mt-1 text-sm text-[var(--color-text-muted)]">
+          <p className="mt-1 text-base text-[var(--color-text-muted)]">
             Manage writing styles that control the AI writer's tone and voice.
           </p>
         </div>
         <button
           type="button"
           onClick={handleCreate}
-          className="flex items-center gap-1.5 rounded-lg bg-[var(--color-accent)] px-3 py-2 text-sm font-medium text-white transition-colors hover:bg-[var(--color-accent-hover)]"
+          className="flex items-center gap-1.5 rounded-lg bg-[var(--color-accent)] px-3 py-2 text-base font-medium text-white transition-colors hover:bg-[var(--color-accent-hover)]"
         >
           <PlusIcon size={16} />
           Create Style
@@ -146,7 +146,7 @@ export function StylesPage() {
       </div>
 
       {error && (
-        <div className="mb-4 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">
+        <div className="mb-4 rounded-lg border border-red-200 bg-red-50 p-3 text-base text-red-700">
           {error}
         </div>
       )}
@@ -154,7 +154,7 @@ export function StylesPage() {
       {/* Pre-built Styles */}
       {prebuiltStyles.length > 0 && (
         <section className="mb-8">
-          <h3 className="mb-3 text-sm font-semibold text-[var(--color-text-muted)] uppercase tracking-wide">
+          <h3 className="mb-3 text-xs font-semibold text-[var(--color-text-muted)] uppercase tracking-wide">
             Built-in Styles
           </h3>
           <div className="space-y-3">
@@ -177,13 +177,13 @@ export function StylesPage() {
         </h3>
         {userStyles.length === 0 ? (
           <div className="rounded-xl border border-dashed border-[var(--color-border-default)] p-8 text-center">
-            <p className="text-sm text-[var(--color-text-muted)]">
+            <p className="text-base text-[var(--color-text-muted)]">
               No custom styles yet. Create one from a prompt or learn from a blog URL.
             </p>
             <button
               type="button"
               onClick={handleCreate}
-              className="mt-3 inline-flex items-center gap-1.5 rounded-lg border border-[var(--color-accent)] px-3 py-1.5 text-sm font-medium text-[var(--color-accent)] transition-colors hover:bg-[var(--color-accent-light)]"
+              className="mt-3 inline-flex items-center gap-1.5 rounded-lg border border-[var(--color-accent)] px-3 py-1.5 text-base font-medium text-[var(--color-accent)] transition-colors hover:bg-[var(--color-accent-light)]"
             >
               <PlusIcon size={14} />
               Create Style
@@ -217,14 +217,14 @@ export function StylesPage() {
       <Modal isOpen={deleteTarget !== null} onClose={() => setDeleteTarget(null)}>
         <div className="space-y-4 p-5">
           <h3 className="text-lg font-semibold">Delete Style</h3>
-          <p className="text-sm text-[var(--color-text-muted)]">
+          <p className="text-base text-[var(--color-text-muted)]">
             Are you sure you want to delete <strong>{deleteTarget?.name}</strong>? This action cannot be undone.
           </p>
           <div className="flex justify-end gap-2">
             <button
               type="button"
               onClick={() => setDeleteTarget(null)}
-              className="rounded-lg border border-[var(--color-border-default)] px-4 py-2 text-sm font-medium transition-colors hover:bg-[var(--color-bg-card)]"
+              className="rounded-lg border border-[var(--color-border-default)] px-4 py-2 text-base font-medium transition-colors hover:bg-[var(--color-bg-card)]"
             >
               Cancel
             </button>
@@ -232,7 +232,7 @@ export function StylesPage() {
               type="button"
               onClick={handleDelete}
               disabled={deleting}
-              className="rounded-lg bg-red-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-red-700 disabled:opacity-50"
+              className="rounded-lg bg-red-600 px-4 py-2 text-base font-medium text-white transition-colors hover:bg-red-700 disabled:opacity-50"
             >
               {deleting ? 'Deleting...' : 'Delete'}
             </button>

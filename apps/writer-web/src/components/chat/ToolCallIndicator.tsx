@@ -66,11 +66,11 @@ export function ToolCallIndicator({ toolName, state, input }: ToolCallIndicatorP
   const detail = extractDetail(toolName, input)
 
   return (
-    <div className="flex items-center gap-2 rounded-lg border border-[#e5e7eb] bg-[#fafafa] px-3 py-2 text-xs text-[#6b7280] dark:border-[#374151] dark:bg-[#1a1a1a]">
+    <div className="flex items-center gap-2 rounded-lg border border-[#e5e7eb] bg-[#fafafa] px-3 py-2 text-sm text-[#6b7280] dark:border-[#374151] dark:bg-[#1a1a1a]">
       {isActive ? (
-        <Loader size={14} />
+        <Loader size={16} />
       ) : (
-        <Icon size={14} className="text-[#d97706]" />
+        <Icon size={16} className="text-[#d97706]" />
       )}
       <span>
         {label}
@@ -79,7 +79,7 @@ export function ToolCallIndicator({ toolName, state, input }: ToolCallIndicatorP
         )}
       </span>
       {!isActive && (
-        <span className="ml-auto text-[10px] text-[#d97706]">done</span>
+        <span className="ml-auto text-xs text-[#d97706]">done</span>
       )}
     </div>
   )
