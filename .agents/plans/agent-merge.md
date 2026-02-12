@@ -512,6 +512,89 @@ Net: 2 secrets deleted, 1 new secret, 2 moved.
 
 ---
 
+## Review Notes (gaps and corrections)
+
+### 1. Local dev persistence (`--persist-to`)
+
+All services use `--persist-to ../../.wrangler/shared-state` in their dev scripts so they share the same D1/KV/R2 state locally. Writer-agent has this in its `package.json`. Web uses `vite dev` (not `wrangler dev` directly), so persistence is configured through the cloudflare vite plugin.
+
+The `@cloudflare/vite-plugin` supports `persistState: { path: string }` in its config. After merge, we must update `vite.config.ts`:
+
+```typescript
+cloudflare({
+  persistState: { path: '../../.wrangler/shared-state' }
+})
+```
+
+Without this, the DO's SQLite state and R2 bucket won't be shared with data-layer's D1. **Add this to Phase 2.**
+
+### 2. `WriterAgentEnv` type references in moved files
+
+14 files in writer-agent reference `WriterAgentEnv`. After moving to web, every import of `WriterAgentEnv` must be replaced with the new Env type. Specifically:
+
+- `agent/writer-agent.ts` — `AIChatAgent<WriterAgentEnv, WriterAgentState>` becomes `AIChatAgent<Env, WriterAgentState>`
+- `routes/drafts.ts`, `routes/chat.ts`, `routes/publish.ts`, `routes/images.ts` — all use `getAgentByName<WriterAgentEnv, WriterAgent>(c.env.WRITER_AGENT, ...)` which becomes `getAgentByName<Env, WriterAgent>(...)`
+- `middleware/error-handler.ts`, `middleware/api-key-auth.ts` — error handler uses the type
+
+The plan mentions this conceptually (Phase 3 says "Replace `WriterAgentEnv` type with `AppEnv`") but **Phase 1 should explicitly note**: all files moved in Phase 1 will have broken imports until Phase 2 updates the types. This is fine as long as we don't try to build between phases.
+
+### 3. `/internal/*` in `run_worker_first`
+
+Phase 5c correctly notes that `/internal/*` needs to be added to `run_worker_first` in wrangler.jsonc. But Phase 2b (where we modify wrangler.jsonc) doesn't mention it. **Add `/internal/*` to the `run_worker_first` array change in Phase 2b.** This avoids the static asset pipeline intercepting internal routes.
+
+Updated `run_worker_first`:
+```jsonc
+"run_worker_first": ["/api/*", "/agents/*", "/health", "/internal/*"]
+```
+
+### 4. Error handler middleware integration
+
+Phase 1 lists `middleware/error-handler.ts` as a file to copy, but Phase 4 (server.ts rewrite) doesn't show where it's mounted. The error handler should be registered as Hono `onError` middleware:
+
+```typescript
+app.onError(errorHandler)
+```
+
+**Add this to the Phase 4 server.ts structure.**
+
+### 5. `getAgentByName` type parameter after merge
+
+All DO-interacting routes (drafts, chat, publish, images) call:
+```typescript
+getAgentByName<WriterAgentEnv, WriterAgent>(c.env.WRITER_AGENT, sessionId)
+```
+
+After merge, the first type parameter should be the web's `Env` type:
+```typescript
+getAgentByName<Env, WriterAgent>(c.env.WRITER_AGENT, sessionId)
+```
+
+This is already implied by the `WriterAgentEnv` → `AppEnv` change in Phase 3, just calling it out explicitly.
+
+### 6. Writer-agent custom domain (`agent.hotmetalapp.com`)
+
+Writer-agent has a `routes` entry for `agent.hotmetalapp.com`. After merge, this custom domain is no longer needed. **Phase 8 should include deleting this custom domain** (via Cloudflare dashboard or `wrangler delete`). Not blocking for implementation, but worth noting.
+
+### 7. Compatibility date
+
+Writer-agent uses `"compatibility_date": "2026-02-05"`, web uses `"2025-12-17"`. After merge, we should update web's compatibility date to `2026-02-05` (the newer one). **Add to Phase 2b.**
+
+### 8. `@hotmetal/shared` already in web
+
+Phase 2c lists `@hotmetal/shared` as a new dependency to add. Checking web's package.json — it's NOT listed (web only has `@hotmetal/data-layer`). The plan is correct: `@hotmetal/shared` and `@hotmetal/content-core` need to be added.
+
+However, `@ai-sdk/anthropic` also needs to be added. Web has `@ai-sdk/react` but NOT `@ai-sdk/anthropic`. Plan correctly lists this. Good.
+
+### 9. Scout trigger — keep HTTP or convert to service binding?
+
+The plan keeps the scout trigger as an HTTP proxy (`CONTENT_SCOUT_URL` + `SCOUT_API_KEY`). This is fine for now. Converting web→content-scout to a service binding would be a nice optimization but is orthogonal to this merge. No change needed.
+
+### 10. Postman collections
+
+Phase 8 doesn't mention updating Postman collections. The Writer Agent collection currently points to `localhost:8789` (writer-agent port). After merge, all these endpoints are at `localhost:5173` (web port). **Add to Phase 8**: update Postman collection base URL and remove the writer-agent-specific auth headers (replace with Clerk token or internal key as appropriate).
+
+---
+
 ## Verification
 
 1. `pnpm install` succeeds
