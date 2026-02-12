@@ -33,8 +33,8 @@ app.get('/health', (c) => c.json({ status: 'ok', service: 'writer-web' }))
 
 // ─── Auth: Clerk JWT + user sync on all protected routes ────────────
 
-app.use('/api/*', clerkAuth, ensureUser)
-app.use('/agents/*', clerkAuth)
+app.use('/api/*', ...clerkAuth, ensureUser)
+app.use('/agents/*', ...clerkAuth)
 
 // ─── DAL direct reads ───────────────────────────────────────────────
 

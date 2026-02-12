@@ -27,7 +27,6 @@
     "CONTENT_SCOUT_URL": "https://scout.hotmetalapp.com",
     "ALEXANDER_API_URL": "https://alexanderai.farfarawaylabs.com",
     "CLERK_PUBLISHABLE_KEY": "pk_test_dHJ1c3RlZC13aGFsZS05Ni5jbGVyay5hY2NvdW50cy5kZXYk",
-    "CLERK_ISSUER": "https://trusted-whale-96.clerk.accounts.dev",
   },
 
   // SPA fallback — serve index.html for unmatched routes (client-side routing)
@@ -39,6 +38,7 @@
   },
 
   // Secrets (set via `wrangler secret put`):
+  // CLERK_SECRET_KEY  — Clerk backend API key (required by @hono/clerk-auth)
   // WRITER_API_KEY    — authenticates requests to writer-agent
   // SCOUT_API_KEY     — authenticates requests to content-scout (must match API_KEY on scout)
   // ALEXANDER_API_KEY — authenticates requests to Alexander API
