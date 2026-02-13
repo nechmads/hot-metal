@@ -256,6 +256,11 @@ export async function fetchNewIdeasCount(): Promise<number> {
   return result.count
 }
 
+export async function fetchRecentIdeas(limit = 8): Promise<Idea[]> {
+  const result = await request<{ data: Idea[] }>(`/api/ideas/recent?limit=${limit}`)
+  return result.data
+}
+
 export async function fetchIdeas(pubId: string, status?: IdeaStatus): Promise<Idea[]> {
   const params = status ? `?status=${status}` : ''
   const result = await request<{ data: Idea[] }>(`/api/publications/${pubId}/ideas${params}`)

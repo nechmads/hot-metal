@@ -183,6 +183,20 @@ export async function countIdeasByStatus(db: D1Database, status: IdeaStatus): Pr
 	return row?.cnt ?? 0
 }
 
+export async function listRecentIdeasForUser(
+	db: D1Database,
+	publicationIds: string[],
+	limit: number = 8
+): Promise<Idea[]> {
+	if (publicationIds.length === 0) return []
+	const placeholders = publicationIds.map(() => '?').join(', ')
+	const result = await db
+		.prepare(`SELECT * FROM ideas WHERE publication_id IN (${placeholders}) ORDER BY created_at DESC LIMIT ?`)
+		.bind(...publicationIds, limit)
+		.all<IdeaRow>()
+	return (result.results ?? []).map(mapRow)
+}
+
 export async function getRecentIdeasByPublication(
 	db: D1Database,
 	publicationId: string,

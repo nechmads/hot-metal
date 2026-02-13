@@ -104,6 +104,7 @@ export interface DataLayerApi {
 	countIdeasByPublication(pubId: string): Promise<number>
 	countIdeasByStatus(status: IdeaStatus): Promise<number>
 	getRecentIdeasByPublication(pubId: string, sinceDays?: number): Promise<Idea[]>
+	listRecentIdeasForUser(publicationIds: string[], limit?: number): Promise<Idea[]>
 
 	// Activity
 	getRecentActivity(cutoffDays?: number, userId?: string): Promise<ActivityEntry[]>
@@ -198,6 +199,7 @@ export class DataLayer extends WorkerEntrypoint<Env> {
 	countIdeasByPublication(pubId: string) { return ideas.countIdeasByPublication(this.env.DB, pubId) }
 	countIdeasByStatus(status: IdeaStatus) { return ideas.countIdeasByStatus(this.env.DB, status) }
 	getRecentIdeasByPublication(pubId: string, sinceDays?: number) { return ideas.getRecentIdeasByPublication(this.env.DB, pubId, sinceDays) }
+	listRecentIdeasForUser(publicationIds: string[], limit?: number) { return ideas.listRecentIdeasForUser(this.env.DB, publicationIds, limit) }
 
 	// ─── Activity ──────────────────────────────────────────────────────
 	getRecentActivity(cutoffDays?: number, userId?: string) { return activity.getRecentActivity(this.env.DB, cutoffDays, userId) }

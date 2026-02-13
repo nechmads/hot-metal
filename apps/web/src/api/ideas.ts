@@ -17,6 +17,19 @@ ideas.get('/ideas/new-count', async (c) => {
   return c.json({ count: total })
 })
 
+/** Return the most recent ideas across all of the user's publications. */
+ideas.get('/ideas/recent', async (c) => {
+  const userId = c.get('userId')
+  const publications = await c.env.DAL.listPublicationsByUser(userId)
+  const pubIds = publications.map((p) => p.id)
+
+  const raw = parseInt(c.req.query('limit') ?? '8', 10)
+  const limit = Math.min(Math.max(raw > 0 ? raw : 8, 1), 50)
+  const data = await c.env.DAL.listRecentIdeasForUser(pubIds, limit)
+
+  return c.json({ data })
+})
+
 /** Get a single idea by ID (verifies ownership via publication). */
 ideas.get('/ideas/:id', async (c) => {
   const idea = await c.env.DAL.getIdeaById(c.req.param('id'))
