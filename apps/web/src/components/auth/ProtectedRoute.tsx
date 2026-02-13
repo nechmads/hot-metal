@@ -6,8 +6,8 @@
  * - Signed out: redirects to the sign-in page
  */
 
-import { SignedIn, SignedOut, RedirectToSignIn, useAuth } from '@clerk/clerk-react'
-import { useEffect, useState, type ReactNode } from 'react'
+import { SignedIn, SignedOut, RedirectToSignIn, useAuth, useClerk } from '@clerk/clerk-react'
+import { useCallback, useEffect, useState, type ReactNode } from 'react'
 import { setTokenProvider } from '@/lib/api'
 
 function TokenSync({ children }: { children: ReactNode }) {
@@ -33,10 +33,40 @@ function TokenSync({ children }: { children: ReactNode }) {
   return <>{children}</>
 }
 
+/**
+ * Checks that the Clerk session is still valid when the browser tab
+ * regains focus. If the user has been disabled or signed out elsewhere,
+ * this signs them out locally so they don't stay on an authenticated page.
+ */
+function SessionGuard() {
+  const { getToken } = useAuth()
+  const { signOut } = useClerk()
+
+  const checkSession = useCallback(async () => {
+    try {
+      const token = await getToken()
+      if (!token) await signOut()
+    } catch {
+      await signOut()
+    }
+  }, [getToken, signOut])
+
+  useEffect(() => {
+    const onVisibilityChange = () => {
+      if (document.visibilityState === 'visible') checkSession()
+    }
+    document.addEventListener('visibilitychange', onVisibilityChange)
+    return () => document.removeEventListener('visibilitychange', onVisibilityChange)
+  }, [checkSession])
+
+  return null
+}
+
 export function ProtectedRoute({ children }: { children: ReactNode }) {
   return (
     <>
       <SignedIn>
+        <SessionGuard />
         <TokenSync>{children}</TokenSync>
       </SignedIn>
       <SignedOut>

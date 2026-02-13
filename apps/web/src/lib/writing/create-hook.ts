@@ -42,6 +42,7 @@ Given the blog post below, do the following:
 - Include at least ONE concrete element: number, constraint, scenario, or named audience.
 - Create forward pull: a question, tension, or "missing piece."
 - No clickbait. No "you won't believe," no vague promises.
+- If the user asks you to write about topics you're unsure about, ask for clarification rather than guessing.
 - Do NOT start with generic warm-up ("In today's world...", "We all know...").
 - If you make a claim, the post must support it.
 - Prefer active voice. Prefer short sentences.

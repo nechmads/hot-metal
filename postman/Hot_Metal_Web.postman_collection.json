@@ -1,7 +1,7 @@
 {
 	"info": {
-		"name": "Hot Metal — Writer Agent",
-		"description": "# Hot Metal Writer Agent Service\n\nThe Writer Agent is an AI-powered writing assistant built on Cloudflare Workers with the Agents SDK. It provides a conversational interface for drafting, revising, and publishing blog posts, along with a full blog automation pipeline (publications, topics, content scouting, and idea management).\n\n## Architecture\n\n- **REST API (Hono)** — Session, draft, publication, topic, idea, and activity management\n- **WebSocket (Agents SDK)** — Real-time AI conversation via Durable Objects\n\nEach writing session is backed by its own Durable Object instance with embedded SQLite for drafts and conversation history. Cross-session metadata (listing, search) lives in D1.\n\n## Authentication\n\nAll `/api/*` endpoints require an `X-API-Key` header.\n\nThe health endpoint and WebSocket connections are unauthenticated.\n\n## Endpoints Overview\n\n### Sessions\n| Method | Path | Auth | Description |\n|--------|------|------|-------------|\n| POST | `/api/sessions` | API Key | Create a new writing session |\n| GET | `/api/sessions` | API Key | List sessions (filterable) |\n| GET | `/api/sessions/:id` | API Key | Get session details |\n| PATCH | `/api/sessions/:id` | API Key | Update session title or status |\n\n### Drafts\n| Method | Path | Auth | Description |\n|--------|------|------|-------------|\n| GET | `/api/sessions/:id/drafts` | API Key | List all draft versions |\n| GET | `/api/sessions/:id/drafts/:version` | API Key | Get a specific draft |\n\n### Chat\n| Method | Path | Auth | Description |\n|--------|------|------|-------------|\n| POST | `/api/sessions/:id/chat` | API Key | Send message, get full AI response (non-streaming) |\n\n### Publications\n| Method | Path | Auth | Description |\n|--------|------|------|-------------|\n| POST | `/api/publications` | API Key | Create a new publication |\n| GET | `/api/publications` | API Key | List publications (optionally filtered by userId) |\n| GET | `/api/publications/:id` | API Key | Get publication with its topics |\n| PATCH | `/api/publications/:id` | API Key | Update publication settings |\n| DELETE | `/api/publications/:id` | API Key | Delete a publication |\n\n### Topics\n| Method | Path | Auth | Description |\n|--------|------|------|-------------|\n| POST | `/api/publications/:pubId/topics` | API Key | Create a topic for a publication |\n| GET | `/api/publications/:pubId/topics` | API Key | List topics for a publication |\n| PATCH | `/api/topics/:id` | API Key | Update a topic |\n| DELETE | `/api/topics/:id` | API Key | Delete a topic |\n\n### Ideas\n| Method | Path | Auth | Description |\n|--------|------|------|-------------|\n| GET | `/api/publications/:pubId/ideas` | API Key | List ideas for a publication |\n| GET | `/api/ideas/:id` | API Key | Get idea detail |\n| PATCH | `/api/ideas/:id` | API Key | Update idea status |\n| POST | `/api/ideas/:id/promote` | API Key | Promote idea to a writing session |\n\n### Scout\n| Method | Path | Auth | Description |\n|--------|------|------|-------------|\n| POST | `/api/publications/:id/scout` | API Key | Trigger content scout for a publication |\n\n### Activity\n| Method | Path | Auth | Description |\n|--------|------|------|-------------|\n| GET | `/api/activity` | API Key | Get recent session activity |\n\n### WebSocket\n| URL | Description |\n|-----|-------------|\n| `ws://host/agents/writer-agent/:sessionId` | Connect to a writing session |\n\n### Health\n| Method | Path | Auth | Description |\n|--------|------|------|-------------|\n| GET | `/health` | None | Service health check |\n\n## Environment Variables\n\nThis collection uses variables from the Postman environment:\n- `WRITER_BASE_URL` — Base URL of the writer agent (e.g. `http://localhost:8789`)\n- `WRITER_API_KEY` — API key for authentication\n\nSelect the **Hot Metal — Local Development** environment before sending requests.",
+		"name": "Hot Metal — Web",
+		"description": "# Hot Metal Web API\n\nThe Web service hosts the React SPA, all API routes, and the WriterAgent Durable Object. It provides a conversational AI writing interface, blog automation pipeline (publications, topics, content scouting, ideas), and CMS publishing.\n\n## Architecture\n\n- **REST API (Hono)** — Session, draft, publication, topic, idea, style, and activity management\n- **WebSocket (Agents SDK)** — Real-time AI conversation via Durable Objects\n- **Internal API** — Service-to-service routes for content-scout auto-write\n\nEach writing session is backed by its own Durable Object instance with embedded SQLite for drafts and conversation history.\n\n## Authentication\n\nAll `/api/*` endpoints require a Clerk JWT token via `Authorization: Bearer <token>` header.\n\nThe health endpoint is unauthenticated. WebSocket connections pass the token via query parameter.\n\n## Endpoints Overview\n\n### Sessions\n| Method | Path | Auth | Description |\n|--------|------|------|-------------|\n| POST | `/api/sessions` | JWT | Create a new writing session |\n| GET | `/api/sessions` | JWT | List sessions (filterable) |\n| GET | `/api/sessions/:id` | JWT | Get session details |\n| PATCH | `/api/sessions/:id` | JWT | Update session title or status |\n\n### Drafts\n| Method | Path | Auth | Description |\n|--------|------|------|-------------|\n| GET | `/api/sessions/:id/drafts` | JWT | List all draft versions |\n| GET | `/api/sessions/:id/drafts/:version` | JWT | Get a specific draft |\n\n### Chat\n| Method | Path | Auth | Description |\n|--------|------|------|-------------|\n| POST | `/api/sessions/:id/chat` | JWT | Send message, get full AI response (non-streaming) |\n\n### Publications\n| Method | Path | Auth | Description |\n|--------|------|------|-------------|\n| POST | `/api/publications` | JWT | Create a new publication |\n| GET | `/api/publications` | JWT | List publications (optionally filtered by userId) |\n| GET | `/api/publications/:id` | JWT | Get publication with its topics |\n| PATCH | `/api/publications/:id` | JWT | Update publication settings |\n| DELETE | `/api/publications/:id` | JWT | Delete a publication |\n\n### Topics\n| Method | Path | Auth | Description |\n|--------|------|------|-------------|\n| POST | `/api/publications/:pubId/topics` | JWT | Create a topic for a publication |\n| GET | `/api/publications/:pubId/topics` | JWT | List topics for a publication |\n| PATCH | `/api/topics/:id` | JWT | Update a topic |\n| DELETE | `/api/topics/:id` | JWT | Delete a topic |\n\n### Ideas\n| Method | Path | Auth | Description |\n|--------|------|------|-------------|\n| GET | `/api/publications/:pubId/ideas` | JWT | List ideas for a publication |\n| GET | `/api/ideas/:id` | JWT | Get idea detail |\n| PATCH | `/api/ideas/:id` | JWT | Update idea status |\n| POST | `/api/ideas/:id/promote` | JWT | Promote idea to a writing session |\n\n### Scout\n| Method | Path | Auth | Description |\n|--------|------|------|-------------|\n| POST | `/api/publications/:id/scout` | JWT | Trigger content scout for a publication |\n\n### Activity\n| Method | Path | Auth | Description |\n|--------|------|------|-------------|\n| GET | `/api/activity` | JWT | Get recent session activity |\n\n### WebSocket\n| URL | Description |\n|-----|-------------|\n| `ws://host/agents/writer-agent/:sessionId` | Connect to a writing session |\n\n### Health\n| Method | Path | Auth | Description |\n|--------|------|------|-------------|\n| GET | `/health` | None | Service health check |\n\n## Environment Variables\n\nThis collection uses variables from the Postman environment:\n- `WEB_BASE_URL` — Base URL of the web service (e.g. `http://localhost:5173`)\n- `CLERK_JWT_TOKEN` — Clerk JWT token for authentication\n\nSelect the **Hot Metal — Local Development** environment before sending requests.",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
 	},
 	"variable": [
@@ -37,13 +37,13 @@
 			"item": [
 				{
 					"name": "Health Check",
-					"description": "Returns the service status. Use this to verify the writer agent worker is running.\n\n### Response\n\n```json\n{\n  \"status\": \"ok\",\n  \"service\": \"hotmetal-writer-agent\"\n}\n```\n\nNo authentication required.",
+					"description": "Returns the service status. Use this to verify the web service worker is running.\n\n### Response\n\n```json\n{\n  \"status\": \"ok\",\n  \"service\": \"hotmetal-web\"\n}\n```\n\nNo authentication required.",
 					"request": {
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "{{WRITER_BASE_URL}}/health",
-							"host": ["{{WRITER_BASE_URL}}"],
+							"raw": "{{WEB_BASE_URL}}/health",
+							"host": ["{{WEB_BASE_URL}}"],
 							"path": ["health"]
 						}
 					},
@@ -55,7 +55,7 @@
 							"header": [
 								{ "key": "Content-Type", "value": "application/json" }
 							],
-							"body": "{\n  \"status\": \"ok\",\n  \"service\": \"hotmetal-writer-agent\"\n}"
+							"body": "{\n  \"status\": \"ok\",\n  \"service\": \"hotmetal-web\"\n}"
 						}
 					]
 				}
@@ -63,7 +63,7 @@
 		},
 		{
 			"name": "Sessions",
-			"description": "Manage writing sessions. Each session represents a single blog post writing effort.\n\nA session maps 1:1 to a Durable Object instance. Session metadata is stored in D1 for listing, while the actual conversation, drafts, and research notes live inside the Durable Object's embedded SQLite.\n\n### Session Object\n\n| Field | Type | Description |\n|-------|------|-------------|\n| `id` | string | UUID, also used as the Durable Object name |\n| `userId` | string | ID of the user who created the session |\n| `title` | string \\| null | Working title (set during conversation or via PATCH) |\n| `status` | string | Session status: `active`, `completed`, or `archived` |\n| `currentDraftVersion` | number | Latest draft version number (0 = no drafts yet) |\n| `cmsPostId` | string \\| null | CMS post ID once published |\n| `createdAt` | number | Unix timestamp (seconds) |\n| `updatedAt` | number | Unix timestamp (seconds) |\n\nAll endpoints require `X-API-Key` authentication.",
+			"description": "Manage writing sessions. Each session represents a single blog post writing effort.\n\nA session maps 1:1 to a Durable Object instance. Session metadata is stored in D1 for listing, while the actual conversation, drafts, and research notes live inside the Durable Object's embedded SQLite.\n\n### Session Object\n\n| Field | Type | Description |\n|-------|------|-------------|\n| `id` | string | UUID, also used as the Durable Object name |\n| `userId` | string | ID of the user who created the session |\n| `title` | string \\| null | Working title (set during conversation or via PATCH) |\n| `status` | string | Session status: `active`, `completed`, or `archived` |\n| `currentDraftVersion` | number | Latest draft version number (0 = no drafts yet) |\n| `cmsPostId` | string \\| null | CMS post ID once published |\n| `createdAt` | number | Unix timestamp (seconds) |\n| `updatedAt` | number | Unix timestamp (seconds) |\n\nAll endpoints require `Authorization` authentication.",
 			"item": [
 				{
 					"name": "Create Session",
@@ -86,7 +86,7 @@
 					"request": {
 						"method": "POST",
 						"header": [
-							{ "key": "X-API-Key", "value": "{{WRITER_API_KEY}}" },
+							{ "key": "Authorization", "value": "Bearer {{CLERK_JWT_TOKEN}}" },
 							{ "key": "Content-Type", "value": "application/json" }
 						],
 						"body": {
@@ -94,8 +94,8 @@
 							"raw": "{\n  \"userId\": \"shahar\"\n}"
 						},
 						"url": {
-							"raw": "{{WRITER_BASE_URL}}/api/sessions",
-							"host": ["{{WRITER_BASE_URL}}"],
+							"raw": "{{WEB_BASE_URL}}/api/sessions",
+							"host": ["{{WEB_BASE_URL}}"],
 							"path": ["api", "sessions"]
 						}
 					},
@@ -135,11 +135,11 @@
 					"request": {
 						"method": "GET",
 						"header": [
-							{ "key": "X-API-Key", "value": "{{WRITER_API_KEY}}" }
+							{ "key": "Authorization", "value": "Bearer {{CLERK_JWT_TOKEN}}" }
 						],
 						"url": {
-							"raw": "{{WRITER_BASE_URL}}/api/sessions?userId=shahar&status=active",
-							"host": ["{{WRITER_BASE_URL}}"],
+							"raw": "{{WEB_BASE_URL}}/api/sessions?userId=shahar&status=active",
+							"host": ["{{WEB_BASE_URL}}"],
 							"path": ["api", "sessions"],
 							"query": [
 								{
@@ -192,11 +192,11 @@
 					"request": {
 						"method": "GET",
 						"header": [
-							{ "key": "X-API-Key", "value": "{{WRITER_API_KEY}}" }
+							{ "key": "Authorization", "value": "Bearer {{CLERK_JWT_TOKEN}}" }
 						],
 						"url": {
-							"raw": "{{WRITER_BASE_URL}}/api/sessions",
-							"host": ["{{WRITER_BASE_URL}}"],
+							"raw": "{{WEB_BASE_URL}}/api/sessions",
+							"host": ["{{WEB_BASE_URL}}"],
 							"path": ["api", "sessions"]
 						}
 					},
@@ -218,11 +218,11 @@
 					"request": {
 						"method": "GET",
 						"header": [
-							{ "key": "X-API-Key", "value": "{{WRITER_API_KEY}}" }
+							{ "key": "Authorization", "value": "Bearer {{CLERK_JWT_TOKEN}}" }
 						],
 						"url": {
-							"raw": "{{WRITER_BASE_URL}}/api/sessions/{{sessionId}}",
-							"host": ["{{WRITER_BASE_URL}}"],
+							"raw": "{{WEB_BASE_URL}}/api/sessions/{{sessionId}}",
+							"host": ["{{WEB_BASE_URL}}"],
 							"path": ["api", "sessions", "{{sessionId}}"]
 						}
 					},
@@ -253,7 +253,7 @@
 					"request": {
 						"method": "PATCH",
 						"header": [
-							{ "key": "X-API-Key", "value": "{{WRITER_API_KEY}}" },
+							{ "key": "Authorization", "value": "Bearer {{CLERK_JWT_TOKEN}}" },
 							{ "key": "Content-Type", "value": "application/json" }
 						],
 						"body": {
@@ -261,8 +261,8 @@
 							"raw": "{\n  \"title\": \"Why Edge Functions Matter\"\n}"
 						},
 						"url": {
-							"raw": "{{WRITER_BASE_URL}}/api/sessions/{{sessionId}}",
-							"host": ["{{WRITER_BASE_URL}}"],
+							"raw": "{{WEB_BASE_URL}}/api/sessions/{{sessionId}}",
+							"host": ["{{WEB_BASE_URL}}"],
 							"path": ["api", "sessions", "{{sessionId}}"]
 						}
 					},
@@ -293,7 +293,7 @@
 					"request": {
 						"method": "PATCH",
 						"header": [
-							{ "key": "X-API-Key", "value": "{{WRITER_API_KEY}}" },
+							{ "key": "Authorization", "value": "Bearer {{CLERK_JWT_TOKEN}}" },
 							{ "key": "Content-Type", "value": "application/json" }
 						],
 						"body": {
@@ -301,8 +301,8 @@
 							"raw": "{\n  \"status\": \"completed\"\n}"
 						},
 						"url": {
-							"raw": "{{WRITER_BASE_URL}}/api/sessions/{{sessionId}}",
-							"host": ["{{WRITER_BASE_URL}}"],
+							"raw": "{{WEB_BASE_URL}}/api/sessions/{{sessionId}}",
+							"host": ["{{WEB_BASE_URL}}"],
 							"path": ["api", "sessions", "{{sessionId}}"]
 						}
 					},
@@ -333,7 +333,7 @@
 					"request": {
 						"method": "PATCH",
 						"header": [
-							{ "key": "X-API-Key", "value": "{{WRITER_API_KEY}}" },
+							{ "key": "Authorization", "value": "Bearer {{CLERK_JWT_TOKEN}}" },
 							{ "key": "Content-Type", "value": "application/json" }
 						],
 						"body": {
@@ -341,8 +341,8 @@
 							"raw": "{\n  \"status\": \"archived\"\n}"
 						},
 						"url": {
-							"raw": "{{WRITER_BASE_URL}}/api/sessions/{{sessionId}}",
-							"host": ["{{WRITER_BASE_URL}}"],
+							"raw": "{{WEB_BASE_URL}}/api/sessions/{{sessionId}}",
+							"host": ["{{WEB_BASE_URL}}"],
 							"path": ["api", "sessions", "{{sessionId}}"]
 						}
 					},
@@ -364,7 +364,7 @@
 					"request": {
 						"method": "PATCH",
 						"header": [
-							{ "key": "X-API-Key", "value": "{{WRITER_API_KEY}}" },
+							{ "key": "Authorization", "value": "Bearer {{CLERK_JWT_TOKEN}}" },
 							{ "key": "Content-Type", "value": "application/json" }
 						],
 						"body": {
@@ -372,8 +372,8 @@
 							"raw": "{\n  \"title\": \"Final: Why Edge Functions Matter\",\n  \"status\": \"completed\"\n}"
 						},
 						"url": {
-							"raw": "{{WRITER_BASE_URL}}/api/sessions/{{sessionId}}",
-							"host": ["{{WRITER_BASE_URL}}"],
+							"raw": "{{WEB_BASE_URL}}/api/sessions/{{sessionId}}",
+							"host": ["{{WEB_BASE_URL}}"],
 							"path": ["api", "sessions", "{{sessionId}}"]
 						}
 					},
@@ -393,7 +393,7 @@
 		},
 		{
 			"name": "Drafts",
-			"description": "Retrieve draft versions for a writing session.\n\nDrafts are stored in the agent's embedded SQLite (inside the Durable Object). These REST endpoints proxy requests to the agent DO to retrieve draft data.\n\nDrafts are created by the AI agent during conversation (via the `save_draft` tool). Each call to `save_draft` creates a new version. When published, intermediate drafts (between v1 and the final) are cleaned up.\n\n### Draft Summary Object (from list)\n\n| Field | Type | Description |\n|-------|------|-------------|\n| `id` | string | UUID of the draft |\n| `version` | number | Version number (1, 2, 3, ...) |\n| `title` | string \\| null | Draft title at this version |\n| `word_count` | number | Word count of the content |\n| `is_final` | number | 1 if this is the published version, 0 otherwise |\n| `created_at` | number | Unix timestamp (seconds) |\n\n### Full Draft Object (from get by version)\n\n| Field | Type | Description |\n|-------|------|-------------|\n| `id` | string | UUID of the draft |\n| `version` | number | Version number |\n| `title` | string \\| null | Draft title |\n| `content` | string | Full Markdown content |\n| `citations` | string \\| null | JSON array of citation objects |\n| `word_count` | number | Word count |\n| `is_final` | number | 1 if published, 0 otherwise |\n| `feedback` | string \\| null | User feedback that prompted this revision |\n| `created_at` | number | Unix timestamp (seconds) |\n\n### Citation Object (inside `citations` JSON)\n\n| Field | Type | Description |\n|-------|------|-------------|\n| `url` | string | Source URL |\n| `title` | string | Source title |\n| `publisher` | string \\| undefined | Publisher name |\n| `excerpt` | string \\| undefined | Relevant excerpt |\n\nAll endpoints require `X-API-Key` authentication.",
+			"description": "Retrieve draft versions for a writing session.\n\nDrafts are stored in the agent's embedded SQLite (inside the Durable Object). These REST endpoints proxy requests to the agent DO to retrieve draft data.\n\nDrafts are created by the AI agent during conversation (via the `save_draft` tool). Each call to `save_draft` creates a new version. When published, intermediate drafts (between v1 and the final) are cleaned up.\n\n### Draft Summary Object (from list)\n\n| Field | Type | Description |\n|-------|------|-------------|\n| `id` | string | UUID of the draft |\n| `version` | number | Version number (1, 2, 3, ...) |\n| `title` | string \\| null | Draft title at this version |\n| `word_count` | number | Word count of the content |\n| `is_final` | number | 1 if this is the published version, 0 otherwise |\n| `created_at` | number | Unix timestamp (seconds) |\n\n### Full Draft Object (from get by version)\n\n| Field | Type | Description |\n|-------|------|-------------|\n| `id` | string | UUID of the draft |\n| `version` | number | Version number |\n| `title` | string \\| null | Draft title |\n| `content` | string | Full Markdown content |\n| `citations` | string \\| null | JSON array of citation objects |\n| `word_count` | number | Word count |\n| `is_final` | number | 1 if published, 0 otherwise |\n| `feedback` | string \\| null | User feedback that prompted this revision |\n| `created_at` | number | Unix timestamp (seconds) |\n\n### Citation Object (inside `citations` JSON)\n\n| Field | Type | Description |\n|-------|------|-------------|\n| `url` | string | Source URL |\n| `title` | string | Source title |\n| `publisher` | string \\| undefined | Publisher name |\n| `excerpt` | string \\| undefined | Relevant excerpt |\n\nAll endpoints require `Authorization` authentication.",
 			"item": [
 				{
 					"name": "List Drafts for Session",
@@ -401,11 +401,11 @@
 					"request": {
 						"method": "GET",
 						"header": [
-							{ "key": "X-API-Key", "value": "{{WRITER_API_KEY}}" }
+							{ "key": "Authorization", "value": "Bearer {{CLERK_JWT_TOKEN}}" }
 						],
 						"url": {
-							"raw": "{{WRITER_BASE_URL}}/api/sessions/{{sessionId}}/drafts",
-							"host": ["{{WRITER_BASE_URL}}"],
+							"raw": "{{WEB_BASE_URL}}/api/sessions/{{sessionId}}/drafts",
+							"host": ["{{WEB_BASE_URL}}"],
 							"path": ["api", "sessions", "{{sessionId}}", "drafts"]
 						}
 					},
@@ -436,11 +436,11 @@
 					"request": {
 						"method": "GET",
 						"header": [
-							{ "key": "X-API-Key", "value": "{{WRITER_API_KEY}}" }
+							{ "key": "Authorization", "value": "Bearer {{CLERK_JWT_TOKEN}}" }
 						],
 						"url": {
-							"raw": "{{WRITER_BASE_URL}}/api/sessions/{{sessionId}}/drafts/1",
-							"host": ["{{WRITER_BASE_URL}}"],
+							"raw": "{{WEB_BASE_URL}}/api/sessions/{{sessionId}}/drafts/1",
+							"host": ["{{WEB_BASE_URL}}"],
 							"path": ["api", "sessions", "{{sessionId}}", "drafts", "1"]
 						}
 					},
@@ -480,11 +480,11 @@
 					"request": {
 						"method": "GET",
 						"header": [
-							{ "key": "X-API-Key", "value": "{{WRITER_API_KEY}}" }
+							{ "key": "Authorization", "value": "Bearer {{CLERK_JWT_TOKEN}}" }
 						],
 						"url": {
-							"raw": "{{WRITER_BASE_URL}}/api/sessions/{{sessionId}}/drafts/3",
-							"host": ["{{WRITER_BASE_URL}}"],
+							"raw": "{{WEB_BASE_URL}}/api/sessions/{{sessionId}}/drafts/3",
+							"host": ["{{WEB_BASE_URL}}"],
 							"path": ["api", "sessions", "{{sessionId}}", "drafts", "3"]
 						}
 					},
@@ -504,7 +504,7 @@
 		},
 		{
 			"name": "Chat",
-			"description": "Non-streaming chat endpoint. Send a message and get the full AI response as JSON — no WebSocket client needed.\n\nUses `generateText` instead of `streamText` under the hood. Same tools, same system prompt, same state transitions as the WebSocket conversation.\n\nUseful for:\n- Testing with curl/Postman\n- Programmatic integration from other services\n- Non-streaming channels (SMS, WhatsApp, email)\n\nAll endpoints require `X-API-Key` authentication.",
+			"description": "Non-streaming chat endpoint. Send a message and get the full AI response as JSON — no WebSocket client needed.\n\nUses `generateText` instead of `streamText` under the hood. Same tools, same system prompt, same state transitions as the WebSocket conversation.\n\nUseful for:\n- Testing with curl/Postman\n- Programmatic integration from other services\n- Non-streaming channels (SMS, WhatsApp, email)\n\nAll endpoints require `Authorization` authentication.",
 			"item": [
 				{
 					"name": "Send Chat Message",
@@ -512,7 +512,7 @@
 					"request": {
 						"method": "POST",
 						"header": [
-							{ "key": "X-API-Key", "value": "{{WRITER_API_KEY}}" },
+							{ "key": "Authorization", "value": "Bearer {{CLERK_JWT_TOKEN}}" },
 							{ "key": "Content-Type", "value": "application/json" }
 						],
 						"body": {
@@ -520,8 +520,8 @@
 							"raw": "{\n  \"message\": \"I want to write a blog post about AI replacing jobs\"\n}"
 						},
 						"url": {
-							"raw": "{{WRITER_BASE_URL}}/api/sessions/{{sessionId}}/chat",
-							"host": ["{{WRITER_BASE_URL}}"],
+							"raw": "{{WEB_BASE_URL}}/api/sessions/{{sessionId}}/chat",
+							"host": ["{{WEB_BASE_URL}}"],
 							"path": ["api", "sessions", "{{sessionId}}", "chat"]
 						}
 					},
@@ -561,7 +561,7 @@
 					"request": {
 						"method": "POST",
 						"header": [
-							{ "key": "X-API-Key", "value": "{{WRITER_API_KEY}}" },
+							{ "key": "Authorization", "value": "Bearer {{CLERK_JWT_TOKEN}}" },
 							{ "key": "Content-Type", "value": "application/json" }
 						],
 						"body": {
@@ -569,8 +569,8 @@
 							"raw": "{\n  \"message\": \"Target audience is tech professionals. I want a balanced take with real examples.\"\n}"
 						},
 						"url": {
-							"raw": "{{WRITER_BASE_URL}}/api/sessions/{{sessionId}}/chat",
-							"host": ["{{WRITER_BASE_URL}}"],
+							"raw": "{{WEB_BASE_URL}}/api/sessions/{{sessionId}}/chat",
+							"host": ["{{WEB_BASE_URL}}"],
 							"path": ["api", "sessions", "{{sessionId}}", "chat"]
 						}
 					},
@@ -590,7 +590,7 @@
 		},
 		{
 			"name": "Publications",
-			"description": "Manage publication configurations. A publication represents a blog or content outlet with its own writing tone, cadence, and topic set.\n\nPublications are the top-level organizational unit for the blog automation pipeline. Each publication can have multiple topics, and the content scout generates ideas for each publication's topics.\n\n### PublicationConfig Object\n\n| Field | Type | Description |\n|-------|------|-------------|\n| `id` | string | UUID of the publication |\n| `userId` | string | ID of the user who owns the publication |\n| `cmsPublicationId` | string \\| null | Linked CMS publication ID |\n| `name` | string | Display name of the publication |\n| `slug` | string | URL-friendly slug |\n| `description` | string \\| null | Description of the publication's focus |\n| `writingTone` | string \\| null | Tone guidance for AI-generated content |\n| `defaultAuthor` | string \\| null | Default author name for posts |\n| `autoPublishMode` | string | Publishing mode: `draft`, `review`, or `auto` |\n| `cadencePostsPerWeek` | number | Target number of posts per week |\n| `createdAt` | number | Unix timestamp (seconds) |\n| `updatedAt` | number | Unix timestamp (seconds) |\n\nAll endpoints require `X-API-Key` authentication.",
+			"description": "Manage publication configurations. A publication represents a blog or content outlet with its own writing tone, cadence, and topic set.\n\nPublications are the top-level organizational unit for the blog automation pipeline. Each publication can have multiple topics, and the content scout generates ideas for each publication's topics.\n\n### PublicationConfig Object\n\n| Field | Type | Description |\n|-------|------|-------------|\n| `id` | string | UUID of the publication |\n| `userId` | string | ID of the user who owns the publication |\n| `cmsPublicationId` | string \\| null | Linked CMS publication ID |\n| `name` | string | Display name of the publication |\n| `slug` | string | URL-friendly slug |\n| `description` | string \\| null | Description of the publication's focus |\n| `writingTone` | string \\| null | Tone guidance for AI-generated content |\n| `defaultAuthor` | string \\| null | Default author name for posts |\n| `autoPublishMode` | string | Publishing mode: `draft`, `review`, or `auto` |\n| `cadencePostsPerWeek` | number | Target number of posts per week |\n| `createdAt` | number | Unix timestamp (seconds) |\n| `updatedAt` | number | Unix timestamp (seconds) |\n\nAll endpoints require `Authorization` authentication.",
 			"item": [
 				{
 					"name": "Create Publication",
@@ -613,7 +613,7 @@
 					"request": {
 						"method": "POST",
 						"header": [
-							{ "key": "X-API-Key", "value": "{{WRITER_API_KEY}}" },
+							{ "key": "Authorization", "value": "Bearer {{CLERK_JWT_TOKEN}}" },
 							{ "key": "Content-Type", "value": "application/json" }
 						],
 						"body": {
@@ -621,8 +621,8 @@
 							"raw": "{\n  \"userId\": \"default\",\n  \"name\": \"Looking Ahead\",\n  \"slug\": \"looking-ahead\",\n  \"description\": \"A technology blog covering AI, software engineering, and developer tools.\",\n  \"writingTone\": \"Skeptical tech analyst. Conversational but data-driven.\",\n  \"defaultAuthor\": \"Shahar\",\n  \"autoPublishMode\": \"draft\",\n  \"cadencePostsPerWeek\": 3\n}"
 						},
 						"url": {
-							"raw": "{{WRITER_BASE_URL}}/api/publications",
-							"host": ["{{WRITER_BASE_URL}}"],
+							"raw": "{{WEB_BASE_URL}}/api/publications",
+							"host": ["{{WEB_BASE_URL}}"],
 							"path": ["api", "publications"]
 						}
 					},
@@ -662,11 +662,11 @@
 					"request": {
 						"method": "GET",
 						"header": [
-							{ "key": "X-API-Key", "value": "{{WRITER_API_KEY}}" }
+							{ "key": "Authorization", "value": "Bearer {{CLERK_JWT_TOKEN}}" }
 						],
 						"url": {
-							"raw": "{{WRITER_BASE_URL}}/api/publications?userId=default",
-							"host": ["{{WRITER_BASE_URL}}"],
+							"raw": "{{WEB_BASE_URL}}/api/publications?userId=default",
+							"host": ["{{WEB_BASE_URL}}"],
 							"path": ["api", "publications"],
 							"query": [
 								{
@@ -705,11 +705,11 @@
 					"request": {
 						"method": "GET",
 						"header": [
-							{ "key": "X-API-Key", "value": "{{WRITER_API_KEY}}" }
+							{ "key": "Authorization", "value": "Bearer {{CLERK_JWT_TOKEN}}" }
 						],
 						"url": {
-							"raw": "{{WRITER_BASE_URL}}/api/publications/{{publicationId}}",
-							"host": ["{{WRITER_BASE_URL}}"],
+							"raw": "{{WEB_BASE_URL}}/api/publications/{{publicationId}}",
+							"host": ["{{WEB_BASE_URL}}"],
 							"path": ["api", "publications", "{{publicationId}}"]
 						}
 					},
@@ -740,7 +740,7 @@
 					"request": {
 						"method": "PATCH",
 						"header": [
-							{ "key": "X-API-Key", "value": "{{WRITER_API_KEY}}" },
+							{ "key": "Authorization", "value": "Bearer {{CLERK_JWT_TOKEN}}" },
 							{ "key": "Content-Type", "value": "application/json" }
 						],
 						"body": {
@@ -748,8 +748,8 @@
 							"raw": "{\n  \"description\": \"Updated description for the publication.\",\n  \"cadencePostsPerWeek\": 5\n}"
 						},
 						"url": {
-							"raw": "{{WRITER_BASE_URL}}/api/publications/{{publicationId}}",
-							"host": ["{{WRITER_BASE_URL}}"],
+							"raw": "{{WEB_BASE_URL}}/api/publications/{{publicationId}}",
+							"host": ["{{WEB_BASE_URL}}"],
 							"path": ["api", "publications", "{{publicationId}}"]
 						}
 					},
@@ -780,11 +780,11 @@
 					"request": {
 						"method": "DELETE",
 						"header": [
-							{ "key": "X-API-Key", "value": "{{WRITER_API_KEY}}" }
+							{ "key": "Authorization", "value": "Bearer {{CLERK_JWT_TOKEN}}" }
 						],
 						"url": {
-							"raw": "{{WRITER_BASE_URL}}/api/publications/{{publicationId}}",
-							"host": ["{{WRITER_BASE_URL}}"],
+							"raw": "{{WEB_BASE_URL}}/api/publications/{{publicationId}}",
+							"host": ["{{WEB_BASE_URL}}"],
 							"path": ["api", "publications", "{{publicationId}}"]
 						}
 					},
@@ -813,7 +813,7 @@
 		},
 		{
 			"name": "Topics",
-			"description": "Manage topics within a publication. Topics define the content areas that the content scout will search for ideas.\n\nEach topic belongs to a publication and has a priority level that influences how frequently the scout generates ideas for it.\n\n### Topic Object\n\n| Field | Type | Description |\n|-------|------|-------------|\n| `id` | string | UUID of the topic |\n| `publicationId` | string | UUID of the parent publication |\n| `name` | string | Topic name |\n| `description` | string \\| null | Detailed description of the topic focus |\n| `priority` | number | Priority level (higher = more frequent scouting) |\n| `isActive` | boolean | Whether the topic is actively scouted |\n| `createdAt` | number | Unix timestamp (seconds) |\n| `updatedAt` | number | Unix timestamp (seconds) |\n\nAll endpoints require `X-API-Key` authentication.",
+			"description": "Manage topics within a publication. Topics define the content areas that the content scout will search for ideas.\n\nEach topic belongs to a publication and has a priority level that influences how frequently the scout generates ideas for it.\n\n### Topic Object\n\n| Field | Type | Description |\n|-------|------|-------------|\n| `id` | string | UUID of the topic |\n| `publicationId` | string | UUID of the parent publication |\n| `name` | string | Topic name |\n| `description` | string \\| null | Detailed description of the topic focus |\n| `priority` | number | Priority level (higher = more frequent scouting) |\n| `isActive` | boolean | Whether the topic is actively scouted |\n| `createdAt` | number | Unix timestamp (seconds) |\n| `updatedAt` | number | Unix timestamp (seconds) |\n\nAll endpoints require `Authorization` authentication.",
 			"item": [
 				{
 					"name": "Create Topic",
@@ -836,7 +836,7 @@
 					"request": {
 						"method": "POST",
 						"header": [
-							{ "key": "X-API-Key", "value": "{{WRITER_API_KEY}}" },
+							{ "key": "Authorization", "value": "Bearer {{CLERK_JWT_TOKEN}}" },
 							{ "key": "Content-Type", "value": "application/json" }
 						],
 						"body": {
@@ -844,8 +844,8 @@
 							"raw": "{\n  \"name\": \"AI in Software Engineering\",\n  \"description\": \"Focus on practical implications for working developers.\",\n  \"priority\": 2\n}"
 						},
 						"url": {
-							"raw": "{{WRITER_BASE_URL}}/api/publications/{{publicationId}}/topics",
-							"host": ["{{WRITER_BASE_URL}}"],
+							"raw": "{{WEB_BASE_URL}}/api/publications/{{publicationId}}/topics",
+							"host": ["{{WEB_BASE_URL}}"],
 							"path": ["api", "publications", "{{publicationId}}", "topics"]
 						}
 					},
@@ -885,11 +885,11 @@
 					"request": {
 						"method": "GET",
 						"header": [
-							{ "key": "X-API-Key", "value": "{{WRITER_API_KEY}}" }
+							{ "key": "Authorization", "value": "Bearer {{CLERK_JWT_TOKEN}}" }
 						],
 						"url": {
-							"raw": "{{WRITER_BASE_URL}}/api/publications/{{publicationId}}/topics",
-							"host": ["{{WRITER_BASE_URL}}"],
+							"raw": "{{WEB_BASE_URL}}/api/publications/{{publicationId}}/topics",
+							"host": ["{{WEB_BASE_URL}}"],
 							"path": ["api", "publications", "{{publicationId}}", "topics"]
 						}
 					},
@@ -920,7 +920,7 @@
 					"request": {
 						"method": "PATCH",
 						"header": [
-							{ "key": "X-API-Key", "value": "{{WRITER_API_KEY}}" },
+							{ "key": "Authorization", "value": "Bearer {{CLERK_JWT_TOKEN}}" },
 							{ "key": "Content-Type", "value": "application/json" }
 						],
 						"body": {
@@ -928,8 +928,8 @@
 							"raw": "{\n  \"priority\": 3,\n  \"description\": \"Updated focus on LLM-powered developer tools and their impact.\"\n}"
 						},
 						"url": {
-							"raw": "{{WRITER_BASE_URL}}/api/topics/{{topicId}}",
-							"host": ["{{WRITER_BASE_URL}}"],
+							"raw": "{{WEB_BASE_URL}}/api/topics/{{topicId}}",
+							"host": ["{{WEB_BASE_URL}}"],
 							"path": ["api", "topics", "{{topicId}}"]
 						}
 					},
@@ -960,11 +960,11 @@
 					"request": {
 						"method": "DELETE",
 						"header": [
-							{ "key": "X-API-Key", "value": "{{WRITER_API_KEY}}" }
+							{ "key": "Authorization", "value": "Bearer {{CLERK_JWT_TOKEN}}" }
 						],
 						"url": {
-							"raw": "{{WRITER_BASE_URL}}/api/topics/{{topicId}}",
-							"host": ["{{WRITER_BASE_URL}}"],
+							"raw": "{{WEB_BASE_URL}}/api/topics/{{topicId}}",
+							"host": ["{{WEB_BASE_URL}}"],
 							"path": ["api", "topics", "{{topicId}}"]
 						}
 					},
@@ -993,7 +993,7 @@
 		},
 		{
 			"name": "Ideas",
-			"description": "Manage content ideas generated by the content scout. Ideas are potential blog post topics discovered from web sources, tied to a publication's topics.\n\nIdeas flow through a lifecycle: `new` (just discovered) -> `reviewed` (seen by user) -> `promoted` (turned into a writing session) or `dismissed` (rejected).\n\n### Idea Object\n\n| Field | Type | Description |\n|-------|------|-------------|\n| `id` | string | UUID of the idea |\n| `publicationId` | string | UUID of the parent publication |\n| `topicId` | string | UUID of the topic this idea relates to |\n| `title` | string | Proposed blog post title |\n| `angle` | string | The specific angle or thesis |\n| `summary` | string | Brief summary of the proposed content |\n| `sources` | array | Array of source objects (url, title, snippet) |\n| `status` | string | Idea status: `new`, `reviewed`, `promoted`, `dismissed` |\n| `sessionId` | string \\| null | Writing session ID (set when promoted) |\n| `relevanceScore` | number | AI-assigned relevance score (0-1) |\n| `createdAt` | number | Unix timestamp (seconds) |\n| `updatedAt` | number | Unix timestamp (seconds) |\n\n### Source Object (inside `sources` array)\n\n| Field | Type | Description |\n|-------|------|-------------|\n| `url` | string | Source URL |\n| `title` | string | Source article title |\n| `snippet` | string | Relevant quote or excerpt |\n\nAll endpoints require `X-API-Key` authentication.",
+			"description": "Manage content ideas generated by the content scout. Ideas are potential blog post topics discovered from web sources, tied to a publication's topics.\n\nIdeas flow through a lifecycle: `new` (just discovered) -> `reviewed` (seen by user) -> `promoted` (turned into a writing session) or `dismissed` (rejected).\n\n### Idea Object\n\n| Field | Type | Description |\n|-------|------|-------------|\n| `id` | string | UUID of the idea |\n| `publicationId` | string | UUID of the parent publication |\n| `topicId` | string | UUID of the topic this idea relates to |\n| `title` | string | Proposed blog post title |\n| `angle` | string | The specific angle or thesis |\n| `summary` | string | Brief summary of the proposed content |\n| `sources` | array | Array of source objects (url, title, snippet) |\n| `status` | string | Idea status: `new`, `reviewed`, `promoted`, `dismissed` |\n| `sessionId` | string \\| null | Writing session ID (set when promoted) |\n| `relevanceScore` | number | AI-assigned relevance score (0-1) |\n| `createdAt` | number | Unix timestamp (seconds) |\n| `updatedAt` | number | Unix timestamp (seconds) |\n\n### Source Object (inside `sources` array)\n\n| Field | Type | Description |\n|-------|------|-------------|\n| `url` | string | Source URL |\n| `title` | string | Source article title |\n| `snippet` | string | Relevant quote or excerpt |\n\nAll endpoints require `Authorization` authentication.",
 			"item": [
 				{
 					"name": "List Ideas for Publication",
@@ -1001,11 +1001,11 @@
 					"request": {
 						"method": "GET",
 						"header": [
-							{ "key": "X-API-Key", "value": "{{WRITER_API_KEY}}" }
+							{ "key": "Authorization", "value": "Bearer {{CLERK_JWT_TOKEN}}" }
 						],
 						"url": {
-							"raw": "{{WRITER_BASE_URL}}/api/publications/{{publicationId}}/ideas?status=new",
-							"host": ["{{WRITER_BASE_URL}}"],
+							"raw": "{{WEB_BASE_URL}}/api/publications/{{publicationId}}/ideas?status=new",
+							"host": ["{{WEB_BASE_URL}}"],
 							"path": ["api", "publications", "{{publicationId}}", "ideas"],
 							"query": [
 								{
@@ -1053,11 +1053,11 @@
 					"request": {
 						"method": "GET",
 						"header": [
-							{ "key": "X-API-Key", "value": "{{WRITER_API_KEY}}" }
+							{ "key": "Authorization", "value": "Bearer {{CLERK_JWT_TOKEN}}" }
 						],
 						"url": {
-							"raw": "{{WRITER_BASE_URL}}/api/ideas/{{ideaId}}",
-							"host": ["{{WRITER_BASE_URL}}"],
+							"raw": "{{WEB_BASE_URL}}/api/ideas/{{ideaId}}",
+							"host": ["{{WEB_BASE_URL}}"],
 							"path": ["api", "ideas", "{{ideaId}}"]
 						}
 					},
@@ -1088,7 +1088,7 @@
 					"request": {
 						"method": "PATCH",
 						"header": [
-							{ "key": "X-API-Key", "value": "{{WRITER_API_KEY}}" },
+							{ "key": "Authorization", "value": "Bearer {{CLERK_JWT_TOKEN}}" },
 							{ "key": "Content-Type", "value": "application/json" }
 						],
 						"body": {
@@ -1096,8 +1096,8 @@
 							"raw": "{\n  \"status\": \"reviewed\"\n}"
 						},
 						"url": {
-							"raw": "{{WRITER_BASE_URL}}/api/ideas/{{ideaId}}",
-							"host": ["{{WRITER_BASE_URL}}"],
+							"raw": "{{WEB_BASE_URL}}/api/ideas/{{ideaId}}",
+							"host": ["{{WEB_BASE_URL}}"],
 							"path": ["api", "ideas", "{{ideaId}}"]
 						}
 					},
@@ -1137,11 +1137,11 @@
 					"request": {
 						"method": "POST",
 						"header": [
-							{ "key": "X-API-Key", "value": "{{WRITER_API_KEY}}" }
+							{ "key": "Authorization", "value": "Bearer {{CLERK_JWT_TOKEN}}" }
 						],
 						"url": {
-							"raw": "{{WRITER_BASE_URL}}/api/ideas/{{ideaId}}/promote",
-							"host": ["{{WRITER_BASE_URL}}"],
+							"raw": "{{WEB_BASE_URL}}/api/ideas/{{ideaId}}/promote",
+							"host": ["{{WEB_BASE_URL}}"],
 							"path": ["api", "ideas", "{{ideaId}}", "promote"]
 						}
 					},
@@ -1179,7 +1179,7 @@
 		},
 		{
 			"name": "Scout",
-			"description": "Trigger the content scout to discover new blog post ideas for a publication. The scout analyzes the publication's topics and searches the web for relevant content, generating ideas with angles, summaries, and source citations.\n\nThe scout runs asynchronously — the endpoint returns immediately with a confirmation, and ideas will appear in the Ideas list as they are discovered.\n\nThis request is routed by web directly to the content-scout service (not through writer-agent). No `X-API-Key` header is needed — web injects the scout credentials automatically.",
+			"description": "Trigger the content scout to discover new blog post ideas for a publication. The scout analyzes the publication's topics and searches the web for relevant content, generating ideas with angles, summaries, and source citations.\n\nThe scout runs asynchronously — the endpoint returns immediately with a confirmation, and ideas will appear in the Ideas list as they are discovered.\n\nThis request is proxied by web to the content-scout service. Web injects the scout credentials automatically.",
 			"item": [
 				{
 					"name": "Trigger Content Scout",
@@ -1187,11 +1187,11 @@
 					"request": {
 						"method": "POST",
 						"header": [
-							{ "key": "X-API-Key", "value": "{{WRITER_API_KEY}}" }
+							{ "key": "Authorization", "value": "Bearer {{CLERK_JWT_TOKEN}}" }
 						],
 						"url": {
-							"raw": "{{WRITER_BASE_URL}}/api/publications/{{publicationId}}/scout",
-							"host": ["{{WRITER_BASE_URL}}"],
+							"raw": "{{WEB_BASE_URL}}/api/publications/{{publicationId}}/scout",
+							"host": ["{{WEB_BASE_URL}}"],
 							"path": ["api", "publications", "{{publicationId}}", "scout"]
 						}
 					},
@@ -1229,7 +1229,7 @@
 		},
 		{
 			"name": "Activity",
-			"description": "View recent session activity across all publications. Provides a high-level overview of writing sessions and their current status.\n\nAll endpoints require `X-API-Key` authentication.",
+			"description": "View recent session activity across all publications. Provides a high-level overview of writing sessions and their current status.\n\nAll endpoints require `Authorization` authentication.",
 			"item": [
 				{
 					"name": "Get Recent Activity",
@@ -1237,11 +1237,11 @@
 					"request": {
 						"method": "GET",
 						"header": [
-							{ "key": "X-API-Key", "value": "{{WRITER_API_KEY}}" }
+							{ "key": "Authorization", "value": "Bearer {{CLERK_JWT_TOKEN}}" }
 						],
 						"url": {
-							"raw": "{{WRITER_BASE_URL}}/api/activity?days=30",
-							"host": ["{{WRITER_BASE_URL}}"],
+							"raw": "{{WEB_BASE_URL}}/api/activity?days=30",
+							"host": ["{{WEB_BASE_URL}}"],
 							"path": ["api", "activity"],
 							"query": [
 								{
@@ -1287,20 +1287,20 @@
 		},
 		{
 			"name": "WebSocket (Reference)",
-			"description": "## WebSocket Connection\n\nThe AI conversation happens over WebSocket, not REST. This folder documents the connection details for reference.\n\n### Connection URL\n\n```\nws://localhost:8789/agents/writer-agent/{sessionId}\n```\n\nReplace `{sessionId}` with the session ID from `POST /api/sessions`.\n\n### Protocol\n\nThe WebSocket uses the Cloudflare Agents SDK protocol. Messages are JSON with these types:\n\n**Client → Agent:**\n```json\n{\n  \"type\": \"cf_agent_use_chat_request\",\n  \"id\": \"unique-message-id\",\n  \"init\": {\n    \"method\": \"POST\",\n    \"body\": \"{\\\"messages\\\": [{\\\"role\\\": \\\"user\\\", \\\"content\\\": \\\"Write a blog post about edge functions\\\"}]}\"\n  }\n}\n```\n\n**Agent → Client (streaming):**\n```json\n{\n  \"type\": \"cf_agent_use_chat_response\",\n  \"id\": \"unique-message-id\",\n  \"body\": \"data chunk...\",\n  \"done\": false\n}\n```\n\n**Agent → Client (state update):**\nState changes are automatically broadcast to all connected clients.\n\n### State Object\n\nThe agent maintains reactive state that clients receive:\n\n```json\n{\n  \"sessionId\": \"\",\n  \"userId\": \"\",\n  \"title\": \"Why Edge Functions Matter\",\n  \"writingPhase\": \"revising\",\n  \"currentDraftVersion\": 2,\n  \"isGenerating\": false,\n  \"lastError\": null,\n  \"cmsPostId\": null\n}\n```\n\n### Writing Phases\n\n| Phase | Description |\n|-------|-------------|\n| `idle` | Initial — agent greets the user |\n| `interviewing` | Gathering topic, audience, key points |\n| `researching` | Using search/lookup tools |\n| `drafting` | Writing initial content |\n| `revising` | Iterating based on feedback |\n| `published` | Post pushed to CMS |\n\n### Agent Tools (called by LLM)\n\nDuring conversation, the LLM can call these tools:\n\n| Tool | Description |\n|------|-------------|\n| `save_draft` | Save content as a new draft version |\n| `get_current_draft` | Retrieve the latest draft |\n| `list_drafts` | List all draft versions |\n| `publish_to_cms` | Push final draft to CMS |\n| `search_web` | Web search (stub) |\n| `lookup_source` | URL lookup for citations (stub) |\n\n### Testing with wscat\n\n```bash\n# Install wscat\nnpm install -g wscat\n\n# Connect to a session\nwscat -c ws://localhost:8789/agents/writer-agent/{sessionId}\n```\n\n**Note:** Postman does not natively support the Agents SDK WebSocket protocol. Use `wscat` or a custom WebSocket client for testing.",
+			"description": "## WebSocket Connection\n\nThe AI conversation happens over WebSocket, not REST. This folder documents the connection details for reference.\n\n### Connection URL\n\n```\nws://localhost:5173/agents/writer-agent/{sessionId}\n```\n\nReplace `{sessionId}` with the session ID from `POST /api/sessions`.\n\n### Protocol\n\nThe WebSocket uses the Cloudflare Agents SDK protocol. Messages are JSON with these types:\n\n**Client → Agent:**\n```json\n{\n  \"type\": \"cf_agent_use_chat_request\",\n  \"id\": \"unique-message-id\",\n  \"init\": {\n    \"method\": \"POST\",\n    \"body\": \"{\\\"messages\\\": [{\\\"role\\\": \\\"user\\\", \\\"content\\\": \\\"Write a blog post about edge functions\\\"}]}\"\n  }\n}\n```\n\n**Agent → Client (streaming):**\n```json\n{\n  \"type\": \"cf_agent_use_chat_response\",\n  \"id\": \"unique-message-id\",\n  \"body\": \"data chunk...\",\n  \"done\": false\n}\n```\n\n**Agent → Client (state update):**\nState changes are automatically broadcast to all connected clients.\n\n### State Object\n\nThe agent maintains reactive state that clients receive:\n\n```json\n{\n  \"sessionId\": \"\",\n  \"userId\": \"\",\n  \"title\": \"Why Edge Functions Matter\",\n  \"writingPhase\": \"revising\",\n  \"currentDraftVersion\": 2,\n  \"isGenerating\": false,\n  \"lastError\": null,\n  \"cmsPostId\": null\n}\n```\n\n### Writing Phases\n\n| Phase | Description |\n|-------|-------------|\n| `idle` | Initial — agent greets the user |\n| `interviewing` | Gathering topic, audience, key points |\n| `researching` | Using search/lookup tools |\n| `drafting` | Writing initial content |\n| `revising` | Iterating based on feedback |\n| `published` | Post pushed to CMS |\n\n### Agent Tools (called by LLM)\n\nDuring conversation, the LLM can call these tools:\n\n| Tool | Description |\n|------|-------------|\n| `save_draft` | Save content as a new draft version |\n| `get_current_draft` | Retrieve the latest draft |\n| `list_drafts` | List all draft versions |\n| `publish_to_cms` | Push final draft to CMS |\n| `search_web` | Web search (stub) |\n| `lookup_source` | URL lookup for citations (stub) |\n\n### Testing with wscat\n\n```bash\n# Install wscat\nnpm install -g wscat\n\n# Connect to a session\nwscat -c ws://localhost:5173/agents/writer-agent/{sessionId}\n```\n\n**Note:** Postman does not natively support the Agents SDK WebSocket protocol. Use `wscat` or a custom WebSocket client for testing.",
 			"item": [
 				{
 					"name": "WebSocket Connection Info",
-					"description": "This is a placeholder request to document the WebSocket endpoint. **Do not send this as HTTP** — it's a WebSocket connection.\n\n### How to Connect\n\n1. Create a session via `POST /api/sessions`\n2. Copy the `id` from the response\n3. Connect with wscat:\n   ```\n   wscat -c ws://localhost:8789/agents/writer-agent/{id}\n   ```\n4. Send a message to start the conversation",
+					"description": "This is a placeholder request to document the WebSocket endpoint. **Do not send this as HTTP** — it's a WebSocket connection.\n\n### How to Connect\n\n1. Create a session via `POST /api/sessions`\n2. Copy the `id` from the response\n3. Connect with wscat:\n   ```\n   wscat -c ws://localhost:5173/agents/writer-agent/{id}\n   ```\n4. Send a message to start the conversation",
 					"request": {
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "{{WRITER_BASE_URL}}/agents/writer-agent/{{sessionId}}",
-							"host": ["{{WRITER_BASE_URL}}"],
+							"raw": "{{WEB_BASE_URL}}/agents/writer-agent/{{sessionId}}",
+							"host": ["{{WEB_BASE_URL}}"],
 							"path": ["agents", "writer-agent", "{{sessionId}}"]
 						},
-						"description": "This is a WebSocket endpoint — use wscat or a WebSocket client, not a regular HTTP request.\n\nURL: ws://localhost:8789/agents/writer-agent/{sessionId}"
+						"description": "This is a WebSocket endpoint — use wscat or a WebSocket client, not a regular HTTP request.\n\nURL: ws://localhost:5173/agents/writer-agent/{sessionId}"
 					},
 					"response": []
 				}

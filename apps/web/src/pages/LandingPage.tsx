@@ -11,7 +11,7 @@ export function LandingPage() {
   const { isSignedIn, isLoaded } = useAuth()
 
   if (isLoaded && isSignedIn) {
-    return <Navigate to="/writing" replace />
+    return <Navigate to="/dashboard" replace />
   }
 
   return <LandingContent />

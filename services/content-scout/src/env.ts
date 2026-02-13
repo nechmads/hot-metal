@@ -7,11 +7,14 @@ export interface ScoutEnv extends Omit<Env, 'DAL'> {
   // Data Access Layer (overrides base Fetcher with typed RPC interface)
   DAL: DataLayerApi
 
+  // Service binding to web worker (for auto-write pipeline)
+  WEB: Fetcher
+
   // Secrets (set via `wrangler secret put`)
   API_KEY: string
   ALEXANDER_API_KEY: string
   ANTHROPIC_API_KEY: string
-  WRITER_AGENT_API_KEY: string
+  INTERNAL_API_KEY: string
 }
 
 export interface ScoutQueueMessage {

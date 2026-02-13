@@ -127,10 +127,10 @@ export function IdeasPage() {
         </p>
         <button
           type="button"
-          onClick={() => navigate('/schedule')}
+          onClick={() => navigate('/publications')}
           className="mt-6 inline-flex items-center gap-2 rounded-lg bg-[var(--color-accent)] px-5 py-2.5 text-sm font-medium text-white transition-colors hover:bg-[var(--color-accent-hover)]"
         >
-          Go to Schedule
+          Go to Publications
           <ArrowRightIcon size={16} />
         </button>
       </div>
@@ -206,7 +206,7 @@ export function IdeasPage() {
               key={idea.id}
               className="group cursor-pointer rounded-xl border border-[var(--color-border-default)] bg-[var(--color-bg-primary)] p-4 transition-shadow hover:shadow-md"
               onClick={() => navigate(`/ideas/${idea.id}`)}
-              onKeyDown={(e) => { if (e.key === 'Enter') navigate(`/ideas/${idea.id}`) }}
+              onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); navigate(`/ideas/${idea.id}`) } }}
               role="button"
               tabIndex={0}
             >

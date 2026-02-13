@@ -8,10 +8,10 @@ A blogging platform built as a pnpm monorepo on Cloudflare Workers/Pages.
 apps/
   cms-admin/        SonicJS CMS (port 8787)
   blog-frontend/    Astro 6 blog frontend (port 4321)
-  web/              React SPA + BFF proxy (port 5173)
+  web/              React SPA + API + WriterAgent DO (port 5173)
 
 services/
-  writer-agent/     AI writing agent — sessions, drafts, chat (port 8789)
+  data-layer/       Shared D1 database access via Service Bindings
   content-scout/    Content discovery pipeline — cron, queue, workflow (port 8790)
   publisher/        Outlet publishing — blog, LinkedIn (port 8788)
 
@@ -37,16 +37,13 @@ cd apps/cms-admin && pnpm dev
 # Terminal 2 — Blog frontend
 cd apps/blog-frontend && pnpm dev
 
-# Terminal 3 — Writer Agent
-cd services/writer-agent && pnpm dev
-
-# Terminal 4 — Web (UI)
+# Terminal 3 — Web (UI + API + AI agent)
 cd apps/web && pnpm dev
 
-# Terminal 5 — Content Scout (only needed for automation)
+# Terminal 4 — Content Scout (only needed for automation)
 cd services/content-scout && pnpm dev
 
-# Terminal 6 — Publisher (only needed for LinkedIn publishing)
+# Terminal 5 — Publisher (only needed for LinkedIn publishing)
 cd services/publisher && pnpm dev
 ```
 
@@ -69,43 +66,38 @@ Astro 6 blog frontend. No secrets or custom vars needed.
 
 ### apps/web
 
-React SPA with a thin Cloudflare Worker backend that proxies API requests.
-
-| Type | Name | Value (local) | Description |
-|------|------|---------------|-------------|
-| var | `WRITER_AGENT_URL` | `http://localhost:8789` | Writer agent service URL |
-| var | `CONTENT_SCOUT_URL` | `http://localhost:8790` | Content scout service URL |
-| secret | `WRITER_API_KEY` | | Key for authenticating to writer-agent (must match writer-agent's `WRITER_API_KEY`) |
-| secret | `SCOUT_API_KEY` | | Key for authenticating to content-scout (must match content-scout's `API_KEY`) |
-
-### services/writer-agent
-
-AI writing agent with sessions, drafts, real-time chat via WebSocket.
+React SPA with Cloudflare Worker backend hosting all API routes and the WriterAgent Durable Object.
 
 | Type | Name | Value (local) | Description |
 |------|------|---------------|-------------|
 | var | `CMS_URL` | `http://localhost:8787` | CMS admin URL (for publishing) |
+| var | `CONTENT_SCOUT_URL` | `http://localhost:8790` | Content scout service URL |
 | var | `ALEXANDER_API_URL` | `https://alexanderai.farfarawaylabs.com` | Alexander research API base URL |
-| secret | `WRITER_API_KEY` | | API key for authenticating incoming requests |
+| secret | `CLERK_PUBLISHABLE_KEY` | | Clerk frontend auth key |
+| secret | `CLERK_ISSUER` | | Clerk JWT issuer URL |
 | secret | `ANTHROPIC_API_KEY` | | Claude API key for AI drafting and SEO generation |
 | secret | `CMS_API_KEY` | | Key for authenticating to the CMS (must match cms-admin's `CMS_API_KEY`) |
 | secret | `ALEXANDER_API_KEY` | | Alexander research API key |
+| secret | `SCOUT_API_KEY` | | Key for authenticating to content-scout (must match content-scout's `API_KEY`) |
+| secret | `INTERNAL_API_KEY` | | Key for service-to-service calls from content-scout |
 | binding | `DAL` | Service: `hotmetal-data-layer` | Data Access Layer (sessions, publications, topics, ideas) |
 | binding | `WRITER_AGENT` | DO: `WriterAgent` | Durable Object for per-session AI agent state |
+| binding | `AI` | Workers AI | Image generation via Flux |
+| binding | `IMAGE_BUCKET` | R2: `hotmetal-cms-bucket` | Image storage |
 
 ### services/content-scout
 
-Content discovery pipeline. Runs daily via cron or on-demand via API.
+Content discovery pipeline. Runs hourly via cron or on-demand via API.
 
 | Type | Name | Value (local) | Description |
 |------|------|---------------|-------------|
 | var | `ALEXANDER_API_URL` | `https://alexanderai.farfarawaylabs.com` | Alexander research API base URL |
-| var | `WRITER_AGENT_URL` | `https://hotmetal-writer-agent...` | Writer agent URL (for auto-write step) |
 | secret | `API_KEY` | | Authenticates incoming requests (from web or Postman) |
 | secret | `ALEXANDER_API_KEY` | | Alexander research API key |
 | secret | `ANTHROPIC_API_KEY` | | Claude API key for idea generation |
-| secret | `WRITER_AGENT_API_KEY` | | Key for calling writer-agent (must match writer-agent's `WRITER_API_KEY`) |
-| binding | `DAL` | Service: `hotmetal-data-layer` | Data Access Layer (shared with writer-agent) |
+| secret | `INTERNAL_API_KEY` | | Key for calling web's internal endpoints (must match web's `INTERNAL_API_KEY`) |
+| binding | `DAL` | Service: `hotmetal-data-layer` | Data Access Layer |
+| binding | `WEB` | Service: `hotmetal-web` | Service binding to web (for auto-write pipeline) |
 | binding | `SCOUT_QUEUE` | Queue: `hotmetal-scout-queue` | Fan-out queue (1 message per publication) |
 | binding | `SCOUT_WORKFLOW` | Workflow: `ScoutWorkflow` | Durable 6-step scout pipeline |
 | binding | `SCOUT_CACHE` | KV: `HOTMETAL_SCOUT_CACHE` | Alexander API response cache (24h TTL) |
@@ -130,16 +122,15 @@ Outlet publishing service (blog + LinkedIn).
 Some secrets must match across services:
 
 ```
-web.WRITER_API_KEY      ══  writer-agent.WRITER_API_KEY
-web.SCOUT_API_KEY       ══  content-scout.API_KEY
-content-scout.WRITER_AGENT_API_KEY  ══  writer-agent.WRITER_API_KEY
-publisher.CMS_API_KEY          ══  cms-admin.CMS_API_KEY
-writer-agent.CMS_API_KEY       ══  cms-admin.CMS_API_KEY
+web.SCOUT_API_KEY          ==  content-scout.API_KEY
+web.INTERNAL_API_KEY       ==  content-scout.INTERNAL_API_KEY
+web.CMS_API_KEY            ==  cms-admin.CMS_API_KEY
+publisher.CMS_API_KEY      ==  cms-admin.CMS_API_KEY
 ```
 
 ## Data Access Layer
 
-All database access is centralized in `services/data-layer` (`hotmetal-data-layer`). Services (writer-agent, content-scout, publisher) access data via Cloudflare Service Bindings with typed RPC calls. Migrations live in `services/data-layer/migrations/`.
+All database access is centralized in `services/data-layer` (`hotmetal-data-layer`). Services (web, content-scout, publisher) access data via Cloudflare Service Bindings with typed RPC calls. Migrations live in `services/data-layer/migrations/`.
 
 ```bash
 # Apply DAL migrations locally:
@@ -159,7 +150,7 @@ This stores the secret in `.dev.vars` (gitignored). For production, omit `--loca
 
 Import from the `postman/` directory:
 
-- `Hot_Metal_Writer_Agent.postman_collection.json` — Sessions, drafts, chat, publications, topics, ideas, scout, activity
+- `Hot_Metal_Web.postman_collection.json` — Sessions, drafts, chat, publications, topics, ideas, scout, activity, styles
 - `Hot_Metal_Content_Scout.postman_collection.json` — Scout health and manual triggers
 - `Hot_Metal_CMS_API.postman_collection.json` — CMS content API
 - `Hot_Metal_Publisher.postman_collection.json` — Blog and LinkedIn publishing

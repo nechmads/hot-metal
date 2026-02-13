@@ -2,7 +2,6 @@ import { useCallback, useRef } from 'react'
 import { useAgent } from 'agents/react'
 import { useAgentChat } from '@cloudflare/ai-chat/react'
 import { useAuth } from '@clerk/clerk-react'
-import { TOKEN_REFRESH_INTERVAL_MS } from '@/lib/auth-config'
 import type { WriterAgentState } from './useWriterState'
 
 export type { WriterAgentState }
@@ -36,7 +35,6 @@ export function useWriterChat({ sessionId, onStateUpdate }: UseWriterChatOptions
       return { token: token ?? null }
     },
     queryDeps: [],
-    cacheTtl: TOKEN_REFRESH_INTERVAL_MS,
   })
 
   const chat = useAgentChat({

@@ -1,20 +1,21 @@
 import { getAgentByName } from 'agents'
 import { Hono } from 'hono'
-import type { WriterAgentEnv } from '../env'
+import type { AppEnv } from '../server'
 import type { WriterAgent } from '../agent/writer-agent'
-import { writerApiKeyAuth } from '../middleware/api-key-auth'
 import { createImagePrompt } from '../lib/writing'
 
-const images = new Hono<{ Bindings: WriterAgentEnv }>()
-
-images.use('/api/sessions/:sessionId/generate-image-prompt', writerApiKeyAuth)
-images.use('/api/sessions/:sessionId/generate-images', writerApiKeyAuth)
-images.use('/api/sessions/:sessionId/select-image', writerApiKeyAuth)
+const images = new Hono<AppEnv>()
 
 /** Generate an image prompt based on the current draft content. */
-images.post('/api/sessions/:sessionId/generate-image-prompt', async (c) => {
+images.post('/sessions/:sessionId/generate-image-prompt', async (c) => {
   const sessionId = c.req.param('sessionId')
-  const agent = await getAgentByName<WriterAgentEnv, WriterAgent>(c.env.WRITER_AGENT, sessionId)
+  const session = await c.env.DAL.getSessionById(sessionId)
+  if (!session) return c.json({ error: 'Session not found' }, 404)
+  if (session.userId !== c.get('userId')) {
+    return c.json({ error: 'Session not found' }, 404)
+  }
+
+  const agent = await getAgentByName<Env, WriterAgent>(c.env.WRITER_AGENT, sessionId)
 
   const draftRes = await agent.fetch(new Request('https://internal/drafts', { method: 'GET' }))
   if (!draftRes.ok) {
@@ -43,11 +44,12 @@ images.post('/api/sessions/:sessionId/generate-image-prompt', async (c) => {
 })
 
 /** Generate 4 images from a prompt using Workers AI Flux model. */
-images.post('/api/sessions/:sessionId/generate-images', async (c) => {
+images.post('/sessions/:sessionId/generate-images', async (c) => {
   const sessionId = c.req.param('sessionId')
 
   const session = await c.env.DAL.getSessionById(sessionId)
-  if (!session) {
+  if (!session) return c.json({ error: 'Session not found' }, 404)
+  if (session.userId !== c.get('userId')) {
     return c.json({ error: 'Session not found' }, 404)
   }
 
@@ -99,8 +101,13 @@ images.post('/api/sessions/:sessionId/generate-images', async (c) => {
 })
 
 /** Select a generated image as the featured image. */
-images.post('/api/sessions/:sessionId/select-image', async (c) => {
+images.post('/sessions/:sessionId/select-image', async (c) => {
   const sessionId = c.req.param('sessionId')
+  const session = await c.env.DAL.getSessionById(sessionId)
+  if (!session) return c.json({ error: 'Session not found' }, 404)
+  if (session.userId !== c.get('userId')) {
+    return c.json({ error: 'Session not found' }, 404)
+  }
 
   const body = await c.req.json<{ imageUrl: string }>()
   if (!body.imageUrl?.trim()) {
@@ -120,7 +127,7 @@ images.post('/api/sessions/:sessionId/select-image', async (c) => {
   }
 
   // Also update the agent DO state
-  const agent = await getAgentByName<WriterAgentEnv, WriterAgent>(c.env.WRITER_AGENT, sessionId)
+  const agent = await getAgentByName<Env, WriterAgent>(c.env.WRITER_AGENT, sessionId)
   const doRes = await agent.fetch(new Request('https://internal/update-featured-image', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -134,24 +141,7 @@ images.post('/api/sessions/:sessionId/select-image', async (c) => {
   return c.json({ featuredImageUrl: updated.featuredImageUrl })
 })
 
-/** Serve generated images from R2 (public, no auth — images are referenced by CMS posts). */
-images.get('/api/images/*', async (c) => {
-  const key = c.req.path.replace('/api/images/', '')
-  if (!key || !key.startsWith('images/sessions/') || key.includes('..')) {
-    return c.json({ error: 'Invalid image key' }, 400)
-  }
-
-  const object = await c.env.IMAGE_BUCKET.get(key)
-  if (!object) {
-    return c.json({ error: 'Image not found' }, 404)
-  }
-
-  return new Response(object.body, {
-    headers: {
-      'Content-Type': object.httpMetadata?.contentType || 'image/jpeg',
-      'Cache-Control': 'public, max-age=31536000, immutable',
-    },
-  })
-})
+// Note: Public image serving (GET /api/images/*) is handled in server.ts
+// before auth middleware, so it doesn't need to be duplicated here.
 
 export default images

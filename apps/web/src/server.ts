@@ -1,17 +1,23 @@
 /**
- * Writer Web — backend Worker
+ * Hot Metal Web — unified backend Worker
  *
- * All /api/* and /agents/* routes require Clerk JWT authentication.
- * Data reads (GET) are served directly via the DAL service binding.
- * Writes, AI operations, and WebSocket connections proxy to writer-agent.
- * Scout triggers proxy directly to content-scout.
+ * Hosts the WriterAgent Durable Object, all API routes, and the SPA frontend.
+ *
+ * Route structure:
+ * - /health           — public health check
+ * - /api/images/*     — public image serving from R2
+ * - /internal/*       — service-to-service routes (content-scout auto-write)
+ * - /api/*            — Clerk-authenticated user routes
+ * - /agents/*         — WebSocket/HTTP agent connections (Clerk JWT verified)
  */
 
+import { routeAgentRequest } from 'agents'
 import { Hono } from 'hono'
-import type { Context } from 'hono'
 
-import { clerkAuth, type AuthVariables } from './middleware/clerk-auth'
+import { clerkAuth, verifyClerkJwt, type AuthVariables } from './middleware/clerk-auth'
 import { ensureUser } from './middleware/ensure-user'
+import { internalAuth } from './middleware/internal-auth'
+import { errorHandler } from './middleware/error-handler'
 import { verifyPublicationOwnership } from './middleware/ownership'
 import sessions from './api/sessions'
 import publications from './api/publications'
@@ -19,6 +25,14 @@ import topics from './api/topics'
 import ideas from './api/ideas'
 import activity from './api/activity'
 import styles from './api/styles'
+import drafts from './api/drafts'
+import chat from './api/chat'
+import publish from './api/publish'
+import images from './api/images'
+import internal from './api/internal'
+
+// Re-export the WriterAgent DO class for wrangler registration
+export { WriterAgent } from './agent/writer-agent'
 
 export type AppEnv = {
   Bindings: Env
@@ -27,28 +41,53 @@ export type AppEnv = {
 
 const app = new Hono<AppEnv>()
 
-// ─── Health check (public, before auth middleware) ──────────────────
+// ─── Error handler ──────────────────────────────────────────────────
+app.onError(errorHandler)
 
+// ─── Health check (public, before auth middleware) ──────────────────
 app.get('/health', (c) => c.json({ status: 'ok', service: 'hotmetal-web' }))
 
-// ─── Auth: Clerk JWT + user sync on all protected routes ────────────
+// ─── Public image serving (no auth — referenced by CMS posts) ──────
+app.get('/api/images/*', async (c) => {
+  const key = c.req.path.replace('/api/images/', '')
+  if (!key || !key.startsWith('images/sessions/') || key.includes('..')) {
+    return c.json({ error: 'Invalid image key' }, 400)
+  }
 
+  const object = await c.env.IMAGE_BUCKET.get(key)
+  if (!object) {
+    return c.json({ error: 'Image not found' }, 404)
+  }
+
+  return new Response(object.body, {
+    headers: {
+      'Content-Type': object.httpMetadata?.contentType || 'image/jpeg',
+      'Cache-Control': 'public, max-age=31536000, immutable',
+    },
+  })
+})
+
+// ─── Internal service-to-service routes (content-scout auto-write) ──
+app.use('/internal/*', internalAuth)
+app.route('/internal', internal)
+
+// ─── Auth: Clerk JWT + user sync on all /api/* routes ───────────────
 app.use('/api/*', clerkAuth, ensureUser)
-app.use('/agents/*', clerkAuth)
 
-// ─── DAL direct reads ───────────────────────────────────────────────
-
+// ─── User-facing API routes ─────────────────────────────────────────
 app.route('/api', sessions)
 app.route('/api', publications)
 app.route('/api', topics)
 app.route('/api', ideas)
 app.route('/api', activity)
 app.route('/api', styles)
+app.route('/api', drafts)
+app.route('/api', chat)
+app.route('/api', publish)
+app.route('/api', images)
 
 // ─── Scout trigger (proxied to content-scout) ───────────────────────
-
 app.post('/api/publications/:pubId/scout', async (c) => {
-  // Verify the user owns this publication
   const pub = await verifyPublicationOwnership(c, c.req.param('pubId'))
   if (!pub) return c.json({ error: 'Publication not found' }, 404)
 
@@ -73,89 +112,27 @@ app.post('/api/publications/:pubId/scout', async (c) => {
   return new Response(res.body, { status: res.status, headers: res.headers })
 })
 
-// ─── WebSocket proxy (agent chat) ───────────────────────────────────
-
-app.get('/agents/*', async (c) => {
-  if (c.req.header('Upgrade') !== 'websocket') {
-    return proxyToWriterAgent(c)
-  }
-
-  const url = new URL(c.req.url)
-  const target = `${c.env.WRITER_AGENT_URL}${url.pathname}${url.search}`
-
-  const upstreamResp = await fetch(target, {
-    headers: {
-      Upgrade: 'websocket',
-      'X-API-Key': c.env.WRITER_API_KEY,
-      'X-User-Id': c.get('userId') || '',
-    },
-  })
-
-  const upstream = upstreamResp.webSocket
-  if (!upstream) {
-    return c.text('Failed to connect to agent', 502)
-  }
-
-  const pair = new WebSocketPair()
-  const [client, server] = Object.values(pair)
-
-  server.accept()
-  upstream.accept()
-
-  server.addEventListener('message', (event) => {
-    try { upstream.send(event.data as string | ArrayBuffer) } catch { /* closed */ }
-  })
-  upstream.addEventListener('message', (event) => {
-    try { server.send(event.data as string | ArrayBuffer) } catch { /* closed */ }
-  })
-
-  server.addEventListener('close', (event) => {
-    try { upstream.close(event.code, event.reason) } catch { /* closed */ }
-  })
-  upstream.addEventListener('close', (event) => {
-    try { server.close(event.code, event.reason) } catch { /* closed */ }
-  })
-
-  server.addEventListener('error', () => {
-    try { upstream.close(1011, 'Client error') } catch { /* closed */ }
-  })
-  upstream.addEventListener('error', () => {
-    try { server.close(1011, 'Upstream error') } catch { /* closed */ }
-  })
-
-  return new Response(null, { status: 101, webSocket: client })
-})
-
-// ─── Catch-all: proxy writes/AI/DO to writer-agent ─────────────────
-
-app.all('/agents/*', proxyToWriterAgent)
-app.all('/api/*', proxyToWriterAgent)
-
 // ─── Export ─────────────────────────────────────────────────────────
 
-export default app
+export default {
+  async fetch(request: Request, env: Env, ctx: ExecutionContext) {
+    const url = new URL(request.url)
 
-// ─── Writer-agent proxy helper ──────────────────────────────────────
+    // Agent WebSocket/HTTP routes — verify JWT before routing to DO
+    if (url.pathname.startsWith('/agents/')) {
+      const token = url.searchParams.get('token')
+        || request.headers.get('Authorization')?.slice(7)
+      if (!token) return new Response('Unauthorized', { status: 401 })
 
-async function proxyToWriterAgent(c: Context<AppEnv>): Promise<Response> {
-  const url = new URL(c.req.url)
-  const target = `${c.env.WRITER_AGENT_URL}${url.pathname}${url.search}`
-  const headers = new Headers(c.req.raw.headers)
-  headers.set('X-API-Key', c.env.WRITER_API_KEY)
-  // Don't forward end-user's Clerk JWT to internal services
-  headers.delete('Authorization')
+      const payload = await verifyClerkJwt(token, env)
+      if (!payload) return new Response('Unauthorized', { status: 401 })
 
-  // Forward authenticated user ID to downstream services
-  const userId = c.get('userId')
-  if (userId) {
-    headers.set('X-User-Id', userId)
-  }
+      const response = await routeAgentRequest(request, env)
+      if (response) return response
+      return new Response('Agent not found', { status: 404 })
+    }
 
-  const res = await fetch(target, {
-    method: c.req.method,
-    headers,
-    body: c.req.raw.body,
-  })
-
-  return new Response(res.body, { status: res.status, headers: res.headers })
+    // Everything else through Hono
+    return app.fetch(request, env, ctx)
+  },
 }

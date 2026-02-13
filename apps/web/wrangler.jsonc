@@ -2,7 +2,7 @@
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "hotmetal-web",
   "main": "src/server.ts",
-  "compatibility_date": "2025-12-17",
+  "compatibility_date": "2026-02-05",
   "compatibility_flags": ["nodejs_compat"],
   "observability": {
     "enabled": true,
@@ -12,7 +12,25 @@
     "port": 5173,
   },
 
-  // Data Access Layer — direct reads bypass writer-agent proxy
+  // Durable Objects — one WriterAgent instance per writing session
+  "durable_objects": {
+    "bindings": [
+      {
+        "name": "WRITER_AGENT",
+        "class_name": "WriterAgent",
+      },
+    ],
+  },
+
+  // SQLite migrations for agent-local state (drafts, research_notes)
+  "migrations": [
+    {
+      "tag": "v1",
+      "new_sqlite_classes": ["WriterAgent"],
+    },
+  ],
+
+  // Service bindings
   "services": [
     {
       "binding": "DAL",
@@ -21,9 +39,20 @@
     },
   ],
 
+  // Workers AI binding (for image generation)
+  "ai": { "binding": "AI" },
+
+  // R2 bucket for generated images
+  "r2_buckets": [
+    {
+      "binding": "IMAGE_BUCKET",
+      "bucket_name": "hotmetal-cms-bucket",
+    },
+  ],
+
   // Environment variables (non-secret)
   "vars": {
-    "WRITER_AGENT_URL": "https://agent.hotmetalapp.com",
+    "CMS_URL": "https://cms.hotmetalapp.com",
     "CONTENT_SCOUT_URL": "https://scout.hotmetalapp.com",
     "ALEXANDER_API_URL": "https://alexanderai.farfarawaylabs.com",
     "CLERK_PUBLISHABLE_KEY": "pk_test_dHJ1c3RlZC13aGFsZS05Ni5jbGVyay5hY2NvdW50cy5kZXYk",
@@ -35,11 +64,13 @@
   // is served from the static asset pipeline (or falls back to index.html).
   "assets": {
     "not_found_handling": "single-page-application",
-    "run_worker_first": ["/api/*", "/agents/*", "/health"],
+    "run_worker_first": ["/api/*", "/agents/*", "/health", "/internal/*"],
   },
 
   // Secrets (set via `wrangler secret put`):
-  // WRITER_API_KEY    — authenticates requests to writer-agent
-  // SCOUT_API_KEY     — authenticates requests to content-scout (must match API_KEY on scout)
-  // ALEXANDER_API_KEY — authenticates requests to Alexander API
+  // ANTHROPIC_API_KEY    — Claude API key for AI drafting, SEO, hooks
+  // CMS_API_KEY          — authenticates requests to the CMS
+  // SCOUT_API_KEY        — authenticates requests to content-scout
+  // ALEXANDER_API_KEY    — authenticates requests to Alexander research API
+  // INTERNAL_API_KEY     — service-to-service auth (content-scout auto-write)
 }

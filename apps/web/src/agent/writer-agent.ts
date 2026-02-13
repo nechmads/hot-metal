@@ -2,7 +2,6 @@ import { AIChatAgent } from '@cloudflare/ai-chat'
 import { anthropic } from '@ai-sdk/anthropic'
 import { convertToModelMessages, createUIMessageStream, createUIMessageStreamResponse, generateText, streamText, stepCountIs, type StreamTextOnFinishCallback, type ToolSet } from 'ai'
 import type { Connection, WSMessage } from 'partyserver'
-import type { WriterAgentEnv } from '../env'
 import { type WriterAgentState, type WritingPhase, INITIAL_STATE } from './state'
 import { initAgentSqlite } from './sqlite-schema'
 import { buildSystemPrompt } from '../prompts/system-prompt'
@@ -34,7 +33,7 @@ export interface DraftSummary {
   created_at: number
 }
 
-export class WriterAgent extends AIChatAgent<WriterAgentEnv, WriterAgentState> {
+export class WriterAgent extends AIChatAgent<Env, WriterAgentState> {
   initialState: WriterAgentState = INITIAL_STATE
 
   async onStart() {
@@ -419,7 +418,7 @@ export class WriterAgent extends AIChatAgent<WriterAgentEnv, WriterAgentState> {
 
   // --- Draft management methods (called by tools) ---
 
-  getEnv(): WriterAgentEnv {
+  getEnv(): Env {
     return this.env
   }
 

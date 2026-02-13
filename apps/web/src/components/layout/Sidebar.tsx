@@ -1,13 +1,14 @@
 import { NavLink } from 'react-router'
-import { LightbulbIcon, PencilLineIcon, CalendarDotsIcon, PaletteIcon, ListIcon, XIcon } from '@phosphor-icons/react'
+import { HouseIcon, LightbulbIcon, PencilLineIcon, NewspaperIcon, PaletteIcon, ListIcon, XIcon } from '@phosphor-icons/react'
 import { UserButton } from '@clerk/clerk-react'
 import { useValue } from '@legendapp/state/react'
 import { scoutStore$ } from '@/stores/scout-store'
 
 const NAV_ITEMS = [
+  { to: '/dashboard', label: 'Home', icon: HouseIcon },
+  { to: '/publications', label: 'Publications', icon: NewspaperIcon },
   { to: '/ideas', label: 'Ideas', icon: LightbulbIcon },
   { to: '/writing', label: 'Writing', icon: PencilLineIcon },
-  { to: '/schedule', label: 'Schedule', icon: CalendarDotsIcon },
   { to: '/styles', label: 'Styles', icon: PaletteIcon },
 ] as const
 

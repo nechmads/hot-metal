@@ -59,6 +59,34 @@ function extractName(payload: JWTPayload): string {
 }
 
 /**
+ * Standalone JWT verification — usable outside Hono middleware (e.g. raw fetch handler).
+ * Returns the JWT payload on success, or null on failure.
+ */
+export async function verifyClerkJwt(token: string, env: Env): Promise<JWTPayload | null> {
+	const issuer = env.CLERK_ISSUER
+	if (!issuer) {
+		console.error('CLERK_ISSUER not configured')
+		return null
+	}
+
+	try {
+		const jwks = getJwks(issuer)
+		const { payload } = await jwtVerify(token, jwks, {
+			issuer,
+			algorithms: ['RS256'],
+			clockTolerance: 10,
+		})
+
+		if (!payload.sub) return null
+		return payload
+	} catch (err) {
+		const message = err instanceof Error ? err.message : 'Token verification failed'
+		console.error('JWT verification failed:', message)
+		return null
+	}
+}
+
+/**
  * Hono middleware that verifies Clerk JWTs.
  *
  * Requires env vars:

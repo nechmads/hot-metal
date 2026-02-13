@@ -1,19 +1,21 @@
 import { getAgentByName } from 'agents'
 import { Hono } from 'hono'
 import type { ContentfulStatusCode } from 'hono/utils/http-status'
-import type { WriterAgentEnv } from '../env'
+import type { AppEnv } from '../server'
 import type { WriterAgent } from '../agent/writer-agent'
-import { writerApiKeyAuth } from '../middleware/api-key-auth'
 
-const publish = new Hono<{ Bindings: WriterAgentEnv }>()
-
-publish.use('/api/sessions/:sessionId/publish', writerApiKeyAuth)
-publish.use('/api/sessions/:sessionId/generate-seo', writerApiKeyAuth)
+const publish = new Hono<AppEnv>()
 
 /** Generate SEO excerpt and tags for the current draft. */
-publish.post('/api/sessions/:sessionId/generate-seo', async (c) => {
+publish.post('/sessions/:sessionId/generate-seo', async (c) => {
   const sessionId = c.req.param('sessionId')
-  const agent = await getAgentByName<WriterAgentEnv, WriterAgent>(c.env.WRITER_AGENT, sessionId)
+  const session = await c.env.DAL.getSessionById(sessionId)
+  if (!session) return c.json({ error: 'Session not found' }, 404)
+  if (session.userId !== c.get('userId')) {
+    return c.json({ error: 'Session not found' }, 404)
+  }
+
+  const agent = await getAgentByName<Env, WriterAgent>(c.env.WRITER_AGENT, sessionId)
 
   const url = new URL(c.req.url)
   url.pathname = '/generate-seo'
@@ -24,16 +26,16 @@ publish.post('/api/sessions/:sessionId/generate-seo', async (c) => {
 })
 
 /** Publish the current draft to the CMS — proxied to agent DO. */
-publish.post('/api/sessions/:sessionId/publish', async (c) => {
+publish.post('/sessions/:sessionId/publish', async (c) => {
   const sessionId = c.req.param('sessionId')
 
-  // Verify session exists
   const session = await c.env.DAL.getSessionById(sessionId)
-  if (!session) {
+  if (!session) return c.json({ error: 'Session not found' }, 404)
+  if (session.userId !== c.get('userId')) {
     return c.json({ error: 'Session not found' }, 404)
   }
 
-  const agent = await getAgentByName<WriterAgentEnv, WriterAgent>(c.env.WRITER_AGENT, sessionId)
+  const agent = await getAgentByName<Env, WriterAgent>(c.env.WRITER_AGENT, sessionId)
 
   const url = new URL(c.req.url)
   url.pathname = '/publish'

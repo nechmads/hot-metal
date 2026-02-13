@@ -17,18 +17,17 @@
     "db:reset:local": "pnpm cms:reset:local && pnpm dal:reset:local",
     "deploy:cms": "pnpm --filter @hotmetal/cms-admin run deploy",
     "deploy:dal": "pnpm --filter @hotmetal/data-layer run deploy",
-    "deploy:writer": "pnpm --filter @hotmetal/writer-agent run deploy",
     "deploy:scout": "pnpm --filter @hotmetal/content-scout run deploy",
     "deploy:publisher": "pnpm --filter @hotmetal/publisher run deploy",
     "deploy:web": "pnpm --filter @hotmetal/web run deploy",
-    "deploy:all": "pnpm deploy:cms && pnpm deploy:dal && pnpm deploy:writer && pnpm deploy:scout && pnpm deploy:publisher && pnpm deploy:web",
+    "deploy:all": "pnpm deploy:cms && pnpm deploy:dal && pnpm deploy:scout && pnpm deploy:publisher && pnpm deploy:web",
     "dev:cms": "pnpm --filter @hotmetal/cms-admin dev",
     "dev:dal": "pnpm --filter @hotmetal/data-layer dev",
     "dev:blog": "pnpm --filter @hotmetal/blog-frontend dev",
-    "dev:writer": "pnpm --filter @hotmetal/writer-agent dev",
     "dev:publisher": "pnpm --filter @hotmetal/publisher dev",
     "dev:web": "pnpm --filter @hotmetal/web dev",
-    "dev:scout": "pnpm --filter @hotmetal/content-scout dev"
+    "dev:scout": "pnpm --filter @hotmetal/content-scout dev",
+    "dev:stack": "STACK=true pnpm --filter @hotmetal/web dev"
   },
   "engines": {
     "node": ">=22.12.0"
