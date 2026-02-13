@@ -5,21 +5,21 @@ import type { WriterAgent } from '../agent/writer-agent'
 export function createDraftTools(agent: WriterAgent) {
   const save_draft = tool({
     description:
-      'Save a new draft version of the blog post. Use this after writing or significantly revising content. Increments the version number automatically.',
+      'Save a new draft version of the blog post. Use this after writing or significantly revising content. Increments the version number automatically. Always include citations from any research tools you used (search_web, search_news, ask_question, research_topic, crawl_url).',
     inputSchema: z.object({
       title: z.string().describe('The title of the blog post'),
       content: z.string().describe('The full content of the blog post in Markdown format'),
       citations: z
         .array(
           z.object({
-            url: z.string(),
-            title: z.string(),
-            publisher: z.string().optional(),
-            excerpt: z.string().optional(),
+            url: z.string().describe('The source URL'),
+            title: z.string().describe('Title of the source article or page'),
+            publisher: z.string().optional().describe('Domain or publisher name, e.g. "reuters.com"'),
+            excerpt: z.string().optional().describe('Brief relevant excerpt from the source'),
           }),
         )
         .optional()
-        .describe('Sources cited in the post'),
+        .describe('All sources used during research for this draft. Include every URL from search results, research citations, and crawled pages.'),
       feedback: z
         .string()
         .optional()

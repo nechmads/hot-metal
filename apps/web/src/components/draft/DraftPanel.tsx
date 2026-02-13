@@ -5,6 +5,7 @@ import { Loader } from '@/components/loader/Loader'
 import { DraftVersionSelector } from './DraftVersionSelector'
 import { PublishModal } from './PublishModal'
 import { ImageGenerator } from './ImageGenerator'
+import { SourcesList } from './SourcesList'
 import { fetchDrafts, fetchDraft } from '@/lib/api'
 import type { Draft, DraftContent } from '@/lib/types'
 import React from 'react'
@@ -162,12 +163,15 @@ export const DraftPanel = React.forwardRef<DraftPanelHandle, DraftPanelProps>(
               <Loader size={20} />
             </div>
           ) : content ? (
-            <div className="prose mx-auto max-w-prose rounded-xl bg-white p-8 shadow-sm dark:bg-[#1a1a1a]">
-              <MemoizedMarkdown
-                content={content.content}
-                id={`draft-${content.version}`}
-              />
-            </div>
+            <>
+              <div className="prose mx-auto max-w-prose rounded-xl bg-white p-8 shadow-sm dark:bg-[#1a1a1a]">
+                <MemoizedMarkdown
+                  content={content.content}
+                  id={`draft-${content.version}`}
+                />
+              </div>
+              <SourcesList citationsJson={content.citations} />
+            </>
           ) : (
             <div className="flex h-full flex-col items-center justify-center text-center">
               <p className="font-semibold text-[#0a0a0a] dark:text-[#fafafa]">No drafts yet</p>

@@ -33,17 +33,6 @@ export function ScheduleSummary({ publication, onEdit }: ScheduleSummaryProps) {
       </div>
 
       <div className="mt-4 grid gap-3 sm:grid-cols-2">
-        <SummaryItem label="Mode">
-          <span className="rounded-full bg-[var(--color-accent-light)] px-2 py-0.5 text-xs font-medium text-[var(--color-accent)]">
-            {MODE_LABELS[publication.autoPublishMode] ??
-              publication.autoPublishMode}
-          </span>
-          {publication.autoPublishMode === "full-auto" && (
-            <span className="ml-2 text-xs text-[var(--color-text-muted)]">
-              {publication.cadencePostsPerWeek}/week
-            </span>
-          )}
-        </SummaryItem>
         <SummaryItem label="Schedule">{scheduleDescription}</SummaryItem>
         <SummaryItem label="Timezone">
           {publication.timezone?.replace(/_/g, " ") || "Not set"}
@@ -52,6 +41,17 @@ export function ScheduleSummary({ publication, onEdit }: ScheduleSummaryProps) {
           {formatNextRun(
             publication.nextScoutAt,
             publication.timezone || "UTC",
+          )}
+        </SummaryItem>
+        <SummaryItem label="Publish mode">
+          <span className="rounded-full bg-[var(--color-accent-light)] px-2 py-0.5 text-xs font-medium text-[var(--color-accent)]">
+            {MODE_LABELS[publication.autoPublishMode] ??
+              publication.autoPublishMode}
+          </span>
+          {publication.autoPublishMode === "full-auto" && (
+            <span className="ml-2 text-xs text-[var(--color-text-muted)]">
+              {publication.cadencePostsPerWeek}/week
+            </span>
           )}
         </SummaryItem>
       </div>

@@ -1,7 +1,8 @@
 declare namespace Cloudflare {
 	interface Env {
 		DAL: import('@hotmetal/data-layer').DataLayerApi;
-		// Content-scout proxy (keep for direct HTTP trigger)
+		// Content-scout service binding + HTTP fallback
+		CONTENT_SCOUT: Fetcher;
 		CONTENT_SCOUT_URL: string;
 		SCOUT_API_KEY: string;
 		// Alexander research API

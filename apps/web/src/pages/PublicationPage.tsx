@@ -314,18 +314,78 @@ export function PublicationPage() {
         </div>
       )}
 
-      {/* Schedule — summary or editor */}
-      {editingSchedule ? (
-        <ScheduleEditor
-          state={scheduleState}
-          onChange={(updates) => setScheduleState((prev) => ({ ...prev, ...updates }))}
-          onRunScout={handleRunScout}
-          scouting={scouting}
-          topicsExist={topics.length > 0}
-        />
-      ) : (
-        <ScheduleSummary publication={publication} onEdit={() => setEditingSchedule(true)} />
-      )}
+      {/* Publication Settings */}
+      <section className="space-y-5 rounded-xl border border-[var(--color-border-default)] bg-[var(--color-bg-primary)] p-5">
+        <h3 className="font-semibold">Publication Settings</h3>
+
+        <div>
+          <label className="mb-1 block text-sm font-medium">Name</label>
+          <input
+            type="text"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            className="w-full rounded-lg border border-[var(--color-border-default)] bg-[var(--color-bg-primary)] px-3 py-2 text-sm focus:border-[var(--color-accent)] focus:outline-none focus:ring-1 focus:ring-[var(--color-accent)]"
+          />
+        </div>
+
+        <div>
+          <label className="mb-1 block text-sm font-medium">Description</label>
+          <textarea
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+            rows={3}
+            placeholder="What does this publication cover? This helps the content scout understand your focus."
+            className="w-full rounded-lg border border-[var(--color-border-default)] bg-[var(--color-bg-primary)] px-3 py-2 text-sm focus:border-[var(--color-accent)] focus:outline-none focus:ring-1 focus:ring-[var(--color-accent)]"
+          />
+        </div>
+
+        <div>
+          <label className="mb-1 block text-sm font-medium">Default Author</label>
+          <input
+            type="text"
+            value={defaultAuthor}
+            onChange={(e) => setDefaultAuthor(e.target.value)}
+            className="w-full rounded-lg border border-[var(--color-border-default)] bg-[var(--color-bg-primary)] px-3 py-2 text-sm focus:border-[var(--color-accent)] focus:outline-none focus:ring-1 focus:ring-[var(--color-accent)]"
+          />
+        </div>
+
+        <div>
+          <label className="mb-1 block text-sm font-medium">Writing Tone</label>
+          <textarea
+            value={writingTone}
+            onChange={(e) => setWritingTone(e.target.value)}
+            rows={2}
+            placeholder='e.g., "Skeptical tech analyst. Conversational but data-driven."'
+            className="w-full rounded-lg border border-[var(--color-border-default)] bg-[var(--color-bg-primary)] px-3 py-2 text-sm focus:border-[var(--color-accent)] focus:outline-none focus:ring-1 focus:ring-[var(--color-accent)]"
+          />
+        </div>
+
+        <div>
+          <label className="mb-1 block text-sm font-medium">Writing Style</label>
+          <select
+            value={styleId ?? ''}
+            onChange={(e) => setStyleId(e.target.value || null)}
+            className="w-full rounded-lg border border-[var(--color-border-default)] bg-[var(--color-bg-primary)] px-3 py-2 text-sm focus:border-[var(--color-accent)] focus:outline-none focus:ring-1 focus:ring-[var(--color-accent)]"
+          >
+            <option value="">None (use default)</option>
+            {availableStyles.map((s) => (
+              <option key={s.id} value={s.id}>
+                {s.name}{s.isPrebuilt ? ' (built-in)' : ''}
+              </option>
+            ))}
+          </select>
+          <p className="mt-1 text-xs text-[var(--color-text-muted)]">
+            Controls the AI writer's tone and voice.{' '}
+            <button
+              type="button"
+              onClick={() => navigate('/styles')}
+              className="text-[var(--color-accent)] hover:underline"
+            >
+              Manage Styles
+            </button>
+          </p>
+        </div>
+      </section>
 
       {/* Topics */}
       <section className="mt-6 space-y-4">
@@ -407,78 +467,20 @@ export function PublicationPage() {
         )}
       </section>
 
-      {/* Publication Settings */}
-      <section className="mt-6 space-y-5 rounded-xl border border-[var(--color-border-default)] bg-[var(--color-bg-primary)] p-5">
-        <h3 className="font-semibold">Publication Settings</h3>
-
-        <div>
-          <label className="mb-1 block text-sm font-medium">Name</label>
-          <input
-            type="text"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            className="w-full rounded-lg border border-[var(--color-border-default)] bg-[var(--color-bg-primary)] px-3 py-2 text-sm focus:border-[var(--color-accent)] focus:outline-none focus:ring-1 focus:ring-[var(--color-accent)]"
+      {/* Schedule & Publish Mode — summary or editor */}
+      <div className="mt-6">
+        {editingSchedule ? (
+          <ScheduleEditor
+            state={scheduleState}
+            onChange={(updates) => setScheduleState((prev) => ({ ...prev, ...updates }))}
+            onRunScout={handleRunScout}
+            scouting={scouting}
+            topicsExist={topics.length > 0}
           />
-        </div>
-
-        <div>
-          <label className="mb-1 block text-sm font-medium">Description</label>
-          <textarea
-            value={description}
-            onChange={(e) => setDescription(e.target.value)}
-            rows={3}
-            placeholder="What does this publication cover? This helps the content scout understand your focus."
-            className="w-full rounded-lg border border-[var(--color-border-default)] bg-[var(--color-bg-primary)] px-3 py-2 text-sm focus:border-[var(--color-accent)] focus:outline-none focus:ring-1 focus:ring-[var(--color-accent)]"
-          />
-        </div>
-
-        <div>
-          <label className="mb-1 block text-sm font-medium">Default Author</label>
-          <input
-            type="text"
-            value={defaultAuthor}
-            onChange={(e) => setDefaultAuthor(e.target.value)}
-            className="w-full rounded-lg border border-[var(--color-border-default)] bg-[var(--color-bg-primary)] px-3 py-2 text-sm focus:border-[var(--color-accent)] focus:outline-none focus:ring-1 focus:ring-[var(--color-accent)]"
-          />
-        </div>
-
-        <div>
-          <label className="mb-1 block text-sm font-medium">Writing Tone</label>
-          <textarea
-            value={writingTone}
-            onChange={(e) => setWritingTone(e.target.value)}
-            rows={2}
-            placeholder='e.g., "Skeptical tech analyst. Conversational but data-driven."'
-            className="w-full rounded-lg border border-[var(--color-border-default)] bg-[var(--color-bg-primary)] px-3 py-2 text-sm focus:border-[var(--color-accent)] focus:outline-none focus:ring-1 focus:ring-[var(--color-accent)]"
-          />
-        </div>
-
-        <div>
-          <label className="mb-1 block text-sm font-medium">Writing Style</label>
-          <select
-            value={styleId ?? ''}
-            onChange={(e) => setStyleId(e.target.value || null)}
-            className="w-full rounded-lg border border-[var(--color-border-default)] bg-[var(--color-bg-primary)] px-3 py-2 text-sm focus:border-[var(--color-accent)] focus:outline-none focus:ring-1 focus:ring-[var(--color-accent)]"
-          >
-            <option value="">None (use default)</option>
-            {availableStyles.map((s) => (
-              <option key={s.id} value={s.id}>
-                {s.name}{s.isPrebuilt ? ' (built-in)' : ''}
-              </option>
-            ))}
-          </select>
-          <p className="mt-1 text-xs text-[var(--color-text-muted)]">
-            Controls the AI writer's tone and voice.{' '}
-            <button
-              type="button"
-              onClick={() => navigate('/styles')}
-              className="text-[var(--color-accent)] hover:underline"
-            >
-              Manage Styles
-            </button>
-          </p>
-        </div>
-      </section>
+        ) : (
+          <ScheduleSummary publication={publication} onEdit={() => setEditingSchedule(true)} />
+        )}
+      </div>
 
       {/* Save button */}
       <div className="mt-6 flex items-center gap-3">
