@@ -91,18 +91,25 @@ app.post('/api/publications/:pubId/scout', async (c) => {
   const pub = await verifyPublicationOwnership(c, c.req.param('pubId'))
   if (!pub) return c.json({ error: 'Publication not found' }, 404)
 
-  if (!c.env.CONTENT_SCOUT_URL || !c.env.SCOUT_API_KEY) {
+  if (!c.env.SCOUT_API_KEY) {
     return c.json({ error: 'Scout service not configured' }, 503)
   }
 
-  const res = await fetch(`${c.env.CONTENT_SCOUT_URL}/api/scout/run`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${c.env.SCOUT_API_KEY}`,
-    },
-    body: JSON.stringify({ publicationId: c.req.param('pubId') }),
-  })
+  let res: Response
+  try {
+    // Use service binding (works in dev:stack and production)
+    res = await c.env.CONTENT_SCOUT.fetch(new Request('https://scout/api/scout/run', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${c.env.SCOUT_API_KEY}`,
+      },
+      body: JSON.stringify({ publicationId: c.req.param('pubId') }),
+    }))
+  } catch (err) {
+    console.error('Failed to reach content-scout service:', err)
+    return c.json({ error: 'Content scout service is unreachable.' }, 503)
+  }
 
   if (!res.ok) {
     console.error(`Scout service error (${res.status}):`, await res.text())

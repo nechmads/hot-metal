@@ -37,6 +37,10 @@
       "service": "hotmetal-data-layer",
       "entrypoint": "DataLayer",
     },
+    {
+      "binding": "CONTENT_SCOUT",
+      "service": "hotmetal-content-scout",
+    },
   ],
 
   // Workers AI binding (for image generation)

@@ -58,7 +58,7 @@ After saving a draft, briefly summarize what you wrote and ask for feedback.`,
 const TOOL_GUIDELINES = `## Tool Usage Guidelines
 
 ### Draft Tools
-- **save_draft**: Use this whenever you've written or significantly revised content. Always include a title. The tool auto-increments the version number.
+- **save_draft**: Use this whenever you've written or significantly revised content. Always include a title. The tool auto-increments the version number. **Important:** Always include the "citations" array with every URL you used during research — from search_web results, search_news results, ask_question sources, research_topic citations, and any URLs you crawled with crawl_url. These are displayed to the user as sources for the post. Include the url, title, and publisher (domain name) for each.
 - **get_current_draft**: Use this to review the latest draft before making changes. Always read before editing.
 - **list_drafts**: Use this to show the user their draft history or when they ask about previous versions.
 

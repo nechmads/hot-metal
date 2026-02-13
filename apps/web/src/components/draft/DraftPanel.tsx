@@ -5,6 +5,7 @@ import { Loader } from '@/components/loader/Loader'
 import { DraftVersionSelector } from './DraftVersionSelector'
 import { PublishModal } from './PublishModal'
 import { ImageGenerator } from './ImageGenerator'
+import { SourcesList } from './SourcesList'
 import { fetchDrafts, fetchDraft } from '@/lib/api'
 import type { Draft, DraftContent } from '@/lib/types'
 import React from 'react'
@@ -17,11 +18,12 @@ interface DraftPanelProps {
   sessionId: string
   cmsPostId?: string | null
   initialFeaturedImageUrl?: string | null
+  publicationId?: string | null
   ref?: React.Ref<DraftPanelHandle>
 }
 
 export const DraftPanel = React.forwardRef<DraftPanelHandle, DraftPanelProps>(
-  function DraftPanel({ sessionId, cmsPostId, initialFeaturedImageUrl }, ref) {
+  function DraftPanel({ sessionId, cmsPostId, initialFeaturedImageUrl, publicationId }, ref) {
     const [drafts, setDrafts] = useState<Draft[]>([])
     const [selectedVersion, setSelectedVersion] = useState<number | null>(null)
     const [content, setContent] = useState<DraftContent | null>(null)
@@ -161,12 +163,15 @@ export const DraftPanel = React.forwardRef<DraftPanelHandle, DraftPanelProps>(
               <Loader size={20} />
             </div>
           ) : content ? (
-            <div className="prose mx-auto max-w-prose rounded-xl bg-white p-8 shadow-sm dark:bg-[#1a1a1a]">
-              <MemoizedMarkdown
-                content={content.content}
-                id={`draft-${content.version}`}
-              />
-            </div>
+            <>
+              <div className="prose mx-auto max-w-prose rounded-xl bg-white p-8 shadow-sm dark:bg-[#1a1a1a]">
+                <MemoizedMarkdown
+                  content={content.content}
+                  id={`draft-${content.version}`}
+                />
+              </div>
+              <SourcesList citationsJson={content.citations} />
+            </>
           ) : (
             <div className="flex h-full flex-col items-center justify-center text-center">
               <p className="font-semibold text-[#0a0a0a] dark:text-[#fafafa]">No drafts yet</p>
@@ -191,6 +196,7 @@ export const DraftPanel = React.forwardRef<DraftPanelHandle, DraftPanelProps>(
           sessionId={sessionId}
           draftTitle={content?.title ?? null}
           featuredImageUrl={featuredImageUrl}
+          sessionPublicationId={publicationId}
           onPublished={handlePublished}
         />
       </div>
