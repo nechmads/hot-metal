@@ -104,7 +104,7 @@ export function WorkspacePage() {
               onStateUpdate={handleStateUpdate}
             />
           ) : (
-            <DraftPanel sessionId={id} cmsPostId={session.cmsPostId} initialFeaturedImageUrl={session.featuredImageUrl} ref={draftRef} />
+            <DraftPanel sessionId={id} cmsPostId={session.cmsPostId} initialFeaturedImageUrl={session.featuredImageUrl} publicationId={session.publicationId} ref={draftRef} />
           )}
         </div>
       </div>
@@ -150,7 +150,7 @@ export function WorkspacePage() {
         className="relative h-full overflow-hidden"
         style={{ width: `${rightPercent}%` }}
       >
-        <DraftPanel sessionId={id} cmsPostId={session.cmsPostId} initialFeaturedImageUrl={session.featuredImageUrl} ref={draftRef} />
+        <DraftPanel sessionId={id} cmsPostId={session.cmsPostId} initialFeaturedImageUrl={session.featuredImageUrl} publicationId={session.publicationId} ref={draftRef} />
       </div>
     </div>
   )

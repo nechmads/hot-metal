@@ -46,13 +46,19 @@ export interface PublishInput {
   tags?: string
   excerpt?: string
   hook?: string
+  publicationIds?: string[]
+}
+
+export interface PublishResultEntry {
+  postId: string
+  slug: string
+  title: string
+  publicationId: string
 }
 
 export interface PublishResult {
   success: boolean
-  postId: string
-  slug: string
-  title: string
+  results: PublishResultEntry[]
 }
 
 // --- Automation types ---

@@ -2,7 +2,8 @@ import { useEffect, useState } from 'react'
 import { CheckCircleIcon, GlobeIcon, ImageIcon, LinkedinLogoIcon, SparkleIcon } from '@phosphor-icons/react'
 import { Modal } from '@/components/modal/Modal'
 import { Loader } from '@/components/loader/Loader'
-import { generateSeo, publishDraft } from '@/lib/api'
+import { fetchPublications, generateSeo, publishDraft } from '@/lib/api'
+import type { PublicationConfig } from '@/lib/types'
 
 type Outlet = 'blog' | 'linkedin'
 
@@ -12,6 +13,7 @@ interface PublishModalProps {
   sessionId: string
   draftTitle: string | null
   featuredImageUrl?: string | null
+  sessionPublicationId?: string | null
   onPublished: (postId: string) => void
 }
 
@@ -24,7 +26,7 @@ function slugify(text: string): string {
     .replace(/^-|-$/g, '')
 }
 
-export function PublishModal({ isOpen, onClose, sessionId, draftTitle, featuredImageUrl, onPublished }: PublishModalProps) {
+export function PublishModal({ isOpen, onClose, sessionId, draftTitle, featuredImageUrl, sessionPublicationId, onPublished }: PublishModalProps) {
   const [selectedOutlet, setSelectedOutlet] = useState<Outlet>('blog')
   const [slug, setSlug] = useState('')
   const [author, setAuthor] = useState('Shahar')
@@ -36,7 +38,12 @@ export function PublishModal({ isOpen, onClose, sessionId, draftTitle, featuredI
   const [error, setError] = useState<string | null>(null)
   const [published, setPublished] = useState(false)
 
-  // Auto-generate slug + SEO fields when modal opens
+  // Publications state
+  const [publications, setPublications] = useState<PublicationConfig[]>([])
+  const [selectedPubIds, setSelectedPubIds] = useState<Set<string>>(new Set())
+  const [loadingPubs, setLoadingPubs] = useState(false)
+
+  // Load publications + auto-generate slug/SEO when modal opens
   useEffect(() => {
     if (!isOpen) {
       setError(null)
@@ -46,6 +53,7 @@ export function PublishModal({ isOpen, onClose, sessionId, draftTitle, featuredI
       setExcerpt('')
       setTags('')
       setSlug('')
+      setSelectedPubIds(new Set())
       return
     }
 
@@ -53,8 +61,30 @@ export function PublishModal({ isOpen, onClose, sessionId, draftTitle, featuredI
       setSlug(slugify(draftTitle))
     }
 
-    // Generate SEO suggestions in the background
+    // Fetch user's publications
     let cancelled = false
+    setLoadingPubs(true)
+
+    fetchPublications()
+      .then((pubs) => {
+        if (cancelled) return
+        setPublications(pubs)
+        // Pre-select the session's publication if it exists
+        if (sessionPublicationId && pubs.some((p) => p.id === sessionPublicationId)) {
+          setSelectedPubIds(new Set([sessionPublicationId]))
+        } else if (pubs.length === 1) {
+          // If user has exactly one publication, select it automatically
+          setSelectedPubIds(new Set([pubs[0].id]))
+        }
+      })
+      .catch(() => {
+        if (!cancelled) setError('Failed to load publications. Please close and try again.')
+      })
+      .finally(() => {
+        if (!cancelled) setLoadingPubs(false)
+      })
+
+    // Generate SEO suggestions in the background
     setGeneratingSeo(true)
 
     generateSeo(sessionId)
@@ -74,10 +104,22 @@ export function PublishModal({ isOpen, onClose, sessionId, draftTitle, featuredI
     return () => {
       cancelled = true
     }
-  }, [isOpen, sessionId, draftTitle])
+  }, [isOpen, sessionId, draftTitle, sessionPublicationId])
+
+  const togglePublication = (id: string) => {
+    setSelectedPubIds((prev) => {
+      const next = new Set(prev)
+      if (next.has(id)) {
+        next.delete(id)
+      } else {
+        next.add(id)
+      }
+      return next
+    })
+  }
 
   const handlePublish = async () => {
-    if (publishing || !slug.trim()) return
+    if (publishing || !slug.trim() || selectedPubIds.size === 0) return
     setPublishing(true)
     setError(null)
 
@@ -88,10 +130,13 @@ export function PublishModal({ isOpen, onClose, sessionId, draftTitle, featuredI
         tags: tags.trim() || undefined,
         excerpt: excerpt.trim() || undefined,
         hook: hook.trim() || undefined,
+        publicationIds: [...selectedPubIds],
       })
 
       setPublished(true)
-      onPublished(result.postId)
+      if (result.results[0]?.postId) {
+        onPublished(result.results[0].postId)
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to publish')
     } finally {
@@ -104,6 +149,8 @@ export function PublishModal({ isOpen, onClose, sessionId, draftTitle, featuredI
     { id: 'linkedin', label: 'LinkedIn', icon: <LinkedinLogoIcon size={20} />, available: false },
   ]
 
+  const publishedCount = selectedPubIds.size
+
   return (
     <Modal isOpen={isOpen} onClose={onClose}>
       <div className="space-y-5 p-5">
@@ -113,7 +160,7 @@ export function PublishModal({ isOpen, onClose, sessionId, draftTitle, featuredI
             <CheckCircleIcon size={48} weight="fill" className="text-green-500" />
             <h3 className="mt-3 text-lg font-semibold">Published!</h3>
             <p className="mt-1 text-sm text-[#6b7280]">
-              Your post has been published to the blog.
+              Your post has been published to {publishedCount} publication{publishedCount !== 1 ? 's' : ''}.
             </p>
             <button
               type="button"
@@ -155,29 +202,74 @@ export function PublishModal({ isOpen, onClose, sessionId, draftTitle, featuredI
               </div>
             </div>
 
-            {/* Featured Image preview */}
-            <div>
-              <label className="mb-1.5 block text-xs font-medium text-[#6b7280]">Featured Image</label>
-              {featuredImageUrl ? (
-                <div className="flex items-center gap-3">
-                  <img
-                    src={featuredImageUrl}
-                    alt="Featured"
-                    className="h-20 w-20 rounded-lg object-cover"
-                  />
-                  <span className="text-xs text-[#6b7280]">Image selected</span>
-                </div>
-              ) : (
-                <div className="flex items-center gap-2 rounded-lg border border-dashed border-[#e5e7eb] px-3 py-2.5 dark:border-[#374151]">
-                  <ImageIcon size={16} className="text-[#9ca3af]" />
-                  <span className="text-xs text-[#9ca3af]">No featured image — add one from the draft panel</span>
-                </div>
-              )}
-            </div>
-
             {/* Blog-specific fields */}
             {selectedOutlet === 'blog' && (
               <div className="space-y-3">
+                {/* Publication selector */}
+                <div>
+                  <label className="mb-1.5 block text-xs font-medium text-[#6b7280]">
+                    Publications
+                  </label>
+                  {loadingPubs ? (
+                    <div className="flex items-center gap-2 py-2">
+                      <Loader size={12} />
+                      <span className="text-xs text-[#6b7280]">Loading publications...</span>
+                    </div>
+                  ) : publications.length === 0 ? (
+                    <p className="rounded-lg border border-dashed border-[#e5e7eb] px-3 py-2.5 text-xs text-[#9ca3af] dark:border-[#374151]">
+                      No publications yet. Create one from the Publications page first.
+                    </p>
+                  ) : (
+                    <div className="space-y-1.5">
+                      {publications.map((pub) => (
+                        <label
+                          key={pub.id}
+                          className={`flex cursor-pointer items-center gap-2.5 rounded-lg border px-3 py-2 transition-colors ${
+                            selectedPubIds.has(pub.id)
+                              ? 'border-[#d97706] bg-[#d97706]/5'
+                              : 'border-[#e5e7eb] hover:border-[#d97706]/30 dark:border-[#374151]'
+                          }`}
+                        >
+                          <input
+                            type="checkbox"
+                            checked={selectedPubIds.has(pub.id)}
+                            onChange={() => togglePublication(pub.id)}
+                            className="h-3.5 w-3.5 rounded border-[#d1d5db] accent-[#d97706]"
+                          />
+                          <span className="text-sm font-medium text-[#0a0a0a] dark:text-[#fafafa]">
+                            {pub.name}
+                          </span>
+                          {pub.description && (
+                            <span className="truncate text-xs text-[#9ca3af]">
+                              {pub.description}
+                            </span>
+                          )}
+                        </label>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                {/* Featured Image preview */}
+                <div>
+                  <label className="mb-1.5 block text-xs font-medium text-[#6b7280]">Featured Image</label>
+                  {featuredImageUrl ? (
+                    <div className="flex items-center gap-3">
+                      <img
+                        src={featuredImageUrl}
+                        alt="Featured"
+                        className="h-20 w-20 rounded-lg object-cover"
+                      />
+                      <span className="text-xs text-[#6b7280]">Image selected</span>
+                    </div>
+                  ) : (
+                    <div className="flex items-center gap-2 rounded-lg border border-dashed border-[#e5e7eb] px-3 py-2.5 dark:border-[#374151]">
+                      <ImageIcon size={16} className="text-[#9ca3af]" />
+                      <span className="text-xs text-[#9ca3af]">No featured image — add one from the draft panel</span>
+                    </div>
+                  )}
+                </div>
+
                 <div>
                   <label htmlFor="publish-slug" className="mb-1 block text-xs font-medium text-[#6b7280]">
                     Slug
@@ -282,7 +374,7 @@ export function PublishModal({ isOpen, onClose, sessionId, draftTitle, featuredI
               <button
                 type="button"
                 onClick={handlePublish}
-                disabled={publishing || !slug.trim()}
+                disabled={publishing || !slug.trim() || selectedPubIds.size === 0}
                 className="flex items-center gap-1.5 rounded-lg bg-[#d97706] px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-[#b45309] disabled:opacity-50"
               >
                 {publishing ? (
@@ -291,7 +383,7 @@ export function PublishModal({ isOpen, onClose, sessionId, draftTitle, featuredI
                     Publishing...
                   </>
                 ) : (
-                  'Publish'
+                  `Publish${selectedPubIds.size > 1 ? ` to ${selectedPubIds.size} publications` : ''}`
                 )}
               </button>
             </div>

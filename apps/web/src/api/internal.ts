@@ -113,14 +113,17 @@ internal.post('/sessions/:sessionId/publish', async (c) => {
 
   // If publish succeeded, update session status via DAL
   if (res.ok && (data as { success?: boolean }).success) {
-    const result = data as { postId: string }
-    try {
-      await c.env.DAL.updateSession(sessionId, {
-        status: 'completed',
-        cmsPostId: result.postId,
-      })
-    } catch (err) {
-      console.error(`Failed to update session ${sessionId} after successful publish:`, err)
+    const result = data as { results?: { postId: string }[] }
+    const firstPostId = result.results?.[0]?.postId
+    if (firstPostId) {
+      try {
+        await c.env.DAL.updateSession(sessionId, {
+          status: 'completed',
+          cmsPostId: firstPostId,
+        })
+      } catch (err) {
+        console.error(`Failed to update session ${sessionId} after successful publish:`, err)
+      }
     }
   }
 

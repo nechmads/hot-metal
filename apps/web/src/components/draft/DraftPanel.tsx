@@ -17,11 +17,12 @@ interface DraftPanelProps {
   sessionId: string
   cmsPostId?: string | null
   initialFeaturedImageUrl?: string | null
+  publicationId?: string | null
   ref?: React.Ref<DraftPanelHandle>
 }
 
 export const DraftPanel = React.forwardRef<DraftPanelHandle, DraftPanelProps>(
-  function DraftPanel({ sessionId, cmsPostId, initialFeaturedImageUrl }, ref) {
+  function DraftPanel({ sessionId, cmsPostId, initialFeaturedImageUrl, publicationId }, ref) {
     const [drafts, setDrafts] = useState<Draft[]>([])
     const [selectedVersion, setSelectedVersion] = useState<number | null>(null)
     const [content, setContent] = useState<DraftContent | null>(null)
@@ -191,6 +192,7 @@ export const DraftPanel = React.forwardRef<DraftPanelHandle, DraftPanelProps>(
           sessionId={sessionId}
           draftTitle={content?.title ?? null}
           featuredImageUrl={featuredImageUrl}
+          sessionPublicationId={publicationId}
           onPublished={handlePublished}
         />
       </div>
