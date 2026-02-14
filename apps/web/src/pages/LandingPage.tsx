@@ -2,10 +2,14 @@ import { useAuth } from "@clerk/clerk-react";
 import { Navigate, Link } from "react-router";
 import {
   PencilLineIcon,
-  LightbulbIcon,
   RocketLaunchIcon,
   NewspaperIcon,
+  MagnifyingGlassIcon,
+  CheckCircleIcon,
+  GlobeIcon,
+  LinkedinLogoIcon,
 } from "@phosphor-icons/react";
+import { PublicNavbar } from "@/components/public/PublicNavbar";
 
 /**
  * Public landing page — shows marketing content for visitors.
@@ -25,18 +29,7 @@ export function LandingPage() {
 function LandingContent() {
   return (
     <div className="min-h-screen bg-[var(--color-bg-primary)]">
-      {/* Header */}
-      <header className="flex items-center justify-between px-6 py-4 md:px-12">
-        <h1 className="text-xl font-bold tracking-tight">
-          <span className="text-[var(--color-accent)]">Hot Metal</span> Writer
-        </h1>
-        <Link
-          to="/sign-in"
-          className="rounded-lg bg-[var(--color-accent)] px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-[var(--color-accent-hover)]"
-        >
-          Sign In
-        </Link>
-      </header>
+      <PublicNavbar showWaitlistCta={false} />
 
       {/* Hero */}
       <section className="mx-auto max-w-3xl px-6 py-24 text-center md:py-32">
@@ -64,7 +57,7 @@ function LandingContent() {
             href="#workflow"
             className="rounded-lg border border-[var(--color-border-default)] px-6 py-3 text-base font-semibold text-[var(--color-text-primary)] transition-colors hover:bg-[var(--color-bg-card)]"
           >
-            See How It Works
+            See the workflow
           </a>
         </div>
 
@@ -84,9 +77,9 @@ function LandingContent() {
             How it works
           </h3>
           <p className="mt-2 max-w-2xl text-base leading-relaxed text-[var(--color-text-muted)]">
-            Hot Metal is built for consistency. Set your topics and cadence once,
-            then run a repeatable loop that keeps quality high without eating
-            your whole week.
+            Hot Metal is built for consistency. Set your topics and cadence
+            once, then run a repeatable loop that keeps quality high without
+            eating your whole week.
           </p>
 
           <ol className="mt-6 space-y-4">
@@ -126,21 +119,46 @@ function LandingContent() {
 
       {/* Features */}
       <section className="mx-auto max-w-4xl px-6 pb-24">
-        <div className="grid gap-8 md:grid-cols-3">
+        <div className="mb-8">
+          <h3 className="text-xl font-bold tracking-tight text-[var(--color-text-primary)] md:text-2xl">
+            Top features
+          </h3>
+          <p className="mt-2 max-w-2xl text-base leading-relaxed text-[var(--color-text-muted)]">
+            Everything you need to generate quality content consistently — with
+            as much automation (or control) as you want.
+          </p>
+        </div>
+
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+          <FeatureCard
+            icon={<MagnifyingGlassIcon size={28} />}
+            title="Research on schedule"
+            description="Scout researches real-world news and updates on your cadence and brings you fresh, high-signal ideas to write about."
+          />
           <FeatureCard
             icon={<PencilLineIcon size={28} />}
-            title="Conversational Drafting"
-            description="Go from messy idea to clean draft fast — without losing your voice."
+            title="Professional writer agent (your voice)"
+            description="Write by conversation with a pro writer agent that follows your tone and style — not a generic AI vibe."
           />
           <FeatureCard
-            icon={<LightbulbIcon size={28} />}
-            title="AI-Powered Ideas"
-            description="Scout surfaces angles and topics so you can focus on writing, not hunting."
+            icon={<CheckCircleIcon size={28} />}
+            title="Human-in-the-loop or fully automated"
+            description="Review drafts before publishing, or enable auto-mode to run the schedule hands-free when you’re ready."
           />
           <FeatureCard
-            icon={<RocketLaunchIcon size={28} />}
-            title="One-Click Publish"
-            description="Publish when you're happy — or automate once your workflow feels dialed in."
+            icon={<NewspaperIcon size={28} />}
+            title="Multiple publications & blogs"
+            description="Manage multiple publications with separate topics, schedules, and writing styles — all in one place."
+          />
+          <FeatureCard
+            icon={<LinkedinLogoIcon size={28} />}
+            title="Social post variants"
+            description="Generate network-ready promo posts for your content using each platform’s best practices (hooks, formatting, CTAs)."
+          />
+          <FeatureCard
+            icon={<GlobeIcon size={28} />}
+            title="Full ownership + RSS feeds"
+            description="Your content stays yours. Export anytime, and get automatic RSS feeds for your publications."
           />
         </div>
       </section>
@@ -163,7 +181,7 @@ function LandingContent() {
               bullets={[
                 "Build your personal brand by showing up reliably.",
                 "Stay in your voice — not a generic “AI tone.”",
-                "Go from idea → draft without the blank-page tax.",
+                "Go from idea → post without the blank-page tax.",
               ]}
             />
             <AudienceCard
@@ -253,7 +271,7 @@ function LandingContent() {
               href="#workflow"
               className="rounded-lg border border-[var(--color-border-default)] px-6 py-3 text-base font-semibold text-[var(--color-text-primary)] transition-colors hover:bg-[var(--color-bg-card)]"
             >
-              See How It Works
+              See the workflow
             </a>
           </div>
         </div>
@@ -261,7 +279,17 @@ function LandingContent() {
 
       {/* Footer */}
       <footer className="border-t border-[var(--color-border-default)] px-6 py-8 text-center text-sm text-[var(--color-text-muted)]">
-        Hot Metal Writer
+        <span className="font-medium text-[var(--color-text-primary)]">
+          Hot Metal
+        </span>
+        <span className="mx-2">·</span>
+        <Link to="/faq" className="hover:underline">
+          FAQ
+        </Link>
+        <span className="mx-2">·</span>
+        <Link to="/waitlist" className="hover:underline">
+          Waitlist
+        </Link>
       </footer>
     </div>
   );

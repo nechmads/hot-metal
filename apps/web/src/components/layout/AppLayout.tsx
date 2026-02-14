@@ -22,8 +22,7 @@ export function AppLayout() {
         <header className="flex h-14 items-center border-b border-[var(--color-border-default)] bg-[var(--color-bg-primary)] px-4 md:hidden">
           <SidebarToggle onClick={() => setSidebarOpen(true)} />
           <h1 className="ml-3 text-lg font-bold tracking-tight">
-            <span className="text-[var(--color-accent)]">Hot Metal</span>{' '}
-            <span>Writer</span>
+            <span className="text-[var(--color-accent)]">Hot Metal</span>
           </h1>
         </header>
 
