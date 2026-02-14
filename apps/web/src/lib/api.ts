@@ -99,6 +99,12 @@ export async function updateSession(
 }
 
 
+export async function fetchSessionsByPublication(pubId: string, status?: Session['status']): Promise<Session[]> {
+  const params = status ? `?status=${status}` : ''
+  const result = await request<{ data: Session[] }>(`/api/publications/${pubId}/sessions${params}`)
+  return result.data
+}
+
 export async function fetchDrafts(sessionId: string): Promise<Draft[]> {
   const result = await request<{ data: Draft[] }>(
     `/api/sessions/${sessionId}/drafts`
@@ -198,6 +204,8 @@ export async function updatePublication(
     scoutSchedule: ScoutSchedule
     timezone: string
     styleId: string | null
+    feedFullEnabled: boolean
+    feedPartialEnabled: boolean
   }>,
 ): Promise<PublicationConfig> {
   return request<PublicationConfig>(`/api/publications/${id}`, {

@@ -12,19 +12,9 @@ import { EmptyPublications } from '@/components/publications/EmptyPublications'
 import { CreatePublicationModal } from '@/components/publications/CreatePublicationModal'
 import { PublicationCard } from '@/components/publications/PublicationCard'
 import { IDEA_STATUS_COLORS } from '@/lib/constants'
+import { formatRelativeTime } from '@/lib/format'
 import { fetchPublications, fetchRecentIdeas, fetchSessions } from '@/lib/api'
 import type { PublicationConfig, Idea, Session } from '@/lib/types'
-
-function formatRelativeTime(timestamp: number): string {
-  const diff = Math.max(0, Date.now() - timestamp * 1000)
-  const minutes = Math.floor(diff / 60_000)
-  if (minutes < 1) return 'Just now'
-  if (minutes < 60) return `${minutes}m ago`
-  const hours = Math.floor(minutes / 60)
-  if (hours < 24) return `${hours}h ago`
-  const days = Math.floor(hours / 24)
-  return `${days}d ago`
-}
 
 export function DashboardPage() {
   const { user } = useUser()
@@ -108,7 +98,7 @@ export function DashboardPage() {
         <CreatePublicationModal
           isOpen={showCreateModal}
           onClose={() => setShowCreateModal(false)}
-          onCreated={(pub) => navigate(`/publications/${pub.id}`)}
+          onCreated={(pub) => navigate(`/publications/${pub.id}/settings`)}
         />
       </div>
     )

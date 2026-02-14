@@ -41,6 +41,10 @@
       "binding": "CONTENT_SCOUT",
       "service": "hotmetal-content-scout",
     },
+    {
+      "binding": "PUBLISHER",
+      "service": "hotmetal-publisher",
+    },
   ],
 
   // Workers AI binding (for image generation)
@@ -59,8 +63,8 @@
     "CMS_URL": "https://cms.hotmetalapp.com",
     "CONTENT_SCOUT_URL": "https://scout.hotmetalapp.com",
     "ALEXANDER_API_URL": "https://alexanderai.farfarawaylabs.com",
-    "CLERK_PUBLISHABLE_KEY": "pk_test_dHJ1c3RlZC13aGFsZS05Ni5jbGVyay5hY2NvdW50cy5kZXYk",
-    "CLERK_ISSUER": "https://trusted-whale-96.clerk.accounts.dev",
+    "CLERK_PUBLISHABLE_KEY": "pk_live_Y2xlcmsuaG90bWV0YWxhcHAuY29tJA",
+    "CLERK_ISSUER": "https://clerk.hotmetalapp.com",
   },
 
   // SPA fallback — serve index.html for unmatched routes (client-side routing)
@@ -76,5 +80,6 @@
   // CMS_API_KEY          — authenticates requests to the CMS
   // SCOUT_API_KEY        — authenticates requests to content-scout
   // ALEXANDER_API_KEY    — authenticates requests to Alexander research API
+  // PUBLISHER_API_KEY    — authenticates requests to the publisher service
   // INTERNAL_API_KEY     — service-to-service auth (content-scout auto-write)
 }

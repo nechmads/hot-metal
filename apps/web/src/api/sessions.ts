@@ -1,6 +1,7 @@
 import { Hono } from 'hono'
 import type { AppEnv } from '../server'
 import type { SessionStatus } from '@hotmetal/data-layer'
+import { verifyPublicationOwnership } from '../middleware/ownership'
 
 const VALID_STATUSES: SessionStatus[] = ['active', 'completed', 'archived']
 
@@ -85,6 +86,24 @@ sessions.patch('/sessions/:id', async (c) => {
   })
 
   return c.json(updated)
+})
+
+/** List sessions for a specific publication. */
+sessions.get('/publications/:pubId/sessions', async (c) => {
+  const pub = await verifyPublicationOwnership(c, c.req.param('pubId'))
+  if (!pub) return c.json({ error: 'Publication not found' }, 404)
+
+  const status = c.req.query('status') || undefined
+  if (status && !isValidStatus(status)) {
+    return c.json({ error: `Invalid status. Must be one of: ${VALID_STATUSES.join(', ')}` }, 400)
+  }
+
+  const result = await c.env.DAL.listSessions({
+    userId: c.get('userId'),
+    publicationId: pub.id,
+    status: status as SessionStatus | undefined,
+  })
+  return c.json({ data: result })
 })
 
 export default sessions

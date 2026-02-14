@@ -1,4 +1,4 @@
-import { useCallback, useRef } from 'react'
+import { useCallback, useRef, useState } from 'react'
 import { useAgent } from 'agents/react'
 import { useAgentChat } from '@cloudflare/ai-chat/react'
 import { useAuth } from '@clerk/clerk-react'
@@ -17,6 +17,12 @@ interface UseWriterChatOptions {
 export function useWriterChat({ sessionId, onStateUpdate }: UseWriterChatOptions) {
   const { getToken } = useAuth()
 
+  // Unique key per component mount — ensures the agents SDK's module-level
+  // queryCache is busted when navigating away and back, so getToken() is
+  // called fresh instead of reusing a stale (expired) cached token.
+  // See: https://github.com/cloudflare/agents/issues/725
+  const [mountKey] = useState(() => Date.now())
+
   // Stabilize the callback via ref to prevent reconnection loops
   const onStateUpdateRef = useRef(onStateUpdate)
   onStateUpdateRef.current = onStateUpdate
@@ -34,7 +40,7 @@ export function useWriterChat({ sessionId, onStateUpdate }: UseWriterChatOptions
       const token = await getToken()
       return { token: token ?? null }
     },
-    queryDeps: [],
+    queryDeps: [mountKey],
   })
 
   const chat = useAgentChat({

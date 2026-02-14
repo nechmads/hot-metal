@@ -91,5 +91,14 @@
   - Publication settings: Writing Style dropdown with "Manage Styles" link
   - Session creation: accepts `styleId`, "Use" button on style cards creates session + navigates to workspace
   - Writer-agent integration: `styleId` in agent state, async `prepareLlmCall()` with style cascade (session > publication > default), `customStylePrompt` option in system prompt builder
+- [x] **Publication Home Page** — Added `/publications/:id` home page showing published posts, latest ideas, and settings link. Moved existing settings page to `/publications/:id/settings`. Added `publicationId` filter to DAL `listSessions`, new `GET /publications/:pubId/sessions` API route, `fetchSessionsByPublication` frontend helper. Extracted `formatRelativeTime` to shared `lib/format.ts` utility (deduplicated from 4 files).
+- [x] **RSS/Atom Feeds** — Pre-generated RSS 2.0 and Atom feeds per publication, stored in KV, served from publisher service. Two feed variants (full content, partial/excerpt) controlled by per-publication settings. Includes:
+  - DB migration (`0008_feed_settings.sql`): `feed_full_enabled` and `feed_partial_enabled` columns on publications
+  - Data layer: `getPublicationBySlug()`, feed columns in mapRow/create/update
+  - CMS API: `publicationId` filter added to `GET /posts` and `CmsApi.listPosts`
+  - Publisher: KV `FEEDS` binding, `feed-generator.ts` (hand-built XML with escapeXml), `feed-store.ts` (KV read/write with SHA-256 ETag + conditional requests), `feeds.ts` routes with slug validation
+  - Public feed URLs: `/:slug/rss`, `/:slug/rss/full`, `/:slug/atom`, `/:slug/atom/full`
+  - Internal regeneration: `POST /internal/feeds/regenerate/:slug` (API key auth)
+  - Web app: PUBLISHER service binding, fire-and-forget feed regeneration after publish (waitUntil), RSS Feeds settings section in publication page with enable/disable checkboxes and feed URL display
 - [ ] Writer Agent — Phase 2: Voice input (transcription in `input-processor.ts`)
 - [ ] Writer Agent — Phase 2: D1 session sync (synchronize DO state back to D1 for listing accuracy)

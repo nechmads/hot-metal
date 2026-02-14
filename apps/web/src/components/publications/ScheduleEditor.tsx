@@ -1,4 +1,5 @@
-import { MagnifyingGlassIcon } from "@phosphor-icons/react";
+import { FloppyDiskIcon, MagnifyingGlassIcon } from "@phosphor-icons/react";
+import { Loader } from "@/components/loader/Loader";
 import type { AutoPublishMode, ScheduleType } from "@/lib/types";
 import {
   MODE_OPTIONS,
@@ -23,16 +24,24 @@ interface ScheduleEditorProps {
   state: ScheduleEditorState;
   onChange: (updates: Partial<ScheduleEditorState>) => void;
   onRunScout: () => void;
+  onSave: () => void;
+  onCancel: () => void;
+  saving: boolean;
   scouting: boolean;
   topicsExist: boolean;
+  onAutoPublishModeChange: (mode: AutoPublishMode) => void;
 }
 
 export function ScheduleEditor({
   state,
   onChange,
   onRunScout,
+  onSave,
+  onCancel,
+  saving,
   scouting,
   topicsExist,
+  onAutoPublishModeChange,
 }: ScheduleEditorProps) {
   return (
     <div className="space-y-6">
@@ -175,6 +184,27 @@ export function ScheduleEditor({
             {formatNextRun(state.nextScoutAt, state.timezone)}
           </span>
         </div>
+
+        {/* Save / Cancel buttons */}
+        <div className="flex items-center gap-2 border-t border-[var(--color-border-default)] pt-4">
+          <button
+            type="button"
+            onClick={onSave}
+            disabled={saving}
+            className="flex items-center gap-2 rounded-lg bg-[var(--color-accent)] px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-[var(--color-accent-hover)] disabled:opacity-50"
+          >
+            {saving ? <Loader size={14} /> : <FloppyDiskIcon size={14} />}
+            {saving ? 'Saving...' : 'Save Schedule'}
+          </button>
+          <button
+            type="button"
+            onClick={onCancel}
+            disabled={saving}
+            className="rounded-lg border border-[var(--color-border-default)] px-4 py-2 text-sm font-medium transition-colors hover:bg-[var(--color-bg-card)] disabled:opacity-50"
+          >
+            Cancel
+          </button>
+        </div>
       </section>
 
       {/* Publish Mode */}
@@ -196,7 +226,7 @@ export function ScheduleEditor({
                 name="autoPublishMode"
                 value={mode.value}
                 checked={state.autoPublishMode === mode.value}
-                onChange={() => onChange({ autoPublishMode: mode.value })}
+                onChange={() => onAutoPublishModeChange(mode.value)}
                 className="mt-0.5 accent-[var(--color-accent)]"
               />
               <div>

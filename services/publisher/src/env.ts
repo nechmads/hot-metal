@@ -2,6 +2,7 @@ import type { DataLayerApi } from '@hotmetal/data-layer'
 
 export interface PublisherEnv {
   DAL: DataLayerApi
+  FEEDS: KVNamespace
   CMS_URL: string
   CMS_API_KEY: string
   PUBLISHER_API_KEY: string

@@ -6,6 +6,7 @@ import { Loader } from '@/components/loader/Loader'
 import { fetchPublications, fetchIdeas, updateIdeaStatus } from '@/lib/api'
 import type { PublicationConfig, Idea, IdeaStatus } from '@/lib/types'
 import { IDEA_STATUS_COLORS } from '@/lib/constants'
+import { formatRelativeTime } from '@/lib/format'
 import { scoutStore$, refreshNewIdeasCount } from '@/stores/scout-store'
 
 const STATUS_FILTERS: { value: IdeaStatus | 'all'; label: string }[] = [
@@ -16,22 +17,10 @@ const STATUS_FILTERS: { value: IdeaStatus | 'all'; label: string }[] = [
   { value: 'dismissed', label: 'Dismissed' },
 ]
 
-function formatRelativeTime(timestamp: number): string {
-  const now = Date.now()
-  const diff = Math.max(0, now - timestamp * 1000)
-  const minutes = Math.floor(diff / 60_000)
-  if (minutes < 1) return 'Just now'
-  if (minutes < 60) return `${minutes}m ago`
-  const hours = Math.floor(minutes / 60)
-  if (hours < 24) return `${hours}h ago`
-  const days = Math.floor(hours / 24)
-  return `${days}d ago`
-}
-
 export function IdeasPage() {
   const navigate = useNavigate()
   const [publications, setPublications] = useState<PublicationConfig[]>([])
-  const [selectedPubId, setSelectedPubId] = useState<string | null>(null)
+  const [selectedPubId, setSelectedPubId] = useState<string>('all')
   const [ideas, setIdeas] = useState<Idea[]>([])
   const [statusFilter, setStatusFilter] = useState<IdeaStatus | 'all'>('all')
   const [loading, setLoading] = useState(true)
@@ -53,9 +42,6 @@ export function IdeasPage() {
       try {
         const pubs = await fetchPublications()
         setPublications(pubs)
-        if (pubs.length > 0) {
-          setSelectedPubId(pubs[0].id)
-        }
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Failed to load publications')
       } finally {
@@ -67,28 +53,37 @@ export function IdeasPage() {
 
   // Load ideas when publication or filter changes
   const loadIdeas = useCallback(async () => {
-    if (!selectedPubId) return
+    if (publications.length === 0) return
     setLoadingIdeas(true)
     try {
       setError(null)
-      const data = await fetchIdeas(selectedPubId, statusFilter === 'all' ? undefined : statusFilter)
-      setIdeas(data)
+      const status = statusFilter === 'all' ? undefined : statusFilter
+      if (selectedPubId === 'all') {
+        const results = await Promise.all(
+          publications.map((pub) => fetchIdeas(pub.id, status).catch(() => [] as Idea[]))
+        )
+        const merged = results.flat().sort((a, b) => b.createdAt - a.createdAt)
+        setIdeas(merged)
+      } else {
+        const data = await fetchIdeas(selectedPubId, status)
+        setIdeas(data)
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load ideas')
     } finally {
       setLoadingIdeas(false)
     }
-  }, [selectedPubId, statusFilter])
+  }, [selectedPubId, statusFilter, publications])
 
   useEffect(() => {
-    if (selectedPubId) loadIdeas()
-  }, [selectedPubId, loadIdeas])
+    if (publications.length > 0) loadIdeas()
+  }, [publications, loadIdeas])
 
   // Auto-refresh when new ideas arrive while on this page
   useEffect(() => {
     if (newIdeasCount > 0 && prevNewIdeasCount.current === 0) {
-      // Only refresh if the new ideas are for the currently selected publication
-      if (!pollingPubId || pollingPubId === selectedPubId) {
+      // Refresh if viewing all pubs, or if new ideas are for the selected publication
+      if (selectedPubId === 'all' || !pollingPubId || pollingPubId === selectedPubId) {
         loadIdeas()
       }
     }
@@ -137,25 +132,26 @@ export function IdeasPage() {
     )
   }
 
+  const pubNameMap = new Map(publications.map((p) => [p.id, p.name]))
+
   return (
     <div className="mx-auto max-w-3xl p-6">
       {/* Header */}
       <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <h2 className="text-xl font-bold">Ideas</h2>
 
-        {publications.length > 1 && (
-          <select
-            value={selectedPubId ?? ''}
-            onChange={(e) => setSelectedPubId(e.target.value)}
-            className="rounded-lg border border-[var(--color-border-default)] bg-[var(--color-bg-primary)] px-3 py-1.5 text-sm focus:border-[var(--color-accent)] focus:outline-none focus:ring-1 focus:ring-[var(--color-accent)]"
-          >
-            {publications.map((pub) => (
-              <option key={pub.id} value={pub.id}>
-                {pub.name}
-              </option>
-            ))}
-          </select>
-        )}
+        <select
+          value={selectedPubId}
+          onChange={(e) => setSelectedPubId(e.target.value)}
+          className="rounded-lg border border-[var(--color-border-default)] bg-[var(--color-bg-primary)] px-3 py-1.5 text-sm focus:border-[var(--color-accent)] focus:outline-none focus:ring-1 focus:ring-[var(--color-accent)]"
+        >
+          <option value="all">All Publications</option>
+          {publications.map((pub) => (
+            <option key={pub.id} value={pub.id}>
+              {pub.name}
+            </option>
+          ))}
+        </select>
       </div>
 
       {/* Status filter */}
@@ -224,6 +220,9 @@ export function IdeasPage() {
 
               <div className="mt-3 flex items-center justify-between text-xs text-[var(--color-text-muted)]">
                 <div className="flex items-center gap-3">
+                  {selectedPubId === 'all' && (
+                    <span className="font-medium">{pubNameMap.get(idea.publicationId) ?? 'Unknown'}</span>
+                  )}
                   {idea.relevanceScore != null && (
                     <span>Score: {Math.round(idea.relevanceScore * 100)}%</span>
                   )}

@@ -46,7 +46,7 @@ export function PublicationsPage() {
         <CreatePublicationModal
           isOpen={showCreateModal}
           onClose={() => setShowCreateModal(false)}
-          onCreated={(pub) => navigate(`/publications/${pub.id}`)}
+          onCreated={(pub) => navigate(`/publications/${pub.id}/settings`)}
         />
       </div>
     )
@@ -85,7 +85,7 @@ export function PublicationsPage() {
       <CreatePublicationModal
         isOpen={showCreateModal}
         onClose={() => setShowCreateModal(false)}
-        onCreated={(pub) => navigate(`/publications/${pub.id}`)}
+        onCreated={(pub) => navigate(`/publications/${pub.id}/settings`)}
       />
     </div>
   )

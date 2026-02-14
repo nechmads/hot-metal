@@ -20,6 +20,12 @@
 			"entrypoint": "DataLayer",
 		},
 	],
+	"kv_namespaces": [
+		{
+			"binding": "FEEDS",
+			"id": "d81d849f6dee475babb7ef842ff1ce87",
+		},
+	],
 	"routes": [
 		{
 			"pattern": "publisher.hotmetalapp.com",
@@ -31,7 +37,7 @@
 	// Environment variables (non-secret)
 	"vars": {
 		"CMS_URL": "https://cms.hotmetalapp.com",
-		"BLOG_BASE_URL": "http://localhost:4321",
+		"BLOG_BASE_URL": "https://cms.hotmetalapp.com/",
 		"LINKEDIN_REDIRECT_URI": "https://publisher.hotmetalapp.com/oauth/linkedin/callback",
 	},
 

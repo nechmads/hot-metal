@@ -52,7 +52,7 @@ publish.post('/sessions/:sessionId/publish', async (c) => {
 
   // If publish succeeded, update session status via DAL
   if (res.ok && (data as { success?: boolean }).success) {
-    const result = data as { results?: { postId: string }[] }
+    const result = data as { results?: { postId: string; publicationId: string }[] }
     const firstPostId = result.results?.[0]?.postId
     if (firstPostId) {
       try {
@@ -62,6 +62,33 @@ publish.post('/sessions/:sessionId/publish', async (c) => {
         })
       } catch (err) {
         console.error(`Failed to update session ${sessionId} after successful publish:`, err)
+      }
+    }
+
+    // Regenerate RSS/Atom feeds for each publication (fire-and-forget)
+    if (result.results?.length) {
+      const pubIds = [...new Set(result.results.map((r) => r.publicationId))]
+      for (const pubId of pubIds) {
+        c.executionCtx.waitUntil(
+          (async () => {
+            try {
+              const pub = await c.env.DAL.getPublicationById(pubId)
+              if (!pub?.slug) return
+              const feedRes = await c.env.PUBLISHER.fetch(
+                new Request(`https://publisher/internal/feeds/regenerate/${pub.slug}`, {
+                  method: 'POST',
+                  headers: { 'X-API-Key': c.env.PUBLISHER_API_KEY },
+                }),
+              )
+              if (!feedRes.ok) {
+                const body = await feedRes.text().catch(() => '')
+                console.error(`Feed regeneration returned ${feedRes.status} for "${pub.slug}": ${body}`)
+              }
+            } catch (err) {
+              console.error(`Feed regeneration failed for publication ${pubId}:`, err)
+            }
+          })(),
+        )
       }
     }
   }

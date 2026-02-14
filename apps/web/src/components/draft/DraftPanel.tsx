@@ -24,6 +24,7 @@ interface DraftPanelProps {
 
 export const DraftPanel = React.forwardRef<DraftPanelHandle, DraftPanelProps>(
   function DraftPanel({ sessionId, cmsPostId, initialFeaturedImageUrl, publicationId }, ref) {
+
     const [drafts, setDrafts] = useState<Draft[]>([])
     const [selectedVersion, setSelectedVersion] = useState<number | null>(null)
     const [content, setContent] = useState<DraftContent | null>(null)
@@ -111,15 +112,15 @@ export const DraftPanel = React.forwardRef<DraftPanelHandle, DraftPanelProps>(
       <div className="relative flex h-full flex-col bg-[#f5f5f5] dark:bg-[#111]">
         {/* Header */}
         <div className="flex items-center justify-between border-b border-[#e5e7eb] bg-white px-4 py-2 dark:border-[#374151] dark:bg-[#0a0a0a]">
-          <div className="flex items-center gap-2">
-            <span className="text-sm font-semibold text-[#0a0a0a] dark:text-[#fafafa]">Draft</span>
+          <div className="flex min-w-0 flex-1 items-center gap-2">
+            <span className="shrink-0 text-sm font-semibold text-[#0a0a0a] dark:text-[#fafafa]">Draft</span>
             <DraftVersionSelector
               drafts={drafts}
               selectedVersion={selectedVersion}
               onSelect={setSelectedVersion}
             />
           </div>
-          <div className="flex items-center gap-1">
+          <div className="flex shrink-0 items-center gap-1">
             <button
               type="button"
               onClick={handleCopy}

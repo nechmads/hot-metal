@@ -18,6 +18,8 @@ interface PublicationRow {
 	timezone: string
 	next_scout_at: number | null
 	style_id: string | null
+	feed_full_enabled: number
+	feed_partial_enabled: number
 	created_at: number
 	updated_at: number
 }
@@ -38,6 +40,8 @@ function mapRow(row: PublicationRow): Publication {
 		timezone: row.timezone ?? DEFAULT_TIMEZONE,
 		nextScoutAt: row.next_scout_at,
 		styleId: row.style_id ?? null,
+		feedFullEnabled: row.feed_full_enabled === 1,
+		feedPartialEnabled: row.feed_partial_enabled === 1,
 		createdAt: row.created_at,
 		updatedAt: row.updated_at,
 	}
@@ -56,8 +60,9 @@ export async function createPublication(
 		.prepare(
 			`INSERT INTO publications (id, user_id, name, slug, description, writing_tone,
 			 default_author, auto_publish_mode, cadence_posts_per_week, scout_schedule,
-			 timezone, next_scout_at, style_id, created_at, updated_at)
-			 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+			 timezone, next_scout_at, style_id, feed_full_enabled, feed_partial_enabled,
+			 created_at, updated_at)
+			 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
 		)
 		.bind(
 			data.id,
@@ -73,6 +78,8 @@ export async function createPublication(
 			tz,
 			nextScoutAt,
 			data.styleId ?? null,
+			(data.feedFullEnabled ?? true) ? 1 : 0,
+			(data.feedPartialEnabled ?? true) ? 1 : 0,
 			now,
 			now
 		)
@@ -93,6 +100,8 @@ export async function createPublication(
 		timezone: tz,
 		nextScoutAt,
 		styleId: data.styleId ?? null,
+		feedFullEnabled: data.feedFullEnabled ?? true,
+		feedPartialEnabled: data.feedPartialEnabled ?? true,
 		createdAt: now,
 		updatedAt: now,
 	}
@@ -102,6 +111,14 @@ export async function getPublicationById(db: D1Database, id: string): Promise<Pu
 	const row = await db
 		.prepare('SELECT * FROM publications WHERE id = ?')
 		.bind(id)
+		.first<PublicationRow>()
+	return row ? mapRow(row) : null
+}
+
+export async function getPublicationBySlug(db: D1Database, slug: string): Promise<Publication | null> {
+	const row = await db
+		.prepare('SELECT * FROM publications WHERE slug = ?')
+		.bind(slug)
 		.first<PublicationRow>()
 	return row ? mapRow(row) : null
 }
@@ -176,6 +193,14 @@ export async function updatePublication(
 	if (data.styleId !== undefined) {
 		sets.push('style_id = ?')
 		bindings.push(data.styleId)
+	}
+	if (data.feedFullEnabled !== undefined) {
+		sets.push('feed_full_enabled = ?')
+		bindings.push(data.feedFullEnabled ? 1 : 0)
+	}
+	if (data.feedPartialEnabled !== undefined) {
+		sets.push('feed_partial_enabled = ?')
+		bindings.push(data.feedPartialEnabled ? 1 : 0)
 	}
 
 	if (sets.length === 0) return getPublicationById(db, id)

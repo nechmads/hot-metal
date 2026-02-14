@@ -15,6 +15,7 @@
     "db:migrate:local": "pnpm cms:migrate:local && pnpm dal:migrate:local",
     "db:migrate:remote": "pnpm cms:migrate:remote && pnpm dal:migrate:remote",
     "db:reset:local": "pnpm cms:reset:local && pnpm dal:reset:local",
+    "db:reset:remote": "pnpm cms:migrate:remote && pnpm dal:migrate:remote",
     "deploy:cms": "pnpm --filter @hotmetal/cms-admin run deploy",
     "deploy:dal": "pnpm --filter @hotmetal/data-layer run deploy",
     "deploy:scout": "pnpm --filter @hotmetal/content-scout run deploy",

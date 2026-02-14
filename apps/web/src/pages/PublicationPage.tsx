@@ -1,13 +1,13 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { useParams, useNavigate } from 'react-router'
 import { toast } from 'sonner'
 import {
   ArrowLeftIcon,
   PlusIcon,
   TrashIcon,
-  FloppyDiskIcon,
   ToggleLeftIcon,
   ToggleRightIcon,
+  RssIcon,
 } from '@phosphor-icons/react'
 import { Modal } from '@/components/modal/Modal'
 import { Loader } from '@/components/loader/Loader'
@@ -27,13 +27,15 @@ import {
   fetchStyles,
 } from '@/lib/api'
 import { startScoutPolling } from '@/stores/scout-store'
-import type { PublicationConfig, Topic, WritingStyle } from '@/lib/types'
+import type { PublicationConfig, Topic, WritingStyle, AutoPublishMode } from '@/lib/types'
 
 const PRIORITY_OPTIONS = [
   { value: 1 as const, label: 'Normal' },
   { value: 2 as const, label: 'High' },
   { value: 3 as const, label: 'Urgent' },
 ]
+
+const DEBOUNCE_MS = 800
 
 export function PublicationPage() {
   const { id } = useParams<{ id: string }>()
@@ -42,11 +44,11 @@ export function PublicationPage() {
   const [publication, setPublication] = useState<PublicationConfig | null>(null)
   const [topics, setTopics] = useState<Topic[]>([])
   const [loading, setLoading] = useState(true)
-  const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
   // Schedule view toggle
   const [editingSchedule, setEditingSchedule] = useState(false)
+  const [savingSchedule, setSavingSchedule] = useState(false)
 
   // Publication settings form state
   const [name, setName] = useState('')
@@ -55,6 +57,8 @@ export function PublicationPage() {
   const [writingTone, setWritingTone] = useState('')
   const [styleId, setStyleId] = useState<string | null>(null)
   const [availableStyles, setAvailableStyles] = useState<WritingStyle[]>([])
+  const [feedFullEnabled, setFeedFullEnabled] = useState(true)
+  const [feedPartialEnabled, setFeedPartialEnabled] = useState(true)
 
   // Schedule form state (managed here, passed to ScheduleEditor)
   const [scheduleState, setScheduleState] = useState<ScheduleEditorState>({
@@ -84,6 +88,98 @@ export function PublicationPage() {
   const [deleting, setDeleting] = useState(false)
   const [topicToDelete, setTopicToDelete] = useState<string | null>(null)
 
+  // Auto-save refs
+  const initializedRef = useRef(false)
+  const debounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  // Keep latest text values in refs so the debounced save always reads current values
+  const nameRef = useRef(name)
+  const descriptionRef = useRef(description)
+  const defaultAuthorRef = useRef(defaultAuthor)
+  const writingToneRef = useRef(writingTone)
+
+  // --- Auto-save helpers ---
+
+  const saveFields = useCallback(async (fields: Parameters<typeof updatePublication>[1]) => {
+    if (!id) return
+    try {
+      const updated = await updatePublication(id, fields)
+      setPublication(updated)
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Failed to save')
+    }
+  }, [id])
+
+  const debouncedSaveText = useCallback(() => {
+    if (debounceTimerRef.current) clearTimeout(debounceTimerRef.current)
+    debounceTimerRef.current = setTimeout(() => {
+      const trimmedName = nameRef.current.trim()
+      if (!trimmedName) return // don't save empty name
+      saveFields({
+        name: trimmedName,
+        description: descriptionRef.current.trim() || null,
+        defaultAuthor: defaultAuthorRef.current.trim() || undefined,
+        writingTone: writingToneRef.current.trim() || null,
+      })
+    }, DEBOUNCE_MS)
+  }, [saveFields])
+
+  // Cleanup debounce timer on unmount
+  useEffect(() => {
+    return () => {
+      if (debounceTimerRef.current) clearTimeout(debounceTimerRef.current)
+    }
+  }, [])
+
+  // --- Text field change handlers (update state + ref + trigger debounce) ---
+
+  const handleNameChange = (value: string) => {
+    setName(value)
+    nameRef.current = value
+    if (initializedRef.current) debouncedSaveText()
+  }
+
+  const handleDescriptionChange = (value: string) => {
+    setDescription(value)
+    descriptionRef.current = value
+    if (initializedRef.current) debouncedSaveText()
+  }
+
+  const handleDefaultAuthorChange = (value: string) => {
+    setDefaultAuthor(value)
+    defaultAuthorRef.current = value
+    if (initializedRef.current) debouncedSaveText()
+  }
+
+  const handleWritingToneChange = (value: string) => {
+    setWritingTone(value)
+    writingToneRef.current = value
+    if (initializedRef.current) debouncedSaveText()
+  }
+
+  // --- Immediate-save change handlers ---
+
+  const handleStyleChange = (value: string | null) => {
+    setStyleId(value)
+    saveFields({ styleId: value })
+  }
+
+  const handleFeedFullChange = (checked: boolean) => {
+    setFeedFullEnabled(checked)
+    saveFields({ feedFullEnabled: checked })
+  }
+
+  const handleFeedPartialChange = (checked: boolean) => {
+    setFeedPartialEnabled(checked)
+    saveFields({ feedPartialEnabled: checked })
+  }
+
+  const handleAutoPublishModeChange = (mode: AutoPublishMode) => {
+    setScheduleState((prev) => ({ ...prev, autoPublishMode: mode }))
+    saveFields({ autoPublishMode: mode })
+  }
+
+  // --- Load ---
+
   const loadPublication = useCallback(async () => {
     if (!id) return
     try {
@@ -101,6 +197,13 @@ export function PublicationPage() {
       setDefaultAuthor(data.defaultAuthor)
       setWritingTone(data.writingTone ?? '')
       setStyleId(data.styleId ?? null)
+      setFeedFullEnabled(data.feedFullEnabled ?? true)
+      setFeedPartialEnabled(data.feedPartialEnabled ?? true)
+      // Sync refs
+      nameRef.current = data.name
+      descriptionRef.current = data.description ?? ''
+      defaultAuthorRef.current = data.defaultAuthor
+      writingToneRef.current = data.writingTone ?? ''
       // Populate schedule state
       const sched: Partial<ScheduleEditorState> = {
         autoPublishMode: data.autoPublishMode,
@@ -120,6 +223,8 @@ export function PublicationPage() {
         }
       }
       setScheduleState((prev) => ({ ...prev, ...sched }))
+      // Mark initialized so future state changes trigger auto-save
+      initializedRef.current = true
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load publication')
     } finally {
@@ -131,10 +236,11 @@ export function PublicationPage() {
     loadPublication()
   }, [loadPublication])
 
-  const handleSave = async () => {
-    if (!id || saving || !name.trim()) return
-    setSaving(true)
-    setError(null)
+  // --- Schedule save ---
+
+  const handleSaveSchedule = async () => {
+    if (!id || savingSchedule) return
+    setSavingSchedule(true)
     try {
       const scoutSchedule = buildSchedule(
         scheduleState.scheduleType,
@@ -143,36 +249,22 @@ export function PublicationPage() {
         scheduleState.scheduleDays,
       )
       const updated = await updatePublication(id, {
-        name: name.trim(),
-        description: description.trim() || null,
-        defaultAuthor: defaultAuthor.trim() || undefined,
-        writingTone: writingTone.trim() || null,
-        autoPublishMode: scheduleState.autoPublishMode,
         cadencePostsPerWeek: scheduleState.cadencePostsPerWeek,
         scoutSchedule,
         timezone: scheduleState.timezone,
-        styleId,
       })
       setPublication(updated)
-      // Refresh all local state from the server response to prevent stale data
-      setName(updated.name)
-      setDescription(updated.description ?? '')
-      setDefaultAuthor(updated.defaultAuthor)
-      setWritingTone(updated.writingTone ?? '')
-      setStyleId(updated.styleId ?? null)
       setScheduleState((prev) => ({
         ...prev,
-        autoPublishMode: updated.autoPublishMode,
-        cadencePostsPerWeek: updated.cadencePostsPerWeek,
         nextScoutAt: updated.nextScoutAt,
         ...(updated.timezone ? { timezone: updated.timezone } : {}),
       }))
       setEditingSchedule(false)
-      toast.success('Settings saved')
+      toast.success('Schedule saved')
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to save')
+      toast.error(err instanceof Error ? err.message : 'Failed to save schedule')
     } finally {
-      setSaving(false)
+      setSavingSchedule(false)
     }
   }
 
@@ -299,9 +391,9 @@ export function PublicationPage() {
       <div className="mb-6 flex items-center gap-3">
         <button
           type="button"
-          onClick={() => navigate('/publications')}
+          onClick={() => navigate(-1)}
           className="rounded-md p-1.5 text-[var(--color-text-muted)] transition-colors hover:bg-[var(--color-bg-card)]"
-          aria-label="Back to publications"
+          aria-label="Back"
         >
           <ArrowLeftIcon size={18} />
         </button>
@@ -323,7 +415,7 @@ export function PublicationPage() {
           <input
             type="text"
             value={name}
-            onChange={(e) => setName(e.target.value)}
+            onChange={(e) => handleNameChange(e.target.value)}
             className="w-full rounded-lg border border-[var(--color-border-default)] bg-[var(--color-bg-primary)] px-3 py-2 text-sm focus:border-[var(--color-accent)] focus:outline-none focus:ring-1 focus:ring-[var(--color-accent)]"
           />
         </div>
@@ -332,7 +424,7 @@ export function PublicationPage() {
           <label className="mb-1 block text-sm font-medium">Description</label>
           <textarea
             value={description}
-            onChange={(e) => setDescription(e.target.value)}
+            onChange={(e) => handleDescriptionChange(e.target.value)}
             rows={3}
             placeholder="What does this publication cover? This helps the content scout understand your focus."
             className="w-full rounded-lg border border-[var(--color-border-default)] bg-[var(--color-bg-primary)] px-3 py-2 text-sm focus:border-[var(--color-accent)] focus:outline-none focus:ring-1 focus:ring-[var(--color-accent)]"
@@ -344,7 +436,7 @@ export function PublicationPage() {
           <input
             type="text"
             value={defaultAuthor}
-            onChange={(e) => setDefaultAuthor(e.target.value)}
+            onChange={(e) => handleDefaultAuthorChange(e.target.value)}
             className="w-full rounded-lg border border-[var(--color-border-default)] bg-[var(--color-bg-primary)] px-3 py-2 text-sm focus:border-[var(--color-accent)] focus:outline-none focus:ring-1 focus:ring-[var(--color-accent)]"
           />
         </div>
@@ -353,7 +445,7 @@ export function PublicationPage() {
           <label className="mb-1 block text-sm font-medium">Writing Tone</label>
           <textarea
             value={writingTone}
-            onChange={(e) => setWritingTone(e.target.value)}
+            onChange={(e) => handleWritingToneChange(e.target.value)}
             rows={2}
             placeholder='e.g., "Skeptical tech analyst. Conversational but data-driven."'
             className="w-full rounded-lg border border-[var(--color-border-default)] bg-[var(--color-bg-primary)] px-3 py-2 text-sm focus:border-[var(--color-accent)] focus:outline-none focus:ring-1 focus:ring-[var(--color-accent)]"
@@ -364,7 +456,7 @@ export function PublicationPage() {
           <label className="mb-1 block text-sm font-medium">Writing Style</label>
           <select
             value={styleId ?? ''}
-            onChange={(e) => setStyleId(e.target.value || null)}
+            onChange={(e) => handleStyleChange(e.target.value || null)}
             className="w-full rounded-lg border border-[var(--color-border-default)] bg-[var(--color-bg-primary)] px-3 py-2 text-sm focus:border-[var(--color-accent)] focus:outline-none focus:ring-1 focus:ring-[var(--color-accent)]"
           >
             <option value="">None (use default)</option>
@@ -474,26 +566,85 @@ export function PublicationPage() {
             state={scheduleState}
             onChange={(updates) => setScheduleState((prev) => ({ ...prev, ...updates }))}
             onRunScout={handleRunScout}
+            onSave={handleSaveSchedule}
+            onCancel={() => setEditingSchedule(false)}
+            saving={savingSchedule}
             scouting={scouting}
             topicsExist={topics.length > 0}
+            onAutoPublishModeChange={handleAutoPublishModeChange}
           />
         ) : (
           <ScheduleSummary publication={publication} onEdit={() => setEditingSchedule(true)} />
         )}
       </div>
 
-      {/* Save button */}
-      <div className="mt-6 flex items-center gap-3">
-        <button
-          type="button"
-          onClick={handleSave}
-          disabled={saving || !name.trim()}
-          className="flex items-center gap-2 rounded-lg bg-[var(--color-accent)] px-5 py-2 text-sm font-medium text-white transition-colors hover:bg-[var(--color-accent-hover)] disabled:opacity-50"
-        >
-          {saving ? <Loader size={16} /> : <FloppyDiskIcon size={16} />}
-          {saving ? 'Saving...' : 'Save Settings'}
-        </button>
-      </div>
+      {/* RSS Feeds */}
+      <section className="mt-6 space-y-4 rounded-xl border border-[var(--color-border-default)] bg-[var(--color-bg-primary)] p-5">
+        <div className="flex items-center gap-2">
+          <RssIcon size={20} className="text-[var(--color-accent)]" />
+          <h3 className="font-semibold">RSS Feeds</h3>
+        </div>
+
+        <div className="space-y-3">
+          <label className="flex items-center gap-3">
+            <input
+              type="checkbox"
+              checked={feedPartialEnabled}
+              onChange={(e) => handleFeedPartialChange(e.target.checked)}
+              className="h-4 w-4 rounded accent-[var(--color-accent)]"
+            />
+            <div>
+              <span className="text-sm font-medium">Partial content feed</span>
+              <p className="text-xs text-[var(--color-text-muted)]">
+                Includes title and excerpt only
+              </p>
+            </div>
+          </label>
+
+          <label className="flex items-center gap-3">
+            <input
+              type="checkbox"
+              checked={feedFullEnabled}
+              onChange={(e) => handleFeedFullChange(e.target.checked)}
+              className="h-4 w-4 rounded accent-[var(--color-accent)]"
+            />
+            <div>
+              <span className="text-sm font-medium">Full content feed</span>
+              <p className="text-xs text-[var(--color-text-muted)]">
+                Includes the complete post content
+              </p>
+            </div>
+          </label>
+        </div>
+
+        {(feedPartialEnabled || feedFullEnabled) && publication.slug && (
+          <div className="rounded-lg bg-[var(--color-bg-card)] p-3">
+            <p className="mb-2 text-xs font-medium text-[var(--color-text-muted)]">Feed URLs</p>
+            <div className="space-y-1.5 text-xs">
+              {feedPartialEnabled && (
+                <>
+                  <a href={`https://feeds.hotmetalapp.com/${publication.slug}/rss`} target="_blank" rel="noopener noreferrer" className="block font-mono text-[var(--color-accent)] hover:underline">
+                    https://feeds.hotmetalapp.com/{publication.slug}/rss
+                  </a>
+                  <a href={`https://feeds.hotmetalapp.com/${publication.slug}/atom`} target="_blank" rel="noopener noreferrer" className="block font-mono text-[var(--color-accent)] hover:underline">
+                    https://feeds.hotmetalapp.com/{publication.slug}/atom
+                  </a>
+                </>
+              )}
+              {feedFullEnabled && (
+                <>
+                  <a href={`https://feeds.hotmetalapp.com/${publication.slug}/rss/full`} target="_blank" rel="noopener noreferrer" className="block font-mono text-[var(--color-accent)] hover:underline">
+                    https://feeds.hotmetalapp.com/{publication.slug}/rss/full
+                  </a>
+                  <a href={`https://feeds.hotmetalapp.com/${publication.slug}/atom/full`} target="_blank" rel="noopener noreferrer" className="block font-mono text-[var(--color-accent)] hover:underline">
+                    https://feeds.hotmetalapp.com/{publication.slug}/atom/full
+                  </a>
+                </>
+              )}
+            </div>
+          </div>
+        )}
+      </section>
 
       {/* Danger Zone */}
       <section className="mt-8 rounded-xl border border-red-200 p-5">

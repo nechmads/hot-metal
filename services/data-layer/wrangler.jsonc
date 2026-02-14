@@ -1,5 +1,6 @@
 {
 	"$schema": "node_modules/wrangler/config-schema.json",
+	"account_id": "2174498561748c927a0b968e44a56754",
 	"name": "hotmetal-data-layer",
 	"main": "src/index.ts",
 	"compatibility_date": "2026-02-10",

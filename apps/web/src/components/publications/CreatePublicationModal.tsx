@@ -57,7 +57,7 @@ export function CreatePublicationModal({ isOpen, onClose, onCreated }: CreatePub
       if (onCreated) {
         onCreated(pub)
       } else {
-        navigate(`/publications/${pub.id}`)
+        navigate(`/publications/${pub.id}/settings`)
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to create publication')

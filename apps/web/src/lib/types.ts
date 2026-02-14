@@ -63,7 +63,7 @@ export interface PublishResult {
 
 // --- Automation types ---
 
-export type AutoPublishMode = 'draft' | 'publish' | 'full-auto'
+export type AutoPublishMode = 'draft' | 'full-auto'
 
 export type ScheduleType = 'daily' | 'times_per_day' | 'every_n_days'
 
@@ -100,6 +100,8 @@ export interface PublicationConfig {
   timezone: string
   nextScoutAt: number | null
   styleId: string | null
+  feedFullEnabled: boolean
+  feedPartialEnabled: boolean
   createdAt: number
   updatedAt: number
   topics?: Topic[]

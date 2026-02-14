@@ -81,6 +81,7 @@ export interface UpdateSessionInput {
 export interface ListSessionsFilters {
 	userId?: string
 	status?: SessionStatus
+	publicationId?: string
 }
 
 // ─── Publications ────────────────────────────────────────────────────
@@ -100,6 +101,8 @@ export interface Publication {
 	timezone: string
 	nextScoutAt: number | null
 	styleId: string | null
+	feedFullEnabled: boolean
+	feedPartialEnabled: boolean
 	createdAt: number
 	updatedAt: number
 }
@@ -117,6 +120,8 @@ export interface CreatePublicationInput {
 	scoutSchedule?: ScoutSchedule
 	timezone?: string
 	styleId?: string
+	feedFullEnabled?: boolean
+	feedPartialEnabled?: boolean
 }
 
 export interface UpdatePublicationInput {
@@ -132,6 +137,8 @@ export interface UpdatePublicationInput {
 	timezone?: string
 	nextScoutAt?: number | null
 	styleId?: string | null
+	feedFullEnabled?: boolean
+	feedPartialEnabled?: boolean
 }
 
 // ─── Topics ──────────────────────────────────────────────────────────

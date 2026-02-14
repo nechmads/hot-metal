@@ -12,6 +12,7 @@ import { IdeasPage } from '@/pages/IdeasPage'
 import { IdeaDetailPage } from '@/pages/IdeaDetailPage'
 import { PublicationsPage } from '@/pages/PublicationsPage'
 import { PublicationPage } from '@/pages/PublicationPage'
+import { PublicationHomePage } from '@/pages/PublicationHomePage'
 import { StylesPage } from '@/pages/StylesPage'
 
 export default function App() {
@@ -38,7 +39,8 @@ export default function App() {
           <Route path="/writing" element={<SessionsPage />} />
           <Route path="/writing/:id" element={<WorkspacePage />} />
           <Route path="/publications" element={<PublicationsPage />} />
-          <Route path="/publications/:id" element={<PublicationPage />} />
+          <Route path="/publications/:id" element={<PublicationHomePage />} />
+          <Route path="/publications/:id/settings" element={<PublicationPage />} />
           <Route path="/styles" element={<StylesPage />} />
         </Route>
 

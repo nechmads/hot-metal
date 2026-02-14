@@ -22,6 +22,9 @@ declare namespace Cloudflare {
 		// CMS admin (publishing)
 		CMS_URL: string;
 		CMS_API_KEY: string;
+		// Publisher service binding (feed regeneration)
+		PUBLISHER: Fetcher;
+		PUBLISHER_API_KEY: string;
 		// Service-to-service auth (content-scout auto-write)
 		INTERNAL_API_KEY: string;
 	}

@@ -234,6 +234,7 @@ apiV1.post('/publications', async (c) => {
 apiV1.get('/posts', async (c) => {
   const db = (c.env as Record<string, unknown>).DB as D1Database
   const status = c.req.query('status')
+  const publicationId = c.req.query('publicationId')
   const limit = Math.max(1, Math.min(parseInt(c.req.query('limit') || '50', 10) || 50, 100))
   const offset = Math.max(0, parseInt(c.req.query('offset') || '0', 10) || 0)
 
@@ -248,6 +249,10 @@ apiV1.get('/posts', async (c) => {
   if (status) {
     query += "AND json_extract(data, '$.status') = ? "
     params.push(status)
+  }
+  if (publicationId) {
+    query += "AND json_extract(data, '$.publication') = ? "
+    params.push(publicationId)
   }
 
   query += 'ORDER BY created_at DESC LIMIT ? OFFSET ?'

@@ -101,6 +101,10 @@ export async function listSessions(db: D1Database, filters?: ListSessionsFilters
 		conditions.push('status = ?')
 		bindings.push(filters.status)
 	}
+	if (filters?.publicationId) {
+		conditions.push('publication_id = ?')
+		bindings.push(filters.publicationId)
+	}
 
 	if (conditions.length > 0) {
 		query += ' WHERE ' + conditions.join(' AND ')

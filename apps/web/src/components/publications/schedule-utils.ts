@@ -2,14 +2,12 @@ import type { AutoPublishMode, ScheduleType, ScoutSchedule } from '@/lib/types'
 
 export const MODE_LABELS: Record<AutoPublishMode, string> = {
   draft: 'Draft',
-  publish: 'Publish',
-  'full-auto': 'Full Auto',
+  'full-auto': 'Auto Publish',
 }
 
 export const MODE_OPTIONS: { value: AutoPublishMode; label: string; description: string }[] = [
   { value: 'draft', label: 'Draft', description: 'Scout finds ideas. You decide what to write.' },
-  { value: 'publish', label: 'Publish', description: 'Scout finds and publishes the best idea each run.' },
-  { value: 'full-auto', label: 'Full Auto', description: 'Scout finds ideas and publishes on your cadence.' },
+  { value: 'full-auto', label: 'Auto Publish', description: 'Scout finds ideas and publishes on your cadence.' },
 ]
 
 export const SCHEDULE_TYPE_OPTIONS: { value: ScheduleType; label: string; description: string }[] = [

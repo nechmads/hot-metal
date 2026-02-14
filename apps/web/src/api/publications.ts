@@ -112,6 +112,8 @@ publications.patch('/publications/:id', async (c) => {
     scoutSchedule?: ScoutSchedule
     timezone?: string
     styleId?: string | null
+    feedFullEnabled?: boolean
+    feedPartialEnabled?: boolean
   }>()
 
   if (body.autoPublishMode && !AUTO_PUBLISH_MODES.includes(body.autoPublishMode as AutoPublishMode)) {
@@ -158,6 +160,8 @@ publications.patch('/publications/:id', async (c) => {
     scoutSchedule: body.scoutSchedule,
     timezone: body.timezone,
     styleId: body.styleId,
+    feedFullEnabled: body.feedFullEnabled,
+    feedPartialEnabled: body.feedPartialEnabled,
     nextScoutAt,
   })
 

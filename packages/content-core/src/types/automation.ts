@@ -10,9 +10,9 @@ export interface User {
 }
 
 /** Auto-publish modes for a publication. */
-export type AutoPublishMode = 'draft' | 'publish' | 'full-auto'
+export type AutoPublishMode = 'draft' | 'full-auto'
 
-export const AUTO_PUBLISH_MODES: readonly AutoPublishMode[] = ['draft', 'publish', 'full-auto'] as const
+export const AUTO_PUBLISH_MODES: readonly AutoPublishMode[] = ['draft', 'full-auto'] as const
 
 /**
  * Publication automation config stored in the Data Access Layer.
