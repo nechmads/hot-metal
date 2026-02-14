@@ -28,12 +28,17 @@ publish.post('/sessions/:sessionId/generate-seo', async (c) => {
 /** Publish the current draft to the CMS — proxied to agent DO. */
 publish.post('/sessions/:sessionId/publish', async (c) => {
   const sessionId = c.req.param('sessionId')
+  const userId = c.get('userId')
 
   const session = await c.env.DAL.getSessionById(sessionId)
   if (!session) return c.json({ error: 'Session not found' }, 404)
-  if (session.userId !== c.get('userId')) {
+  if (session.userId !== userId) {
     return c.json({ error: 'Session not found' }, 404)
   }
+
+  // Parse body to extract publishToLinkedIn before forwarding to agent
+  const body = await c.req.json<{ publishToLinkedIn?: boolean; [key: string]: unknown }>()
+  const publishToLinkedIn = body.publishToLinkedIn ?? false
 
   const agent = await getAgentByName<Env, WriterAgent>(c.env.WRITER_AGENT, sessionId)
 
@@ -44,7 +49,7 @@ publish.post('/sessions/:sessionId/publish', async (c) => {
     new Request(url.toString(), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: await c.req.text(),
+      body: JSON.stringify(body),
     }),
   )
 
@@ -81,8 +86,8 @@ publish.post('/sessions/:sessionId/publish', async (c) => {
                 }),
               )
               if (!feedRes.ok) {
-                const body = await feedRes.text().catch(() => '')
-                console.error(`Feed regeneration returned ${feedRes.status} for "${pub.slug}": ${body}`)
+                const errBody = await feedRes.text().catch(() => '')
+                console.error(`Feed regeneration returned ${feedRes.status} for "${pub.slug}": ${errBody}`)
               }
             } catch (err) {
               console.error(`Feed regeneration failed for publication ${pubId}:`, err)
@@ -90,6 +95,35 @@ publish.post('/sessions/:sessionId/publish', async (c) => {
           })(),
         )
       }
+    }
+
+    // Publish to LinkedIn (fire-and-forget) if requested
+    if (publishToLinkedIn && firstPostId) {
+      c.executionCtx.waitUntil(
+        (async () => {
+          try {
+            const linkedinRes = await c.env.PUBLISHER.fetch(
+              new Request('https://publisher/publish/linkedin', {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                  'X-API-Key': c.env.PUBLISHER_API_KEY,
+                },
+                body: JSON.stringify({
+                  postId: firstPostId,
+                  userId,
+                }),
+              }),
+            )
+            if (!linkedinRes.ok) {
+              const errBody = await linkedinRes.text().catch(() => '')
+              console.error(`LinkedIn publish failed (${linkedinRes.status}): ${errBody}`)
+            }
+          } catch (err) {
+            console.error('LinkedIn publish failed:', err)
+          }
+        })(),
+      )
     }
   }
 

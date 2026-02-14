@@ -137,16 +137,20 @@ publish.post('/publish/blog/create', async (c) => {
 
 /** Publish a post to LinkedIn. */
 publish.post('/publish/linkedin', async (c) => {
-  const body = await c.req.json<{ postId?: string; shareType?: string }>()
+  const body = await c.req.json<{ postId?: string; userId?: string; shareType?: string }>()
 
   if (!body.postId || typeof body.postId !== 'string') {
     return c.json({ error: 'postId is required' }, 400)
   }
 
-  const token = await getValidLinkedInToken(c.env.DAL)
+  if (!body.userId || typeof body.userId !== 'string') {
+    return c.json({ error: 'userId is required' }, 400)
+  }
+
+  const token = await getValidLinkedInToken(c.env.DAL, body.userId)
 
   if (!token) {
-    return c.json({ error: 'LinkedIn not connected. Visit /oauth/linkedin to authorize.' }, 401)
+    return c.json({ error: 'LinkedIn not connected. Connect your account in Settings.' }, 401)
   }
 
   const cmsApi = new CmsApi(c.env.CMS_URL, c.env.CMS_API_KEY)

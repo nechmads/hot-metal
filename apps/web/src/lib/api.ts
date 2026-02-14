@@ -2,6 +2,7 @@ import type {
   Session, Draft, DraftContent, SeoSuggestion, PublishInput, PublishResult,
   PublicationConfig, Topic, Idea, IdeaStatus, AutoPublishMode, ActivityItem,
   ScoutSchedule, GeneratedImage, WritingStyle, AnalyzeUrlResponse,
+  SocialConnection,
 } from './types'
 
 const JSON_HEADERS = { 'Content-Type': 'application/json' }
@@ -361,6 +362,25 @@ export async function duplicateStyle(id: string): Promise<WritingStyle> {
   return request<WritingStyle>(`/api/styles/${id}/duplicate`, {
     method: 'POST',
   })
+}
+
+// --- Social Connections ---
+
+export async function fetchConnections(): Promise<SocialConnection[]> {
+  const result = await request<{ data: SocialConnection[] }>('/api/connections')
+  return result.data
+}
+
+export async function deleteConnection(id: string): Promise<void> {
+  await request(`/api/connections/${id}`, { method: 'DELETE' })
+}
+
+export async function getLinkedInAuthUrl(): Promise<{ authUrl: string }> {
+  return request<{ authUrl: string }>('/api/connections/oauth/linkedin')
+}
+
+export async function getLinkedInStatus(): Promise<{ connected: boolean }> {
+  return request<{ connected: boolean }>('/api/connections/oauth/linkedin/status')
 }
 
 // --- Activity (content calendar) ---

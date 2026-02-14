@@ -47,6 +47,7 @@ export interface PublishInput {
   excerpt?: string
   hook?: string
   publicationIds?: string[]
+  publishToLinkedIn?: boolean
 }
 
 export interface PublishResultEntry {
@@ -174,6 +175,21 @@ export interface AnalyzeUrlResponse {
     sample_rewrite?: string
   }
   metadata?: Record<string, unknown>
+}
+
+// --- Social Connections ---
+
+export interface SocialConnection {
+  id: string
+  userId: string
+  provider: string
+  displayName: string | null
+  connectionType: string | null
+  externalId: string | null
+  tokenExpiresAt: number | null
+  scopes: string | null
+  createdAt: number
+  updatedAt: number
 }
 
 // --- Activity (content calendar) ---

@@ -100,5 +100,15 @@
   - Public feed URLs: `/:slug/rss`, `/:slug/rss/full`, `/:slug/atom`, `/:slug/atom/full`
   - Internal regeneration: `POST /internal/feeds/regenerate/:slug` (API key auth)
   - Web app: PUBLISHER service binding, fire-and-forget feed regeneration after publish (waitUntil), RSS Feeds settings section in publication page with enable/disable checkboxes and feed URL display
+- [x] **Multi-User LinkedIn Connections & Settings Page** — Thread userId through publisher OAuth and publish flows, add web app connections API, build Settings page with LinkedIn connection management, and enable LinkedIn in PublishModal. Includes:
+  - DB migration (`0009_oauth_state_user_id.sql`): `user_id` column on `oauth_state` table
+  - Data layer: `OAuthStateResult` type, updated `storeOAuthState`/`validateAndConsumeOAuthState` for userId
+  - Publisher: removed `DEFAULT_USER_ID`, thread userId through token-store, OAuth routes (with API key auth), publish route
+  - Publisher: `WEB_APP_URL` env var for OAuth callback redirects back to web app
+  - Web app: `/api/connections` routes (list, delete, OAuth initiate, status check) with ownership verification
+  - Frontend: `SocialConnection` type, connection API functions, Settings page (`/settings`) with LinkedIn connect/disconnect
+  - PublishModal: LinkedIn toggle checkbox, `publishToLinkedIn` flag, fire-and-forget LinkedIn publish via `waitUntil`
+  - Sidebar: Settings nav item with gear icon
+- [x] **Web Landing Page + Public FAQ Page** — Updated the web landing page to better sell “consistent content → authority” (new hero, workflow flow, expanded feature grid, audiences, improved readability, links) and added a public `/faq` page with comprehensive product FAQs, linked from the landing footer.
 - [ ] Writer Agent — Phase 2: Voice input (transcription in `input-processor.ts`)
 - [ ] Writer Agent — Phase 2: D1 session sync (synchronize DO state back to D1 for listing accuracy)

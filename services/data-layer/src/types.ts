@@ -227,7 +227,10 @@ export interface AuditLogInput {
 
 // ─── OAuth State ─────────────────────────────────────────────────────
 
-// No extra types needed — methods use primitives
+export interface OAuthStateResult {
+	valid: boolean
+	userId: string | null
+}
 
 // ─── Social Connections ──────────────────────────────────────────────
 

@@ -29,6 +29,7 @@ import drafts from './api/drafts'
 import chat from './api/chat'
 import publish from './api/publish'
 import images from './api/images'
+import connections from './api/connections'
 import internal from './api/internal'
 
 // Re-export the WriterAgent DO class for wrangler registration
@@ -84,6 +85,7 @@ app.route('/api', styles)
 app.route('/api', drafts)
 app.route('/api', chat)
 app.route('/api', publish)
+app.route('/api', connections)
 app.route('/api', images)
 
 // ─── Scout trigger (proxied to content-scout) ───────────────────────

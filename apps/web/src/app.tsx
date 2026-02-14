@@ -5,6 +5,8 @@ import { LandingPage } from '@/pages/LandingPage'
 import { SignInPage } from '@/pages/SignInPage'
 import { SignUpPage } from '@/pages/SignUpPage'
 import { WaitlistPage } from '@/pages/WaitlistPage'
+import { FaqPage } from '@/pages/FaqPage'
+import { AboutPage } from '@/pages/AboutPage'
 import { DashboardPage } from '@/pages/DashboardPage'
 import { SessionsPage } from '@/pages/SessionsPage'
 import { WorkspacePage } from '@/pages/WorkspacePage'
@@ -14,6 +16,7 @@ import { PublicationsPage } from '@/pages/PublicationsPage'
 import { PublicationPage } from '@/pages/PublicationPage'
 import { PublicationHomePage } from '@/pages/PublicationHomePage'
 import { StylesPage } from '@/pages/StylesPage'
+import { SettingsPage } from '@/pages/SettingsPage'
 
 export default function App() {
   return (
@@ -24,6 +27,8 @@ export default function App() {
         <Route path="/sign-in/*" element={<SignInPage />} />
         <Route path="/sign-up/*" element={<SignUpPage />} />
         <Route path="/waitlist/*" element={<WaitlistPage />} />
+        <Route path="/faq/*" element={<FaqPage />} />
+        <Route path="/about/*" element={<AboutPage />} />
 
         {/* Protected routes — require Clerk auth */}
         <Route
@@ -42,6 +47,7 @@ export default function App() {
           <Route path="/publications/:id" element={<PublicationHomePage />} />
           <Route path="/publications/:id/settings" element={<PublicationPage />} />
           <Route path="/styles" element={<StylesPage />} />
+          <Route path="/settings" element={<SettingsPage />} />
         </Route>
 
         {/* Catch-all: redirect to landing */}

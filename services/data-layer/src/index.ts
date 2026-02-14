@@ -28,6 +28,7 @@ import type {
 	ListIdeasFilters,
 	IdeaStatus,
 	AuditLogInput,
+	OAuthStateResult,
 	CreateSocialConnectionInput,
 	TokenUpdate,
 	CreatePublicationOutletInput,
@@ -114,8 +115,8 @@ export interface DataLayerApi {
 	writeAuditLog(entry: AuditLogInput): Promise<void>
 
 	// OAuth State
-	storeOAuthState(state: string, provider: string, ttlSeconds?: number): Promise<void>
-	validateAndConsumeOAuthState(state: string, provider: string): Promise<boolean>
+	storeOAuthState(state: string, provider: string, ttlSeconds?: number, userId?: string): Promise<void>
+	validateAndConsumeOAuthState(state: string, provider: string): Promise<OAuthStateResult>
 
 	// Social Connections
 	createSocialConnection(data: CreateSocialConnectionInput): Promise<SocialConnection>
@@ -210,7 +211,7 @@ export class DataLayer extends WorkerEntrypoint<Env> {
 	writeAuditLog(entry: AuditLogInput) { return auditLogs.writeAuditLog(this.env.DB, entry) }
 
 	// ─── OAuth State ───────────────────────────────────────────────────
-	storeOAuthState(state: string, provider: string, ttlSeconds?: number) { return oauthState.storeOAuthState(this.env.DB, state, provider, ttlSeconds) }
+	storeOAuthState(state: string, provider: string, ttlSeconds?: number, userId?: string) { return oauthState.storeOAuthState(this.env.DB, state, provider, ttlSeconds, userId) }
 	validateAndConsumeOAuthState(state: string, provider: string) { return oauthState.validateAndConsumeOAuthState(this.env.DB, state, provider) }
 
 	// ─── Social Connections ────────────────────────────────────────────

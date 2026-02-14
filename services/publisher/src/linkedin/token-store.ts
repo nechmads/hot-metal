@@ -3,15 +3,13 @@
  * Encryption is handled internally by the DAL service.
  */
 
-import type { DataLayerApi } from '@hotmetal/data-layer'
-
-// Publisher currently has a single implicit user
-const DEFAULT_USER_ID = 'default'
+import type { DataLayerApi, OAuthStateResult } from '@hotmetal/data-layer'
 
 // ─── Token management ────────────────────────────────────────────────
 
 export async function storeLinkedInToken(
   dal: DataLayerApi,
+  userId: string,
   accessToken: string,
   personUrn: string | null,
   expiresIn: number,
@@ -19,14 +17,14 @@ export async function storeLinkedInToken(
   const now = Math.floor(Date.now() / 1000)
 
   // Find any existing LinkedIn connection before creating the new one
-  const connections = await dal.getSocialConnectionsByUser(DEFAULT_USER_ID)
+  const connections = await dal.getSocialConnectionsByUser(userId)
   const existing = connections.find((c) => c.provider === 'linkedin')
 
   // Create the new connection first (DAL encrypts tokens internally).
   // If we crash between create and delete, we have a recoverable duplicate
   // rather than zero connections (data loss).
   await dal.createSocialConnection({
-    userId: DEFAULT_USER_ID,
+    userId,
     provider: 'linkedin',
     accessToken,
     externalId: personUrn ?? undefined,
@@ -35,15 +33,20 @@ export async function storeLinkedInToken(
 
   // Remove the old connection after the new one is safely stored
   if (existing) {
-    await dal.deleteSocialConnection(existing.id)
+    try {
+      await dal.deleteSocialConnection(existing.id)
+    } catch (err) {
+      console.error(`Failed to delete old LinkedIn connection ${existing.id}, duplicate may exist:`, err)
+    }
   }
 }
 
 export async function getValidLinkedInToken(
   dal: DataLayerApi,
+  userId: string,
 ): Promise<{ accessToken: string; personUrn: string } | null> {
   const now = Math.floor(Date.now() / 1000)
-  const connections = await dal.getSocialConnectionsByUser(DEFAULT_USER_ID)
+  const connections = await dal.getSocialConnectionsByUser(userId)
   const linkedin = connections.find(
     (c) => c.provider === 'linkedin' && (c.tokenExpiresAt === null || c.tokenExpiresAt > now),
   )
@@ -57,8 +60,8 @@ export async function getValidLinkedInToken(
   return { accessToken: decrypted.accessToken, personUrn: decrypted.externalId }
 }
 
-export async function hasValidLinkedInToken(dal: DataLayerApi): Promise<boolean> {
-  return dal.hasValidSocialConnection(DEFAULT_USER_ID, 'linkedin')
+export async function hasValidLinkedInToken(dal: DataLayerApi, userId: string): Promise<boolean> {
+  return dal.hasValidSocialConnection(userId, 'linkedin')
 }
 
 // ─── OAuth state management ──────────────────────────────────────────
@@ -66,14 +69,15 @@ export async function hasValidLinkedInToken(dal: DataLayerApi): Promise<boolean>
 export async function storeOAuthState(
   dal: DataLayerApi,
   state: string,
+  userId: string,
   ttlSeconds?: number,
 ): Promise<void> {
-  await dal.storeOAuthState(state, 'linkedin', ttlSeconds)
+  await dal.storeOAuthState(state, 'linkedin', ttlSeconds, userId)
 }
 
 export async function validateAndConsumeOAuthState(
   dal: DataLayerApi,
   state: string,
-): Promise<boolean> {
+): Promise<OAuthStateResult> {
   return dal.validateAndConsumeOAuthState(state, 'linkedin')
 }

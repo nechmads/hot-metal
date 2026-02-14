@@ -10,4 +10,5 @@ export interface PublisherEnv {
   LINKEDIN_CLIENT_ID: string
   LINKEDIN_CLIENT_SECRET: string
   LINKEDIN_REDIRECT_URI: string
+  WEB_APP_URL: string
 }

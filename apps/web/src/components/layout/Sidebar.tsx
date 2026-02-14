@@ -1,5 +1,5 @@
 import { NavLink } from 'react-router'
-import { HouseIcon, LightbulbIcon, PencilLineIcon, NewspaperIcon, PaletteIcon, ListIcon, XIcon } from '@phosphor-icons/react'
+import { HouseIcon, LightbulbIcon, PencilLineIcon, NewspaperIcon, PaletteIcon, GearSixIcon, ListIcon, XIcon } from '@phosphor-icons/react'
 import { UserButton } from '@clerk/clerk-react'
 import { useValue } from '@legendapp/state/react'
 import { scoutStore$ } from '@/stores/scout-store'
@@ -10,6 +10,7 @@ const NAV_ITEMS = [
   { to: '/ideas', label: 'Ideas', icon: LightbulbIcon },
   { to: '/writing', label: 'Writing', icon: PencilLineIcon },
   { to: '/styles', label: 'Styles', icon: PaletteIcon },
+  { to: '/settings', label: 'Settings', icon: GearSixIcon },
 ] as const
 
 interface SidebarProps {
