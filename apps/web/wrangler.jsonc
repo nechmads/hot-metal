@@ -63,7 +63,7 @@
     "CMS_URL": "https://cms.hotmetalapp.com",
     "CONTENT_SCOUT_URL": "https://scout.hotmetalapp.com",
     "ALEXANDER_API_URL": "https://alexanderai.farfarawaylabs.com",
-    "IMAGE_BASE_URL": "",
+    "IMAGE_BASE_URL": "https://images.hotmetalapp.com",
     "CLERK_PUBLISHABLE_KEY": "pk_live_Y2xlcmsuaG90bWV0YWxhcHAuY29tJA",
     "CLERK_ISSUER": "https://clerk.hotmetalapp.com",
   },
