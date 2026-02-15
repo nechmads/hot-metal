@@ -8,6 +8,9 @@ import {
   CheckCircleIcon,
   GlobeIcon,
   LinkedinLogoIcon,
+  PaintBrushIcon,
+  RssIcon,
+  LightningIcon,
 } from "@phosphor-icons/react";
 import { PublicNavbar } from "@/components/public/PublicNavbar";
 
@@ -114,6 +117,52 @@ function LandingContent() {
               isLast
             />
           </ol>
+        </div>
+      </section>
+
+      {/* Beautiful publications included */}
+      <section className="mx-auto max-w-4xl px-6 pb-24">
+        <div className="rounded-2xl border border-[var(--color-border-default)] bg-gradient-to-br from-[var(--color-bg-card)] to-[var(--color-bg-primary)] p-8">
+          <div className="text-center">
+            <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-[var(--color-accent)] text-white">
+              <GlobeIcon size={32} weight="duotone" />
+            </div>
+            <h3 className="text-xl font-bold tracking-tight text-[var(--color-text-primary)] md:text-2xl">
+              Beautiful publications, automatically included
+            </h3>
+            <p className="mx-auto mt-3 max-w-2xl text-base leading-relaxed text-[var(--color-text-muted)]">
+              Every publication you create gets its own stunning frontend —
+              complete with customizable templates, lightning-fast RSS & Atom
+              feeds, and zero setup required.
+            </p>
+          </div>
+
+          <div className="mt-8 grid gap-4 md:grid-cols-3">
+            <PublicationFeatureCard
+              icon={<PaintBrushIcon size={24} />}
+              title="Choose your style"
+              description="Pick from gorgeous templates to match your vibe — minimal, bold, editorial, or whatever feels right."
+            />
+            <PublicationFeatureCard
+              icon={<LightningIcon size={24} />}
+              title="Lightning-fast performance"
+              description="Edge-optimized frontends that load instantly and scale effortlessly. Your readers will feel the difference."
+            />
+            <PublicationFeatureCard
+              icon={<RssIcon size={24} />}
+              title="RSS & Atom built-in"
+              description="Standard feeds generated automatically. Perfect for syndicating to platforms or building your own audience beyond the walled gardens."
+            />
+          </div>
+
+          <div className="mt-8 rounded-xl border border-[var(--color-border-default)] bg-[var(--color-bg-primary)] p-6 text-center">
+            <p className="text-base text-[var(--color-text-primary)]">
+              <span className="font-semibold">Write once, publish everywhere:</span>{" "}
+              Use your beautiful frontend as the canonical home, share RSS feeds
+              to aggregators, or export to Medium, Substack, and beyond — all
+              from one source of truth.
+            </p>
+          </div>
         </div>
       </section>
 
@@ -415,5 +464,27 @@ function FaqItem({ question, answer }: { question: string; answer: string }) {
         {answer}
       </p>
     </details>
+  );
+}
+
+function PublicationFeatureCard({
+  icon,
+  title,
+  description,
+}: {
+  icon: React.ReactNode;
+  title: string;
+  description: string;
+}) {
+  return (
+    <div className="rounded-xl border border-[var(--color-border-default)] bg-[var(--color-bg-primary)] p-6">
+      <div className="mb-3 text-[var(--color-accent)]">{icon}</div>
+      <h4 className="text-base font-semibold text-[var(--color-text-primary)]">
+        {title}
+      </h4>
+      <p className="mt-2 text-base leading-relaxed text-[var(--color-text-muted)]">
+        {description}
+      </p>
+    </div>
   );
 }
