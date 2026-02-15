@@ -61,12 +61,9 @@ metaDescription: string | null
 - Update `createPublication()` and `updatePublication()` input types
 - No new methods needed — `getPublicationBySlug()` already exists
 
-### 0.4 Web App Publication Settings
+### 0.4 pnpm Workspace
 
-- Add branding fields to the publication settings page (`apps/web/src/pages/PublicationSettingsPage.tsx`)
-- Fields: tagline, logo URL, header image URL, accent color picker, social links (twitter, linkedin, github, website), meta description
-- Template selector dropdown (just "Starter" for now)
-- All fields optional with sensible placeholder text
+- Add `apps/publications-web` to `pnpm-workspace.yaml` (should already be covered by `apps/*` glob, but verify)
 
 ---
 
@@ -145,7 +142,14 @@ apps/publications-web/
       404.astro                  # Not found page
 ```
 
-### 1.2 Wrangler Config (`wrangler.jsonc`)
+### 1.2 Dependencies
+
+Add to the copied `package.json` (beyond what blog-frontend already has):
+- `@hotmetal/shared` (workspace dep — for `CmsApi` client)
+- Rename package to `@hotmetal/publications-web`
+- Keep existing: `astro`, `@astrojs/cloudflare`, `@hotmetal/content-core`, `sanitize-html`, `tailwindcss`, `@tailwindcss/vite`
+
+### 1.3 Wrangler Config (`wrangler.jsonc`)
 
 ```jsonc
 {
@@ -173,7 +177,7 @@ apps/publications-web/
 }
 ```
 
-### 1.4 Astro Config
+### 1.4 Astro Config (minor updates to copied file)
 
 ```javascript
 // astro.config.mjs
@@ -195,8 +199,26 @@ export default defineConfig({
 
 For local dev, we can't use subdomain routing. Add hostname resolution fallback:
 - Check `X-Publication-Slug` header (for local testing)
-- Or read a `DEV_PUBLICATION_SLUG` env var
+- Or read a `DEV_PUBLICATION_SLUG` env var in `.dev.vars`
 - This lets us develop at `localhost:4322` while simulating a specific publication
+
+**Service binding requirement:** The DAL worker must be running locally for the service binding to work. With `platformProxy: { enabled: true }` in astro.config + the service binding in wrangler.jsonc, Astro dev server will proxy through miniflare. Run the DAL worker concurrently:
+```bash
+# Terminal 1: DAL worker
+cd services/data-layer && pnpm dev
+
+# Terminal 2: Publications web
+cd apps/publications-web && pnpm dev
+```
+
+Same pattern used by other services in the monorepo (writer-agent, content-scout, publisher all bind to DAL).
+
+**`.dev.vars` for local development:**
+```
+DEV_PUBLICATION_SLUG=my-blog
+CMS_URL=http://localhost:8787
+CMS_API_KEY=dev-key
+```
 
 ---
 
@@ -213,33 +235,41 @@ export async function getPublicationBySlug(
   slug: string
 ): Promise<Publication | null>
 
-// Convenience: extract branding fields for template rendering
-export async function getPublicationBranding(
-  publication: Publication
-): PublicationBranding
+// Convenience: extract branding fields for template rendering (sync — just field extraction)
+export function getPublicationBranding(publication: Publication): PublicationBranding
 ```
 
 The DAL binding is available via `Astro.locals.runtime.env.DAL`.
 
 ### 2.2 `dl/posts.ts`
 
+Uses the `CmsApi` client from `@hotmetal/shared` (already handles SonicJS content item mapping).
+
 ```typescript
-// Uses CMS API (HTTP) to fetch published posts for a publication
+// Instantiate CmsApi from env vars (CMS_URL, CMS_API_KEY)
+function getCmsApi(env: Env): CmsApi
+
+// Fetch published posts scoped to a publication
 export async function listPublishedPosts(
-  cmsUrl: string,
-  cmsApiKey: string,
+  env: Env,
   cmsPublicationId: string,
   options?: { limit?: number; offset?: number }
 ): Promise<Post[]>
+// Calls: cmsApi.listPosts({ publicationId, status: 'published', limit, offset })
 
+// Fetch a single post by slug, scoped to a publication (prevents cross-publication access)
 export async function getPostBySlug(
-  cmsUrl: string,
-  cmsApiKey: string,
-  slug: string
+  env: Env,
+  slug: string,
+  cmsPublicationId: string
 ): Promise<Post | null>
+// Calls: cmsApi.listPosts({ publicationId, status: 'published' }) with slug filter
+// Returns null if no match — this ensures a post from publication A can't be viewed on publication B's subdomain
 ```
 
-Uses `@hotmetal/shared` CmsApi client or direct fetch (whichever is simpler given the Astro context).
+**Important:** `getPostBySlug` must filter by BOTH slug AND `cmsPublicationId`. This prevents publication cross-contamination (e.g., visiting `blog-a.hotmetalapp.com/some-post` where `some-post` actually belongs to `blog-b`).
+
+**CMS Auth note:** The existing `blog-frontend` calls the CMS without auth for read-only access. Verify whether the CMS requires API key for reads — if not, `CMS_API_KEY` may be empty/optional. If auth is needed, set as a Cloudflare secret.
 
 ### 2.3 `lib/resolve-publication.ts`
 
@@ -305,6 +335,7 @@ For now this is a simple map with one entry. Future templates just add entries.
 - Optional logo (from `publication.logoUrl`)
 - Simple navigation: Home | RSS
 - Clean horizontal layout, sticky on scroll
+- Mobile hamburger menu (adapt `MobileMenu.astro` pattern from blog-frontend)
 
 #### `PublicationHero.astro`
 - Publication name as large heading
@@ -438,7 +469,17 @@ Every page includes:
 
 ### 5.4 RSS Feed Links
 
-Add `<link rel="alternate" type="application/rss+xml">` in `<head>`, pointing to the existing publisher feed URLs. The feeds are already served by the publisher service at `/:slug/rss`. We'll link to them from the publication frontend's HTML head.
+Add `<link rel="alternate" type="application/rss+xml">` in `<head>`. The feeds are already generated and served by the publisher service at `/:slug/rss`.
+
+For the `<link>` tag, we need the publisher service's public URL. Options:
+- **Option A:** Link to publisher directly (e.g., `https://publisher.hotmetalapp.com/{slug}/rss`) — simpler, but exposes the publisher URL
+- **Option B:** Add a `/rss` route in publications-web that proxies to the publisher's KV-stored feed — cleaner URL (`my-blog.hotmetalapp.com/rss`), keeps everything under the publication subdomain
+
+Recommend **Option B** for cleaner URLs. Add `pages/rss.ts` and `pages/atom.ts` that fetch from the publisher service (via service binding or HTTP) and return the XML.
+
+### 5.5 Route Priority Note
+
+Since post pages use `pages/[slug].astro` (catch-all single segment), we need to ensure static routes take priority. Astro handles this correctly — explicit files (`sitemap.xml.ts`, `robots.txt.ts`, `rss.ts`, `404.astro`) always match before `[slug].astro`. The internal cache-purge endpoint goes under `pages/internal/cache-purge.ts` → `/internal/cache-purge` (two segments, won't match `[slug]`).
 
 ---
 
@@ -531,14 +572,20 @@ For local dev, subdomain routing isn't available. The resolution fallback (from 
 
 **Goal:** Wire up the publish flow to trigger cache purging and ensure posts appear on the publication frontend.
 
-### 8.1 Cache Purge Call
+### 8.1 Service Binding Setup
+
+Add the publications-web worker as a service binding on the publisher (or vice versa) for cache purge calls. Alternatively, use HTTP with an internal API key — same pattern as the existing feed regeneration endpoint.
+
+The publisher already has `PUBLICATIONS_WEB_URL` or similar env var pattern (like `WEB_APP_URL`). Add `PUBLICATIONS_WEB_INTERNAL_URL` for the cache purge call.
+
+### 8.2 Cache Purge Call
 
 In `services/publisher/src/routes/publish.ts`, after a successful blog publish:
 
 ```typescript
-// Fire-and-forget cache purge
+// Fire-and-forget cache purge (same pattern as feed regeneration)
 ctx.executionCtx.waitUntil(
-  fetch(`${PUBLICATIONS_WEB_URL}/internal/cache-purge`, {
+  fetch(`${PUBLICATIONS_WEB_INTERNAL_URL}/internal/cache-purge`, {
     method: 'POST',
     headers: { 'Authorization': `Bearer ${API_KEY}` },
     body: JSON.stringify({ publicationSlug, postSlug })
@@ -546,7 +593,7 @@ ctx.executionCtx.waitUntil(
 );
 ```
 
-### 8.2 Canonical URL Generation
+### 8.3 Canonical URL Generation
 
 When publishing a post to the CMS, set the `canonicalUrl` field to:
 ```
@@ -555,7 +602,7 @@ https://{publication-slug}.hotmetalapp.com/{post-slug}
 
 This ensures the post's canonical URL points to the publication frontend, not the CMS.
 
-### 8.3 Social Sharing URLs
+### 8.4 Social Sharing URLs
 
 When publishing to Twitter/LinkedIn, the shared URL should be the publication frontend URL (not the CMS URL). Update the tweet/LinkedIn post formatters to use:
 ```
@@ -566,29 +613,29 @@ https://{publication-slug}.hotmetalapp.com/{post-slug}
 
 ## Phase 9: Publication Settings UI Updates
 
-**Goal:** Let users configure branding and template in the web app.
+**Goal:** Let users configure branding and template in the web app. This is the UI counterpart to the data model changes in Phase 0.
 
-### 9.1 Publication Settings Page Updates
+### 9.1 Publication Settings Page Updates (`apps/web/src/pages/PublicationSettingsPage.tsx`)
 
-Add new sections to `PublicationSettingsPage.tsx`:
+Add new sections below the existing settings:
 
 **Branding Section:**
-- Tagline (text input)
+- Tagline (text input, placeholder: "A short description that appears on your publication's homepage")
 - Logo URL (text input, future: upload to R2)
 - Header image URL (text input, future: upload to R2)
-- Accent color (color picker, hex value)
-- Meta description (textarea)
+- Accent color (color picker, hex value, default: amber `#F59E0B`)
+- Meta description (textarea, placeholder: "Default SEO description for your publication")
 
 **Social Links Section:**
-- Twitter/X URL
-- LinkedIn URL
-- GitHub URL
-- Website URL
+- Twitter/X URL (text input, placeholder: "https://x.com/yourhandle")
+- LinkedIn URL (text input, placeholder: "https://linkedin.com/in/yourprofile")
+- GitHub URL (text input)
+- Website URL (text input)
 
 **Template Section:**
-- Template selector (dropdown/cards)
-- Preview link: "View your publication at {slug}.hotmetalapp.com"
-- Only "Starter" template available initially
+- Template selector (dropdown or visual cards)
+- Preview link: "View your publication at {slug}.hotmetalapp.com" (external link)
+- Only "Starter" template available initially — show as selected/default
 
 **Custom Domain Section (placeholder):**
 - Coming soon message
@@ -596,7 +643,9 @@ Add new sections to `PublicationSettingsPage.tsx`:
 
 ### 9.2 API Updates
 
-The web app backend (`apps/web/src/server.ts`) already proxies to the DAL for publication updates. The new fields just need to be included in the update payload — no new API routes needed.
+The web app backend (`apps/web/src/server.ts`) already proxies to the DAL for publication updates. The new fields just need to be included in the update payload — no new API routes needed. Verify:
+- `PUT /api/publications/:id` handler passes through the new fields
+- Frontend `updatePublication()` API function includes the new fields in its payload type
 
 ---
 
