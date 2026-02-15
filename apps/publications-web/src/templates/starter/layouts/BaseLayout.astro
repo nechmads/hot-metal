@@ -1,0 +1,117 @@
+---
+import { ClientRouter } from 'astro:transitions';
+import '../styles/theme.css';
+
+interface Props {
+  title: string;
+  publicationName: string;
+  description?: string;
+  ogImage?: string;
+  canonicalUrl?: string;
+  accentColor?: string | null;
+  ogType?: string;
+  jsonLd?: Record<string, unknown>;
+  rssUrl?: string;
+}
+
+const {
+  title,
+  publicationName,
+  description,
+  ogImage,
+  canonicalUrl,
+  accentColor,
+  ogType = 'website',
+  jsonLd,
+  rssUrl,
+} = Astro.props;
+
+const pageTitle =
+  title === publicationName ? publicationName : `${title} | ${publicationName}`;
+
+const HEX_COLOR_PATTERN = /^#[0-9a-fA-F]{3,8}$/;
+const validAccent = accentColor && HEX_COLOR_PATTERN.test(accentColor) ? accentColor : null;
+const accentStyle = validAccent
+  ? `--publication-accent: ${validAccent};`
+  : undefined;
+---
+
+<html lang="en" style={accentStyle}>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <!-- Inter font -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap"
+      rel="stylesheet"
+    />
+
+    <title>{pageTitle}</title>
+    {description && <meta name="description" content={description} />}
+    <meta name="generator" content={Astro.generator} />
+
+    {canonicalUrl && <link rel="canonical" href={canonicalUrl} />}
+    {rssUrl && (
+      <link
+        rel="alternate"
+        type="application/rss+xml"
+        title={publicationName}
+        href={rssUrl}
+      />
+    )}
+
+    <!-- Open Graph -->
+    <meta property="og:type" content={ogType} />
+    <meta property="og:title" content={pageTitle} />
+    {description && <meta property="og:description" content={description} />}
+    {ogImage && <meta property="og:image" content={ogImage} />}
+    {canonicalUrl && <meta property="og:url" content={canonicalUrl} />}
+    <meta property="og:site_name" content={publicationName} />
+
+    <!-- Twitter -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content={pageTitle} />
+    {description && <meta name="twitter:description" content={description} />}
+    {ogImage && <meta name="twitter:image" content={ogImage} />}
+
+    {jsonLd && (
+      <script
+        is:inline
+        type="application/ld+json"
+        set:html={JSON.stringify(jsonLd)}
+      />
+    )}
+
+    <ClientRouter />
+  </head>
+  <body class="min-h-screen flex flex-col">
+    <slot />
+
+    <script>
+      function initScrollAnimations() {
+        const observer = new IntersectionObserver(
+          (entries) => {
+            for (const entry of entries) {
+              if (entry.isIntersecting) {
+                entry.target.classList.add('is-visible');
+                observer.unobserve(entry.target);
+              }
+            }
+          },
+          { threshold: 0.1 },
+        );
+
+        document
+          .querySelectorAll('.animate-on-scroll')
+          .forEach((el) => observer.observe(el));
+      }
+
+      // Run on initial load and after view transitions
+      initScrollAnimations();
+      document.addEventListener('astro:after-swap', initScrollAnimations);
+    </script>
+  </body>
+</html>

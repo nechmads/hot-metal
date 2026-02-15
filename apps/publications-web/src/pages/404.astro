@@ -1,0 +1,60 @@
+---
+import { env } from 'cloudflare:workers';
+import { resolvePublication } from '../lib/resolve-publication';
+import { getPublicationBranding } from '../dl/publication';
+import BaseLayout from '../templates/starter/layouts/BaseLayout.astro';
+import Header from '../templates/starter/components/Header.astro';
+import Footer from '../templates/starter/components/Footer.astro';
+
+
+let publicationName = 'Not Found';
+let accentColor: string | null = null;
+let branding = null;
+
+try {
+  const publication = await resolvePublication(Astro.request, env.DAL, env.DEV_PUBLICATION_SLUG);
+  if (publication) {
+    branding = getPublicationBranding(publication);
+    publicationName = branding.name;
+    accentColor = branding.accentColor;
+  }
+} catch {
+  // If publication resolution fails, render a generic 404
+}
+---
+
+<BaseLayout
+  title="Page Not Found"
+  publicationName={publicationName}
+  description="The page you are looking for could not be found."
+  accentColor={accentColor}
+>
+  {branding && <Header publicationName={branding.name} logoUrl={branding.logoUrl} />}
+
+  <main class="flex-1 flex items-center justify-center px-6 py-24">
+    <div class="text-center">
+      <p class="text-6xl font-black text-text-muted mb-4">404</p>
+      <h1 class="text-2xl font-bold mb-2">Page not found</h1>
+      <p class="text-text-muted mb-8">
+        The page you are looking for does not exist or has been moved.
+      </p>
+      <a
+        href="/"
+        class="inline-flex items-center gap-2 px-6 py-3 text-sm font-medium rounded-lg bg-accent text-white hover:bg-accent-hover transition-colors"
+      >
+        <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+        </svg>
+        Back to home
+      </a>
+    </div>
+  </main>
+
+  {branding && (
+    <Footer
+      publicationName={branding.name}
+      publicationSlug={branding.slug}
+      socialLinks={branding.socialLinks}
+    />
+  )}
+</BaseLayout>

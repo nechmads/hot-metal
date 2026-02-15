@@ -86,6 +86,13 @@ export interface ListSessionsFilters {
 
 // ─── Publications ────────────────────────────────────────────────────
 
+export interface SocialLinks {
+	twitter?: string
+	linkedin?: string
+	github?: string
+	website?: string
+}
+
 export interface Publication {
 	id: string
 	userId: string
@@ -103,6 +110,14 @@ export interface Publication {
 	styleId: string | null
 	feedFullEnabled: boolean
 	feedPartialEnabled: boolean
+	templateId: string
+	tagline: string | null
+	logoUrl: string | null
+	headerImageUrl: string | null
+	accentColor: string | null
+	socialLinks: SocialLinks | null
+	customDomain: string | null
+	metaDescription: string | null
 	createdAt: number
 	updatedAt: number
 }
@@ -122,6 +137,13 @@ export interface CreatePublicationInput {
 	styleId?: string
 	feedFullEnabled?: boolean
 	feedPartialEnabled?: boolean
+	templateId?: string
+	tagline?: string
+	logoUrl?: string
+	headerImageUrl?: string
+	accentColor?: string
+	socialLinks?: SocialLinks
+	metaDescription?: string
 }
 
 export interface UpdatePublicationInput {
@@ -139,6 +161,14 @@ export interface UpdatePublicationInput {
 	styleId?: string | null
 	feedFullEnabled?: boolean
 	feedPartialEnabled?: boolean
+	templateId?: string
+	tagline?: string | null
+	logoUrl?: string | null
+	headerImageUrl?: string | null
+	accentColor?: string | null
+	socialLinks?: SocialLinks | null
+	customDomain?: string | null
+	metaDescription?: string | null
 }
 
 // ─── Topics ──────────────────────────────────────────────────────────
