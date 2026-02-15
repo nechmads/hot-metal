@@ -72,12 +72,13 @@ images.post('/sessions/:sessionId/generate-images', async (c) => {
 
     const results = await Promise.all(imagePromises)
 
-    // Store each image in R2 and return absolute URLs
+    // Store each image in R2 and return URLs
+    const imageBaseUrl = c.env.IMAGE_BASE_URL?.trim().replace(/\/$/, '') || ''
     const origin = new URL(c.req.url).origin
     const imageEntries = await Promise.all(
       results.map(async (result) => {
         const id = crypto.randomUUID()
-        const key = `images/sessions/${sessionId}/${id}.png`
+        const key = `sessions/${sessionId}/${id}.jpg`
 
         // Flux returns { image: string } where image is base64-encoded JPEG
         const base64 = (result as { image: string }).image
@@ -88,7 +89,12 @@ images.post('/sessions/:sessionId/generate-images', async (c) => {
           httpMetadata: { contentType: 'image/jpeg' },
         })
 
-        return { id, url: `${origin}/api/images/${key}` }
+        // Production: absolute URL via R2 custom domain
+        // Dev: relative path served by whichever app is running
+        const url = imageBaseUrl
+          ? `${imageBaseUrl}/${key}`
+          : `${origin}/api/images/${key}`
+        return { id, url }
       })
     )
 
@@ -114,10 +120,13 @@ images.post('/sessions/:sessionId/select-image', async (c) => {
     return c.json({ error: 'imageUrl is required' }, 400)
   }
 
-  // Validate the URL belongs to this session's generated images
-  const expectedPath = `/api/images/images/sessions/${sessionId}/`
+  // Validate the URL belongs to this session's generated images.
+  // Dev URLs: /api/images/sessions/{sessionId}/{id}.png
+  // Prod URLs: /sessions/{sessionId}/{id}.png (on images.hotmetalapp.com)
   const urlPath = new URL(body.imageUrl, 'http://localhost').pathname
-  if (!urlPath.startsWith(expectedPath)) {
+  const devPrefix = `/api/images/sessions/${sessionId}/`
+  const prodPrefix = `/sessions/${sessionId}/`
+  if (!urlPath.startsWith(devPrefix) && !urlPath.startsWith(prodPrefix)) {
     return c.json({ error: 'imageUrl must reference an image from this session' }, 400)
   }
 

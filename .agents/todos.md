@@ -122,5 +122,16 @@
   - Frontend Settings page: X connection card with connect/disconnect, per-provider connecting state
   - Frontend PublishModal: X checkbox, editable tweet text editor with char counter (280 max, t.co-aware), auto-generate from AI hook, publish disabled on over-limit, success message
 - [x] **PublishModal UI Redesign + AI Tweet Generation** — Full PublishModal restructure with fixed header/footer, scrollable body (max-h-[60vh]), blog details section, and collapsible social cards (X + LinkedIn) with CSS grid animation. AI tweet generation via new `/generate-tweet` endpoint using Claude Haiku 4.5 (leaves room for t.co 23-char link). Collapsible cards auto-expand on toggle, show collapsed summary when minimized. LinkedIn card shows placeholder for future customization. Character counter accounts for appended link. Race condition fix: re-triggers tweet generation when SEO hook arrives if X is already selected.
+- [x] **Publications Frontend (Phases 0-6)** — Built multi-tenant Astro 6 blog frontend (`apps/publications-web`) serving each publication at `{slug}.hotmetalapp.com`. Includes:
+  - D1 migration (`0011_publication_branding.sql`): 8 new columns for branding/template support (template_id, tagline, logo_url, header_image_url, accent_color, social_links, custom_domain, meta_description)
+  - Data layer: SocialLinks interface, updated Publication type + mapRow/create/update with all new fields
+  - Multi-tenant resolution: subdomain extraction from `*.hotmetalapp.com` with dev-only header/env fallback
+  - Starter template: BaseLayout (Inter font, OG/Twitter/JSON-LD meta), Header (sticky, mobile menu), PublicationHero (optional bg image), PostCard, PostList (responsive grid), Footer (social icons, "Powered by Hot Metal")
+  - Pages: Home (post grid), Post detail (sanitized content, citations, tags, share links), 404, RSS 2.0, Atom, sitemap.xml, robots.txt
+  - Cache: `s-maxage=3600, stale-while-revalidate=86400` on all pages, cache-purge endpoint with timing-safe API key auth
+  - Security: social link URL validation (https only), accentColor hex validation, slug validation on all inputs, dev-header gated behind localhost
+  - Cloudflare Workers: `import { env } from 'cloudflare:workers'` (Astro v6 pattern), DAL service binding, wildcard route
+- [x] **Image URL Fix** — Fixed double `/images/` path prefix in R2 keys and absolute localhost URLs stored in CMS. R2 keys now use `sessions/{sessionId}/{id}.png`. Production uses `IMAGE_BASE_URL` (R2 custom domain `images.hotmetalapp.com`), dev uses relative paths. Added image proxy route to publications-web (`/api/images/[...path]`) for dev. Added `decodeURIComponent` path traversal protection and strict `startsWith` URL validation on select-image endpoint.
+- [x] **Dev Stack for Publications Frontend** — Added `dev:stack-pub` command and `@cloudflare/vite-plugin` integration in `astro.config.mjs` for running publications-web with auxiliary workers (DAL, content-scout, publisher) using shared persistent state.
 - [ ] Writer Agent — Phase 2: Voice input (transcription in `input-processor.ts`)
 - [ ] Writer Agent — Phase 2: D1 session sync (synchronize DO state back to D1 for listing accuracy)

@@ -49,10 +49,11 @@ export class CmsApi {
     return this.request('POST', '/api/v1/publications', data)
   }
 
-  async listPosts(params?: { status?: string; publicationId?: string; limit?: number; offset?: number }): Promise<{ data: Post[] }> {
+  async listPosts(params?: { status?: string; publicationId?: string; slug?: string; limit?: number; offset?: number }): Promise<{ data: Post[] }> {
     const search = new URLSearchParams()
     if (params?.status) search.set('status', params.status)
     if (params?.publicationId) search.set('publicationId', params.publicationId)
+    if (params?.slug) search.set('slug', params.slug)
     if (params?.limit) search.set('limit', String(params.limit))
     if (params?.offset) search.set('offset', String(params.offset))
     const qs = search.toString()

@@ -28,7 +28,9 @@
     "dev:publisher": "pnpm --filter @hotmetal/publisher dev",
     "dev:web": "pnpm --filter @hotmetal/web dev",
     "dev:scout": "pnpm --filter @hotmetal/content-scout dev",
-    "dev:stack": "STACK=true pnpm --filter @hotmetal/web dev"
+    "dev:pub-web": "pnpm --filter @hotmetal/publications-web dev",
+    "dev:stack": "STACK=true pnpm --filter @hotmetal/web dev",
+    "dev:stack-pub": "STACK=true pnpm --filter @hotmetal/publications-web dev"
   },
   "engines": {
     "node": ">=22.12.0"

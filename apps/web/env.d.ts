@@ -17,6 +17,8 @@ declare namespace Cloudflare {
 		AI: Ai;
 		// R2 bucket (generated images)
 		IMAGE_BUCKET: R2Bucket;
+		// Public image base URL (production: https://images.hotmetalapp.com, empty for dev)
+		IMAGE_BASE_URL?: string;
 		// Anthropic API key (AI drafting, SEO, hooks)
 		ANTHROPIC_API_KEY: string;
 		// CMS admin (publishing)

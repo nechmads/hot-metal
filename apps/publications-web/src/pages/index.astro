@@ -1,0 +1,65 @@
+---
+import { env } from 'cloudflare:workers';
+import { resolvePublication } from '../lib/resolve-publication';
+import { getPublicationBranding } from '../dl/publication';
+import { listPublishedPosts } from '../dl/posts';
+import BaseLayout from '../templates/starter/layouts/BaseLayout.astro';
+import Header from '../templates/starter/components/Header.astro';
+import PublicationHero from '../templates/starter/components/PublicationHero.astro';
+import PostList from '../templates/starter/components/PostList.astro';
+import Footer from '../templates/starter/components/Footer.astro';
+
+const publication = await resolvePublication(Astro.request, env.DAL, env.DEV_PUBLICATION_SLUG);
+
+if (!publication) {
+  return new Response(null, { status: 404, statusText: 'Publication Not Found' });
+}
+
+if (!publication.cmsPublicationId) {
+  return new Response(null, { status: 404, statusText: 'Publication not configured' });
+}
+
+const branding = getPublicationBranding(publication);
+const posts = await listPublishedPosts(env, publication.cmsPublicationId);
+const baseUrl = `https://${publication.slug}.hotmetalapp.com`;
+
+Astro.response.headers.set('Cache-Control', 'public, s-maxage=3600, stale-while-revalidate=86400');
+
+const jsonLd: Record<string, unknown> = {
+  '@context': 'https://schema.org',
+  '@type': 'WebSite',
+  name: branding.name,
+  url: baseUrl,
+  description: branding.metaDescription ?? branding.tagline ?? `${branding.name} publication`,
+  publisher: {
+    '@type': 'Organization',
+    name: branding.name,
+    ...(branding.logoUrl ? { logo: { '@type': 'ImageObject', url: branding.logoUrl } } : {}),
+  },
+};
+---
+
+<BaseLayout
+  title={branding.name}
+  publicationName={branding.name}
+  description={branding.metaDescription ?? branding.tagline ?? undefined}
+  ogImage={branding.headerImageUrl ?? undefined}
+  canonicalUrl={baseUrl}
+  accentColor={branding.accentColor}
+  jsonLd={jsonLd}
+  rssUrl={`${baseUrl}/rss`}
+>
+  <Header publicationName={branding.name} logoUrl={branding.logoUrl} />
+  <PublicationHero
+    name={branding.name}
+    tagline={branding.tagline}
+    headerImageUrl={branding.headerImageUrl}
+    socialLinks={branding.socialLinks}
+  />
+  <PostList posts={posts} />
+  <Footer
+    publicationName={branding.name}
+    publicationSlug={branding.slug}
+    socialLinks={branding.socialLinks}
+  />
+</BaseLayout>

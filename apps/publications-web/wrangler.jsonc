@@ -1,0 +1,31 @@
+{
+  "name": "hotmetal-publications-web",
+  "compatibility_date": "2026-02-07",
+  "compatibility_flags": ["nodejs_compat"],
+  "routes": [
+    { "pattern": "*.hotmetalapp.com", "zone_name": "hotmetalapp.com" }
+  ],
+  "services": [
+    {
+      "binding": "DAL",
+      "service": "hotmetal-data-layer",
+      "entrypoint": "DataLayer"
+    }
+  ],
+  "r2_buckets": [
+    {
+      "binding": "IMAGE_BUCKET",
+      "bucket_name": "hotmetal-cms-bucket"
+    }
+  ],
+  "vars": {
+    "CMS_URL": "https://cms.hotmetalapp.com",
+    "CMS_API_KEY": ""
+  },
+  "observability": {
+    "enabled": true
+  },
+  "dev": {
+    "port": 4322
+  }
+}

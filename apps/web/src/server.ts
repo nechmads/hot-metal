@@ -50,8 +50,8 @@ app.get('/health', (c) => c.json({ status: 'ok', service: 'hotmetal-web' }))
 
 // ─── Public image serving (no auth — referenced by CMS posts) ──────
 app.get('/api/images/*', async (c) => {
-  const key = c.req.path.replace('/api/images/', '')
-  if (!key || !key.startsWith('images/sessions/') || key.includes('..')) {
+  const key = decodeURIComponent(c.req.path.replace('/api/images/', ''))
+  if (!key || !key.startsWith('sessions/') || key.includes('..')) {
     return c.json({ error: 'Invalid image key' }, 400)
   }
 

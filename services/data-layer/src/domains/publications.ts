@@ -1,7 +1,7 @@
 import type { AutoPublishMode, ScoutSchedule } from '@hotmetal/content-core'
 import { DEFAULT_SCHEDULE, DEFAULT_TIMEZONE } from '@hotmetal/content-core'
 import { computeNextRun, parseSchedule } from '@hotmetal/shared'
-import type { Publication, CreatePublicationInput, UpdatePublicationInput } from '../types'
+import type { Publication, CreatePublicationInput, UpdatePublicationInput, SocialLinks } from '../types'
 
 interface PublicationRow {
 	id: string
@@ -20,8 +20,25 @@ interface PublicationRow {
 	style_id: string | null
 	feed_full_enabled: number
 	feed_partial_enabled: number
+	template_id: string | null
+	tagline: string | null
+	logo_url: string | null
+	header_image_url: string | null
+	accent_color: string | null
+	social_links: string | null
+	custom_domain: string | null
+	meta_description: string | null
 	created_at: number
 	updated_at: number
+}
+
+function parseSocialLinks(raw: string | null): SocialLinks | null {
+	if (!raw) return null
+	try {
+		return JSON.parse(raw) as SocialLinks
+	} catch {
+		return null
+	}
 }
 
 function mapRow(row: PublicationRow): Publication {
@@ -42,6 +59,14 @@ function mapRow(row: PublicationRow): Publication {
 		styleId: row.style_id ?? null,
 		feedFullEnabled: row.feed_full_enabled === 1,
 		feedPartialEnabled: row.feed_partial_enabled === 1,
+		templateId: row.template_id ?? 'starter',
+		tagline: row.tagline,
+		logoUrl: row.logo_url,
+		headerImageUrl: row.header_image_url,
+		accentColor: row.accent_color,
+		socialLinks: parseSocialLinks(row.social_links),
+		customDomain: row.custom_domain,
+		metaDescription: row.meta_description,
 		createdAt: row.created_at,
 		updatedAt: row.updated_at,
 	}
@@ -61,8 +86,9 @@ export async function createPublication(
 			`INSERT INTO publications (id, user_id, name, slug, description, writing_tone,
 			 default_author, auto_publish_mode, cadence_posts_per_week, scout_schedule,
 			 timezone, next_scout_at, style_id, feed_full_enabled, feed_partial_enabled,
-			 created_at, updated_at)
-			 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+			 template_id, tagline, logo_url, header_image_url, accent_color, social_links,
+			 meta_description, created_at, updated_at)
+			 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
 		)
 		.bind(
 			data.id,
@@ -80,6 +106,13 @@ export async function createPublication(
 			data.styleId ?? null,
 			(data.feedFullEnabled ?? true) ? 1 : 0,
 			(data.feedPartialEnabled ?? true) ? 1 : 0,
+			data.templateId ?? 'starter',
+			data.tagline ?? null,
+			data.logoUrl ?? null,
+			data.headerImageUrl ?? null,
+			data.accentColor ?? null,
+			data.socialLinks ? JSON.stringify(data.socialLinks) : null,
+			data.metaDescription ?? null,
 			now,
 			now
 		)
@@ -102,6 +135,14 @@ export async function createPublication(
 		styleId: data.styleId ?? null,
 		feedFullEnabled: data.feedFullEnabled ?? true,
 		feedPartialEnabled: data.feedPartialEnabled ?? true,
+		templateId: data.templateId ?? 'starter',
+		tagline: data.tagline ?? null,
+		logoUrl: data.logoUrl ?? null,
+		headerImageUrl: data.headerImageUrl ?? null,
+		accentColor: data.accentColor ?? null,
+		socialLinks: data.socialLinks ?? null,
+		customDomain: null,
+		metaDescription: data.metaDescription ?? null,
 		createdAt: now,
 		updatedAt: now,
 	}
@@ -201,6 +242,38 @@ export async function updatePublication(
 	if (data.feedPartialEnabled !== undefined) {
 		sets.push('feed_partial_enabled = ?')
 		bindings.push(data.feedPartialEnabled ? 1 : 0)
+	}
+	if (data.templateId !== undefined) {
+		sets.push('template_id = ?')
+		bindings.push(data.templateId)
+	}
+	if (data.tagline !== undefined) {
+		sets.push('tagline = ?')
+		bindings.push(data.tagline)
+	}
+	if (data.logoUrl !== undefined) {
+		sets.push('logo_url = ?')
+		bindings.push(data.logoUrl)
+	}
+	if (data.headerImageUrl !== undefined) {
+		sets.push('header_image_url = ?')
+		bindings.push(data.headerImageUrl)
+	}
+	if (data.accentColor !== undefined) {
+		sets.push('accent_color = ?')
+		bindings.push(data.accentColor)
+	}
+	if (data.socialLinks !== undefined) {
+		sets.push('social_links = ?')
+		bindings.push(data.socialLinks ? JSON.stringify(data.socialLinks) : null)
+	}
+	if (data.customDomain !== undefined) {
+		sets.push('custom_domain = ?')
+		bindings.push(data.customDomain)
+	}
+	if (data.metaDescription !== undefined) {
+		sets.push('meta_description = ?')
+		bindings.push(data.metaDescription)
 	}
 
 	if (sets.length === 0) return getPublicationById(db, id)
