@@ -109,6 +109,18 @@
   - Frontend: `SocialConnection` type, connection API functions, Settings page (`/settings`) with LinkedIn connect/disconnect
   - PublishModal: LinkedIn toggle checkbox, `publishToLinkedIn` flag, fire-and-forget LinkedIn publish via `waitUntil`
   - Sidebar: Settings nav item with gear icon
-- [x] **Web Landing Page + Public FAQ Page** — Updated the web landing page to better sell “consistent content → authority” (new hero, workflow flow, expanded feature grid, audiences, improved readability, links) and added a public `/faq` page with comprehensive product FAQs, linked from the landing footer.
+- [x] **Web Landing Page + Public FAQ Page** — Updated the web landing page to better sell "consistent content → authority" (new hero, workflow flow, expanded feature grid, audiences, improved readability, links) and added a public `/faq` page with comprehensive product FAQs, linked from the landing footer.
+- [x] **X (Twitter) Integration** — Full Twitter/X social publishing support, mirroring the existing LinkedIn pattern. Includes:
+  - DB migration (`0010_oauth_state_metadata.sql`): `metadata` column on `oauth_state` for PKCE code_verifier storage
+  - Data layer: metadata param in `storeOAuthState`/`validateAndConsumeOAuthState`
+  - Content-core: added `'twitter'` to OUTLETS array
+  - Publisher Twitter module: OAuth 2.0 with PKCE (`oauth.ts`), Twitter v2 API client (`api.ts`), tweet formatter with t.co length accounting (`formatter.ts`), token store with auto-refresh (`token-store.ts`), admin notification placeholder (`notify.ts`)
+  - Publisher `TwitterAdapter`: OutletAdapter implementation (prepareRendition, validate 280-char limit, publish via v2 API)
+  - Publisher routes: 3 OAuth routes (initiate, callback, status) + `POST /publish/twitter` with optional custom tweet text
+  - Publisher env: `TWITTER_CLIENT_ID`, `TWITTER_CLIENT_SECRET`, `TWITTER_REDIRECT_URI`
+  - Web app backend: Twitter OAuth proxy routes, Twitter fire-and-forget publish via `waitUntil`, server-side tweet length validation
+  - Frontend Settings page: X connection card with connect/disconnect, per-provider connecting state
+  - Frontend PublishModal: X checkbox, editable tweet text editor with char counter (280 max, t.co-aware), auto-generate from AI hook, publish disabled on over-limit, success message
+- [x] **PublishModal UI Redesign + AI Tweet Generation** — Full PublishModal restructure with fixed header/footer, scrollable body (max-h-[60vh]), blog details section, and collapsible social cards (X + LinkedIn) with CSS grid animation. AI tweet generation via new `/generate-tweet` endpoint using Claude Haiku 4.5 (leaves room for t.co 23-char link). Collapsible cards auto-expand on toggle, show collapsed summary when minimized. LinkedIn card shows placeholder for future customization. Character counter accounts for appended link. Race condition fix: re-triggers tweet generation when SEO hook arrives if X is already selected.
 - [ ] Writer Agent — Phase 2: Voice input (transcription in `input-processor.ts`)
 - [ ] Writer Agent — Phase 2: D1 session sync (synchronize DO state back to D1 for listing accuracy)

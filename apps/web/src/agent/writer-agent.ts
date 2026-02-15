@@ -10,7 +10,7 @@ import { cleanupMessages } from './message-utils'
 import { CmsApi } from '@hotmetal/shared'
 import type { Citation } from '@hotmetal/content-core'
 import { marked } from 'marked'
-import { createHook, createSeoMeta, type DraftInput } from '../lib/writing'
+import { createHook, createSeoMeta, createTweet, type DraftInput } from '../lib/writing'
 
 export interface DraftRow {
   id: string
@@ -197,6 +197,10 @@ export class WriterAgent extends AIChatAgent<Env, WriterAgentState> {
       return this.handleGenerateSeo()
     }
 
+    if (url.pathname.endsWith('/generate-tweet') && request.method === 'POST') {
+      return this.handleGenerateTweet(request)
+    }
+
     if (url.pathname.endsWith('/publish') && request.method === 'POST') {
       return this.handlePublishToCms(request)
     }
@@ -313,6 +317,26 @@ export class WriterAgent extends AIChatAgent<Env, WriterAgentState> {
     return Response.json({ hook, excerpt, tags })
   }
 
+  async handleGenerateTweet(request: Request): Promise<Response> {
+    const draft = this.getCurrentDraft()
+    if (!draft) {
+      return Response.json({ error: 'No draft exists.' }, { status: 400 })
+    }
+
+    let hook: string | undefined
+    try {
+      const body = await request.json() as { hook?: string }
+      hook = body.hook?.trim() || undefined
+    } catch {
+      // Body is optional — no hook provided
+    }
+
+    const draftInput: DraftInput = { title: draft.title, content: draft.content }
+    const tweet = await createTweet(draftInput, hook)
+
+    return Response.json({ tweet })
+  }
+
   /**
    * Resolve a publication's CMS counterpart ID.
    * Lazily creates the CMS publication if it doesn't exist yet.
@@ -336,10 +360,6 @@ export class WriterAgent extends AIChatAgent<Env, WriterAgentState> {
     const draft = this.getCurrentDraft()
     if (!draft) {
       return Response.json({ error: 'No draft exists to publish.' }, { status: 400 })
-    }
-
-    if (this.state.writingPhase === 'published') {
-      return Response.json({ error: 'This session has already been published.' }, { status: 409 })
     }
 
     if (this.state.writingPhase === 'publishing') {

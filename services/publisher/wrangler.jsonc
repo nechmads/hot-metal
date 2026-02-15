@@ -39,9 +39,11 @@
 		"CMS_URL": "https://cms.hotmetalapp.com",
 		"BLOG_BASE_URL": "https://cms.hotmetalapp.com/",
 		"LINKEDIN_REDIRECT_URI": "https://publisher.hotmetalapp.com/oauth/linkedin/callback",
+		"TWITTER_REDIRECT_URI": "https://publisher.hotmetalapp.com/oauth/twitter/callback",
 		"WEB_APP_URL": "https://hotmetalapp.com",
 	},
 
 	// Secrets (set via `wrangler secret put`):
 	// CMS_API_KEY, PUBLISHER_API_KEY, LINKEDIN_CLIENT_ID, LINKEDIN_CLIENT_SECRET
+	// TWITTER_CLIENT_ID, TWITTER_CLIENT_SECRET
 }

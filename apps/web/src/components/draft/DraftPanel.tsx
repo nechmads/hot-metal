@@ -130,22 +130,20 @@ export const DraftPanel = React.forwardRef<DraftPanelHandle, DraftPanelProps>(
             >
               <CopyIcon size={16} />
             </button>
-            {publishedPostId || cmsPostId ? (
-              <span className="flex items-center gap-1 rounded-md px-2 py-1.5 text-xs font-medium text-green-600">
+            {(publishedPostId || cmsPostId) && (
+              <span className="flex items-center gap-1 text-xs font-medium text-green-600">
                 <CheckCircleIcon size={14} weight="fill" />
-                Published
               </span>
-            ) : (
-              <button
-                type="button"
-                onClick={handlePublish}
-                disabled={!content}
-                className="flex items-center gap-1 rounded-md px-2 py-1.5 text-xs font-medium text-[#6b7280] transition-colors hover:bg-[#e5e7eb] hover:text-[#0a0a0a] disabled:opacity-30 dark:hover:bg-[#374151]"
-              >
-                <RocketLaunchIcon size={14} />
-                Publish
-              </button>
             )}
+            <button
+              type="button"
+              onClick={handlePublish}
+              disabled={!content}
+              className="flex items-center gap-1 rounded-md px-2 py-1.5 text-xs font-medium text-[#6b7280] transition-colors hover:bg-[#e5e7eb] hover:text-[#0a0a0a] disabled:opacity-30 dark:hover:bg-[#374151]"
+            >
+              <RocketLaunchIcon size={14} />
+              {publishedPostId || cmsPostId ? 'Publish Again' : 'Publish'}
+            </button>
           </div>
         </div>
 
@@ -199,6 +197,7 @@ export const DraftPanel = React.forwardRef<DraftPanelHandle, DraftPanelProps>(
           featuredImageUrl={featuredImageUrl}
           sessionPublicationId={publicationId}
           onPublished={handlePublished}
+          isRepublish={!!(publishedPostId || cmsPostId)}
         />
       </div>
     )

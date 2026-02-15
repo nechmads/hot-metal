@@ -1,6 +1,7 @@
 export const OUTLETS = [
   'blog',
   'linkedin',
+  'twitter',
   'medium',
   'substack',
 ] as const

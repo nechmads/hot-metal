@@ -64,4 +64,41 @@ connections.get('/connections/oauth/linkedin/status', async (c) => {
   return c.json(data)
 })
 
+/** Initiate Twitter / X OAuth — proxy to publisher service. */
+connections.get('/connections/oauth/twitter', async (c) => {
+  const userId = c.get('userId')
+
+  const res = await c.env.PUBLISHER.fetch(
+    new Request(`https://publisher/oauth/twitter?userId=${encodeURIComponent(userId)}`, {
+      headers: { 'X-API-Key': c.env.PUBLISHER_API_KEY },
+    }),
+  )
+
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({ error: 'Failed to start OAuth' }))
+    return c.json(body, 502)
+  }
+
+  const data = await res.json<{ authorizeUrl: string }>()
+  return c.json({ authUrl: data.authorizeUrl })
+})
+
+/** Check Twitter / X connection status for the authenticated user. */
+connections.get('/connections/oauth/twitter/status', async (c) => {
+  const userId = c.get('userId')
+
+  const res = await c.env.PUBLISHER.fetch(
+    new Request(`https://publisher/oauth/twitter/status?userId=${encodeURIComponent(userId)}`, {
+      headers: { 'X-API-Key': c.env.PUBLISHER_API_KEY },
+    }),
+  )
+
+  if (!res.ok) {
+    return c.json({ connected: false })
+  }
+
+  const data = await res.json<{ connected: boolean }>()
+  return c.json(data)
+})
+
 export default connections

@@ -230,6 +230,7 @@ export interface AuditLogInput {
 export interface OAuthStateResult {
 	valid: boolean
 	userId: string | null
+	metadata: string | null
 }
 
 // ─── Social Connections ──────────────────────────────────────────────

@@ -48,6 +48,8 @@ export interface PublishInput {
   hook?: string
   publicationIds?: string[]
   publishToLinkedIn?: boolean
+  publishToTwitter?: boolean
+  tweetText?: string
 }
 
 export interface PublishResultEntry {

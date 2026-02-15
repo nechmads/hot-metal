@@ -1,10 +1,10 @@
 import { useCallback, useEffect, useState } from 'react'
 import { useSearchParams } from 'react-router'
 import { toast } from 'sonner'
-import { LinkedinLogoIcon, LinkIcon, TrashIcon, PlugIcon } from '@phosphor-icons/react'
+import { LinkedinLogoIcon, XLogoIcon, LinkIcon, TrashIcon, PlugIcon } from '@phosphor-icons/react'
 import { Loader } from '@/components/loader/Loader'
 import { Modal } from '@/components/modal/Modal'
-import { fetchConnections, deleteConnection, getLinkedInAuthUrl } from '@/lib/api'
+import { fetchConnections, deleteConnection, getLinkedInAuthUrl, getTwitterAuthUrl } from '@/lib/api'
 import type { SocialConnection } from '@/lib/types'
 
 function formatExpiryTime(expiresAt: number | null): string {
@@ -22,7 +22,14 @@ const PROVIDER_CONFIG = {
   linkedin: {
     label: 'LinkedIn',
     icon: LinkedinLogoIcon,
+    color: '#0A66C2',
     description: 'Share posts directly to your LinkedIn profile',
+  },
+  twitter: {
+    label: 'X',
+    icon: XLogoIcon,
+    color: '#000000',
+    description: 'Post tweets with a link to your blog post',
   },
 } as const
 
@@ -30,7 +37,7 @@ export function SettingsPage() {
   const [searchParams, setSearchParams] = useSearchParams()
   const [connections, setConnections] = useState<SocialConnection[]>([])
   const [loading, setLoading] = useState(true)
-  const [connecting, setConnecting] = useState(false)
+  const [connectingProvider, setConnectingProvider] = useState<string | null>(null)
   const [disconnectTarget, setDisconnectTarget] = useState<SocialConnection | null>(null)
   const [disconnecting, setDisconnecting] = useState(false)
 
@@ -54,8 +61,9 @@ export function SettingsPage() {
     const connected = searchParams.get('connected')
     const error = searchParams.get('error')
 
-    if (connected === 'linkedin') {
-      toast.success('LinkedIn connected successfully!')
+    if (connected === 'linkedin' || connected === 'twitter') {
+      const label = PROVIDER_CONFIG[connected as keyof typeof PROVIDER_CONFIG]?.label ?? connected
+      toast.success(`${label} connected successfully!`)
       loadConnections()
       setSearchParams((prev) => { prev.delete('connected'); prev.delete('error'); return prev }, { replace: true })
     } else if (error) {
@@ -65,15 +73,25 @@ export function SettingsPage() {
   }, [searchParams, setSearchParams, loadConnections])
 
   const handleConnect = async (provider: string) => {
-    if (provider !== 'linkedin') return
-    setConnecting(true)
+    setConnectingProvider(provider)
 
     try {
-      const { authUrl } = await getLinkedInAuthUrl()
+      let authUrl: string
+      if (provider === 'linkedin') {
+        const result = await getLinkedInAuthUrl()
+        authUrl = result.authUrl
+      } else if (provider === 'twitter') {
+        const result = await getTwitterAuthUrl()
+        authUrl = result.authUrl
+      } else {
+        setConnectingProvider(null)
+        return
+      }
       window.location.href = authUrl
     } catch {
-      toast.error('Failed to start LinkedIn connection')
-      setConnecting(false)
+      const label = PROVIDER_CONFIG[provider as keyof typeof PROVIDER_CONFIG]?.label ?? provider
+      toast.error(`Failed to start ${label} connection`)
+      setConnectingProvider(null)
     }
   }
 
@@ -94,6 +112,7 @@ export function SettingsPage() {
   }
 
   const linkedinConnection = connections.find((c) => c.provider === 'linkedin')
+  const twitterConnection = connections.find((c) => c.provider === 'twitter')
 
   return (
     <div className="mx-auto max-w-2xl space-y-8 p-6">
@@ -164,10 +183,71 @@ export function SettingsPage() {
                   <button
                     type="button"
                     onClick={() => handleConnect('linkedin')}
-                    disabled={connecting}
+                    disabled={connectingProvider !== null}
                     className="flex items-center gap-1.5 rounded-lg bg-[var(--color-accent)] px-3 py-1.5 text-xs font-medium text-white transition-colors hover:bg-[var(--color-accent-hover)] disabled:opacity-50"
                   >
-                    {connecting ? (
+                    {connectingProvider === 'linkedin' ? (
+                      <>
+                        <Loader size={12} />
+                        Connecting...
+                      </>
+                    ) : (
+                      <>
+                        <LinkIcon size={14} />
+                        Connect
+                      </>
+                    )}
+                  </button>
+                )}
+              </div>
+            </div>
+
+            {/* X (Twitter) */}
+            <div className="rounded-xl border border-[var(--color-border-default)] bg-[var(--color-bg-card)] p-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-black/10 dark:bg-white/10">
+                    <XLogoIcon size={24} weight="fill" className="text-black dark:text-white" />
+                  </div>
+                  <div>
+                    <h3 className="text-sm font-semibold text-[var(--color-text-primary)]">
+                      X
+                    </h3>
+                    {twitterConnection ? (
+                      <div className="flex items-center gap-1.5">
+                        <span className="inline-block h-1.5 w-1.5 rounded-full bg-green-500" />
+                        <span className="text-xs text-[var(--color-text-muted)]">
+                          Connected
+                          {twitterConnection.displayName && ` · @${twitterConnection.displayName}`}
+                          {' · '}
+                          {formatExpiryTime(twitterConnection.tokenExpiresAt)}
+                        </span>
+                      </div>
+                    ) : (
+                      <p className="text-xs text-[var(--color-text-muted)]">
+                        Post tweets with a link to your blog post
+                      </p>
+                    )}
+                  </div>
+                </div>
+
+                {twitterConnection ? (
+                  <button
+                    type="button"
+                    onClick={() => setDisconnectTarget(twitterConnection)}
+                    className="flex items-center gap-1.5 rounded-lg border border-red-200 px-3 py-1.5 text-xs font-medium text-red-600 transition-colors hover:bg-red-50 dark:border-red-800 dark:text-red-400 dark:hover:bg-red-900/20"
+                  >
+                    <TrashIcon size={14} />
+                    Disconnect
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => handleConnect('twitter')}
+                    disabled={connectingProvider !== null}
+                    className="flex items-center gap-1.5 rounded-lg bg-[var(--color-accent)] px-3 py-1.5 text-xs font-medium text-white transition-colors hover:bg-[var(--color-accent-hover)] disabled:opacity-50"
+                  >
+                    {connectingProvider === 'twitter' ? (
                       <>
                         <Loader size={12} />
                         Connecting...

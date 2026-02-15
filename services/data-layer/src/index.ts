@@ -115,7 +115,7 @@ export interface DataLayerApi {
 	writeAuditLog(entry: AuditLogInput): Promise<void>
 
 	// OAuth State
-	storeOAuthState(state: string, provider: string, ttlSeconds?: number, userId?: string): Promise<void>
+	storeOAuthState(state: string, provider: string, ttlSeconds?: number, userId?: string, metadata?: string): Promise<void>
 	validateAndConsumeOAuthState(state: string, provider: string): Promise<OAuthStateResult>
 
 	// Social Connections
@@ -211,7 +211,7 @@ export class DataLayer extends WorkerEntrypoint<Env> {
 	writeAuditLog(entry: AuditLogInput) { return auditLogs.writeAuditLog(this.env.DB, entry) }
 
 	// ─── OAuth State ───────────────────────────────────────────────────
-	storeOAuthState(state: string, provider: string, ttlSeconds?: number, userId?: string) { return oauthState.storeOAuthState(this.env.DB, state, provider, ttlSeconds, userId) }
+	storeOAuthState(state: string, provider: string, ttlSeconds?: number, userId?: string, metadata?: string) { return oauthState.storeOAuthState(this.env.DB, state, provider, ttlSeconds, userId, metadata) }
 	validateAndConsumeOAuthState(state: string, provider: string) { return oauthState.validateAndConsumeOAuthState(this.env.DB, state, provider) }
 
 	// ─── Social Connections ────────────────────────────────────────────

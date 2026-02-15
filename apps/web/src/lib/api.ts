@@ -128,6 +128,14 @@ export async function generateSeo(sessionId: string): Promise<SeoSuggestion> {
   })
 }
 
+export async function generateTweet(sessionId: string, hook?: string): Promise<{ tweet: string }> {
+  return request<{ tweet: string }>(`/api/sessions/${sessionId}/generate-tweet`, {
+    method: 'POST',
+    headers: JSON_HEADERS,
+    body: JSON.stringify({ hook: hook || undefined }),
+  })
+}
+
 export async function publishDraft(
   sessionId: string,
   input: PublishInput
@@ -381,6 +389,14 @@ export async function getLinkedInAuthUrl(): Promise<{ authUrl: string }> {
 
 export async function getLinkedInStatus(): Promise<{ connected: boolean }> {
   return request<{ connected: boolean }>('/api/connections/oauth/linkedin/status')
+}
+
+export async function getTwitterAuthUrl(): Promise<{ authUrl: string }> {
+  return request<{ authUrl: string }>('/api/connections/oauth/twitter')
+}
+
+export async function getTwitterStatus(): Promise<{ connected: boolean }> {
+  return request<{ connected: boolean }>('/api/connections/oauth/twitter/status')
 }
 
 // --- Activity (content calendar) ---

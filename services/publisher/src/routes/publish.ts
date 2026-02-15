@@ -4,7 +4,9 @@ import { CmsApi } from '@hotmetal/shared'
 import { writeAuditLog } from '../lib/audit'
 import { BlogAdapter } from '../adapters/blog-adapter'
 import { LinkedInAdapter } from '../adapters/linkedin-adapter'
+import { TwitterAdapter } from '../adapters/twitter-adapter'
 import { getValidLinkedInToken } from '../linkedin/token-store'
+import { getValidTwitterToken } from '../twitter/token-store'
 import { publisherApiKeyAuth } from '../middleware/api-key-auth'
 
 const publish = new Hono<{ Bindings: PublisherEnv }>()
@@ -194,6 +196,79 @@ publish.post('/publish/linkedin', async (c) => {
     await writeAuditLog(c.env.DAL, {
       postId: post.id,
       outlet: 'linkedin',
+      action: 'publish',
+      status: 'failed',
+      errorMessage: message,
+    })
+
+    throw err
+  }
+})
+
+/** Publish a post to Twitter / X. */
+publish.post('/publish/twitter', async (c) => {
+  const body = await c.req.json<{ postId?: string; userId?: string; tweetText?: string }>()
+
+  if (!body.postId || typeof body.postId !== 'string') {
+    return c.json({ error: 'postId is required' }, 400)
+  }
+
+  if (!body.userId || typeof body.userId !== 'string') {
+    return c.json({ error: 'userId is required' }, 400)
+  }
+
+  const token = await getValidTwitterToken(
+    c.env.DAL,
+    body.userId,
+    c.env.TWITTER_CLIENT_ID,
+    c.env.TWITTER_CLIENT_SECRET,
+  )
+
+  if (!token) {
+    return c.json({ error: 'X not connected. Connect your account in Settings.' }, 401)
+  }
+
+  const cmsApi = new CmsApi(c.env.CMS_URL, c.env.CMS_API_KEY)
+  const adapter = new TwitterAdapter(cmsApi, token.accessToken, c.env.BLOG_BASE_URL)
+
+  const post = await cmsApi.getPost(body.postId)
+
+  const prepared = adapter.prepareRendition(post)
+
+  // Override with user-customized tweet text if provided
+  if (body.tweetText && typeof body.tweetText === 'string') {
+    prepared.content = body.tweetText
+  }
+
+  const validation = adapter.validate(prepared)
+
+  if (!validation.valid) {
+    return c.json({ error: 'Validation failed', details: validation.errors }, 422)
+  }
+
+  try {
+    const result = await adapter.publish(post, prepared)
+
+    await writeAuditLog(c.env.DAL, {
+      postId: post.id,
+      outlet: 'twitter',
+      action: 'publish',
+      status: result.success ? 'success' : 'failed',
+      resultData: result.success ? { externalId: result.externalId, externalUrl: result.externalUrl } : undefined,
+      errorMessage: result.errors?.join('; '),
+    })
+
+    if (!result.success) {
+      return c.json(result, 502)
+    }
+
+    return c.json(result)
+  } catch (err) {
+    const message = err instanceof Error ? err.message : 'Unknown error'
+
+    await writeAuditLog(c.env.DAL, {
+      postId: post.id,
+      outlet: 'twitter',
       action: 'publish',
       status: 'failed',
       errorMessage: message,
