@@ -93,6 +93,10 @@ const linkedinShareUrl = `https://www.linkedin.com/sharing/share-offsite/?url=${
   ogType="article"
   jsonLd={jsonLd}
   rssUrl={`https://${publication.slug}.hotmetalapp.com/rss`}
+  articlePublishedTime={post.publishedAt}
+  articleModifiedTime={post.updatedAt}
+  articleAuthor={post.author}
+  articleTags={allLabels.length > 0 ? allLabels : undefined}
 >
   <Header publicationName={branding.name} logoUrl={branding.logoUrl} />
 
