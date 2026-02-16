@@ -2,7 +2,7 @@ import { useEffect, useState, useCallback } from 'react'
 import { CheckCircleIcon, GlobeIcon, ImageIcon, LinkedinLogoIcon, XLogoIcon, SparkleIcon, CaretDownIcon, LinkSimpleIcon } from '@phosphor-icons/react'
 import { Modal } from '@/components/modal/Modal'
 import { Loader } from '@/components/loader/Loader'
-import { fetchPublications, generateSeo, generateTweet, publishDraft, getLinkedInStatus, getTwitterStatus } from '@/lib/api'
+import { fetchPublications, fetchDrafts, fetchDraft, generateSeo, generateTweet, generateLinkedInPost, publishDraft, getLinkedInStatus, getTwitterStatus } from '@/lib/api'
 import type { PublicationConfig } from '@/lib/types'
 
 const TCO_URL_LENGTH = 23
@@ -37,6 +37,37 @@ function slugify(text: string): string {
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, '-')
     .replace(/^-|-$/g, '')
+}
+
+/** Strip Markdown syntax to plain text for platforms that don't support it (e.g. LinkedIn). */
+function stripMarkdown(md: string): string {
+  return md
+    // Remove code blocks (``` ... ```)
+    .replace(/```[\s\S]*?```/g, '')
+    // Remove inline code
+    .replace(/`([^`]+)`/g, '$1')
+    // Remove images
+    .replace(/!\[[^\]]*\]\([^)]*\)/g, '')
+    // Convert links to just the text
+    .replace(/\[([^\]]+)\]\([^)]*\)/g, '$1')
+    // Remove heading markers
+    .replace(/^#{1,6}\s+/gm, '')
+    // Remove bold/italic (order matters: bold first, then italic)
+    .replace(/\*\*([^*]+)\*\*/g, '$1')
+    .replace(/\*([^*]+)\*/g, '$1')
+    .replace(/__([^_]+)__/g, '$1')
+    .replace(/_([^_]+)_/g, '$1')
+    // Remove horizontal rules
+    .replace(/^[-*_]{3,}\s*$/gm, '')
+    // Remove blockquote markers
+    .replace(/^>\s?/gm, '')
+    // Remove unordered list markers
+    .replace(/^[\s]*[-*+]\s+/gm, '')
+    // Remove ordered list markers
+    .replace(/^[\s]*\d+\.\s+/gm, '')
+    // Collapse 3+ newlines into 2
+    .replace(/\n{3,}/g, '\n\n')
+    .trim()
 }
 
 // --- Collapsible social card ---
@@ -81,13 +112,17 @@ function SocialCard({ icon, label, connected, selected, onToggle, accentColor, a
           : 'border-[#e5e7eb] opacity-50 dark:border-[#374151]'
       }`}
     >
-      {/* Card header */}
-      <div className="flex items-center gap-2.5 px-3 py-2">
+      {/* Card header — full row is clickable to toggle */}
+      <div
+        className={`flex items-center gap-2.5 px-3 py-2 ${connected ? 'cursor-pointer select-none' : ''}`}
+        onClick={() => { if (connected) handleCheckboxChange(!selected) }}
+      >
         {connected ? (
           <input
             type="checkbox"
             checked={selected}
             onChange={(e) => handleCheckboxChange(e.target.checked)}
+            onClick={(e) => e.stopPropagation()}
             className={`h-3.5 w-3.5 rounded border-[#d1d5db] ${accentColor}`}
           />
         ) : (
@@ -109,7 +144,7 @@ function SocialCard({ icon, label, connected, selected, onToggle, accentColor, a
         {connected && selected && (
           <button
             type="button"
-            onClick={() => setExpanded(!expanded)}
+            onClick={(e) => { e.stopPropagation(); setExpanded(!expanded) }}
             className="ml-auto rounded p-0.5 text-[#9ca3af] transition-colors hover:text-[#6b7280]"
             aria-label={expanded ? 'Collapse' : 'Expand'}
           >
@@ -169,6 +204,14 @@ export function PublishModal({ isOpen, onClose, sessionId, draftTitle, featuredI
   const [generatingTweet, setGeneratingTweet] = useState(false)
   const [tweetFromAI, setTweetFromAI] = useState(false)
 
+  // LinkedIn post state
+  const [linkedInPostType, setLinkedInPostType] = useState<'link' | 'text'>('link')
+  const [linkedInText, setLinkedInText] = useState('')
+  const [linkedInTextEdited, setLinkedInTextEdited] = useState(false)
+  const [generatingLinkedIn, setGeneratingLinkedIn] = useState(false)
+  const [linkedInFromAI, setLinkedInFromAI] = useState(false)
+  const [loadingDraftBody, setLoadingDraftBody] = useState(false)
+
   // Load publications + auto-generate slug/SEO when modal opens
   useEffect(() => {
     if (!isOpen) {
@@ -188,6 +231,12 @@ export function PublishModal({ isOpen, onClose, sessionId, draftTitle, featuredI
       setTweetTextEdited(false)
       setGeneratingTweet(false)
       setTweetFromAI(false)
+      setLinkedInPostType('link')
+      setLinkedInText('')
+      setLinkedInTextEdited(false)
+      setGeneratingLinkedIn(false)
+      setLinkedInFromAI(false)
+      setLoadingDraftBody(false)
       return
     }
 
@@ -291,6 +340,94 @@ export function PublishModal({ isOpen, onClose, sessionId, draftTitle, featuredI
   const effectiveTweetLength = tweetText.trim() ? tweetLength + 1 + TCO_URL_LENGTH : 0 // space + t.co link
   const tweetOverLimit = twitterSelected && effectiveTweetLength > 280
 
+  // LinkedIn: default text population when toggled on or mode changes
+  useEffect(() => {
+    if (!linkedinSelected || linkedInTextEdited) return
+    // Wait for publications to load so we can build the real URL
+    if (loadingPubs) return
+
+    if (linkedInPostType === 'link') {
+      // Default to the hook text for link posts
+      setLinkedInText(hook || '')
+      setLinkedInFromAI(false)
+    } else {
+      // Text mode: fetch full draft body
+      let cancelled = false
+      setLoadingDraftBody(true)
+      fetchDrafts(sessionId)
+        .then((drafts) => {
+          if (cancelled || drafts.length === 0) return
+          const latest = drafts[drafts.length - 1]
+          return fetchDraft(sessionId, latest.version)
+        })
+        .then((draft) => {
+          if (cancelled || !draft) return
+          const title = draft.title || draftTitle || 'Untitled'
+          // Strip Markdown — LinkedIn only supports plain text
+          const plainContent = stripMarkdown(draft.content)
+          const parts = [title, '', plainContent]
+          let text = parts.join('\n').trim()
+          // Build footer with publication link
+          const pubId = selectedPubId || sessionPublicationId
+          const pubSlug = pubId ? publications.find((p) => p.id === pubId)?.slug : undefined
+          const postSlug = slug || (draftTitle ? slugify(draftTitle) : '')
+          const postUrl = pubSlug && postSlug ? `https://${pubSlug}.hotmetalapp.com/${postSlug}` : ''
+          const footer = `\n\nRead the full article: ${postUrl || '[link will be added when published]'}`
+          const maxBody = 3000 - footer.length
+          if (text.length > maxBody) {
+            // Cut at last paragraph break before the limit for a clean truncation
+            const cut = text.slice(0, maxBody - 3)
+            const lastBreak = cut.lastIndexOf('\n\n')
+            text = lastBreak > maxBody * 0.5 ? cut.slice(0, lastBreak).trimEnd() + '...' : cut.trimEnd() + '...'
+          }
+          text += footer
+          setLinkedInText(text)
+          setLinkedInFromAI(false)
+        })
+        .catch(() => {
+          setLinkedInText(hook || draftTitle || '')
+        })
+        .finally(() => {
+          if (!cancelled) setLoadingDraftBody(false)
+        })
+
+      return () => { cancelled = true }
+    }
+  }, [linkedinSelected, linkedInPostType, hook, sessionId, draftTitle, linkedInTextEdited, selectedPubId, sessionPublicationId, publications, slug, loadingPubs])
+
+  // LinkedIn: update link mode text when hook arrives
+  useEffect(() => {
+    if (linkedinSelected && linkedInPostType === 'link' && !linkedInTextEdited && hook) {
+      setLinkedInText(hook)
+    }
+  }, [hook, linkedinSelected, linkedInPostType, linkedInTextEdited])
+
+  const handleOptimizeLinkedIn = useCallback(() => {
+    setGeneratingLinkedIn(true)
+    setLinkedInFromAI(false)
+
+    generateLinkedInPost(sessionId, {
+      mode: linkedInPostType,
+      hook: hook || undefined,
+      currentText: linkedInPostType === 'text' ? linkedInText : undefined,
+    })
+      .then(({ linkedInPost }) => {
+        if (linkedInPost) {
+          setLinkedInText(linkedInPost)
+          setLinkedInFromAI(true)
+        }
+      })
+      .catch(() => {
+        // Silent failure — keep current text
+      })
+      .finally(() => {
+        setGeneratingLinkedIn(false)
+      })
+  }, [sessionId, linkedInPostType, hook, linkedInText])
+
+  const linkedInCharCount = linkedInText.length
+  const linkedInOverLimit = linkedinSelected && linkedInPostType === 'text' && linkedInCharCount > 3000
+
   const hasAnyDestination = selectedPubId !== null || twitterSelected || linkedinSelected
   const needsSlug = selectedPubId !== null
 
@@ -311,6 +448,8 @@ export function PublishModal({ isOpen, onClose, sessionId, draftTitle, featuredI
         publishToLinkedIn: linkedinSelected || undefined,
         publishToTwitter: twitterSelected || undefined,
         tweetText: twitterSelected && tweetText.trim() ? tweetText.trim() : undefined,
+        linkedInText: linkedinSelected && linkedInText.trim() ? linkedInText.trim() : undefined,
+        linkedInPostType: linkedinSelected ? linkedInPostType : undefined,
       })
 
       // Build success message from actual results
@@ -335,6 +474,10 @@ export function PublishModal({ isOpen, onClose, sessionId, draftTitle, featuredI
       setTweetText('')
       setTweetTextEdited(false)
       setTweetFromAI(false)
+      setLinkedInPostType('link')
+      setLinkedInText('')
+      setLinkedInTextEdited(false)
+      setLinkedInFromAI(false)
       if (result.results[0]?.postId) {
         onPublished(result.results[0].postId)
       }
@@ -590,11 +733,106 @@ export function PublishModal({ isOpen, onClose, sessionId, draftTitle, featuredI
                 accentColor="accent-[#0A66C2]"
                 accentBorder="border-[#0A66C2]"
                 accentBg="bg-[#0A66C2]/5"
-                collapsedSummary="Post will be shared"
+                collapsedSummary={linkedInPostType === 'link' ? 'Link post' : 'Text post'}
               >
-                <p className="text-xs text-[#9ca3af]">
-                  Your hook and a link to the blog post will be shared on LinkedIn. Post customization coming soon.
-                </p>
+                <div className="space-y-3">
+                  {/* Post type toggle */}
+                  <div className="flex gap-2">
+                    <button
+                      type="button"
+                      onClick={() => { setLinkedInPostType('link'); setLinkedInTextEdited(false) }}
+                      className={`flex-1 rounded-lg border px-3 py-1.5 text-xs font-medium transition-colors ${
+                        linkedInPostType === 'link'
+                          ? 'border-[#0A66C2] bg-[#0A66C2]/10 text-[#0A66C2]'
+                          : 'border-[#e5e7eb] text-[#6b7280] hover:border-[#d1d5db] dark:border-[#374151] dark:text-[#9ca3af]'
+                      }`}
+                    >
+                      Link Post
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => { setLinkedInPostType('text'); setLinkedInTextEdited(false) }}
+                      className={`flex-1 rounded-lg border px-3 py-1.5 text-xs font-medium transition-colors ${
+                        linkedInPostType === 'text'
+                          ? 'border-[#0A66C2] bg-[#0A66C2]/10 text-[#0A66C2]'
+                          : 'border-[#e5e7eb] text-[#6b7280] hover:border-[#d1d5db] dark:border-[#374151] dark:text-[#9ca3af]'
+                      }`}
+                    >
+                      Text Post
+                    </button>
+                  </div>
+
+                  {/* Post type description */}
+                  <p className="text-[10px] text-[#9ca3af]">
+                    {linkedInPostType === 'link'
+                      ? 'Hook text with an article preview card linking to your blog post.'
+                      : 'Full post as a standalone LinkedIn text post. A link to your blog will be added at the end.'}
+                  </p>
+
+                  {/* Text editor */}
+                  <div className="space-y-1.5">
+                    <label className="flex items-center justify-between text-xs font-medium text-[#6b7280]">
+                      <span className="flex items-center gap-1.5">
+                        {linkedInPostType === 'link' ? 'Hook' : 'Post text'}
+                        {(generatingLinkedIn || loadingDraftBody) && <Loader size={10} />}
+                        {!generatingLinkedIn && !loadingDraftBody && linkedInFromAI && (
+                          <span className="flex items-center gap-0.5 text-[#d97706]">
+                            <SparkleIcon size={10} weight="fill" />
+                            <span className="text-[10px]">AI</span>
+                          </span>
+                        )}
+                      </span>
+                      {linkedInPostType === 'text' && (
+                        <span className={`tabular-nums ${linkedInOverLimit ? 'font-semibold text-red-500' : ''}`}>
+                          {linkedInCharCount}/3000
+                        </span>
+                      )}
+                    </label>
+                    <textarea
+                      value={linkedInText}
+                      onChange={(e) => { setLinkedInText(e.target.value); setLinkedInTextEdited(true); setLinkedInFromAI(false) }}
+                      placeholder={
+                        generatingLinkedIn ? 'Optimizing...'
+                          : loadingDraftBody ? 'Loading draft...'
+                          : linkedInPostType === 'link' ? 'A short hook to grab readers...'
+                          : 'Full post text...'
+                      }
+                      disabled={generatingLinkedIn || loadingDraftBody}
+                      rows={linkedInPostType === 'link' ? 3 : 6}
+                      className={`w-full resize-none rounded-lg border bg-white px-3 py-2 text-sm text-[#0a0a0a] placeholder:text-[#6b7280] focus:outline-none focus:ring-1 disabled:opacity-60 dark:bg-[#1a1a1a] dark:text-[#fafafa] ${
+                        linkedInOverLimit
+                          ? 'border-red-400 focus:border-red-500 focus:ring-red-500'
+                          : 'border-[#e5e7eb] focus:border-[#d97706] focus:ring-[#d97706] dark:border-[#374151]'
+                      }`}
+                    />
+                    {linkedInOverLimit && (
+                      <p className="text-[10px] text-red-500">
+                        Text exceeds 3000 characters. Shorten to publish.
+                      </p>
+                    )}
+                  </div>
+
+                  {/* Optimize button — only for text posts; hook is already good for link posts */}
+                  {linkedInPostType === 'text' && (
+                    <button
+                      type="button"
+                      onClick={handleOptimizeLinkedIn}
+                      disabled={generatingLinkedIn || loadingDraftBody}
+                      className="flex items-center gap-1.5 rounded-lg border border-[#0A66C2]/30 px-3 py-1.5 text-xs font-medium text-[#0A66C2] transition-colors hover:bg-[#0A66C2]/5 disabled:opacity-50"
+                    >
+                      <SparkleIcon size={12} weight="fill" />
+                      {generatingLinkedIn ? 'Optimizing...' : 'Optimize for LinkedIn'}
+                    </button>
+                  )}
+
+                  {/* Footer note */}
+                  <p className="flex items-center gap-1 text-[10px] text-[#9ca3af]">
+                    <LinkSimpleIcon size={10} />
+                    {linkedInPostType === 'link'
+                      ? 'Article preview card with your blog link will be attached'
+                      : 'Link to your blog post will be included at the end'}
+                  </p>
+                </div>
               </SocialCard>
             </div>
           </div>
@@ -618,7 +856,7 @@ export function PublishModal({ isOpen, onClose, sessionId, draftTitle, featuredI
             <button
               type="button"
               onClick={handlePublish}
-              disabled={publishing || !hasAnyDestination || (needsSlug && !slug.trim()) || tweetOverLimit}
+              disabled={publishing || !hasAnyDestination || (needsSlug && !slug.trim()) || tweetOverLimit || linkedInOverLimit}
               className="flex items-center gap-1.5 rounded-lg bg-[#d97706] px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-[#b45309] disabled:opacity-50"
             >
               {publishing ? (

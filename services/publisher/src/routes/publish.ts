@@ -167,7 +167,7 @@ publish.post('/publish/blog/create', async (c) => {
 
 /** Publish a post to LinkedIn. */
 publish.post('/publish/linkedin', async (c) => {
-  const body = await c.req.json<{ postId?: string; userId?: string; shareType?: string; publicationId?: string }>()
+  const body = await c.req.json<{ postId?: string; userId?: string; shareType?: string; publicationId?: string; linkedInText?: string }>()
 
   if (!body.postId || typeof body.postId !== 'string') {
     return c.json({ error: 'postId is required' }, 400)
@@ -200,6 +200,11 @@ publish.post('/publish/linkedin', async (c) => {
   // Override share type if specified
   if (body.shareType === 'text' || body.shareType === 'article') {
     prepared.metadata = { ...prepared.metadata, shareType: body.shareType }
+  }
+
+  // Override with user-customized LinkedIn text if provided
+  if (body.linkedInText && typeof body.linkedInText === 'string') {
+    prepared.content = body.linkedInText
   }
 
   const validation = adapter.validate(prepared)

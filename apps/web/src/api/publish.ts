@@ -19,6 +19,8 @@ async function dispatchSocialShares(
     publishToLinkedIn: boolean
     publishToTwitter: boolean
     tweetText?: string
+    linkedInText?: string
+    linkedInPostType?: 'link' | 'text'
   },
 ): Promise<SocialShareResult[]> {
   const results: Promise<SocialShareResult>[] = []
@@ -38,6 +40,8 @@ async function dispatchSocialShares(
                 postId: opts.postId,
                 userId: opts.userId,
                 publicationId: opts.publicationId,
+                linkedInText: opts.linkedInText || undefined,
+                shareType: opts.linkedInPostType === 'text' ? 'text' : 'article',
               }),
             }),
           )
@@ -137,6 +141,31 @@ publish.post('/sessions/:sessionId/generate-tweet', async (c) => {
   return c.json(data, res.status as ContentfulStatusCode)
 })
 
+/** Generate/optimize a LinkedIn post for the current draft via AI. */
+publish.post('/sessions/:sessionId/generate-linkedin-post', async (c) => {
+  const sessionId = c.req.param('sessionId')
+  const session = await c.env.DAL.getSessionById(sessionId)
+  if (!session) return c.json({ error: 'Session not found' }, 404)
+  if (session.userId !== c.get('userId')) {
+    return c.json({ error: 'Session not found' }, 404)
+  }
+
+  const agent = await getAgentByName<Env, WriterAgent>(c.env.WRITER_AGENT, sessionId)
+
+  const url = new URL(c.req.url)
+  url.pathname = '/generate-linkedin-post'
+
+  const res = await agent.fetch(
+    new Request(url.toString(), {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: await c.req.text(),
+    }),
+  )
+  const data = await res.json()
+  return c.json(data, res.status as ContentfulStatusCode)
+})
+
 /** Publish the current draft to the CMS — proxied to agent DO. */
 publish.post('/sessions/:sessionId/publish', async (c) => {
   const sessionId = c.req.param('sessionId')
@@ -149,10 +178,12 @@ publish.post('/sessions/:sessionId/publish', async (c) => {
   }
 
   // Parse body to extract social sharing flags before forwarding to agent
-  const body = await c.req.json<{ publishToLinkedIn?: boolean; publishToTwitter?: boolean; tweetText?: string; publicationId?: string; [key: string]: unknown }>()
+  const body = await c.req.json<{ publishToLinkedIn?: boolean; publishToTwitter?: boolean; tweetText?: string; linkedInText?: string; linkedInPostType?: string; publicationId?: string; [key: string]: unknown }>()
   const publishToLinkedIn = body.publishToLinkedIn ?? false
   const publishToTwitter = body.publishToTwitter ?? false
   const tweetText = typeof body.tweetText === 'string' ? body.tweetText : undefined
+  const linkedInText = typeof body.linkedInText === 'string' ? body.linkedInText : undefined
+  const linkedInPostType = body.linkedInPostType === 'text' ? 'text' as const : 'link' as const
   const publicationId = typeof body.publicationId === 'string' ? body.publicationId : undefined
 
   // Validate tweet length including the blog URL that will be appended (space + t.co 23-char link)
@@ -161,6 +192,11 @@ publish.post('/sessions/:sessionId/publish', async (c) => {
     if (effectiveLength > 280) {
       return c.json({ error: 'Tweet text exceeds 280 characters (including link)' }, 400)
     }
+  }
+
+  // Validate LinkedIn text length
+  if (linkedInText && linkedInText.length > 3000) {
+    return c.json({ error: 'LinkedIn post text exceeds 3000 characters' }, 400)
   }
 
   const socialOnly = !publicationId
@@ -182,6 +218,8 @@ publish.post('/sessions/:sessionId/publish', async (c) => {
       publishToLinkedIn,
       publishToTwitter,
       tweetText,
+      linkedInText,
+      linkedInPostType,
     })
 
     return c.json({ success: true, results: [], socialResults })
@@ -250,6 +288,8 @@ publish.post('/sessions/:sessionId/publish', async (c) => {
           publishToLinkedIn,
           publishToTwitter,
           tweetText,
+          linkedInText,
+          linkedInPostType,
         })
         const enriched = { ...(data as Record<string, unknown>), socialResults }
         return c.json(enriched, res.status as ContentfulStatusCode)

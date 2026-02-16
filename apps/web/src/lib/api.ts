@@ -141,6 +141,17 @@ export async function generateTweet(sessionId: string, hook?: string): Promise<{
   })
 }
 
+export async function generateLinkedInPost(
+  sessionId: string,
+  opts?: { mode?: 'link' | 'text'; hook?: string; currentText?: string },
+): Promise<{ linkedInPost: string }> {
+  return request<{ linkedInPost: string }>(`/api/sessions/${sessionId}/generate-linkedin-post`, {
+    method: 'POST',
+    headers: JSON_HEADERS,
+    body: JSON.stringify(opts ?? {}),
+  })
+}
+
 export async function publishDraft(
   sessionId: string,
   input: PublishInput

@@ -10,7 +10,7 @@ import { cleanupMessages } from './message-utils'
 import { CmsApi } from '@hotmetal/shared'
 import type { Citation } from '@hotmetal/content-core'
 import { marked } from 'marked'
-import { createHook, createSeoMeta, createTweet, type DraftInput } from '../lib/writing'
+import { createHook, createSeoMeta, createTweet, optimizeForLinkedIn, type DraftInput } from '../lib/writing'
 
 export interface DraftRow {
   id: string
@@ -201,6 +201,10 @@ export class WriterAgent extends AIChatAgent<Env, WriterAgentState> {
       return this.handleGenerateTweet(request)
     }
 
+    if (url.pathname.endsWith('/generate-linkedin-post') && request.method === 'POST') {
+      return this.handleGenerateLinkedInPost(request)
+    }
+
     if (url.pathname.endsWith('/publish') && request.method === 'POST') {
       return this.handlePublishToCms(request)
     }
@@ -335,6 +339,30 @@ export class WriterAgent extends AIChatAgent<Env, WriterAgentState> {
     const tweet = await createTweet(draftInput, hook)
 
     return Response.json({ tweet })
+  }
+
+  async handleGenerateLinkedInPost(request: Request): Promise<Response> {
+    const draft = this.getCurrentDraft()
+    if (!draft) {
+      return Response.json({ error: 'No draft exists.' }, { status: 400 })
+    }
+
+    let body: { mode?: string; hook?: string; currentText?: string } = {}
+    try {
+      body = await request.json() as typeof body
+    } catch {
+      // Body is optional
+    }
+
+    const mode = body.mode === 'text' ? 'text' as const : 'link' as const
+    const draftInput: DraftInput = { title: draft.title, content: draft.content }
+    const linkedInPost = await optimizeForLinkedIn(draftInput, {
+      mode,
+      hook: body.hook?.trim() || undefined,
+      currentText: body.currentText?.trim() || undefined,
+    })
+
+    return Response.json({ linkedInPost })
   }
 
   /**

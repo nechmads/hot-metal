@@ -51,6 +51,8 @@ export interface PublishInput {
   publishToLinkedIn?: boolean
   publishToTwitter?: boolean
   tweetText?: string
+  linkedInText?: string
+  linkedInPostType?: 'link' | 'text'
 }
 
 export interface PublishResultEntry {
