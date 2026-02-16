@@ -18,6 +18,9 @@
 
   "dev": {
     "port": 5173,
+    "vars": {
+      "IMAGE_BASE_URL": "",
+    },
   },
 
   // Durable Objects — one WriterAgent instance per writing session

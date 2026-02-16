@@ -14,7 +14,7 @@
   "devDependencies": {
     "@clerk/types": "^4.101.14",
     "@cloudflare/vite-plugin": "1.19.0",
-    "@cloudflare/workers-types": "^4.20251231.0",
+    "@cloudflare/workers-types": "^4.20260214.0",
     "@tailwindcss/vite": "^4.1.18",
     "@types/react": "^19.2.7",
     "@types/react-dom": "^19.2.3",

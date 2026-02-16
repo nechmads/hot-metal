@@ -2,7 +2,18 @@ import { anthropic } from '@ai-sdk/anthropic'
 import { generateText } from 'ai'
 import type { DraftInput } from './index'
 
-const IMAGE_PROMPT_SYSTEM = `You are an expert at creating image generation prompts. Given a blog post, generate a single descriptive prompt for an AI image generator (Flux) that would create a compelling featured image for the post. The prompt should describe a visually striking scene or concept that captures the essence of the article. Keep it under 200 words. Be specific about style, colors, composition. Respond with ONLY the prompt text, no explanation.`
+const IMAGE_PROMPT_SYSTEM = `You are an expert at creating prompts for the Flux AI image generator.
+
+Given a blog post, generate a single prompt that would produce a compelling featured image.
+
+Guidelines:
+- Describe ONE cohesive scene or visual metaphor that captures the article's core theme.
+- Never use split-screen, dual-panel, collage, side-by-side, or before/after compositions.
+- Prefer a single focal subject with a complementary background.
+- Specify a visual style (e.g. editorial photography, watercolor illustration, 3D render, flat vector art) that fits the article's tone.
+- Include lighting, color palette, and mood.
+- Keep it under 150 words. Shorter prompts produce better results with Flux.
+- Respond with ONLY the prompt text, no explanation or preamble.`
 
 /**
  * Generate an image prompt suitable for AI image generators (Flux).
