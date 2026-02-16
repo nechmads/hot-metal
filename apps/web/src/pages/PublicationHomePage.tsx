@@ -90,7 +90,17 @@ export function PublicationHomePage() {
           >
             <ArrowLeftIcon size={18} />
           </button>
-          <h2 className="text-xl font-bold">{publication.name}</h2>
+          <div>
+            <h2 className="text-xl font-bold">{publication.name}</h2>
+            <a
+              href={`https://${publication.slug}.hotmetalapp.com`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-xs text-[var(--color-text-muted)] hover:text-[var(--color-accent)] transition-colors"
+            >
+              {publication.slug}.hotmetalapp.com
+            </a>
+          </div>
         </div>
         <div className="flex items-center gap-2">
           {(publication.feedPartialEnabled || publication.feedFullEnabled) && publication.slug && (
