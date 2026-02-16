@@ -8,17 +8,18 @@
  * - /api/images/*     — public image serving from R2
  * - /internal/*       — service-to-service routes (content-scout auto-write)
  * - /api/*            — Clerk-authenticated user routes
- * - /agents/*         — WebSocket/HTTP agent connections (Clerk JWT verified)
+ * - /agents/*         — WebSocket/HTTP agent connections (per-session chat token)
  */
 
 import { routeAgentRequest } from 'agents'
 import { Hono } from 'hono'
 
-import { clerkAuth, verifyClerkJwt, type AuthVariables } from './middleware/clerk-auth'
+import { clerkAuth, type AuthVariables } from './middleware/clerk-auth'
 import { ensureUser } from './middleware/ensure-user'
 import { internalAuth } from './middleware/internal-auth'
 import { errorHandler } from './middleware/error-handler'
 import { verifyPublicationOwnership } from './middleware/ownership'
+import { verifyChatToken } from './lib/chat-token'
 import sessions from './api/sessions'
 import publications from './api/publications'
 import topics from './api/topics'
@@ -127,14 +128,18 @@ export default {
   async fetch(request: Request, env: Env, ctx: ExecutionContext) {
     const url = new URL(request.url)
 
-    // Agent WebSocket/HTTP routes — verify JWT before routing to DO
+    // Agent WebSocket/HTTP routes — validate per-session chat token (not JWT)
     if (url.pathname.startsWith('/agents/')) {
       const token = url.searchParams.get('token')
-        || request.headers.get('Authorization')?.slice(7)
       if (!token) return new Response('Unauthorized', { status: 401 })
 
-      const payload = await verifyClerkJwt(token, env)
-      if (!payload) return new Response('Unauthorized', { status: 401 })
+      // Extract sessionId from path: /agents/writer-agent/{sessionId}
+      const match = url.pathname.match(/^\/agents\/[^/]+\/([^/]+)/)
+      const sessionId = match?.[1]
+      if (!sessionId) return new Response('Unauthorized', { status: 401 })
+
+      const valid = await verifyChatToken(sessionId, token, env.INTERNAL_API_KEY)
+      if (!valid) return new Response('Unauthorized', { status: 401 })
 
       const response = await routeAgentRequest(request, env)
       if (response) return response

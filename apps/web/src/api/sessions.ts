@@ -2,6 +2,7 @@ import { Hono } from 'hono'
 import type { AppEnv } from '../server'
 import type { SessionStatus } from '@hotmetal/data-layer'
 import { verifyPublicationOwnership } from '../middleware/ownership'
+import { computeChatToken } from '../lib/chat-token'
 
 const VALID_STATUSES: SessionStatus[] = ['active', 'completed', 'archived']
 
@@ -60,7 +61,9 @@ sessions.get('/sessions/:id', async (c) => {
   if (session.userId !== c.get('userId')) {
     return c.json({ error: 'Session not found' }, 404)
   }
-  return c.json(session)
+
+  const chatToken = await computeChatToken(session.id, c.env.INTERNAL_API_KEY)
+  return c.json({ ...session, chatToken })
 })
 
 /** Update session metadata. */

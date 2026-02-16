@@ -59,7 +59,8 @@ export function WorkspacePage() {
     )
   }
 
-  if (error || !session || !id) {
+  const chatToken = session?.chatToken
+  if (error || !session || !id || !chatToken) {
     return (
       <div className="flex h-full items-center justify-center">
         <div className="text-center">
@@ -98,6 +99,7 @@ export function WorkspacePage() {
           {mobileTab === 'chat' ? (
             <ChatPanel
               sessionId={id}
+              chatToken={chatToken}
               seedContext={session.seedContext}
               sessionTitle={session.title}
               onAssistantResponse={handleAssistantResponse}
@@ -124,6 +126,7 @@ export function WorkspacePage() {
       >
         <ChatPanel
           sessionId={id}
+          chatToken={chatToken}
           seedContext={session.seedContext}
           sessionTitle={session.title}
           onAssistantResponse={handleAssistantResponse}

@@ -1,7 +1,6 @@
-import { useCallback, useRef, useState } from 'react'
+import { useCallback, useRef } from 'react'
 import { useAgent } from 'agents/react'
 import { useAgentChat } from '@cloudflare/ai-chat/react'
-import { useAuth } from '@clerk/clerk-react'
 import type { WriterAgentState } from './useWriterState'
 
 export type { WriterAgentState }
@@ -11,18 +10,11 @@ export type ChatStatus = 'submitted' | 'streaming' | 'ready' | 'error'
 
 interface UseWriterChatOptions {
   sessionId: string
+  chatToken: string
   onStateUpdate?: (state: WriterAgentState) => void
 }
 
-export function useWriterChat({ sessionId, onStateUpdate }: UseWriterChatOptions) {
-  const { getToken } = useAuth()
-
-  // Unique key per component mount — ensures the agents SDK's module-level
-  // queryCache is busted when navigating away and back, so getToken() is
-  // called fresh instead of reusing a stale (expired) cached token.
-  // See: https://github.com/cloudflare/agents/issues/725
-  const [mountKey] = useState(() => Date.now())
-
+export function useWriterChat({ sessionId, chatToken, onStateUpdate }: UseWriterChatOptions) {
   // Stabilize the callback via ref to prevent reconnection loops
   const onStateUpdateRef = useRef(onStateUpdate)
   onStateUpdateRef.current = onStateUpdate
@@ -35,12 +27,9 @@ export function useWriterChat({ sessionId, onStateUpdate }: UseWriterChatOptions
     agent: 'writer-agent',
     name: sessionId,
     onStateUpdate: stableOnStateUpdate,
-    // Pass auth token as query param for WebSocket authentication
-    query: async () => {
-      const token = await getToken()
-      return { token: token ?? null }
-    },
-    queryDeps: [mountKey],
+    // Chat token is long-lived — no need to refresh on each connection
+    query: async () => ({ token: chatToken }),
+    queryDeps: [chatToken],
   })
 
   const chat = useAgentChat({

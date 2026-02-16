@@ -10,6 +10,7 @@ export interface Session {
   seedContext: string | null
   featuredImageUrl: string | null
   styleId: string | null
+  chatToken: string | null
   createdAt: number
   updatedAt: number
 }

@@ -7,15 +7,17 @@ import type { WriterAgentState } from '@/hooks/useWriterState'
 
 interface ChatPanelProps {
   sessionId: string
+  chatToken: string
   seedContext?: string | null
   sessionTitle?: string | null
   onAssistantResponse?: () => void
   onStateUpdate?: (state: WriterAgentState) => void
 }
 
-export function ChatPanel({ sessionId, seedContext, sessionTitle, onAssistantResponse, onStateUpdate }: ChatPanelProps) {
+export function ChatPanel({ sessionId, chatToken, seedContext, sessionTitle, onAssistantResponse, onStateUpdate }: ChatPanelProps) {
   const { messages, status, error, sendMessage, stop } = useWriterChat({
     sessionId,
+    chatToken,
     onStateUpdate,
   })
 
