@@ -1,0 +1,77 @@
+---
+import type { Post } from '@hotmetal/content-core';
+import type { SocialLinks } from '@hotmetal/data-layer';
+import { formatDate } from '../../../lib/format';
+import { backgroundImageStyle } from '../../../lib/post-utils';
+
+interface Props {
+  name: string;
+  tagline?: string | null;
+  headerImageUrl?: string | null;
+  socialLinks?: SocialLinks | null;
+  featuredPost?: Post | null;
+}
+
+const { name, tagline, headerImageUrl, featuredPost } = Astro.props;
+
+const date = featuredPost?.publishedAt ? formatDate(featuredPost.publishedAt) : null;
+---
+
+<section class="max-w-[var(--max-width-wide)] mx-auto px-6">
+  <div class="grid grid-cols-1 md:grid-cols-2 border-b-[3px] border-border-strong min-h-[400px]">
+    <div class="flex flex-col justify-center py-10 md:py-12 md:pr-12">
+      {featuredPost ? (
+        <>
+          <p class="font-mono text-xs uppercase tracking-[0.1em] text-accent font-medium mb-4">
+            // Featured
+          </p>
+          <a href={`/${featuredPost.slug}`}>
+            <h2 class="font-display text-3xl md:text-[2.75rem] font-bold leading-[1.08] tracking-tight mb-5 hover:text-accent transition-colors">
+              {featuredPost.title}
+            </h2>
+          </a>
+          {(featuredPost.hook || featuredPost.excerpt) && (
+            <p class="text-lg text-text-muted leading-relaxed mb-6 max-w-lg">
+              {featuredPost.hook ?? featuredPost.excerpt}
+            </p>
+          )}
+          <div class="font-mono text-sm text-text-muted">
+            {featuredPost.author && (
+              <span class="font-medium text-text">{featuredPost.author}</span>
+            )}
+            {date && featuredPost.publishedAt && (
+              <>
+                <span> &mdash; </span>
+                <time datetime={featuredPost.publishedAt}>{date}</time>
+              </>
+            )}
+          </div>
+        </>
+      ) : (
+        <>
+          <h1 class="font-display text-4xl md:text-5xl font-bold leading-[1.08] tracking-tight mb-4">
+            {name}
+          </h1>
+          {tagline && (
+            <p class="text-lg text-text-muted leading-relaxed">
+              {tagline}
+            </p>
+          )}
+        </>
+      )}
+    </div>
+
+    <div class="hidden md:block border-l-[3px] border-border-strong">
+      {backgroundImageStyle(featuredPost?.featuredImage ?? headerImageUrl) ? (
+        <div
+          class="w-full h-full min-h-[400px] bg-bg-card"
+          style={backgroundImageStyle(featuredPost?.featuredImage ?? headerImageUrl)}
+        />
+      ) : (
+        <div class="w-full h-full min-h-[400px] bg-bg-card flex items-center justify-center">
+          <span class="font-display text-8xl font-bold text-border">{name.charAt(0)}</span>
+        </div>
+      )}
+    </div>
+  </div>
+</section>

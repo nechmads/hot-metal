@@ -1,0 +1,494 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>The Quiet Revolution - Editorial Template (Post)</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;0,800;0,900;1,400;1,500;1,600;1,700&family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,500;0,8..60,600;1,8..60,400;1,8..60,500&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --color-bg: #faf8f5;
+      --color-bg-card: #ffffff;
+      --color-text: #1a1a1a;
+      --color-text-muted: #6b6b6b;
+      --color-accent: #8b2635;
+      --color-accent-hover: #6d1e2a;
+      --color-border: #d4cfc8;
+      --color-border-light: #e8e4de;
+      --font-display: 'Playfair Display', Georgia, 'Times New Roman', serif;
+      --font-body: 'Source Serif 4', Georgia, serif;
+      --font-ui: 'Inter', -apple-system, sans-serif;
+      --max-width: 1100px;
+      --max-width-prose: 680px;
+    }
+
+    body {
+      font-family: var(--font-body);
+      color: var(--color-text);
+      background: var(--color-bg);
+      line-height: 1.7;
+      font-size: 17px;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    a { color: inherit; text-decoration: none; }
+
+    /* ─── HEADER ─── */
+    .site-header {
+      border-bottom: 1px solid var(--color-border);
+      background: var(--color-bg);
+      position: sticky;
+      top: 0;
+      z-index: 50;
+    }
+
+    .header-inner {
+      max-width: var(--max-width);
+      margin: 0 auto;
+      padding: 16px 24px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .header-title {
+      font-family: var(--font-display);
+      font-size: 22px;
+      font-weight: 700;
+    }
+
+    .header-title a:hover { color: var(--color-accent); }
+
+    .header-nav {
+      display: flex;
+      gap: 24px;
+      font-family: var(--font-ui);
+      font-size: 13px;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--color-text-muted);
+    }
+
+    .header-nav a:hover { color: var(--color-accent); }
+
+    /* ─── ARTICLE HEADER ─── */
+    .article-header {
+      max-width: var(--max-width-prose);
+      margin: 0 auto;
+      padding: 56px 24px 0;
+      text-align: center;
+    }
+
+    .article-category {
+      font-family: var(--font-ui);
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.14em;
+      color: var(--color-accent);
+      font-weight: 600;
+      margin-bottom: 16px;
+    }
+
+    .article-title {
+      font-family: var(--font-display);
+      font-size: 46px;
+      font-weight: 700;
+      line-height: 1.15;
+      margin-bottom: 20px;
+      letter-spacing: -0.01em;
+    }
+
+    .article-subtitle {
+      font-size: 20px;
+      color: var(--color-text-muted);
+      line-height: 1.5;
+      margin-bottom: 24px;
+    }
+
+    .article-meta {
+      font-family: var(--font-ui);
+      font-size: 14px;
+      color: var(--color-text-muted);
+      padding-bottom: 32px;
+      border-bottom: 1px solid var(--color-border-light);
+    }
+
+    .article-meta .author {
+      font-weight: 600;
+      color: var(--color-text);
+    }
+
+    /* ─── FEATURED IMAGE ─── */
+    .article-hero {
+      max-width: 900px;
+      margin: 40px auto 0;
+      padding: 0 24px;
+    }
+
+    .article-hero img,
+    .article-hero-placeholder {
+      width: 100%;
+      aspect-ratio: 16 / 9;
+      object-fit: cover;
+      display: block;
+    }
+
+    .article-hero-placeholder {
+      background: #d4cfc8;
+      background-image: url('https://images.unsplash.com/photo-1485988412941-77a35537dae4?w=1200&q=80');
+      background-size: cover;
+      background-position: center;
+    }
+
+    .article-hero-caption {
+      font-family: var(--font-ui);
+      font-size: 12px;
+      color: var(--color-text-muted);
+      margin-top: 8px;
+      text-align: center;
+    }
+
+    /* ─── ARTICLE BODY ─── */
+    .article-body {
+      max-width: var(--max-width-prose);
+      margin: 0 auto;
+      padding: 40px 24px 64px;
+    }
+
+    .article-body p {
+      margin-bottom: 24px;
+      font-size: 18px;
+      line-height: 1.8;
+    }
+
+    .article-body p:first-of-type::first-letter {
+      font-family: var(--font-display);
+      font-size: 68px;
+      float: left;
+      line-height: 0.85;
+      margin-right: 8px;
+      margin-top: 6px;
+      color: var(--color-accent);
+      font-weight: 700;
+    }
+
+    .article-body h2 {
+      font-family: var(--font-display);
+      font-size: 28px;
+      font-weight: 700;
+      margin: 48px 0 20px;
+      line-height: 1.3;
+    }
+
+    .article-body h3 {
+      font-family: var(--font-display);
+      font-size: 22px;
+      font-weight: 600;
+      margin: 36px 0 16px;
+      line-height: 1.3;
+    }
+
+    .article-body blockquote {
+      border-left: 3px solid var(--color-accent);
+      padding: 4px 0 4px 24px;
+      margin: 32px 0;
+      font-style: italic;
+      color: var(--color-text-muted);
+      font-size: 19px;
+    }
+
+    .article-body ul, .article-body ol {
+      padding-left: 24px;
+      margin-bottom: 24px;
+    }
+
+    .article-body li {
+      margin-bottom: 8px;
+      font-size: 18px;
+      line-height: 1.7;
+    }
+
+    .article-body a {
+      color: var(--color-accent);
+      text-decoration: underline;
+      text-underline-offset: 3px;
+    }
+
+    .article-body a:hover { color: var(--color-accent-hover); }
+
+    /* Pull quote */
+    .pull-quote {
+      font-family: var(--font-display);
+      font-size: 28px;
+      font-style: italic;
+      line-height: 1.4;
+      text-align: center;
+      padding: 40px 32px;
+      margin: 40px -40px;
+      border-top: 1px solid var(--color-border);
+      border-bottom: 1px solid var(--color-border);
+      color: var(--color-text);
+    }
+
+    /* ─── TAGS ─── */
+    .article-tags {
+      max-width: var(--max-width-prose);
+      margin: 0 auto;
+      padding: 0 24px 32px;
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      border-bottom: 1px solid var(--color-border-light);
+    }
+
+    .tag {
+      font-family: var(--font-ui);
+      font-size: 12px;
+      padding: 4px 12px;
+      border: 1px solid var(--color-border);
+      color: var(--color-text-muted);
+      letter-spacing: 0.04em;
+    }
+
+    .tag:hover {
+      border-color: var(--color-accent);
+      color: var(--color-accent);
+    }
+
+    /* ─── SHARE ─── */
+    .article-share {
+      max-width: var(--max-width-prose);
+      margin: 0 auto;
+      padding: 24px 24px 0;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-family: var(--font-ui);
+      font-size: 13px;
+      color: var(--color-text-muted);
+    }
+
+    .share-links { display: flex; gap: 16px; }
+    .share-links a:hover { color: var(--color-accent); }
+
+    /* ─── RELATED POSTS ─── */
+    .related-section {
+      max-width: var(--max-width);
+      margin: 0 auto;
+      padding: 64px 24px;
+    }
+
+    .related-header {
+      font-family: var(--font-display);
+      font-size: 24px;
+      font-weight: 700;
+      margin-bottom: 32px;
+      padding-bottom: 8px;
+      border-bottom: 2px solid var(--color-text);
+    }
+
+    .related-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 32px;
+    }
+
+    .related-card {
+      border-bottom: 1px solid var(--color-border-light);
+      padding-bottom: 20px;
+    }
+
+    .related-card-image {
+      aspect-ratio: 3 / 2;
+      background: #d4cfc8;
+      background-size: cover;
+      background-position: center;
+      margin-bottom: 12px;
+    }
+
+    .related-card-title {
+      font-family: var(--font-display);
+      font-size: 18px;
+      font-weight: 600;
+      line-height: 1.3;
+      margin-bottom: 6px;
+    }
+
+    .related-card-title:hover { color: var(--color-accent); }
+
+    .related-card-meta {
+      font-family: var(--font-ui);
+      font-size: 12px;
+      color: var(--color-text-muted);
+    }
+
+    /* ─── FOOTER ─── */
+    .site-footer {
+      border-top: 1px solid var(--color-border);
+      background: var(--color-bg);
+      padding: 40px 24px;
+    }
+
+    .footer-inner {
+      max-width: var(--max-width);
+      margin: 0 auto;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-family: var(--font-ui);
+      font-size: 13px;
+      color: var(--color-text-muted);
+    }
+
+    .footer-links { display: flex; gap: 20px; }
+    .footer-links a:hover { color: var(--color-accent); }
+
+    .powered-by a { text-decoration: underline; text-underline-offset: 2px; }
+    .powered-by a:hover { color: var(--color-accent); }
+
+    /* ─── RESPONSIVE ─── */
+    @media (max-width: 768px) {
+      .article-title { font-size: 34px; }
+      .article-body p:first-of-type::first-letter { font-size: 52px; }
+      .pull-quote { font-size: 22px; margin: 32px 0; padding: 24px 16px; }
+      .related-grid { grid-template-columns: 1fr; }
+      .article-hero { padding: 0; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- HEADER (compact for article pages) -->
+  <header class="site-header">
+    <div class="header-inner">
+      <div class="header-title"><a href="editorial-home.html">The Morning Brief</a></div>
+      <nav class="header-nav">
+        <a href="editorial-home.html">Home</a>
+        <a href="#">Technology</a>
+        <a href="#">Leadership</a>
+        <a href="#">About</a>
+      </nav>
+    </div>
+  </header>
+
+  <!-- ARTICLE HEADER -->
+  <div class="article-header">
+    <div class="article-category">Technology</div>
+    <h1 class="article-title">The Quiet Revolution: How AI Agents Are Reshaping the Way Teams Build Software</h1>
+    <p class="article-subtitle">In the span of eighteen months, AI coding tools have gone from curiosity to infrastructure. The implications are just beginning to unfold.</p>
+    <div class="article-meta">
+      By <span class="author">Shahar Nechmad</span> &middot; February 15, 2026 &middot; 8 min read
+    </div>
+  </div>
+
+  <!-- HERO IMAGE -->
+  <div class="article-hero">
+    <div class="article-hero-placeholder"></div>
+    <p class="article-hero-caption">Photo by Unsplash</p>
+  </div>
+
+  <!-- ARTICLE BODY -->
+  <article class="article-body">
+    <p>In engineering organizations around the world, a subtle but unmistakable shift is taking place. AI coding assistants, once novelty tools for auto-completing brackets and suggesting variable names, have evolved into something far more ambitious: autonomous agents that can reason about entire codebases, plan multi-step changes, and execute them with minimal human guidance.</p>
+
+    <p>The change didn't happen overnight. It crept in through developer toolchains, through VS Code extensions and CLI tools that gradually became more capable. But at some point in late 2025, a threshold was crossed. The tools stopped being assistants and started being collaborators.</p>
+
+    <h2>The Shift from Autocomplete to Autonomy</h2>
+
+    <p>The first generation of AI coding tools&mdash;GitHub Copilot, Cursor, Tabnine&mdash;operated on a simple premise: predict what the developer wants to type next. They were sophisticated autocomplete engines. Useful, certainly. Transformative? Not quite.</p>
+
+    <p>The second generation is fundamentally different. These tools don't just predict tokens; they understand intent. Give them a task description, and they'll read through your codebase, identify the relevant files, plan a sequence of changes, and execute them. They'll run your tests, interpret the output, and iterate until the task is done.</p>
+
+    <div class="pull-quote">"The best code is written by teams who understand when to direct the machine and when to let it explore."</div>
+
+    <p>This isn't science fiction; it's the daily reality for a growing number of engineering teams. Companies like Anthropic, Google, and OpenAI have released agent-capable coding tools that can handle tasks previously requiring hours of human work in a fraction of the time.</p>
+
+    <h2>What Changes When AI Can Code</h2>
+
+    <p>The most immediate effect is speed. Tasks that might take a senior engineer an afternoon&mdash;setting up a new API endpoint, adding form validation, writing migration scripts&mdash;can now be completed in minutes. But speed is just the surface-level story.</p>
+
+    <p>The deeper change is about how teams organize their work:</p>
+
+    <ul>
+      <li><strong>Task decomposition becomes critical.</strong> Teams that can break work into clear, well-specified subtasks see the most benefit from AI agents. Vague requirements still produce vague code.</li>
+      <li><strong>Code review evolves.</strong> When AI writes the first draft, human reviewers shift from "is this correct?" to "is this the right approach?" The review becomes more architectural, less syntactic.</li>
+      <li><strong>Junior engineers level up faster.</strong> They can ask the AI to explain its reasoning, explore alternative approaches, and learn patterns by watching the agent work.</li>
+    </ul>
+
+    <h2>The Risks No One Talks About</h2>
+
+    <p>But this revolution isn't without risks. The most concerning isn't code quality&mdash;modern AI agents produce surprisingly good code. The risk is organizational.</p>
+
+    <blockquote>When teams become dependent on AI-generated code without deeply understanding what's being produced, they build a new kind of technical debt: comprehension debt.</blockquote>
+
+    <p>This debt manifests slowly. The codebase grows faster than the team's understanding of it. When things break&mdash;and they always break&mdash;the team struggles to diagnose problems in code they didn't write and may not fully understand.</p>
+
+    <h2>Finding the Balance</h2>
+
+    <p>The organizations doing this well share a common trait: they treat AI agents as team members, not magic boxes. They establish clear boundaries for what the AI handles independently and what requires human judgment. They invest in code review processes that ensure humans maintain deep understanding of critical paths.</p>
+
+    <p>Most importantly, they haven't abandoned the fundamentals. Clean architecture, thorough testing, readable code&mdash;these matter more when AI is writing, not less. The best AI agents produce better output when working within well-designed systems.</p>
+
+    <p>The quiet revolution isn't about replacing developers. It's about amplifying them. The teams that understand this distinction will build the next decade's defining software. The ones that don't will find themselves maintaining codebases they can't explain.</p>
+  </article>
+
+  <!-- TAGS -->
+  <div class="article-tags">
+    <a href="#" class="tag">AI</a>
+    <a href="#" class="tag">Software Engineering</a>
+    <a href="#" class="tag">Developer Tools</a>
+    <a href="#" class="tag">Leadership</a>
+    <a href="#" class="tag">Future of Work</a>
+  </div>
+
+  <!-- SHARE -->
+  <div class="article-share">
+    <span>Share this article</span>
+    <div class="share-links">
+      <a href="#">Twitter</a>
+      <a href="#">LinkedIn</a>
+      <a href="#">Copy Link</a>
+    </div>
+  </div>
+
+  <!-- RELATED POSTS -->
+  <section class="related-section">
+    <h2 class="related-header">You Might Also Like</h2>
+    <div class="related-grid">
+      <article class="related-card">
+        <div class="related-card-image" style="background-image: url('https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=500&q=80')"></div>
+        <a href="#"><h3 class="related-card-title">Why Your Data Pipeline Is Lying to You</h3></a>
+        <div class="related-card-meta">February 12, 2026 &middot; 6 min</div>
+      </article>
+      <article class="related-card">
+        <div class="related-card-image" style="background-image: url('https://images.unsplash.com/photo-1522071820081-009f0129c71c?w=500&q=80')"></div>
+        <a href="#"><h3 class="related-card-title">The Manager's Dilemma: When Your Best Engineer Wants to Lead</h3></a>
+        <div class="related-card-meta">February 10, 2026 &middot; 5 min</div>
+      </article>
+      <article class="related-card">
+        <div class="related-card-image" style="background-image: url('https://images.unsplash.com/photo-1526374965328-7f61d4dc18c5?w=500&q=80')"></div>
+        <a href="#"><h3 class="related-card-title">Zero Trust in Practice: A Year-One Retrospective</h3></a>
+        <div class="related-card-meta">February 8, 2026 &middot; 7 min</div>
+      </article>
+    </div>
+  </section>
+
+  <!-- FOOTER -->
+  <footer class="site-footer">
+    <div class="footer-inner">
+      <span>&copy; 2026 The Morning Brief</span>
+      <div class="footer-links">
+        <a href="#">Twitter</a>
+        <a href="#">LinkedIn</a>
+        <a href="#">RSS</a>
+      </div>
+      <span class="powered-by">Powered by <a href="#">Hot Metal</a></span>
+    </div>
+  </footer>
+
+</body>
+</html>

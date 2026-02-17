@@ -3,11 +3,7 @@ import { env } from 'cloudflare:workers';
 import { resolvePublication } from '../lib/resolve-publication';
 import { getPublicationBranding } from '../dl/publication';
 import { listPublishedPosts } from '../dl/posts';
-import BaseLayout from '../templates/starter/layouts/BaseLayout.astro';
-import Header from '../templates/starter/components/Header.astro';
-import PublicationHero from '../templates/starter/components/PublicationHero.astro';
-import PostList from '../templates/starter/components/PostList.astro';
-import Footer from '../templates/starter/components/Footer.astro';
+import HomePage from '../components/HomePage.astro';
 
 const publication = await resolvePublication(Astro.request, env.DAL, env.DEV_PUBLICATION_SLUG);
 
@@ -37,27 +33,10 @@ const jsonLd: Record<string, unknown> = {
 };
 ---
 
-<BaseLayout
-  title={branding.name}
-  publicationName={branding.name}
-  description={branding.metaDescription ?? branding.tagline ?? undefined}
-  ogImage={branding.headerImageUrl ?? undefined}
-  canonicalUrl={baseUrl}
-  accentColor={branding.accentColor}
-  jsonLd={jsonLd}
-  rssUrl={`${baseUrl}/rss`}
->
-  <Header publicationName={branding.name} logoUrl={branding.logoUrl} />
-  <PublicationHero
-    name={branding.name}
-    tagline={branding.tagline}
-    headerImageUrl={branding.headerImageUrl}
-    socialLinks={branding.socialLinks}
-  />
-  <PostList posts={posts} />
-  <Footer
-    publicationName={branding.name}
-    publicationSlug={branding.slug}
-    socialLinks={branding.socialLinks}
-  />
-</BaseLayout>
+<HomePage
+  templateId={branding.templateId}
+  {branding}
+  {posts}
+  {baseUrl}
+  {jsonLd}
+/>

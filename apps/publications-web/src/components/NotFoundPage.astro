@@ -1,0 +1,135 @@
+---
+/**
+ * Template switcher for 404 pages.
+ * When adding a new template: add imports for its components and a new branch in the conditional below.
+ * Also update HomePage.astro and PostPage.astro switchers.
+ */
+import type { PublicationBranding } from '../dl/publication';
+
+// Starter template
+import StarterBaseLayout from '../templates/starter/layouts/BaseLayout.astro';
+import StarterHeader from '../templates/starter/components/Header.astro';
+import StarterFooter from '../templates/starter/components/Footer.astro';
+
+// Editorial template
+import EditorialBaseLayout from '../templates/editorial/layouts/BaseLayout.astro';
+import EditorialHeader from '../templates/editorial/components/Header.astro';
+import EditorialFooter from '../templates/editorial/components/Footer.astro';
+
+// Bold template
+import BoldBaseLayout from '../templates/bold/layouts/BaseLayout.astro';
+import BoldHeader from '../templates/bold/components/Header.astro';
+import BoldFooter from '../templates/bold/components/Footer.astro';
+
+interface Props {
+  templateId: string;
+  branding: PublicationBranding | null;
+}
+
+const { templateId, branding } = Astro.props;
+
+const publicationName = branding?.name ?? 'Not Found';
+const accentColor = branding?.accentColor ?? null;
+
+const layoutProps = {
+  title: 'Page Not Found',
+  publicationName,
+  description: 'The page you are looking for could not be found.',
+  accentColor,
+};
+---
+
+{templateId === 'editorial' ? (
+  <EditorialBaseLayout {...layoutProps}>
+    {branding && <EditorialHeader publicationName={branding.name} logoUrl={branding.logoUrl} />}
+
+    <main class="flex-1 flex items-center justify-center px-6 py-24">
+      <div class="text-center">
+        <p class="font-display text-6xl font-bold text-text-muted mb-4">404</p>
+        <h1 class="font-display text-2xl font-bold mb-2">Page not found</h1>
+        <p class="text-text-muted mb-8">
+          The page you are looking for does not exist or has been moved.
+        </p>
+        <a
+          href="/"
+          class="inline-flex items-center gap-2 px-6 py-3 font-sans text-sm font-medium bg-accent text-white hover:bg-accent-hover transition-colors"
+        >
+          <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+          </svg>
+          Back to home
+        </a>
+      </div>
+    </main>
+
+    {branding && (
+      <EditorialFooter
+        publicationName={branding.name}
+        publicationSlug={branding.slug}
+        socialLinks={branding.socialLinks}
+      />
+    )}
+  </EditorialBaseLayout>
+) : templateId === 'bold' ? (
+  <BoldBaseLayout {...layoutProps}>
+    {branding && <BoldHeader publicationName={branding.name} logoUrl={branding.logoUrl} />}
+
+    <main class="flex-1 flex items-center justify-center px-6 py-24">
+      <div class="text-center">
+        <p class="font-display text-[5rem] font-bold text-border leading-none mb-4">404</p>
+        <h1 class="font-display text-2xl font-bold tracking-tight mb-2">Page not found</h1>
+        <p class="text-text-muted mb-8">
+          The page you are looking for does not exist or has been moved.
+        </p>
+        <a
+          href="/"
+          class="inline-flex items-center gap-2 px-6 py-3 font-display text-sm font-semibold bg-text text-bg hover:bg-accent transition-colors"
+        >
+          <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+          </svg>
+          Back to home
+        </a>
+      </div>
+    </main>
+
+    {branding && (
+      <BoldFooter
+        publicationName={branding.name}
+        publicationSlug={branding.slug}
+        socialLinks={branding.socialLinks}
+      />
+    )}
+  </BoldBaseLayout>
+) : (
+  <StarterBaseLayout {...layoutProps}>
+    {branding && <StarterHeader publicationName={branding.name} logoUrl={branding.logoUrl} />}
+
+    <main class="flex-1 flex items-center justify-center px-6 py-24">
+      <div class="text-center">
+        <p class="text-6xl font-black text-text-muted mb-4">404</p>
+        <h1 class="text-2xl font-bold mb-2">Page not found</h1>
+        <p class="text-text-muted mb-8">
+          The page you are looking for does not exist or has been moved.
+        </p>
+        <a
+          href="/"
+          class="inline-flex items-center gap-2 px-6 py-3 text-sm font-medium rounded-lg bg-accent text-white hover:bg-accent-hover transition-colors"
+        >
+          <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+          </svg>
+          Back to home
+        </a>
+      </div>
+    </main>
+
+    {branding && (
+      <StarterFooter
+        publicationName={branding.name}
+        publicationSlug={branding.slug}
+        socialLinks={branding.socialLinks}
+      />
+    )}
+  </StarterBaseLayout>
+)}

@@ -1,0 +1,52 @@
+---
+import type { Post } from '@hotmetal/content-core';
+import { formatDate } from '../../../lib/format';
+import { getPreviewText, getFirstTopic } from '../../../lib/post-utils';
+
+interface Props {
+  post: Post;
+}
+
+const { post } = Astro.props;
+
+const date = post.publishedAt ? formatDate(post.publishedAt) : null;
+const preview = getPreviewText(post);
+const firstTopic = getFirstTopic(post);
+---
+
+<article class="animate-on-scroll border-b border-border-light pb-6 group">
+  <a href={`/${post.slug}`} class="block">
+    {post.featuredImage && (
+      <div class="aspect-[3/2] overflow-hidden bg-bg-card mb-4">
+        <img
+          src={post.featuredImage}
+          alt={post.title}
+          class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+          loading="lazy"
+        />
+      </div>
+    )}
+
+    {firstTopic && (
+      <p class="font-sans text-[11px] uppercase tracking-[0.12em] text-accent font-semibold mb-2">
+        {firstTopic}
+      </p>
+    )}
+
+    <h3 class="font-display text-xl font-semibold leading-snug mb-2 group-hover:text-accent transition-colors">
+      {post.title}
+    </h3>
+
+    {preview && (
+      <p class="text-[0.9375rem] text-text-muted leading-relaxed line-clamp-3 mb-3">
+        {preview}
+      </p>
+    )}
+
+    <div class="font-sans text-xs text-text-muted">
+      {date && post.publishedAt && (
+        <time datetime={post.publishedAt}>{date}</time>
+      )}
+    </div>
+  </a>
+</article>

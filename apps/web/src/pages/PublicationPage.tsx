@@ -57,6 +57,7 @@ export function PublicationPage() {
   const [writingTone, setWritingTone] = useState('')
   const [styleId, setStyleId] = useState<string | null>(null)
   const [availableStyles, setAvailableStyles] = useState<WritingStyle[]>([])
+  const [templateId, setTemplateId] = useState('starter')
   const [feedFullEnabled, setFeedFullEnabled] = useState(true)
   const [feedPartialEnabled, setFeedPartialEnabled] = useState(true)
 
@@ -163,6 +164,11 @@ export function PublicationPage() {
     saveFields({ styleId: value })
   }
 
+  const handleTemplateChange = (value: string) => {
+    setTemplateId(value)
+    saveFields({ templateId: value })
+  }
+
   const handleFeedFullChange = (checked: boolean) => {
     setFeedFullEnabled(checked)
     saveFields({ feedFullEnabled: checked })
@@ -197,6 +203,7 @@ export function PublicationPage() {
       setDefaultAuthor(data.defaultAuthor)
       setWritingTone(data.writingTone ?? '')
       setStyleId(data.styleId ?? null)
+      setTemplateId(data.templateId ?? 'starter')
       setFeedFullEnabled(data.feedFullEnabled ?? true)
       setFeedPartialEnabled(data.feedPartialEnabled ?? true)
       // Sync refs
@@ -475,6 +482,26 @@ export function PublicationPage() {
             >
               Manage Styles
             </button>
+          </p>
+        </div>
+
+        <div>
+          <label className="mb-1 block text-sm font-medium">Publication Template</label>
+          <select
+            value={templateId}
+            onChange={(e) => handleTemplateChange(e.target.value)}
+            className="w-full rounded-lg border border-[var(--color-border-default)] bg-[var(--color-bg-primary)] px-3 py-2 text-sm focus:border-[var(--color-accent)] focus:outline-none focus:ring-1 focus:ring-[var(--color-accent)]"
+          >
+            <option value="starter">Starter</option>
+            <option value="editorial">Editorial</option>
+            <option value="bold">Bold</option>
+          </select>
+          <p className="mt-1 text-xs text-[var(--color-text-muted)]">
+            {templateId === 'editorial'
+              ? 'Magazine-style with serif typography and drop caps.'
+              : templateId === 'bold'
+                ? 'Tech-forward with geometric layout and thick borders.'
+                : 'Clean, minimal, content-focused design.'}
           </p>
         </div>
       </section>

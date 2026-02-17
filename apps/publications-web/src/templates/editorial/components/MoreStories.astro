@@ -1,0 +1,66 @@
+---
+import type { Post } from '@hotmetal/content-core';
+import { formatDate } from '../../../lib/format';
+import { getFirstTopic, backgroundImageStyle } from '../../../lib/post-utils';
+
+interface Props {
+  posts: Post[];
+}
+
+const { posts } = Astro.props;
+---
+
+{posts.length > 0 && (
+  <section class="px-6 pb-16">
+    <div class="max-w-[var(--max-width-wide)] mx-auto">
+      <div class="flex justify-between items-baseline mb-8 border-b-2 border-text pb-2">
+        <h2 class="font-display text-2xl font-bold">More Stories</h2>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-2">
+        {posts.map((post, i) => {
+          const date = post.publishedAt ? formatDate(post.publishedAt) : null;
+          const firstTopic = getFirstTopic(post);
+          const bgStyle = backgroundImageStyle(post.featuredImage);
+
+          return (
+            <article
+              class:list={[
+                'flex gap-5 py-6 border-t border-border-light animate-on-scroll',
+                i % 2 === 0
+                  ? 'pr-8 md:border-r md:border-r-border-light'
+                  : 'md:pl-8',
+              ]}
+            >
+              {bgStyle && (
+                <a href={`/${post.slug}`} class="shrink-0">
+                  <div
+                    class="w-[100px] md:w-[120px] aspect-square overflow-hidden bg-bg-card"
+                    style={bgStyle}
+                  />
+                </a>
+              )}
+              <div class="flex-1 min-w-0">
+                {firstTopic && (
+                  <p class="font-sans text-[11px] uppercase tracking-[0.1em] text-accent font-semibold mb-1">
+                    {firstTopic}
+                  </p>
+                )}
+                <a href={`/${post.slug}`}>
+                  <h3 class="font-display text-lg font-semibold leading-snug mb-1 hover:text-accent transition-colors">
+                    {post.title}
+                  </h3>
+                </a>
+                <div class="font-sans text-xs text-text-muted">
+                  {date && post.publishedAt && (
+                    <time datetime={post.publishedAt}>{date}</time>
+                  )}
+                </div>
+              </div>
+            </article>
+          );
+        })}
+      </div>
+    </div>
+  </section>
+)}

@@ -1,0 +1,482 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>The Morning Brief - Editorial Template (Home)</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;0,800;0,900;1,400;1,500;1,600;1,700&family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,500;0,8..60,600;1,8..60,400;1,8..60,500&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --color-bg: #faf8f5;
+      --color-bg-card: #ffffff;
+      --color-text: #1a1a1a;
+      --color-text-muted: #6b6b6b;
+      --color-accent: #8b2635;
+      --color-accent-hover: #6d1e2a;
+      --color-border: #d4cfc8;
+      --color-border-light: #e8e4de;
+      --font-display: 'Playfair Display', Georgia, 'Times New Roman', serif;
+      --font-body: 'Source Serif 4', Georgia, serif;
+      --font-ui: 'Inter', -apple-system, sans-serif;
+      --max-width: 1100px;
+    }
+
+    body {
+      font-family: var(--font-body);
+      color: var(--color-text);
+      background: var(--color-bg);
+      line-height: 1.7;
+      font-size: 17px;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    a { color: inherit; text-decoration: none; }
+
+    /* ─── HEADER ─── */
+    .site-header {
+      border-bottom: 1px solid var(--color-border);
+      background: var(--color-bg);
+      position: sticky;
+      top: 0;
+      z-index: 50;
+    }
+
+    .header-top {
+      max-width: var(--max-width);
+      margin: 0 auto;
+      padding: 12px 24px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-family: var(--font-ui);
+      font-size: 13px;
+      color: var(--color-text-muted);
+      letter-spacing: 0.02em;
+    }
+
+    .header-main {
+      max-width: var(--max-width);
+      margin: 0 auto;
+      padding: 20px 24px 16px;
+      text-align: center;
+      border-top: 1px solid var(--color-border-light);
+    }
+
+    .site-title {
+      font-family: var(--font-display);
+      font-size: 42px;
+      font-weight: 700;
+      letter-spacing: -0.01em;
+      line-height: 1.1;
+    }
+
+    .site-tagline {
+      font-family: var(--font-ui);
+      font-size: 14px;
+      color: var(--color-text-muted);
+      margin-top: 6px;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    .header-nav {
+      max-width: var(--max-width);
+      margin: 0 auto;
+      padding: 0 24px 12px;
+      display: flex;
+      justify-content: center;
+      gap: 28px;
+      font-family: var(--font-ui);
+      font-size: 13px;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--color-text-muted);
+    }
+
+    .header-nav a:hover { color: var(--color-accent); }
+
+    /* ─── FEATURED POST ─── */
+    .featured-section {
+      max-width: var(--max-width);
+      margin: 0 auto;
+      padding: 48px 24px 0;
+    }
+
+    .featured-post {
+      display: grid;
+      grid-template-columns: 1.1fr 1fr;
+      gap: 48px;
+      align-items: start;
+      padding-bottom: 48px;
+      border-bottom: 1px solid var(--color-border);
+    }
+
+    .featured-image {
+      aspect-ratio: 4 / 3;
+      background: #d4cfc8;
+      background-image: url('https://images.unsplash.com/photo-1485988412941-77a35537dae4?w=800&q=80');
+      background-size: cover;
+      background-position: center;
+    }
+
+    .featured-content {
+      padding-top: 8px;
+    }
+
+    .featured-category {
+      font-family: var(--font-ui);
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      color: var(--color-accent);
+      font-weight: 600;
+      margin-bottom: 12px;
+    }
+
+    .featured-title {
+      font-family: var(--font-display);
+      font-size: 36px;
+      font-weight: 700;
+      line-height: 1.2;
+      margin-bottom: 16px;
+      letter-spacing: -0.01em;
+    }
+
+    .featured-title:hover { color: var(--color-accent); }
+
+    .featured-excerpt {
+      font-size: 18px;
+      line-height: 1.7;
+      color: var(--color-text-muted);
+      margin-bottom: 16px;
+    }
+
+    .featured-meta {
+      font-family: var(--font-ui);
+      font-size: 13px;
+      color: var(--color-text-muted);
+    }
+
+    .featured-meta .author { font-weight: 600; color: var(--color-text); }
+
+    /* ─── POST GRID ─── */
+    .posts-section {
+      max-width: var(--max-width);
+      margin: 0 auto;
+      padding: 48px 24px;
+    }
+
+    .section-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      margin-bottom: 32px;
+      border-bottom: 2px solid var(--color-text);
+      padding-bottom: 8px;
+    }
+
+    .section-title {
+      font-family: var(--font-display);
+      font-size: 24px;
+      font-weight: 700;
+    }
+
+    .section-link {
+      font-family: var(--font-ui);
+      font-size: 13px;
+      color: var(--color-accent);
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      font-weight: 500;
+    }
+
+    .posts-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 32px;
+    }
+
+    .post-card {
+      border-bottom: 1px solid var(--color-border-light);
+      padding-bottom: 24px;
+    }
+
+    .post-card-image {
+      aspect-ratio: 3 / 2;
+      background: #d4cfc8;
+      background-size: cover;
+      background-position: center;
+      margin-bottom: 16px;
+    }
+
+    .post-card-category {
+      font-family: var(--font-ui);
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      color: var(--color-accent);
+      font-weight: 600;
+      margin-bottom: 8px;
+    }
+
+    .post-card-title {
+      font-family: var(--font-display);
+      font-size: 22px;
+      font-weight: 600;
+      line-height: 1.3;
+      margin-bottom: 8px;
+    }
+
+    .post-card-title:hover { color: var(--color-accent); }
+
+    .post-card-excerpt {
+      font-size: 15px;
+      color: var(--color-text-muted);
+      line-height: 1.6;
+      display: -webkit-box;
+      -webkit-line-clamp: 3;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+      margin-bottom: 12px;
+    }
+
+    .post-card-meta {
+      font-family: var(--font-ui);
+      font-size: 12px;
+      color: var(--color-text-muted);
+    }
+
+    /* ─── SECONDARY POSTS (horizontal layout) ─── */
+    .secondary-section {
+      max-width: var(--max-width);
+      margin: 0 auto;
+      padding: 0 24px 64px;
+    }
+
+    .secondary-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0;
+    }
+
+    .secondary-post {
+      display: flex;
+      gap: 20px;
+      padding: 24px 0;
+      border-top: 1px solid var(--color-border-light);
+    }
+
+    .secondary-post:nth-child(odd) { padding-right: 32px; border-right: 1px solid var(--color-border-light); }
+    .secondary-post:nth-child(even) { padding-left: 32px; }
+
+    .secondary-image {
+      width: 120px;
+      min-width: 120px;
+      aspect-ratio: 1;
+      background: #d4cfc8;
+      background-size: cover;
+      background-position: center;
+    }
+
+    .secondary-content { flex: 1; }
+
+    .secondary-category {
+      font-family: var(--font-ui);
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--color-accent);
+      font-weight: 600;
+      margin-bottom: 4px;
+    }
+
+    .secondary-title {
+      font-family: var(--font-display);
+      font-size: 18px;
+      font-weight: 600;
+      line-height: 1.3;
+      margin-bottom: 6px;
+    }
+
+    .secondary-title:hover { color: var(--color-accent); }
+
+    .secondary-meta {
+      font-family: var(--font-ui);
+      font-size: 12px;
+      color: var(--color-text-muted);
+    }
+
+    /* ─── FOOTER ─── */
+    .site-footer {
+      border-top: 1px solid var(--color-border);
+      background: var(--color-bg);
+      padding: 40px 24px;
+    }
+
+    .footer-inner {
+      max-width: var(--max-width);
+      margin: 0 auto;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-family: var(--font-ui);
+      font-size: 13px;
+      color: var(--color-text-muted);
+    }
+
+    .footer-links { display: flex; gap: 20px; }
+    .footer-links a:hover { color: var(--color-accent); }
+
+    .powered-by { color: var(--color-text-muted); }
+    .powered-by a { text-decoration: underline; text-underline-offset: 2px; }
+    .powered-by a:hover { color: var(--color-accent); }
+
+    /* ─── RESPONSIVE ─── */
+    @media (max-width: 900px) {
+      .featured-post { grid-template-columns: 1fr; gap: 24px; }
+      .posts-grid { grid-template-columns: repeat(2, 1fr); }
+      .secondary-grid { grid-template-columns: 1fr; }
+      .secondary-post:nth-child(odd) { padding-right: 0; border-right: none; }
+      .secondary-post:nth-child(even) { padding-left: 0; }
+    }
+
+    @media (max-width: 600px) {
+      .site-title { font-size: 32px; }
+      .featured-title { font-size: 28px; }
+      .posts-grid { grid-template-columns: 1fr; }
+      .header-nav { gap: 16px; font-size: 12px; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- HEADER -->
+  <header class="site-header">
+    <div class="header-top">
+      <span>Tuesday, February 17, 2026</span>
+      <span>Subscribe &middot; RSS</span>
+    </div>
+    <div class="header-main">
+      <h1 class="site-title">The Morning Brief</h1>
+      <p class="site-tagline">Technology, Leadership &amp; the Future of Work</p>
+    </div>
+    <nav class="header-nav">
+      <a href="#">Home</a>
+      <a href="#">Technology</a>
+      <a href="#">Leadership</a>
+      <a href="#">Culture</a>
+      <a href="#">About</a>
+    </nav>
+  </header>
+
+  <!-- FEATURED POST -->
+  <section class="featured-section">
+    <article class="featured-post">
+      <a href="editorial-post.html" class="featured-image"></a>
+      <div class="featured-content">
+        <div class="featured-category">Technology</div>
+        <a href="editorial-post.html"><h2 class="featured-title">The Quiet Revolution: How AI Agents Are Reshaping the Way Teams Build Software</h2></a>
+        <p class="featured-excerpt">In engineering organizations around the world, a subtle shift is taking place. AI coding assistants, once novelty tools for auto-completing brackets, have evolved into something far more ambitious: autonomous agents that can reason about codebases, plan multi-step changes, and execute them with minimal human guidance.</p>
+        <div class="featured-meta">
+          By <span class="author">Shahar Nechmad</span> &middot; February 15, 2026 &middot; 8 min read
+        </div>
+      </div>
+    </article>
+  </section>
+
+  <!-- POST GRID -->
+  <section class="posts-section">
+    <div class="section-header">
+      <h2 class="section-title">Latest</h2>
+      <a href="#" class="section-link">View All</a>
+    </div>
+    <div class="posts-grid">
+      <article class="post-card">
+        <div class="post-card-image" style="background-image: url('https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=500&q=80')"></div>
+        <div class="post-card-category">Data</div>
+        <a href="#"><h3 class="post-card-title">Why Your Data Pipeline Is Lying to You</h3></a>
+        <p class="post-card-excerpt">Most organizations trust their data pipelines implicitly. But the gap between what your dashboard shows and what's actually happening is wider than you think.</p>
+        <div class="post-card-meta">February 12, 2026 &middot; 6 min</div>
+      </article>
+
+      <article class="post-card">
+        <div class="post-card-image" style="background-image: url('https://images.unsplash.com/photo-1522071820081-009f0129c71c?w=500&q=80')"></div>
+        <div class="post-card-category">Leadership</div>
+        <a href="#"><h3 class="post-card-title">The Manager's Dilemma: When Your Best Engineer Wants to Lead</h3></a>
+        <p class="post-card-excerpt">Promoting your best individual contributor into management seems like a win. Here's why it often isn't, and what to do instead.</p>
+        <div class="post-card-meta">February 10, 2026 &middot; 5 min</div>
+      </article>
+
+      <article class="post-card">
+        <div class="post-card-image" style="background-image: url('https://images.unsplash.com/photo-1526374965328-7f61d4dc18c5?w=500&q=80')"></div>
+        <div class="post-card-category">Security</div>
+        <a href="#"><h3 class="post-card-title">Zero Trust in Practice: A Year-One Retrospective</h3></a>
+        <p class="post-card-excerpt">After twelve months of implementing zero trust at scale, here are the lessons that no vendor whitepaper will tell you about.</p>
+        <div class="post-card-meta">February 8, 2026 &middot; 7 min</div>
+      </article>
+    </div>
+  </section>
+
+  <!-- SECONDARY POSTS -->
+  <section class="secondary-section">
+    <div class="section-header">
+      <h2 class="section-title">More Stories</h2>
+    </div>
+    <div class="secondary-grid">
+      <article class="secondary-post">
+        <div class="secondary-image" style="background-image: url('https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=300&q=80')"></div>
+        <div class="secondary-content">
+          <div class="secondary-category">Culture</div>
+          <a href="#"><h3 class="secondary-title">Remote Work's Second Act: What Changed After the Mandate Wars</h3></a>
+          <div class="secondary-meta">February 5, 2026</div>
+        </div>
+      </article>
+
+      <article class="secondary-post">
+        <div class="secondary-image" style="background-image: url('https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=300&q=80')"></div>
+        <div class="secondary-content">
+          <div class="secondary-category">Product</div>
+          <a href="#"><h3 class="secondary-title">The Art of Saying No: Product Prioritization Without the Framework Fetish</h3></a>
+          <div class="secondary-meta">February 3, 2026</div>
+        </div>
+      </article>
+
+      <article class="secondary-post">
+        <div class="secondary-image" style="background-image: url('https://images.unsplash.com/photo-1504639725590-34d0984388bd?w=300&q=80')"></div>
+        <div class="secondary-content">
+          <div class="secondary-category">Engineering</div>
+          <a href="#"><h3 class="secondary-title">Monorepos at Scale: Lessons from Moving 200 Packages</h3></a>
+          <div class="secondary-meta">January 30, 2026</div>
+        </div>
+      </article>
+
+      <article class="secondary-post">
+        <div class="secondary-image" style="background-image: url('https://images.unsplash.com/photo-1551434678-e076c223a692?w=300&q=80')"></div>
+        <div class="secondary-content">
+          <div class="secondary-category">Startups</div>
+          <a href="#"><h3 class="secondary-title">Bootstrap or Raise? A Framework for the Decision That Defines Your Company</h3></a>
+          <div class="secondary-meta">January 27, 2026</div>
+        </div>
+      </article>
+    </div>
+  </section>
+
+  <!-- FOOTER -->
+  <footer class="site-footer">
+    <div class="footer-inner">
+      <span>&copy; 2026 The Morning Brief</span>
+      <div class="footer-links">
+        <a href="#">Twitter</a>
+        <a href="#">LinkedIn</a>
+        <a href="#">RSS</a>
+      </div>
+      <span class="powered-by">Powered by <a href="#">Hot Metal</a></span>
+    </div>
+  </footer>
+
+</body>
+</html>

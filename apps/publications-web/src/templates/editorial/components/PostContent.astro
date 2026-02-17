@@ -1,0 +1,172 @@
+---
+import type { Post } from '@hotmetal/content-core';
+import { getFirstTopic } from '../../../lib/post-utils';
+
+interface Props {
+  post: Post;
+  sanitizedContent: string;
+  date: string | null;
+  allLabels: string[];
+  postUrl: string;
+  twitterShareUrl: string;
+  linkedinShareUrl: string;
+}
+
+const {
+  post,
+  sanitizedContent,
+  date,
+  allLabels,
+  postUrl,
+  twitterShareUrl,
+  linkedinShareUrl,
+} = Astro.props;
+
+const firstTopic = getFirstTopic(post);
+---
+
+<article class="py-14 md:py-20">
+  {/* Article header — centered */}
+  <header class="max-w-[var(--max-width-prose)] mx-auto px-6 text-center mb-8">
+    {firstTopic && (
+      <p class="font-sans text-xs uppercase tracking-[0.14em] text-accent font-semibold mb-4">
+        {firstTopic}
+      </p>
+    )}
+
+    <h1 class="font-display text-4xl md:text-[2.875rem] font-bold leading-[1.15] mb-5">
+      {post.title}
+    </h1>
+
+    {post.subtitle && (
+      <p class="text-xl text-text-muted leading-relaxed mb-6">
+        {post.subtitle}
+      </p>
+    )}
+
+    <div class="font-sans text-sm text-text-muted pb-8 border-b border-border-light">
+      {post.author && (
+        <span>By <span class="font-semibold text-text">{post.author}</span></span>
+      )}
+      {date && post.publishedAt && (
+        <>
+          <span> &middot; </span>
+          <time datetime={post.publishedAt}>{date}</time>
+        </>
+      )}
+    </div>
+  </header>
+
+  {/* Featured image */}
+  {post.featuredImage && (
+    <div class="max-w-[900px] mx-auto px-6 mb-10">
+      <img
+        src={post.featuredImage}
+        alt={post.title}
+        class="w-full object-cover"
+      />
+    </div>
+  )}
+
+  {/* Content with drop cap */}
+  <div
+    class="prose prose-editorial max-w-[var(--max-width-prose)] mx-auto px-6"
+    set:html={sanitizedContent}
+  />
+
+  {/* Citations */}
+  {post.citations && post.citations.length > 0 && (
+    <aside class="max-w-[var(--max-width-prose)] mx-auto px-6 mt-16">
+      <h2 class="font-display text-lg font-bold mb-4">Sources & Citations</h2>
+      <ol class="list-decimal list-inside space-y-3 text-sm text-text-muted">
+        {post.citations.map((citation) => (
+          <li>
+            <a
+              href={citation.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              class="text-accent hover:text-accent-hover underline underline-offset-2"
+            >
+              {citation.title}
+            </a>
+            {citation.publisher && (
+              <span> &mdash; {citation.publisher}</span>
+            )}
+          </li>
+        ))}
+      </ol>
+    </aside>
+  )}
+
+  {/* Tags */}
+  {allLabels.length > 0 && (
+    <div class="max-w-[var(--max-width-prose)] mx-auto px-6 mt-12 pb-8 border-b border-border-light">
+      <div class="flex flex-wrap gap-2">
+        {allLabels.map((label) => (
+          <span class="font-sans text-xs px-3 py-1 border border-border text-text-muted hover:border-accent hover:text-accent transition-colors">
+            {label}
+          </span>
+        ))}
+      </div>
+    </div>
+  )}
+
+  {/* Share */}
+  <div class="max-w-[var(--max-width-prose)] mx-auto px-6 mt-6 flex justify-between items-center font-sans text-sm text-text-muted">
+    <span>Share this article</span>
+    <div class="flex gap-4">
+      <a
+        href={twitterShareUrl}
+        target="_blank"
+        rel="noopener noreferrer"
+        class="hover:text-accent transition-colors"
+        aria-label="Share on Twitter"
+      >
+        Twitter
+      </a>
+      <a
+        href={linkedinShareUrl}
+        target="_blank"
+        rel="noopener noreferrer"
+        class="hover:text-accent transition-colors"
+        aria-label="Share on LinkedIn"
+      >
+        LinkedIn
+      </a>
+      <button
+        id="copy-link-btn"
+        class="hover:text-accent transition-colors cursor-pointer"
+        aria-label="Copy link to clipboard"
+        data-url={postUrl}
+      >
+        Copy Link
+      </button>
+    </div>
+  </div>
+</article>
+
+<script>
+  function initCopyLink() {
+    const btn = document.getElementById('copy-link-btn');
+    if (!btn) return;
+
+    btn.addEventListener('click', async () => {
+      const url = btn.getAttribute('data-url');
+      if (!url) return;
+
+      try {
+        await navigator.clipboard.writeText(url);
+        const original = btn.textContent;
+        btn.textContent = 'Copied!';
+        setTimeout(() => {
+          btn.textContent = original;
+        }, 2000);
+      } catch {
+        // Fallback: do nothing if clipboard API is unavailable
+      }
+    });
+  }
+
+  initCopyLink();
+  document.addEventListener('astro:after-swap', initCopyLink);
+</script>

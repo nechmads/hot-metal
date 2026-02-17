@@ -1,0 +1,293 @@
+---
+import type { Post } from '@hotmetal/content-core';
+import { parseTopics, backgroundImageStyle } from '../../../lib/post-utils';
+
+interface Props {
+  post: Post;
+  sanitizedContent: string;
+  date: string | null;
+  allLabels: string[];
+  postUrl: string;
+  twitterShareUrl: string;
+  linkedinShareUrl: string;
+}
+
+const {
+  post,
+  sanitizedContent,
+  date,
+  allLabels,
+  postUrl,
+  twitterShareUrl,
+  linkedinShareUrl,
+} = Astro.props;
+
+const topics = parseTopics(post);
+const firstTopic = topics[0] ?? null;
+
+// Extract headings from sanitized content for TOC
+const headingRegex = /<h([23])[^>]*>(.*?)<\/h[23]>/gi;
+const headings: { level: number; text: string; id: string }[] = [];
+let match;
+while ((match = headingRegex.exec(sanitizedContent)) !== null) {
+  const text = match[2].replace(/<[^>]*>/g, '').trim();
+  const id = text.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+  headings.push({ level: parseInt(match[1]), text, id });
+}
+
+// Inject IDs into the content headings for anchor links
+let contentWithIds = sanitizedContent;
+for (const heading of headings) {
+  const tag = `h${heading.level}`;
+  const escapedText = heading.text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const re = new RegExp(`(<${tag}[^>]*)>([^<]*${escapedText}[^<]*)</${tag}>`, 'i');
+  contentWithIds = contentWithIds.replace(re, `$1 id="${heading.id}">$2</${tag}>`);
+}
+---
+
+<!-- Reading progress bar -->
+<div id="reading-progress" class="fixed top-[60px] left-0 h-[3px] bg-accent z-40 transition-[width] duration-150" style="width: 0%;" />
+
+<!-- Article header (split layout) -->
+<section class="max-w-[var(--max-width-wide)] mx-auto px-6">
+  <div class="grid grid-cols-1 md:grid-cols-2 border-b-[3px] border-border-strong">
+    <div class="py-10 md:py-12 md:pr-12 flex flex-col justify-center">
+      <nav class="font-mono text-xs text-text-muted mb-4">
+        <a href="/" class="text-accent hover:underline">Home</a>
+        {firstTopic && (
+          <span> / {firstTopic}</span>
+        )}
+      </nav>
+
+      {firstTopic && (
+        <span class="inline-block font-mono text-xs uppercase tracking-[0.08em] text-accent font-medium bg-accent-light px-2.5 py-1 mb-3.5 self-start">
+          {firstTopic}
+        </span>
+      )}
+
+      <h1 class="font-display text-3xl md:text-[2.5rem] font-bold leading-[1.1] tracking-tight mb-4">
+        {post.title}
+      </h1>
+
+      {post.subtitle && (
+        <p class="text-lg text-text-muted leading-relaxed mb-6">
+          {post.subtitle}
+        </p>
+      )}
+
+      <div class="flex gap-6 font-mono text-sm text-text-muted pt-4 border-t border-border">
+        {post.author && (
+          <span><span class="font-medium text-text">{post.author}</span></span>
+        )}
+        {date && post.publishedAt && (
+          <time datetime={post.publishedAt}>{date}</time>
+        )}
+      </div>
+    </div>
+
+    {backgroundImageStyle(post.featuredImage) ? (
+      <div
+        class="hidden md:block border-l-[3px] border-border-strong min-h-[400px] bg-bg-card"
+        style={backgroundImageStyle(post.featuredImage)}
+      />
+    ) : (
+      <div class="hidden md:block border-l-[3px] border-border-strong min-h-[400px] bg-bg-card" />
+    )}
+  </div>
+</section>
+
+<!-- Article body + sidebar -->
+<div class="max-w-[var(--max-width-wide)] mx-auto px-6">
+  <div class="grid grid-cols-1 lg:grid-cols-[1fr_220px] gap-16">
+    <!-- Main content -->
+    <article id="article-content" class="max-w-[var(--max-width-prose)] py-12">
+      <div
+        class="prose"
+        set:html={contentWithIds}
+      />
+
+      {/* Citations */}
+      {post.citations && post.citations.length > 0 && (
+        <aside class="mt-16">
+          <h2 class="font-display text-lg font-bold mb-4 pb-2 border-b-2 border-border">Sources & Citations</h2>
+          <ol class="list-decimal list-inside space-y-3 text-sm text-text-muted">
+            {post.citations.map((citation) => (
+              <li>
+                <a
+                  href={citation.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  class="text-accent hover:opacity-80 underline underline-offset-2"
+                >
+                  {citation.title}
+                </a>
+                {citation.publisher && (
+                  <span> &mdash; {citation.publisher}</span>
+                )}
+              </li>
+            ))}
+          </ol>
+        </aside>
+      )}
+    </article>
+
+    <!-- Sidebar -->
+    <aside class="hidden lg:block py-12 sticky top-[80px] self-start">
+      {/* Table of Contents */}
+      {headings.length > 0 && (
+        <div class="mb-8">
+          <h3 class="font-display text-xs font-semibold uppercase tracking-[0.08em] text-text-muted mb-3 pb-2 border-b-2 border-border-strong">
+            Contents
+          </h3>
+          <nav>
+            {headings.map((h) => (
+              <a
+                href={`#${h.id}`}
+                class="block font-display text-sm font-medium py-1.5 text-text-muted hover:text-accent border-b border-border transition-colors"
+              >
+                {h.text}
+              </a>
+            ))}
+          </nav>
+        </div>
+      )}
+
+      {/* Tags */}
+      {allLabels.length > 0 && (
+        <div class="mb-8">
+          <h3 class="font-display text-xs font-semibold uppercase tracking-[0.08em] text-text-muted mb-3 pb-2 border-b-2 border-border-strong">
+            Tags
+          </h3>
+          <div class="flex flex-wrap gap-1.5">
+            {allLabels.map((label) => (
+              <span class="font-mono text-[11px] px-2.5 py-1 border border-border text-text-muted hover:border-text hover:bg-text hover:text-bg transition-all cursor-default">
+                {label}
+              </span>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Share */}
+      <div>
+        <h3 class="font-display text-xs font-semibold uppercase tracking-[0.08em] text-text-muted mb-3 pb-2 border-b-2 border-border-strong">
+          Share
+        </h3>
+        <div class="flex flex-col gap-2">
+          <a
+            href={twitterShareUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            class="flex items-center gap-2 font-display text-sm font-medium py-2 px-3 border border-border hover:border-accent hover:text-accent transition-all"
+            aria-label="Share on Twitter"
+          >
+            Twitter / X
+          </a>
+          <a
+            href={linkedinShareUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            class="flex items-center gap-2 font-display text-sm font-medium py-2 px-3 border border-border hover:border-accent hover:text-accent transition-all"
+            aria-label="Share on LinkedIn"
+          >
+            LinkedIn
+          </a>
+          <button
+            id="copy-link-btn"
+            class="flex items-center gap-2 font-display text-sm font-medium py-2 px-3 border border-border hover:border-accent hover:text-accent transition-all cursor-pointer text-left"
+            aria-label="Copy link to clipboard"
+            data-url={postUrl}
+          >
+            Copy Link
+          </button>
+        </div>
+      </div>
+    </aside>
+  </div>
+</div>
+
+<!-- Mobile share/tags (visible only on mobile) -->
+<div class="lg:hidden max-w-[var(--max-width-prose)] mx-auto px-6 pb-12">
+  {allLabels.length > 0 && (
+    <div class="flex flex-wrap gap-1.5 mb-8">
+      {allLabels.map((label) => (
+        <span class="font-mono text-[11px] px-2.5 py-1 border border-border text-text-muted">
+          {label}
+        </span>
+      ))}
+    </div>
+  )}
+
+  <div class="flex items-center gap-3 pt-6 border-t border-border">
+    <span class="font-display text-sm font-medium text-text-muted">Share:</span>
+    <a
+      href={twitterShareUrl}
+      target="_blank"
+      rel="noopener noreferrer"
+      class="font-display text-sm font-medium text-text-muted hover:text-accent transition-colors"
+    >
+      Twitter
+    </a>
+    <a
+      href={linkedinShareUrl}
+      target="_blank"
+      rel="noopener noreferrer"
+      class="font-display text-sm font-medium text-text-muted hover:text-accent transition-colors"
+    >
+      LinkedIn
+    </a>
+    <button
+      id="copy-link-btn-mobile"
+      class="font-display text-sm font-medium text-text-muted hover:text-accent transition-colors cursor-pointer"
+      data-url={postUrl}
+      aria-label="Copy link to clipboard"
+    >
+      Copy Link
+    </button>
+  </div>
+</div>
+
+<script>
+  function initBoldPost() {
+    // Reading progress bar
+    const progressBar = document.getElementById('reading-progress');
+    const articleContent = document.getElementById('article-content');
+
+    if (progressBar && articleContent) {
+      const updateProgress = () => {
+        const rect = articleContent.getBoundingClientRect();
+        const articleTop = rect.top + window.scrollY;
+        const articleHeight = rect.height;
+        const scrolled = window.scrollY - articleTop;
+        const progress = Math.min(Math.max(scrolled / articleHeight, 0), 1);
+        progressBar.style.width = `${progress * 100}%`;
+      };
+
+      window.addEventListener('scroll', updateProgress, { passive: true });
+      updateProgress();
+    }
+
+    // Copy link buttons
+    const copyBtns = document.querySelectorAll('#copy-link-btn, #copy-link-btn-mobile');
+    copyBtns.forEach((btn) => {
+      btn.addEventListener('click', async () => {
+        const url = btn.getAttribute('data-url');
+        if (!url) return;
+
+        try {
+          await navigator.clipboard.writeText(url);
+          const original = btn.textContent;
+          btn.textContent = 'Copied!';
+          setTimeout(() => {
+            btn.textContent = original;
+          }, 2000);
+        } catch {
+          // Fallback: do nothing
+        }
+      });
+    });
+  }
+
+  initBoldPost();
+  document.addEventListener('astro:after-swap', initBoldPost);
+</script>

@@ -113,6 +113,7 @@ export interface PublicationConfig {
   timezone: string
   nextScoutAt: number | null
   styleId: string | null
+  templateId: string
   feedFullEnabled: boolean
   feedPartialEnabled: boolean
   createdAt: number

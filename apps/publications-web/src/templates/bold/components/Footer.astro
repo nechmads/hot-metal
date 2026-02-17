@@ -1,0 +1,55 @@
+---
+import type { SocialLinks } from '@hotmetal/data-layer';
+
+interface Props {
+  publicationName: string;
+  publicationSlug?: string;
+  socialLinks?: SocialLinks | null;
+}
+
+const { publicationName, socialLinks } = Astro.props;
+---
+
+<footer class="border-t-[3px] border-border-strong bg-text text-bg mt-auto">
+  <div class="max-w-[var(--max-width-wide)] mx-auto px-6 py-10">
+    <div class="flex flex-col sm:flex-row items-center justify-between gap-6">
+      <span class="font-display text-lg font-bold tracking-tight">
+        {publicationName}
+      </span>
+
+      <div class="flex items-center gap-6 font-display text-sm font-medium text-[#a1a1aa]">
+        <a href="/rss" class="hover:text-bg transition-colors">RSS</a>
+
+        {socialLinks?.twitter && (
+          <a href={socialLinks.twitter} target="_blank" rel="noopener noreferrer" class="hover:text-bg transition-colors" aria-label="Follow on X (Twitter)">
+            Twitter
+          </a>
+        )}
+
+        {socialLinks?.linkedin && (
+          <a href={socialLinks.linkedin} target="_blank" rel="noopener noreferrer" class="hover:text-bg transition-colors" aria-label="Connect on LinkedIn">
+            LinkedIn
+          </a>
+        )}
+
+        {socialLinks?.github && (
+          <a href={socialLinks.github} target="_blank" rel="noopener noreferrer" class="hover:text-bg transition-colors" aria-label="View on GitHub">
+            GitHub
+          </a>
+        )}
+      </div>
+
+      <span class="font-mono text-xs text-[#71717a]">
+        Powered by{' '}
+        <a
+          href="https://hotmetalapp.com"
+          target="_blank"
+          rel="noopener noreferrer"
+          class="underline underline-offset-2 hover:text-bg transition-colors"
+        >
+          Hot Metal
+        </a>
+      </span>
+    </div>
+  </div>
+</footer>

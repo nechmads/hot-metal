@@ -112,9 +112,15 @@ publications.patch('/publications/:id', async (c) => {
     scoutSchedule?: ScoutSchedule
     timezone?: string
     styleId?: string | null
+    templateId?: string
     feedFullEnabled?: boolean
     feedPartialEnabled?: boolean
   }>()
+
+  const VALID_TEMPLATE_IDS = ['starter', 'editorial', 'bold']
+  if (body.templateId && !VALID_TEMPLATE_IDS.includes(body.templateId)) {
+    return c.json({ error: `Invalid templateId. Must be one of: ${VALID_TEMPLATE_IDS.join(', ')}` }, 400)
+  }
 
   if (body.autoPublishMode && !AUTO_PUBLISH_MODES.includes(body.autoPublishMode as AutoPublishMode)) {
     return c.json({ error: `Invalid autoPublishMode. Must be one of: ${AUTO_PUBLISH_MODES.join(', ')}` }, 400)
@@ -160,6 +166,7 @@ publications.patch('/publications/:id', async (c) => {
     scoutSchedule: body.scoutSchedule,
     timezone: body.timezone,
     styleId: body.styleId,
+    templateId: body.templateId,
     feedFullEnabled: body.feedFullEnabled,
     feedPartialEnabled: body.feedPartialEnabled,
     nextScoutAt,

@@ -1,0 +1,131 @@
+---
+/**
+ * Template switcher for post pages.
+ * When adding a new template: add imports for its components and a new branch in the conditional below.
+ * Also update HomePage.astro and NotFoundPage.astro switchers.
+ */
+import type { Post } from '@hotmetal/content-core';
+import type { PublicationBranding } from '../dl/publication';
+
+// Starter template
+import StarterBaseLayout from '../templates/starter/layouts/BaseLayout.astro';
+import StarterHeader from '../templates/starter/components/Header.astro';
+import StarterFooter from '../templates/starter/components/Footer.astro';
+import StarterPostContent from '../templates/starter/components/PostContent.astro';
+
+// Editorial template
+import EditorialBaseLayout from '../templates/editorial/layouts/BaseLayout.astro';
+import EditorialHeader from '../templates/editorial/components/Header.astro';
+import EditorialFooter from '../templates/editorial/components/Footer.astro';
+import EditorialPostContent from '../templates/editorial/components/PostContent.astro';
+
+// Bold template
+import BoldBaseLayout from '../templates/bold/layouts/BaseLayout.astro';
+import BoldHeader from '../templates/bold/components/Header.astro';
+import BoldFooter from '../templates/bold/components/Footer.astro';
+import BoldPostContent from '../templates/bold/components/PostContent.astro';
+
+interface Props {
+  templateId: string;
+  branding: PublicationBranding;
+  post: Post;
+  sanitizedContent: string;
+  date: string | null;
+  allLabels: string[];
+  postUrl: string;
+  twitterShareUrl: string;
+  linkedinShareUrl: string;
+  title: string;
+  description: string;
+  ogImage?: string;
+  canonicalUrl: string;
+  ogType: string;
+  jsonLd: Record<string, unknown>;
+  rssUrl: string;
+  articlePublishedTime?: string;
+  articleModifiedTime?: string;
+  articleAuthor?: string;
+  articleTags?: string[];
+}
+
+const {
+  templateId,
+  branding,
+  post,
+  sanitizedContent,
+  date,
+  allLabels,
+  postUrl,
+  twitterShareUrl,
+  linkedinShareUrl,
+  title,
+  description,
+  ogImage,
+  canonicalUrl,
+  ogType,
+  jsonLd,
+  rssUrl,
+  articlePublishedTime,
+  articleModifiedTime,
+  articleAuthor,
+  articleTags,
+} = Astro.props;
+
+const layoutProps = {
+  title,
+  publicationName: branding.name,
+  description,
+  ogImage,
+  canonicalUrl,
+  accentColor: branding.accentColor,
+  ogType,
+  jsonLd,
+  rssUrl,
+  articlePublishedTime,
+  articleModifiedTime,
+  articleAuthor,
+  articleTags,
+};
+
+const contentProps = {
+  post,
+  sanitizedContent,
+  date,
+  allLabels,
+  postUrl,
+  twitterShareUrl,
+  linkedinShareUrl,
+};
+---
+
+{templateId === 'editorial' ? (
+  <EditorialBaseLayout {...layoutProps}>
+    <EditorialHeader publicationName={branding.name} logoUrl={branding.logoUrl} />
+    <EditorialPostContent {...contentProps} />
+    <EditorialFooter
+      publicationName={branding.name}
+      publicationSlug={branding.slug}
+      socialLinks={branding.socialLinks}
+    />
+  </EditorialBaseLayout>
+) : templateId === 'bold' ? (
+  <BoldBaseLayout {...layoutProps}>
+    <BoldHeader publicationName={branding.name} logoUrl={branding.logoUrl} />
+    <BoldPostContent {...contentProps} />
+    <BoldFooter
+      publicationName={branding.name}
+      publicationSlug={branding.slug}
+      socialLinks={branding.socialLinks}
+    />
+  </BoldBaseLayout>
+) : (
+  <StarterBaseLayout {...layoutProps}>
+    <StarterHeader publicationName={branding.name} logoUrl={branding.logoUrl} />
+    <StarterPostContent {...contentProps} />
+    <StarterFooter
+      publicationName={branding.name}
+      publicationSlug={branding.slug}
+      socialLinks={branding.socialLinks}
+    />
+  </StarterBaseLayout>
+)}

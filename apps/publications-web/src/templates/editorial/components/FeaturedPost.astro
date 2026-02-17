@@ -1,0 +1,64 @@
+---
+import type { Post } from '@hotmetal/content-core';
+import { formatDate } from '../../../lib/format';
+import { getPreviewText, getFirstTopic } from '../../../lib/post-utils';
+
+interface Props {
+  post: Post;
+}
+
+const { post } = Astro.props;
+
+const date = post.publishedAt ? formatDate(post.publishedAt) : null;
+const preview = getPreviewText(post, 280);
+const firstTopic = getFirstTopic(post);
+---
+
+<section class="max-w-[var(--max-width-wide)] mx-auto px-6 pt-10">
+  <article class="grid grid-cols-1 md:grid-cols-[1.1fr_1fr] gap-8 md:gap-12 items-start pb-12 border-b border-border animate-on-scroll">
+    {post.featuredImage && (
+      <a href={`/${post.slug}`} class="block">
+        <div class="aspect-[4/3] overflow-hidden bg-bg-card">
+          <img
+            src={post.featuredImage}
+            alt={post.title}
+            class="w-full h-full object-cover transition-transform duration-500 hover:scale-105"
+            loading="eager"
+          />
+        </div>
+      </a>
+    )}
+
+    <div class="pt-1">
+      {firstTopic && (
+        <p class="font-sans text-xs uppercase tracking-[0.12em] text-accent font-semibold mb-3">
+          {firstTopic}
+        </p>
+      )}
+
+      <a href={`/${post.slug}`}>
+        <h2 class="font-display text-3xl md:text-4xl font-bold leading-tight mb-4 hover:text-accent transition-colors">
+          {post.title}
+        </h2>
+      </a>
+
+      {preview && (
+        <p class="text-lg leading-relaxed text-text-muted mb-4">
+          {preview}
+        </p>
+      )}
+
+      <div class="font-sans text-sm text-text-muted">
+        {post.author && (
+          <span>By <span class="font-semibold text-text">{post.author}</span></span>
+        )}
+        {date && post.publishedAt && (
+          <>
+            <span> &middot; </span>
+            <time datetime={post.publishedAt}>{date}</time>
+          </>
+        )}
+      </div>
+    </div>
+  </article>
+</section>

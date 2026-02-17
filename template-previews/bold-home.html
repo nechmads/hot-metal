@@ -1,0 +1,642 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>The Morning Brief - Bold Template (Home)</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --color-bg: #ffffff;
+      --color-bg-alt: #f6f6f6;
+      --color-text: #0a0a0a;
+      --color-text-muted: #71717a;
+      --color-accent: #2563eb;
+      --color-accent-light: #dbeafe;
+      --color-border: #e4e4e7;
+      --color-border-strong: #0a0a0a;
+      --font-display: 'Space Grotesk', -apple-system, sans-serif;
+      --font-body: 'Inter', -apple-system, sans-serif;
+      --font-mono: 'JetBrains Mono', 'SF Mono', monospace;
+      --max-width: 1200px;
+    }
+
+    body {
+      font-family: var(--font-body);
+      color: var(--color-text);
+      background: var(--color-bg);
+      line-height: 1.6;
+      font-size: 16px;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    a { color: inherit; text-decoration: none; }
+
+    /* ─── HEADER ─── */
+    .site-header {
+      border-bottom: 3px solid var(--color-border-strong);
+      background: var(--color-bg);
+      position: sticky;
+      top: 0;
+      z-index: 50;
+    }
+
+    .header-inner {
+      max-width: var(--max-width);
+      margin: 0 auto;
+      padding: 0 24px;
+      display: flex;
+      justify-content: space-between;
+      align-items: stretch;
+      height: 60px;
+    }
+
+    .header-left {
+      display: flex;
+      align-items: center;
+      gap: 32px;
+    }
+
+    .site-logo {
+      font-family: var(--font-display);
+      font-size: 20px;
+      font-weight: 700;
+      letter-spacing: -0.03em;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .logo-mark {
+      width: 28px;
+      height: 28px;
+      background: var(--color-text);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-size: 14px;
+      font-weight: 700;
+    }
+
+    .header-nav {
+      display: flex;
+      align-items: stretch;
+      gap: 0;
+      font-family: var(--font-display);
+      font-size: 14px;
+      font-weight: 500;
+    }
+
+    .header-nav a {
+      display: flex;
+      align-items: center;
+      padding: 0 16px;
+      border-left: 1px solid var(--color-border);
+      color: var(--color-text-muted);
+      transition: all 0.15s;
+    }
+
+    .header-nav a:hover {
+      background: var(--color-bg-alt);
+      color: var(--color-text);
+    }
+
+    .header-right {
+      display: flex;
+      align-items: stretch;
+      border-left: 1px solid var(--color-border);
+    }
+
+    .subscribe-btn {
+      display: flex;
+      align-items: center;
+      padding: 0 20px;
+      font-family: var(--font-display);
+      font-size: 14px;
+      font-weight: 600;
+      background: var(--color-text);
+      color: white;
+      transition: background 0.15s;
+    }
+
+    .subscribe-btn:hover { background: #333; }
+
+    /* ─── HERO ─── */
+    .hero-section {
+      max-width: var(--max-width);
+      margin: 0 auto;
+      padding: 0 24px;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      min-height: 480px;
+      border-bottom: 3px solid var(--color-border-strong);
+    }
+
+    .hero-content {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      padding: 48px 48px 48px 0;
+    }
+
+    .hero-label {
+      font-family: var(--font-mono);
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--color-accent);
+      margin-bottom: 16px;
+      font-weight: 500;
+    }
+
+    .hero-title {
+      font-family: var(--font-display);
+      font-size: 48px;
+      font-weight: 700;
+      line-height: 1.08;
+      letter-spacing: -0.03em;
+      margin-bottom: 20px;
+    }
+
+    .hero-excerpt {
+      font-size: 18px;
+      line-height: 1.6;
+      color: var(--color-text-muted);
+      margin-bottom: 24px;
+      max-width: 480px;
+    }
+
+    .hero-meta {
+      font-family: var(--font-mono);
+      font-size: 13px;
+      color: var(--color-text-muted);
+    }
+
+    .hero-meta .author { font-weight: 500; color: var(--color-text); }
+
+    .hero-image {
+      background: #e4e4e7;
+      background-image: url('https://images.unsplash.com/photo-1485988412941-77a35537dae4?w=800&q=80');
+      background-size: cover;
+      background-position: center;
+      border-left: 3px solid var(--color-border-strong);
+    }
+
+    /* ─── TOPICS BAR ─── */
+    .topics-bar {
+      max-width: var(--max-width);
+      margin: 0 auto;
+      padding: 16px 24px;
+      display: flex;
+      gap: 8px;
+      border-bottom: 1px solid var(--color-border);
+      overflow-x: auto;
+    }
+
+    .topic-chip {
+      font-family: var(--font-display);
+      font-size: 13px;
+      font-weight: 500;
+      padding: 6px 16px;
+      border: 1.5px solid var(--color-border);
+      white-space: nowrap;
+      transition: all 0.15s;
+    }
+
+    .topic-chip:hover {
+      border-color: var(--color-text);
+      background: var(--color-text);
+      color: white;
+    }
+
+    .topic-chip.active {
+      border-color: var(--color-text);
+      background: var(--color-text);
+      color: white;
+    }
+
+    /* ─── POST LIST ─── */
+    .posts-section {
+      max-width: var(--max-width);
+      margin: 0 auto;
+      padding: 0 24px;
+    }
+
+    .posts-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 24px 0 16px;
+      border-bottom: 1px solid var(--color-border);
+    }
+
+    .posts-title {
+      font-family: var(--font-display);
+      font-size: 14px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+    }
+
+    .posts-count {
+      font-family: var(--font-mono);
+      font-size: 13px;
+      color: var(--color-text-muted);
+    }
+
+    .post-item {
+      display: grid;
+      grid-template-columns: 60px 1fr 200px;
+      gap: 24px;
+      align-items: start;
+      padding: 28px 0;
+      border-bottom: 1px solid var(--color-border);
+      transition: background 0.15s;
+    }
+
+    .post-item:hover { background: var(--color-bg-alt); margin: 0 -24px; padding: 28px 24px; }
+
+    .post-number {
+      font-family: var(--font-display);
+      font-size: 40px;
+      font-weight: 700;
+      color: var(--color-border);
+      line-height: 1;
+      padding-top: 2px;
+    }
+
+    .post-item:hover .post-number { color: var(--color-accent); }
+
+    .post-content { flex: 1; }
+
+    .post-topic {
+      display: inline-block;
+      font-family: var(--font-mono);
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--color-accent);
+      font-weight: 500;
+      margin-bottom: 6px;
+      background: var(--color-accent-light);
+      padding: 2px 8px;
+    }
+
+    .post-title {
+      font-family: var(--font-display);
+      font-size: 22px;
+      font-weight: 700;
+      line-height: 1.25;
+      margin-bottom: 8px;
+      letter-spacing: -0.02em;
+    }
+
+    .post-title:hover { color: var(--color-accent); }
+
+    .post-excerpt {
+      font-size: 15px;
+      line-height: 1.6;
+      color: var(--color-text-muted);
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+
+    .post-meta-col {
+      font-family: var(--font-mono);
+      font-size: 12px;
+      color: var(--color-text-muted);
+      text-align: right;
+      padding-top: 4px;
+    }
+
+    .post-meta-col .date { margin-bottom: 4px; }
+    .post-meta-col .read-time { color: var(--color-border); }
+
+    .post-image {
+      width: 200px;
+      aspect-ratio: 16 / 10;
+      background: #e4e4e7;
+      background-size: cover;
+      background-position: center;
+    }
+
+    /* ─── GRID SECTION ─── */
+    .grid-section {
+      max-width: var(--max-width);
+      margin: 0 auto;
+      padding: 48px 24px 64px;
+    }
+
+    .grid-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 24px;
+      padding-bottom: 12px;
+      border-bottom: 3px solid var(--color-border-strong);
+    }
+
+    .grid-title {
+      font-family: var(--font-display);
+      font-size: 14px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+    }
+
+    .posts-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 0;
+    }
+
+    .grid-card {
+      border-right: 1px solid var(--color-border);
+      padding: 0 20px 20px 0;
+    }
+
+    .grid-card:last-child { border-right: none; }
+    .grid-card:not(:first-child) { padding-left: 20px; }
+
+    .grid-card-image {
+      aspect-ratio: 16 / 10;
+      background: #e4e4e7;
+      background-size: cover;
+      background-position: center;
+      margin-bottom: 14px;
+    }
+
+    .grid-card-topic {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--color-accent);
+      font-weight: 500;
+      margin-bottom: 6px;
+    }
+
+    .grid-card-title {
+      font-family: var(--font-display);
+      font-size: 17px;
+      font-weight: 700;
+      line-height: 1.25;
+      letter-spacing: -0.01em;
+      margin-bottom: 6px;
+    }
+
+    .grid-card-title:hover { color: var(--color-accent); }
+
+    .grid-card-meta {
+      font-family: var(--font-mono);
+      font-size: 12px;
+      color: var(--color-text-muted);
+    }
+
+    /* ─── FOOTER ─── */
+    .site-footer {
+      border-top: 3px solid var(--color-border-strong);
+      background: var(--color-text);
+      color: white;
+      padding: 40px 24px;
+    }
+
+    .footer-inner {
+      max-width: var(--max-width);
+      margin: 0 auto;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .footer-logo {
+      font-family: var(--font-display);
+      font-size: 18px;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+    }
+
+    .footer-links {
+      display: flex;
+      gap: 24px;
+      font-family: var(--font-display);
+      font-size: 14px;
+      font-weight: 500;
+      color: #a1a1aa;
+    }
+
+    .footer-links a:hover { color: white; }
+
+    .footer-powered {
+      font-family: var(--font-mono);
+      font-size: 12px;
+      color: #71717a;
+    }
+
+    .footer-powered a { text-decoration: underline; text-underline-offset: 2px; }
+    .footer-powered a:hover { color: white; }
+
+    /* ─── RESPONSIVE ─── */
+    @media (max-width: 1024px) {
+      .posts-grid { grid-template-columns: repeat(2, 1fr); }
+      .grid-card:nth-child(2) { border-right: none; }
+      .grid-card:nth-child(3) { padding-left: 0; border-right: 1px solid var(--color-border); }
+    }
+
+    @media (max-width: 900px) {
+      .hero-section { grid-template-columns: 1fr; min-height: auto; }
+      .hero-content { padding: 40px 0; }
+      .hero-image { height: 300px; border-left: none; border-top: 3px solid var(--color-border-strong); }
+      .hero-title { font-size: 36px; }
+      .post-item { grid-template-columns: 40px 1fr; }
+      .post-meta-col { display: none; }
+      .post-number { font-size: 32px; }
+    }
+
+    @media (max-width: 600px) {
+      .header-nav { display: none; }
+      .hero-title { font-size: 28px; }
+      .posts-grid { grid-template-columns: 1fr; }
+      .grid-card { border-right: none; padding: 0 0 20px 0; border-bottom: 1px solid var(--color-border); margin-bottom: 20px; }
+      .grid-card:not(:first-child) { padding-left: 0; }
+      .topics-bar { padding: 12px 24px; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- HEADER -->
+  <header class="site-header">
+    <div class="header-inner">
+      <div class="header-left">
+        <a href="#" class="site-logo">
+          <span class="logo-mark">M</span>
+          <span>The Morning Brief</span>
+        </a>
+      </div>
+      <nav class="header-nav">
+        <a href="#">Technology</a>
+        <a href="#">Leadership</a>
+        <a href="#">Engineering</a>
+        <a href="#">Culture</a>
+      </nav>
+      <div class="header-right">
+        <a href="#" class="subscribe-btn">Subscribe</a>
+      </div>
+    </div>
+  </header>
+
+  <!-- HERO -->
+  <section class="hero-section">
+    <div class="hero-content">
+      <div class="hero-label">// Featured</div>
+      <a href="bold-post.html"><h1 class="hero-title">The Quiet Revolution: How AI Agents Are Reshaping the Way Teams Build Software</h1></a>
+      <p class="hero-excerpt">AI coding assistants have evolved from autocomplete tools into autonomous agents. The implications for engineering teams are just beginning to unfold.</p>
+      <div class="hero-meta">
+        <span class="author">Shahar Nechmad</span> &mdash; Feb 15, 2026 &mdash; 8 min read
+      </div>
+    </div>
+    <a href="bold-post.html" class="hero-image"></a>
+  </section>
+
+  <!-- TOPICS BAR -->
+  <div class="topics-bar">
+    <a href="#" class="topic-chip active">All</a>
+    <a href="#" class="topic-chip">Technology</a>
+    <a href="#" class="topic-chip">Leadership</a>
+    <a href="#" class="topic-chip">Engineering</a>
+    <a href="#" class="topic-chip">Culture</a>
+    <a href="#" class="topic-chip">Product</a>
+    <a href="#" class="topic-chip">Startups</a>
+    <a href="#" class="topic-chip">Security</a>
+  </div>
+
+  <!-- POST LIST -->
+  <section class="posts-section">
+    <div class="posts-header">
+      <h2 class="posts-title">Latest</h2>
+      <span class="posts-count">12 posts</span>
+    </div>
+
+    <article class="post-item">
+      <div class="post-number">01</div>
+      <div class="post-content">
+        <div class="post-topic">Data</div>
+        <a href="#"><h3 class="post-title">Why Your Data Pipeline Is Lying to You</h3></a>
+        <p class="post-excerpt">Most organizations trust their data pipelines implicitly. But the gap between what your dashboard shows and what's actually happening is wider than you think.</p>
+      </div>
+      <div class="post-meta-col">
+        <div class="date">Feb 12, 2026</div>
+        <div class="read-time">6 min read</div>
+      </div>
+    </article>
+
+    <article class="post-item">
+      <div class="post-number">02</div>
+      <div class="post-content">
+        <div class="post-topic">Leadership</div>
+        <a href="#"><h3 class="post-title">The Manager's Dilemma: When Your Best Engineer Wants to Lead</h3></a>
+        <p class="post-excerpt">Promoting your best individual contributor into management seems like a win. Here's why it often isn't, and what to do instead.</p>
+      </div>
+      <div class="post-meta-col">
+        <div class="date">Feb 10, 2026</div>
+        <div class="read-time">5 min read</div>
+      </div>
+    </article>
+
+    <article class="post-item">
+      <div class="post-number">03</div>
+      <div class="post-content">
+        <div class="post-topic">Security</div>
+        <a href="#"><h3 class="post-title">Zero Trust in Practice: A Year-One Retrospective</h3></a>
+        <p class="post-excerpt">After twelve months of implementing zero trust at scale, here are the lessons that no vendor whitepaper will tell you about.</p>
+      </div>
+      <div class="post-meta-col">
+        <div class="date">Feb 8, 2026</div>
+        <div class="read-time">7 min read</div>
+      </div>
+    </article>
+
+    <article class="post-item">
+      <div class="post-number">04</div>
+      <div class="post-content">
+        <div class="post-topic">Culture</div>
+        <a href="#"><h3 class="post-title">Remote Work's Second Act: What Changed After the Mandate Wars</h3></a>
+        <p class="post-excerpt">The return-to-office mandates of 2024 created a new equilibrium. Here's what the landscape looks like now, and why some predictions were completely wrong.</p>
+      </div>
+      <div class="post-meta-col">
+        <div class="date">Feb 5, 2026</div>
+        <div class="read-time">6 min read</div>
+      </div>
+    </article>
+
+    <article class="post-item">
+      <div class="post-number">05</div>
+      <div class="post-content">
+        <div class="post-topic">Product</div>
+        <a href="#"><h3 class="post-title">The Art of Saying No: Product Prioritization Without the Framework Fetish</h3></a>
+        <p class="post-excerpt">RICE, WSJF, ICE, MoSCoW. The industry loves prioritization frameworks. But the best PMs I know barely use them.</p>
+      </div>
+      <div class="post-meta-col">
+        <div class="date">Feb 3, 2026</div>
+        <div class="read-time">5 min read</div>
+      </div>
+    </article>
+  </section>
+
+  <!-- GRID SECTION -->
+  <section class="grid-section">
+    <div class="grid-header">
+      <h2 class="grid-title">Explore More</h2>
+    </div>
+    <div class="posts-grid">
+      <article class="grid-card">
+        <div class="grid-card-image" style="background-image: url('https://images.unsplash.com/photo-1504639725590-34d0984388bd?w=400&q=80')"></div>
+        <div class="grid-card-topic">Engineering</div>
+        <a href="#"><h3 class="grid-card-title">Monorepos at Scale: Lessons from Moving 200 Packages</h3></a>
+        <div class="grid-card-meta">Jan 30</div>
+      </article>
+      <article class="grid-card">
+        <div class="grid-card-image" style="background-image: url('https://images.unsplash.com/photo-1551434678-e076c223a692?w=400&q=80')"></div>
+        <div class="grid-card-topic">Startups</div>
+        <a href="#"><h3 class="grid-card-title">Bootstrap or Raise? A Framework for the Decision That Defines Your Company</h3></a>
+        <div class="grid-card-meta">Jan 27</div>
+      </article>
+      <article class="grid-card">
+        <div class="grid-card-image" style="background-image: url('https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=400&q=80')"></div>
+        <div class="grid-card-topic">Technology</div>
+        <a href="#"><h3 class="grid-card-title">Edge Computing Is Eating the Cloud&mdash;And That's a Good Thing</h3></a>
+        <div class="grid-card-meta">Jan 24</div>
+      </article>
+      <article class="grid-card">
+        <div class="grid-card-image" style="background-image: url('https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=400&q=80')"></div>
+        <div class="grid-card-topic">Product</div>
+        <a href="#"><h3 class="grid-card-title">The Metrics That Actually Matter: Beyond DAU and Revenue</h3></a>
+        <div class="grid-card-meta">Jan 21</div>
+      </article>
+    </div>
+  </section>
+
+  <!-- FOOTER -->
+  <footer class="site-footer">
+    <div class="footer-inner">
+      <span class="footer-logo">The Morning Brief</span>
+      <div class="footer-links">
+        <a href="#">Twitter</a>
+        <a href="#">LinkedIn</a>
+        <a href="#">GitHub</a>
+        <a href="#">RSS</a>
+      </div>
+      <span class="footer-powered">Powered by <a href="#">Hot Metal</a></span>
+    </div>
+  </footer>
+
+</body>
+</html>

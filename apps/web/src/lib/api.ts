@@ -229,6 +229,7 @@ export async function updatePublication(
     scoutSchedule: ScoutSchedule
     timezone: string
     styleId: string | null
+    templateId: string
     feedFullEnabled: boolean
     feedPartialEnabled: boolean
   }>,

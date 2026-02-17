@@ -1,0 +1,108 @@
+---
+/**
+ * Template switcher for the home page.
+ * When adding a new template: add imports for its components and a new branch in the conditional below.
+ * Also update PostPage.astro and NotFoundPage.astro switchers.
+ */
+import type { Post } from '@hotmetal/content-core';
+import type { PublicationBranding } from '../dl/publication';
+
+// Starter template
+import StarterBaseLayout from '../templates/starter/layouts/BaseLayout.astro';
+import StarterHeader from '../templates/starter/components/Header.astro';
+import StarterHero from '../templates/starter/components/PublicationHero.astro';
+import StarterPostList from '../templates/starter/components/PostList.astro';
+import StarterFooter from '../templates/starter/components/Footer.astro';
+
+// Editorial template
+import EditorialBaseLayout from '../templates/editorial/layouts/BaseLayout.astro';
+import EditorialHeader from '../templates/editorial/components/Header.astro';
+import EditorialHero from '../templates/editorial/components/PublicationHero.astro';
+import EditorialFeaturedPost from '../templates/editorial/components/FeaturedPost.astro';
+import EditorialPostList from '../templates/editorial/components/PostList.astro';
+import EditorialMoreStories from '../templates/editorial/components/MoreStories.astro';
+import EditorialFooter from '../templates/editorial/components/Footer.astro';
+
+// Bold template
+import BoldBaseLayout from '../templates/bold/layouts/BaseLayout.astro';
+import BoldHeader from '../templates/bold/components/Header.astro';
+import BoldHero from '../templates/bold/components/PublicationHero.astro';
+import BoldPostList from '../templates/bold/components/PostList.astro';
+import BoldExploreGrid from '../templates/bold/components/ExploreGrid.astro';
+import BoldFooter from '../templates/bold/components/Footer.astro';
+
+interface Props {
+  templateId: string;
+  branding: PublicationBranding;
+  posts: Post[];
+  baseUrl: string;
+  jsonLd: Record<string, unknown>;
+}
+
+const { templateId, branding, posts, baseUrl, jsonLd } = Astro.props;
+
+const layoutProps = {
+  title: branding.name,
+  publicationName: branding.name,
+  description: branding.metaDescription ?? branding.tagline ?? undefined,
+  ogImage: branding.headerImageUrl ?? undefined,
+  canonicalUrl: baseUrl,
+  accentColor: branding.accentColor,
+  jsonLd,
+  rssUrl: `${baseUrl}/rss`,
+};
+---
+
+{templateId === 'editorial' ? (
+  <EditorialBaseLayout {...layoutProps}>
+    <EditorialHeader publicationName={branding.name} logoUrl={branding.logoUrl} showDate />
+    <EditorialHero
+      name={branding.name}
+      tagline={branding.tagline}
+      headerImageUrl={branding.headerImageUrl}
+      socialLinks={branding.socialLinks}
+    />
+    {posts.length > 0 && <EditorialFeaturedPost post={posts[0]} />}
+    <EditorialPostList posts={posts.length > 1 ? posts.slice(1, 4) : []} />
+    <EditorialMoreStories posts={posts.length > 4 ? posts.slice(4) : []} />
+    <EditorialFooter
+      publicationName={branding.name}
+      publicationSlug={branding.slug}
+      socialLinks={branding.socialLinks}
+    />
+  </EditorialBaseLayout>
+) : templateId === 'bold' ? (
+  <BoldBaseLayout {...layoutProps}>
+    <BoldHeader publicationName={branding.name} logoUrl={branding.logoUrl} />
+    <BoldHero
+      name={branding.name}
+      tagline={branding.tagline}
+      headerImageUrl={branding.headerImageUrl}
+      socialLinks={branding.socialLinks}
+      featuredPost={posts.length > 0 ? posts[0] : null}
+    />
+    <BoldPostList posts={posts.length > 1 ? posts.slice(1, 6) : posts} />
+    <BoldExploreGrid posts={posts.length > 6 ? posts.slice(6) : []} />
+    <BoldFooter
+      publicationName={branding.name}
+      publicationSlug={branding.slug}
+      socialLinks={branding.socialLinks}
+    />
+  </BoldBaseLayout>
+) : (
+  <StarterBaseLayout {...layoutProps}>
+    <StarterHeader publicationName={branding.name} logoUrl={branding.logoUrl} />
+    <StarterHero
+      name={branding.name}
+      tagline={branding.tagline}
+      headerImageUrl={branding.headerImageUrl}
+      socialLinks={branding.socialLinks}
+    />
+    <StarterPostList posts={posts} />
+    <StarterFooter
+      publicationName={branding.name}
+      publicationSlug={branding.slug}
+      socialLinks={branding.socialLinks}
+    />
+  </StarterBaseLayout>
+)}
