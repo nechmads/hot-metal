@@ -63,7 +63,7 @@ const layoutProps = {
       socialLinks={branding.socialLinks}
     />
     {posts.length > 0 && <EditorialFeaturedPost post={posts[0]} />}
-    <EditorialPostList posts={posts.length > 1 ? posts.slice(1, 4) : []} />
+    <EditorialPostList posts={posts.slice(0, 4)} />
     <EditorialMoreStories posts={posts.length > 4 ? posts.slice(4) : []} />
     <EditorialFooter
       publicationName={branding.name}
