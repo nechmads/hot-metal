@@ -39,6 +39,7 @@ This document covers the full implementation details. For the broader automation
 ### Why Queue + Workflow?
 
 **Queue (fan-out):** A single cron invocation can't reliably process 100 publications sequentially — it risks timeouts and one failure blocking others. The queue provides:
+
 - Isolated processing per publication (one failure doesn't affect others)
 - Automatic retry with dead-letter queue for persistent failures
 - Concurrency control (max_concurrency setting)
@@ -57,14 +58,14 @@ This document covers the full implementation details. For the broader automation
 
 ## Cloudflare Resources
 
-| Resource | Name | Purpose |
-|---|---|---|
-| Worker | `hotmetal-content-scout` | Cron handler, queue consumer, workflow host |
-| Queue | `hotmetal-scout-queue` | Fan-out: 1 message per publication |
-| Queue (DLQ) | `hotmetal-scout-dlq` | Dead-letter queue for failed publications |
-| KV Namespace | `hotmetal-scout-cache` | Cache Alexander API search results (24h TTL) |
-| Workflow | `scout-workflow` | Durable multi-step pipeline per publication |
-| D1 (shared) | `hotmetal-writer-db` | Publications, topics, ideas, sessions |
+| Resource     | Name                     | Purpose                                      |
+| ------------ | ------------------------ | -------------------------------------------- |
+| Worker       | `hotmetal-content-scout` | Cron handler, queue consumer, workflow host  |
+| Queue        | `hotmetal-scout-queue`   | Fan-out: 1 message per publication           |
+| Queue (DLQ)  | `hotmetal-scout-dlq`     | Dead-letter queue for failed publications    |
+| KV Namespace | `hotmetal-scout-cache`   | Cache Alexander API search results (24h TTL) |
+| Workflow     | `scout-workflow`         | Durable multi-step pipeline per publication  |
+| D1 (shared)  | `hotmetal-writer-db`     | Publications, topics, ideas, sessions        |
 
 ---
 
@@ -80,53 +81,53 @@ This document covers the full implementation details. For the broader automation
   "compatibility_flags": ["nodejs_compat"],
 
   "triggers": {
-    "crons": ["0 7 * * *"]
+    "crons": ["0 7 * * *"],
   },
 
   "workflows": [
     {
       "name": "scout-workflow",
       "binding": "SCOUT_WORKFLOW",
-      "class_name": "ScoutWorkflow"
-    }
+      "class_name": "ScoutWorkflow",
+    },
   ],
 
   "queues": {
     "producers": [
       {
         "queue": "hotmetal-scout-queue",
-        "binding": "SCOUT_QUEUE"
-      }
+        "binding": "SCOUT_QUEUE",
+      },
     ],
     "consumers": [
       {
         "queue": "hotmetal-scout-queue",
         "max_batch_size": 1,
         "max_retries": 3,
-        "dead_letter_queue": "hotmetal-scout-dlq"
-      }
-    ]
+        "dead_letter_queue": "hotmetal-scout-dlq",
+      },
+    ],
   },
 
   "kv_namespaces": [
     {
       "binding": "SCOUT_CACHE",
-      "id": "<kv-namespace-id>"
-    }
+      "id": "<kv-namespace-id>",
+    },
   ],
 
   "d1_databases": [
     {
       "binding": "WRITER_DB",
       "database_name": "hotmetal-writer-db",
-      "database_id": "<same as writer-agent>"
-    }
+      "database_id": "<same as writer-agent>",
+    },
   ],
 
   "vars": {
     "ALEXANDER_API_URL": "https://alexanderai.farfarawaylabs.com",
-    "WRITER_AGENT_URL": "https://hotmetal-writer-agent.<account>.workers.dev"
-  }
+    "WRITER_AGENT_URL": "https://hotmetal-writer-agent.<account>.workers.dev",
+  },
 }
 ```
 
@@ -134,31 +135,31 @@ This document covers the full implementation details. For the broader automation
 
 ```typescript
 // src/env.ts
-import type { Workflow } from 'cloudflare:workers'
+import type { Workflow } from "cloudflare:workers";
 
 export interface Env {
   // Bindings
-  WRITER_DB: D1Database
-  SCOUT_QUEUE: Queue<ScoutQueueMessage>
-  SCOUT_WORKFLOW: Workflow<ScoutWorkflowParams>
-  SCOUT_CACHE: KVNamespace
+  WRITER_DB: D1Database;
+  SCOUT_QUEUE: Queue<ScoutQueueMessage>;
+  SCOUT_WORKFLOW: Workflow<ScoutWorkflowParams>;
+  SCOUT_CACHE: KVNamespace;
 
   // Vars & Secrets
-  ALEXANDER_API_URL: string
-  ALEXANDER_API_KEY: string
-  ANTHROPIC_API_KEY: string
-  WRITER_AGENT_URL: string
-  WRITER_AGENT_API_KEY: string
+  ALEXANDER_API_URL: string;
+  ALEXANDER_API_KEY: string;
+  ANTHROPIC_API_KEY: string;
+  WRITER_AGENT_URL: string;
+  WRITER_AGENT_API_KEY: string;
 }
 
 export interface ScoutQueueMessage {
-  publicationId: string
-  triggeredBy: 'cron' | 'manual'
+  publicationId: string;
+  triggeredBy: "cron" | "manual";
 }
 
 export interface ScoutWorkflowParams {
-  publicationId: string
-  triggeredBy: 'cron' | 'manual'
+  publicationId: string;
+  triggeredBy: "cron" | "manual";
 }
 ```
 
@@ -183,53 +184,56 @@ export interface ScoutWorkflowParams {
 
 ```typescript
 // src/index.ts
-import { Hono } from 'hono'
-import type { Env, ScoutQueueMessage } from './env'
-import { ScoutWorkflow } from './workflow'
+import { Hono } from "hono";
+import type { Env, ScoutQueueMessage } from "./env";
+import { ScoutWorkflow } from "./workflow";
 
-const app = new Hono<{ Bindings: Env }>()
+const app = new Hono<{ Bindings: Env }>();
 
 // Manual trigger: run scout for a single publication
-app.post('/api/scout/run', async (c) => {
-  const { publicationId } = await c.req.json<{ publicationId: string }>()
-  await c.env.SCOUT_QUEUE.send({ publicationId, triggeredBy: 'manual' })
-  return c.json({ queued: true, publicationId })
-})
+app.post("/api/scout/run", async (c) => {
+  const { publicationId } = await c.req.json<{ publicationId: string }>();
+  await c.env.SCOUT_QUEUE.send({ publicationId, triggeredBy: "manual" });
+  return c.json({ queued: true, publicationId });
+});
 
 // Manual trigger: run scout for all publications
-app.post('/api/scout/run-all', async (c) => {
-  const count = await enqueueAllPublications(c.env, 'manual')
-  return c.json({ queued: true, count })
-})
+app.post("/api/scout/run-all", async (c) => {
+  const count = await enqueueAllPublications(c.env, "manual");
+  return c.json({ queued: true, count });
+});
 
-export { ScoutWorkflow }
+export { ScoutWorkflow };
 
 export default {
   fetch: app.fetch,
 
   // Cron trigger — fan out to queue
   async scheduled(event: ScheduledEvent, env: Env, ctx: ExecutionContext) {
-    ctx.waitUntil(enqueueAllPublications(env, 'cron'))
+    ctx.waitUntil(enqueueAllPublications(env, "cron"));
   },
 
   // Queue consumer — start a workflow per publication
   async queue(batch: MessageBatch<ScoutQueueMessage>, env: Env) {
     for (const message of batch.messages) {
-      const { publicationId, triggeredBy } = message.body
+      const { publicationId, triggeredBy } = message.body;
 
       try {
         await env.SCOUT_WORKFLOW.create({
           id: `scout-${publicationId}-${Date.now()}`,
           params: { publicationId, triggeredBy },
-        })
-        message.ack()
+        });
+        message.ack();
       } catch (err) {
-        console.error(`Failed to start workflow for publication ${publicationId}:`, err)
-        message.retry()
+        console.error(
+          `Failed to start workflow for publication ${publicationId}:`,
+          err,
+        );
+        message.retry();
       }
     }
   },
-}
+};
 ```
 
 ### Enqueue All Publications
@@ -239,21 +243,25 @@ Queries D1 for publications that should run today, then enqueues one message per
 ```typescript
 async function enqueueAllPublications(
   env: Env,
-  triggeredBy: 'cron' | 'manual'
+  triggeredBy: "cron" | "manual",
 ): Promise<number> {
-  const publications = await env.WRITER_DB
-    .prepare('SELECT id, auto_publish_mode, cadence_posts_per_week FROM publications')
-    .all<{ id: string; auto_publish_mode: string; cadence_posts_per_week: number }>()
+  const publications = await env.WRITER_DB.prepare(
+    "SELECT id, auto_publish_mode, cadence_posts_per_week FROM publications",
+  ).all<{
+    id: string;
+    auto_publish_mode: string;
+    cadence_posts_per_week: number;
+  }>();
 
-  let count = 0
+  let count = 0;
   for (const pub of publications.results ?? []) {
     // For 'draft' and 'publish' mode: run every day (ideas are always useful)
     // For 'full-auto': also run every day (cadence check happens at auto-write step)
-    await env.SCOUT_QUEUE.send({ publicationId: pub.id, triggeredBy })
-    count++
+    await env.SCOUT_QUEUE.send({ publicationId: pub.id, triggeredBy });
+    count++;
   }
 
-  return count
+  return count;
 }
 ```
 
@@ -267,93 +275,122 @@ The workflow is the core of the scout. Each instance processes one publication t
 
 ```typescript
 // src/workflow.ts
-import { WorkflowEntrypoint, WorkflowEvent, WorkflowStep } from 'cloudflare:workers'
-import type { Env, ScoutWorkflowParams } from './env'
-import { loadPublicationContext } from './steps/load-context'
-import { searchForContent } from './steps/search'
-import { dedupeStories } from './steps/dedupe'
-import { generateIdeas } from './steps/generate-ideas'
-import { storeIdeas } from './steps/store-ideas'
-import { autoWriteTopIdea } from './steps/auto-write'
+import {
+  WorkflowEntrypoint,
+  WorkflowEvent,
+  WorkflowStep,
+} from "cloudflare:workers";
+import type { Env, ScoutWorkflowParams } from "./env";
+import { loadPublicationContext } from "./steps/load-context";
+import { searchForContent } from "./steps/search";
+import { dedupeStories } from "./steps/dedupe";
+import { generateIdeas } from "./steps/generate-ideas";
+import { storeIdeas } from "./steps/store-ideas";
+import { autoWriteTopIdea } from "./steps/auto-write";
 
-export class ScoutWorkflow extends WorkflowEntrypoint<Env, ScoutWorkflowParams> {
+export class ScoutWorkflow extends WorkflowEntrypoint<
+  Env,
+  ScoutWorkflowParams
+> {
   async run(event: WorkflowEvent<ScoutWorkflowParams>, step: WorkflowStep) {
-    const { publicationId } = event.payload
+    const { publicationId } = event.payload;
 
     // Step 1: Load publication context from D1
-    const context = await step.do('load-context', async () => {
-      return await loadPublicationContext(this.env.WRITER_DB, publicationId)
-    })
+    const context = await step.do("load-context", async () => {
+      return await loadPublicationContext(this.env.WRITER_DB, publicationId);
+    });
 
     if (context.topics.length === 0) {
-      return { publicationId, ideasGenerated: 0, skipped: 'no active topics' }
+      return { publicationId, ideasGenerated: 0, skipped: "no active topics" };
     }
 
     // Step 2: Search for content via Alexander API (with KV cache)
     const searchResults = await step.do(
-      'search-content',
-      { retries: { limit: 2, delay: '10 seconds', backoff: 'exponential' }, timeout: '2 minutes' },
+      "search-content",
+      {
+        retries: { limit: 2, delay: "10 seconds", backoff: "exponential" },
+        timeout: "2 minutes",
+      },
       async () => {
         return await searchForContent(
           this.env.ALEXANDER_API_URL,
           this.env.ALEXANDER_API_KEY,
           this.env.SCOUT_CACHE,
           context.topics,
-          context.publication.description
-        )
-      }
-    )
+          context.publication.description,
+        );
+      },
+    );
 
     // Step 3: Dedupe stories against recent ideas (LLM call)
     const filteredStories = await step.do(
-      'dedupe-stories',
-      { retries: { limit: 2, delay: '5 seconds', backoff: 'exponential' }, timeout: '1 minute' },
+      "dedupe-stories",
+      {
+        retries: { limit: 2, delay: "5 seconds", backoff: "exponential" },
+        timeout: "1 minute",
+      },
       async () => {
         return await dedupeStories(
           this.env.ANTHROPIC_API_KEY,
           searchResults,
-          context.recentIdeas
-        )
-      }
-    )
+          context.recentIdeas,
+        );
+      },
+    );
 
     if (filteredStories.length === 0) {
-      return { publicationId, ideasGenerated: 0, skipped: 'no new stories after dedup' }
+      return {
+        publicationId,
+        ideasGenerated: 0,
+        skipped: "no new stories after dedup",
+      };
     }
 
     // Step 4: Generate idea briefs from filtered stories (LLM call)
     const ideas = await step.do(
-      'generate-ideas',
-      { retries: { limit: 2, delay: '5 seconds', backoff: 'exponential' }, timeout: '2 minutes' },
+      "generate-ideas",
+      {
+        retries: { limit: 2, delay: "5 seconds", backoff: "exponential" },
+        timeout: "2 minutes",
+      },
       async () => {
         return await generateIdeas(
           this.env.ANTHROPIC_API_KEY,
           context.publication,
           filteredStories,
-          context.topics
-        )
-      }
-    )
+          context.topics,
+        );
+      },
+    );
 
     if (ideas.length === 0) {
-      return { publicationId, ideasGenerated: 0, skipped: 'LLM produced no ideas' }
+      return {
+        publicationId,
+        ideasGenerated: 0,
+        skipped: "LLM produced no ideas",
+      };
     }
 
     // Step 5: Store ideas in D1
-    await step.do('store-ideas', async () => {
-      return await storeIdeas(this.env.WRITER_DB, publicationId, ideas, context.topics)
-    })
+    await step.do("store-ideas", async () => {
+      return await storeIdeas(
+        this.env.WRITER_DB,
+        publicationId,
+        ideas,
+        context.topics,
+      );
+    });
 
     // Step 6: Auto-write (conditional — only for publish/full-auto modes)
-    let autoWritten = 0
-    if (context.publication.auto_publish_mode !== 'draft') {
+    let autoWritten = 0;
+    if (context.publication.auto_publish_mode !== "draft") {
       autoWritten = await step.do(
-        'auto-write',
-        { retries: { limit: 1, delay: '10 seconds' }, timeout: '10 minutes' },
+        "auto-write",
+        { retries: { limit: 1, delay: "10 seconds" }, timeout: "10 minutes" },
         async () => {
-          return await autoWriteTopIdea(this.env, context.publication, ideas)
-        }
-      )
+          return await autoWriteTopIdea(this.env, context.publication, ideas);
+        },
+      );
     }
 
     return {
@@ -361,7 +398,7 @@ export class ScoutWorkflow extends WorkflowEntrypoint<Env, ScoutWorkflowParams> 
       publicationName: context.publication.name,
       ideasGenerated: ideas.length,
       autoWritten,
-    }
+    };
   }
 }
 ```
@@ -374,37 +411,41 @@ export class ScoutWorkflow extends WorkflowEntrypoint<Env, ScoutWorkflowParams> 
 // src/steps/load-context.ts
 
 export interface PublicationContext {
-  publication: Publication
-  topics: Topic[]
-  recentIdeas: RecentIdea[]
+  publication: Publication;
+  topics: Topic[];
+  recentIdeas: RecentIdea[];
 }
 
 export async function loadPublicationContext(
   db: D1Database,
-  publicationId: string
+  publicationId: string,
 ): Promise<PublicationContext> {
   // Load publication config
   const publication = await db
-    .prepare('SELECT * FROM publications WHERE id = ?')
+    .prepare("SELECT * FROM publications WHERE id = ?")
     .bind(publicationId)
-    .first<Publication>()
+    .first<Publication>();
 
-  if (!publication) throw new Error(`Publication ${publicationId} not found`)
+  if (!publication) throw new Error(`Publication ${publicationId} not found`);
 
   // Load active topics
   const { results: topics } = await db
-    .prepare('SELECT * FROM topics WHERE publication_id = ? AND is_active = 1 ORDER BY priority DESC')
+    .prepare(
+      "SELECT * FROM topics WHERE publication_id = ? AND is_active = 1 ORDER BY priority DESC",
+    )
     .bind(publicationId)
-    .all<Topic>()
+    .all<Topic>();
 
   // Load recent ideas (last 7 days) for dedup context
-  const sevenDaysAgo = Math.floor(Date.now() / 1000) - 7 * 24 * 60 * 60
+  const sevenDaysAgo = Math.floor(Date.now() / 1000) - 7 * 24 * 60 * 60;
   const { results: recentIdeas } = await db
-    .prepare('SELECT id, title, angle FROM ideas WHERE publication_id = ? AND created_at >= ?')
+    .prepare(
+      "SELECT id, title, angle FROM ideas WHERE publication_id = ? AND created_at >= ?",
+    )
     .bind(publicationId, sevenDaysAgo)
-    .all<RecentIdea>()
+    .all<RecentIdea>();
 
-  return { publication, topics: topics ?? [], recentIdeas: recentIdeas ?? [] }
+  return { publication, topics: topics ?? [], recentIdeas: recentIdeas ?? [] };
 }
 ```
 
@@ -416,36 +457,40 @@ For each active topic, we make **two Alexander API calls** (`searchNews` + `sear
 
 ```typescript
 // src/steps/search.ts
-import { AlexanderApi } from '@hotmetal/shared'
+import { AlexanderApi } from "@hotmetal/shared";
 
-const CACHE_TTL_SECONDS = 24 * 60 * 60 // 24 hours
+const CACHE_TTL_SECONDS = 24 * 60 * 60; // 24 hours
 
 export async function searchForContent(
   alexanderUrl: string,
   alexanderKey: string,
   cache: KVNamespace,
   topics: Topic[],
-  publicationDescription: string | null
+  publicationDescription: string | null,
 ): Promise<TopicSearchResults[]> {
-  const alexander = new AlexanderApi(alexanderUrl, alexanderKey)
+  const alexander = new AlexanderApi(alexanderUrl, alexanderKey);
 
   const results = await Promise.all(
     topics.map(async (topic) => {
-      const searchQuery = `${topic.name} ${topic.description || ''}`
+      const searchQuery = `${topic.name} ${topic.description || ""}`;
 
       // Search news (cached)
-      const news = await cachedSearch(
-        cache,
-        `news:${searchQuery}`,
-        () => alexander.searchNews({ query: searchQuery, max_results: 5, recency: 'day' })
-      )
+      const news = await cachedSearch(cache, `news:${searchQuery}`, () =>
+        alexander.searchNews({
+          query: searchQuery,
+          max_results: 5,
+          recency: "day",
+        }),
+      );
 
       // Search web (cached)
-      const web = await cachedSearch(
-        cache,
-        `web:${searchQuery}`,
-        () => alexander.search({ query: searchQuery, maxResults: 5, recency: 'week' })
-      )
+      const web = await cachedSearch(cache, `web:${searchQuery}`, () =>
+        alexander.search({
+          query: searchQuery,
+          maxResults: 5,
+          recency: "week",
+        }),
+      );
 
       return {
         topicName: topic.name,
@@ -453,38 +498,40 @@ export async function searchForContent(
         topicPriority: topic.priority,
         news: news?.results ?? [],
         web: web?.results ?? [],
-      }
-    })
-  )
+      };
+    }),
+  );
 
-  return results
+  return results;
 }
 
 async function cachedSearch<T>(
   cache: KVNamespace,
   key: string,
-  fetcher: () => Promise<T>
+  fetcher: () => Promise<T>,
 ): Promise<T | null> {
   // Check cache
-  const cacheKey = `search:${hashQuery(key)}`
-  const cached = await cache.get(cacheKey, 'json')
-  if (cached) return cached as T
+  const cacheKey = `search:${hashQuery(key)}`;
+  const cached = await cache.get(cacheKey, "json");
+  if (cached) return cached as T;
 
   // Fetch from Alexander
   try {
-    const result = await fetcher()
+    const result = await fetcher();
     // Store in cache
-    await cache.put(cacheKey, JSON.stringify(result), { expirationTtl: CACHE_TTL_SECONDS })
-    return result
+    await cache.put(cacheKey, JSON.stringify(result), {
+      expirationTtl: CACHE_TTL_SECONDS,
+    });
+    return result;
   } catch (err) {
-    console.error(`Search failed for "${key}":`, err)
-    return null
+    console.error(`Search failed for "${key}":`, err);
+    return null;
   }
 }
 
 function hashQuery(query: string): string {
   // Simple hash for cache keys — normalize whitespace and case
-  return query.trim().toLowerCase().replace(/\s+/g, '-').slice(0, 200)
+  return query.trim().toLowerCase().replace(/\s+/g, "-").slice(0, 200);
 }
 ```
 
@@ -500,33 +547,33 @@ This is a **separate LLM call** before idea generation. Its job: compare new sea
 
 ```typescript
 // src/steps/dedupe.ts
-import { generateText } from 'ai'
-import { createAnthropic } from '@ai-sdk/anthropic'
+import { generateText } from "ai";
+import { createAnthropic } from "@ai-sdk/anthropic";
 
 export async function dedupeStories(
   apiKey: string,
   searchResults: TopicSearchResults[],
-  recentIdeas: RecentIdea[]
+  recentIdeas: RecentIdea[],
 ): Promise<FilteredStory[]> {
   // If no recent ideas, skip dedup — everything is new
   if (recentIdeas.length === 0) {
-    return flattenToStories(searchResults)
+    return flattenToStories(searchResults);
   }
 
-  const anthropic = createAnthropic({ apiKey })
+  const anthropic = createAnthropic({ apiKey });
 
   const result = await generateText({
-    model: anthropic('claude-sonnet-4-5-20250929'),
+    model: anthropic("claude-sonnet-4-6-20250929"),
     system: DEDUPE_SYSTEM_PROMPT,
     messages: [
       {
-        role: 'user',
+        role: "user",
         content: buildDedupeUserPrompt(searchResults, recentIdeas),
       },
     ],
-  })
+  });
 
-  return parseFilteredStories(result.text, searchResults)
+  return parseFilteredStories(result.text, searchResults);
 }
 ```
 
@@ -551,7 +598,7 @@ IMPORTANT: Respond with valid JSON only. Use this exact format:
     { "index": 0, "verdict": "keep", "reason": "New story about X not in recent ideas" },
     { "index": 1, "verdict": "drop", "reason": "Same story as idea 'Title Y' — both about Z" }
   ]
-}`
+}`;
 ```
 
 ### Dedupe User Prompt
@@ -559,32 +606,33 @@ IMPORTANT: Respond with valid JSON only. Use this exact format:
 ```typescript
 function buildDedupeUserPrompt(
   searchResults: TopicSearchResults[],
-  recentIdeas: RecentIdea[]
+  recentIdeas: RecentIdea[],
 ): string {
-  let prompt = '## Recent News Stories\n\n'
+  let prompt = "## Recent News Stories\n\n";
 
-  let index = 0
+  let index = 0;
   for (const { topicName, news, web } of searchResults) {
-    const allStories = [...news, ...web]
+    const allStories = [...news, ...web];
     for (const story of allStories) {
-      prompt += `[${index}] Topic: ${topicName} | "${story.title}"\n`
-      prompt += `    ${story.snippet}\n\n`
-      index++
+      prompt += `[${index}] Topic: ${topicName} | "${story.title}"\n`;
+      prompt += `    ${story.snippet}\n\n`;
+      index++;
     }
   }
 
-  prompt += '## Already-Covered Ideas (past 7 days)\n\n'
+  prompt += "## Already-Covered Ideas (past 7 days)\n\n";
   for (const idea of recentIdeas) {
-    prompt += `- **${idea.title}** — ${idea.angle}\n`
+    prompt += `- **${idea.title}** — ${idea.angle}\n`;
   }
 
-  prompt += '\n---\nFor each numbered story above, respond with keep or drop.'
+  prompt += "\n---\nFor each numbered story above, respond with keep or drop.";
 
-  return prompt
+  return prompt;
 }
 ```
 
 **Why a separate LLM call:** The dedup task (comparison/filtering) is fundamentally different from the idea generation task (creative synthesis). Keeping them separate means:
+
 - Each step is focused and debuggable
 - Dedup output is persisted by the workflow — if idea generation fails, we don't re-run dedup
 - We could use a cheaper/faster model for dedup in the future (e.g., Haiku) since it's a simpler task
@@ -598,29 +646,29 @@ After dedup, we pass the **filtered stories** to the idea generation LLM. This p
 
 ```typescript
 // src/steps/generate-ideas.ts
-import { generateText } from 'ai'
-import { createAnthropic } from '@ai-sdk/anthropic'
+import { generateText } from "ai";
+import { createAnthropic } from "@ai-sdk/anthropic";
 
 export async function generateIdeas(
   apiKey: string,
   publication: Publication,
   filteredStories: FilteredStory[],
-  topics: Topic[]
+  topics: Topic[],
 ): Promise<IdeaBrief[]> {
-  const anthropic = createAnthropic({ apiKey })
+  const anthropic = createAnthropic({ apiKey });
 
   const result = await generateText({
-    model: anthropic('claude-sonnet-4-5-20250929'),
+    model: anthropic("claude-sonnet-4-6-20250929"),
     system: buildIdeaSystemPrompt(publication),
     messages: [
       {
-        role: 'user',
+        role: "user",
         content: buildIdeaUserPrompt(filteredStories, topics),
       },
     ],
-  })
+  });
 
-  return parseIdeaBriefs(result.text)
+  return parseIdeaBriefs(result.text);
 }
 ```
 
@@ -630,7 +678,7 @@ export async function generateIdeas(
 function buildIdeaSystemPrompt(publication: Publication): string {
   return `You are a content scout for a publication called "${publication.name}".
 
-Publication description: ${publication.description || 'No description provided.'}
+Publication description: ${publication.description || "No description provided."}
 
 Your job is to analyze the provided news stories and articles, then generate blog post ideas that would resonate with this publication's audience.
 
@@ -663,7 +711,7 @@ IMPORTANT: Respond with valid JSON only. Use this exact format:
       ]
     }
   ]
-}`
+}`;
 }
 ```
 
@@ -672,29 +720,30 @@ IMPORTANT: Respond with valid JSON only. Use this exact format:
 ```typescript
 function buildIdeaUserPrompt(
   filteredStories: FilteredStory[],
-  topics: Topic[]
+  topics: Topic[],
 ): string {
-  let prompt = '## Topics of Interest\n\n'
+  let prompt = "## Topics of Interest\n\n";
 
   for (const topic of topics) {
-    prompt += `- **${topic.name}**`
-    if (topic.description) prompt += ` — ${topic.description}`
-    prompt += ` (Priority: ${topic.priority === 3 ? 'URGENT' : topic.priority === 2 ? 'High' : 'Normal'})\n`
+    prompt += `- **${topic.name}**`;
+    if (topic.description) prompt += ` — ${topic.description}`;
+    prompt += ` (Priority: ${topic.priority === 3 ? "URGENT" : topic.priority === 2 ? "High" : "Normal"})\n`;
   }
 
-  prompt += '\n## Relevant Stories\n\n'
+  prompt += "\n## Relevant Stories\n\n";
 
   for (const story of filteredStories) {
-    prompt += `### ${story.title}\n`
-    prompt += `Topic: ${story.topicName}\n`
-    if (story.url) prompt += `URL: ${story.url}\n`
-    if (story.date) prompt += `Date: ${story.date}\n`
-    prompt += `${story.snippet}\n\n`
+    prompt += `### ${story.title}\n`;
+    prompt += `Topic: ${story.topicName}\n`;
+    if (story.url) prompt += `URL: ${story.url}\n`;
+    if (story.date) prompt += `Date: ${story.date}\n`;
+    prompt += `${story.snippet}\n\n`;
   }
 
-  prompt += '---\n\nBased on these stories, generate blog post ideas for this publication.'
+  prompt +=
+    "---\n\nBased on these stories, generate blog post ideas for this publication.";
 
-  return prompt
+  return prompt;
 }
 ```
 
@@ -703,15 +752,15 @@ function buildIdeaUserPrompt(
 ```typescript
 function parseIdeaBriefs(text: string): IdeaBrief[] {
   // Extract JSON from the response (handle potential markdown code fences)
-  const jsonMatch = text.match(/\{[\s\S]*\}/)
-  if (!jsonMatch) return []
+  const jsonMatch = text.match(/\{[\s\S]*\}/);
+  if (!jsonMatch) return [];
 
   try {
-    const parsed = JSON.parse(jsonMatch[0])
-    return parsed.ideas || []
+    const parsed = JSON.parse(jsonMatch[0]);
+    return parsed.ideas || [];
   } catch {
-    console.error('Failed to parse idea briefs JSON')
-    return []
+    console.error("Failed to parse idea briefs JSON");
+    return [];
   }
 }
 ```
@@ -727,17 +776,17 @@ export async function storeIdeas(
   db: D1Database,
   publicationId: string,
   ideas: IdeaBrief[],
-  topics: Topic[]
+  topics: Topic[],
 ): Promise<number> {
-  const topicsByName = new Map(topics.map((t) => [t.name, t]))
+  const topicsByName = new Map(topics.map((t) => [t.name, t]));
 
   for (const idea of ideas) {
-    const topicId = topicsByName.get(idea.topic)?.id ?? null
+    const topicId = topicsByName.get(idea.topic)?.id ?? null;
 
     await db
       .prepare(
         `INSERT INTO ideas (id, publication_id, topic_id, title, angle, summary, sources, relevance_score, status)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'new')`
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'new')`,
       )
       .bind(
         crypto.randomUUID(),
@@ -747,12 +796,12 @@ export async function storeIdeas(
         idea.angle,
         idea.summary,
         JSON.stringify(idea.sources),
-        idea.relevance_score
+        idea.relevance_score,
       )
-      .run()
+      .run();
   }
 
-  return ideas.length
+  return ideas.length;
 }
 ```
 
@@ -770,44 +819,48 @@ Only runs for publications with `auto_publish_mode` = `publish` or `full-auto`. 
 export async function autoWriteTopIdea(
   env: Env,
   publication: Publication,
-  ideas: IdeaBrief[]
+  ideas: IdeaBrief[],
 ): Promise<number> {
   // Check if we should auto-write
-  if (publication.auto_publish_mode === 'draft') return 0
+  if (publication.auto_publish_mode === "draft") return 0;
 
-  if (publication.auto_publish_mode === 'full-auto') {
-    const shouldWrite = await checkCadence(env.WRITER_DB, publication)
-    if (!shouldWrite) return 0
+  if (publication.auto_publish_mode === "full-auto") {
+    const shouldWrite = await checkCadence(env.WRITER_DB, publication);
+    if (!shouldWrite) return 0;
   }
 
   // Pick the highest-scoring idea
   const topIdea = ideas.reduce((best, idea) =>
-    idea.relevance_score > best.relevance_score ? idea : best
-  )
+    idea.relevance_score > best.relevance_score ? idea : best,
+  );
 
   // Fetch the stored idea (to get its DB id)
-  const storedIdea = await env.WRITER_DB
-    .prepare('SELECT * FROM ideas WHERE publication_id = ? AND title = ? ORDER BY created_at DESC LIMIT 1')
+  const storedIdea = await env.WRITER_DB.prepare(
+    "SELECT * FROM ideas WHERE publication_id = ? AND title = ? ORDER BY created_at DESC LIMIT 1",
+  )
     .bind(publication.id, topIdea.title)
-    .first<Idea>()
+    .first<Idea>();
 
-  if (!storedIdea) return 0
+  if (!storedIdea) return 0;
 
-  await writeAndPublish(env, publication, storedIdea)
-  return 1
+  await writeAndPublish(env, publication, storedIdea);
+  return 1;
 }
 
-async function checkCadence(db: D1Database, publication: Publication): Promise<boolean> {
-  const weekStart = getWeekStartTimestamp()
+async function checkCadence(
+  db: D1Database,
+  publication: Publication,
+): Promise<boolean> {
+  const weekStart = getWeekStartTimestamp();
   const result = await db
     .prepare(
       `SELECT COUNT(*) as count FROM sessions
-       WHERE publication_id = ? AND status = 'completed' AND updated_at >= ?`
+       WHERE publication_id = ? AND status = 'completed' AND updated_at >= ?`,
     )
     .bind(publication.id, weekStart)
-    .first<{ count: number }>()
+    .first<{ count: number }>();
 
-  return (result?.count ?? 0) < publication.cadence_posts_per_week
+  return (result?.count ?? 0) < publication.cadence_posts_per_week;
 }
 ```
 
@@ -817,58 +870,74 @@ async function checkCadence(db: D1Database, publication: Publication): Promise<b
 async function writeAndPublish(
   env: Env,
   publication: Publication,
-  idea: Idea
+  idea: Idea,
 ): Promise<void> {
-  const baseUrl = env.WRITER_AGENT_URL
+  const baseUrl = env.WRITER_AGENT_URL;
   const headers = {
-    'Content-Type': 'application/json',
+    "Content-Type": "application/json",
     Authorization: `Bearer ${env.WRITER_AGENT_API_KEY}`,
-  }
+  };
 
   // 1. Create a writing session with seed context
-  const seedContext = buildSeedContext(idea, publication)
+  const seedContext = buildSeedContext(idea, publication);
   const sessionRes = await fetch(`${baseUrl}/api/sessions`, {
-    method: 'POST',
+    method: "POST",
     headers,
     body: JSON.stringify({
-      userId: 'default',
+      userId: "default",
       title: idea.title,
       publicationId: publication.id,
       ideaId: idea.id,
       seedContext,
     }),
-  })
-  if (!sessionRes.ok) throw new Error(`Failed to create session: ${await sessionRes.text()}`)
-  const session = (await sessionRes.json()) as { id: string }
+  });
+  if (!sessionRes.ok)
+    throw new Error(`Failed to create session: ${await sessionRes.text()}`);
+  const session = (await sessionRes.json()) as { id: string };
 
   // 2. Send a write instruction to the agent
   const chatRes = await fetch(`${baseUrl}/api/sessions/${session.id}/chat`, {
-    method: 'POST',
+    method: "POST",
     headers,
     body: JSON.stringify({ message: buildWriteInstruction(idea, publication) }),
-  })
-  if (!chatRes.ok) throw new Error(`Chat failed for session ${session.id}: ${await chatRes.text()}`)
+  });
+  if (!chatRes.ok)
+    throw new Error(
+      `Chat failed for session ${session.id}: ${await chatRes.text()}`,
+    );
 
   // 3. Wait for draft to be produced (poll)
-  const draft = await pollForDraft(baseUrl, env.WRITER_AGENT_API_KEY, session.id)
-  if (!draft) throw new Error(`No draft produced for session ${session.id} within timeout`)
+  const draft = await pollForDraft(
+    baseUrl,
+    env.WRITER_AGENT_API_KEY,
+    session.id,
+  );
+  if (!draft)
+    throw new Error(
+      `No draft produced for session ${session.id} within timeout`,
+    );
 
   // 4. Publish the draft
-  const publishRes = await fetch(`${baseUrl}/api/sessions/${session.id}/publish`, {
-    method: 'POST',
-    headers,
-    body: JSON.stringify({
-      slug: slugify(idea.title),
-      author: publication.default_author,
-    }),
-  })
-  if (!publishRes.ok) throw new Error(`Publish failed: ${await publishRes.text()}`)
+  const publishRes = await fetch(
+    `${baseUrl}/api/sessions/${session.id}/publish`,
+    {
+      method: "POST",
+      headers,
+      body: JSON.stringify({
+        slug: slugify(idea.title),
+        author: publication.default_author,
+      }),
+    },
+  );
+  if (!publishRes.ok)
+    throw new Error(`Publish failed: ${await publishRes.text()}`);
 
   // 5. Update idea status
-  await env.WRITER_DB
-    .prepare("UPDATE ideas SET status = 'promoted', session_id = ?, updated_at = unixepoch() WHERE id = ?")
+  await env.WRITER_DB.prepare(
+    "UPDATE ideas SET status = 'promoted', session_id = ?, updated_at = unixepoch() WHERE id = ?",
+  )
     .bind(session.id, idea.id)
-    .run()
+    .run();
 }
 ```
 
@@ -876,39 +945,43 @@ async function writeAndPublish(
 
 ```typescript
 function buildSeedContext(idea: Idea, publication: Publication): string {
-  let context = `## Writing Assignment\n\n`
-  context += `**Title:** ${idea.title}\n`
-  context += `**Angle:** ${idea.angle}\n\n`
-  context += `**Brief:**\n${idea.summary}\n\n`
+  let context = `## Writing Assignment\n\n`;
+  context += `**Title:** ${idea.title}\n`;
+  context += `**Angle:** ${idea.angle}\n\n`;
+  context += `**Brief:**\n${idea.summary}\n\n`;
 
   if (publication.writing_tone) {
-    context += `**Writing Tone:** ${publication.writing_tone}\n\n`
+    context += `**Writing Tone:** ${publication.writing_tone}\n\n`;
   }
 
   if (idea.sources) {
-    const sources = JSON.parse(idea.sources) as Array<{ url: string; title: string; snippet: string }>
-    context += `## Source Material\n\n`
+    const sources = JSON.parse(idea.sources) as Array<{
+      url: string;
+      title: string;
+      snippet: string;
+    }>;
+    context += `## Source Material\n\n`;
     for (const source of sources) {
-      context += `### ${source.title}\nURL: ${source.url}\n${source.snippet}\n\n`
+      context += `### ${source.title}\nURL: ${source.url}\n${source.snippet}\n\n`;
     }
   }
 
-  return context
+  return context;
 }
 
 function buildWriteInstruction(idea: Idea, publication: Publication): string {
-  let instruction = `Please write a complete blog post based on the research context provided. `
-  instruction += `The post should be titled "${idea.title}" and take the following angle: ${idea.angle}\n\n`
-  instruction += `Key points to cover:\n${idea.summary}\n\n`
+  let instruction = `Please write a complete blog post based on the research context provided. `;
+  instruction += `The post should be titled "${idea.title}" and take the following angle: ${idea.angle}\n\n`;
+  instruction += `Key points to cover:\n${idea.summary}\n\n`;
 
   if (publication.writing_tone) {
-    instruction += `Writing style: ${publication.writing_tone}\n\n`
+    instruction += `Writing style: ${publication.writing_tone}\n\n`;
   }
 
-  instruction += `Please research the topic using the available tools, then write a thorough, well-sourced blog post. `
-  instruction += `Include citations where appropriate. The post should be ready for publication.`
+  instruction += `Please research the topic using the available tools, then write a thorough, well-sourced blog post. `;
+  instruction += `Include citations where appropriate. The post should be ready for publication.`;
 
-  return instruction
+  return instruction;
 }
 ```
 
@@ -920,27 +993,29 @@ async function pollForDraft(
   apiKey: string,
   sessionId: string,
   maxAttempts = 30,
-  intervalMs = 10_000
+  intervalMs = 10_000,
 ): Promise<{ version: number } | null> {
-  const headers = { Authorization: `Bearer ${apiKey}` }
+  const headers = { Authorization: `Bearer ${apiKey}` };
 
   for (let i = 0; i < maxAttempts; i++) {
-    await new Promise((resolve) => setTimeout(resolve, intervalMs))
+    await new Promise((resolve) => setTimeout(resolve, intervalMs));
 
-    const res = await fetch(`${baseUrl}/api/sessions/${sessionId}/drafts`, { headers })
-    if (!res.ok) continue
+    const res = await fetch(`${baseUrl}/api/sessions/${sessionId}/drafts`, {
+      headers,
+    });
+    if (!res.ok) continue;
 
     const { data: drafts } = (await res.json()) as {
-      data: Array<{ version: number; is_final: number }>
-    }
+      data: Array<{ version: number; is_final: number }>;
+    };
 
-    const finalDraft = drafts.find((d) => d.is_final)
-    if (finalDraft) return finalDraft
+    const finalDraft = drafts.find((d) => d.is_final);
+    if (finalDraft) return finalDraft;
 
-    if (drafts.length > 0) return drafts[drafts.length - 1]
+    if (drafts.length > 0) return drafts[drafts.length - 1];
   }
 
-  return null
+  return null;
 }
 ```
 
@@ -974,14 +1049,14 @@ services/content-scout/
 
 Each workflow step has its own retry config. Failures are isolated — a failed step retries without re-running completed steps.
 
-| Step | Error | Handling | Retries |
-|---|---|---|---|
-| 1. Load Context | D1 read failure | Workflow fails, queue retries the message | 2 |
-| 2. Search | Alexander API timeout/error | `cachedSearch` returns null for failed topics, continues with others | 2 |
-| 3. Dedupe | LLM timeout/bad response | Returns all stories unfiltered (skip dedup) | 2 |
-| 4. Generate Ideas | LLM timeout/bad response | Returns empty array, no ideas stored | 2 |
-| 5. Store Ideas | D1 write failure | Workflow fails, can be retried from this step | 0 |
-| 6. Auto-Write | Writer-agent unreachable | Logged, ideas already stored for manual use | 1 |
+| Step              | Error                       | Handling                                                             | Retries |
+| ----------------- | --------------------------- | -------------------------------------------------------------------- | ------- |
+| 1. Load Context   | D1 read failure             | Workflow fails, queue retries the message                            | 2       |
+| 2. Search         | Alexander API timeout/error | `cachedSearch` returns null for failed topics, continues with others | 2       |
+| 3. Dedupe         | LLM timeout/bad response    | Returns all stories unfiltered (skip dedup)                          | 2       |
+| 4. Generate Ideas | LLM timeout/bad response    | Returns empty array, no ideas stored                                 | 2       |
+| 5. Store Ideas    | D1 write failure            | Workflow fails, can be retried from this step                        | 0       |
+| 6. Auto-Write     | Writer-agent unreachable    | Logged, ideas already stored for manual use                          | 1       |
 
 **Queue-level retries:** If the entire workflow fails (e.g., the worker crashes), the queue retries the message up to 3 times. After 3 failures, the message goes to the dead-letter queue.
 
@@ -989,13 +1064,13 @@ Each workflow step has its own retry config. Failures are isolated — a failed 
 
 ## Alexander API Usage Summary
 
-| Endpoint | Purpose in Scout | When Called |
-|---|---|---|
-| `POST /search/news` | Find breaking news per topic (last 24h) | Step 2, per topic (KV-cached) |
-| `POST /search` | Find analysis/articles per topic (last week) | Step 2, per topic (KV-cached) |
-| `POST /research` | NOT used by scout (too slow). Used by writer-agent when auto-writing | Indirectly via writer-agent |
-| `POST /questions` | NOT used by scout. Available to writer-agent during writing | Indirectly via writer-agent |
-| `POST /crawl` | NOT used by scout. Writer-agent uses for source verification | Indirectly via writer-agent |
+| Endpoint            | Purpose in Scout                                                     | When Called                   |
+| ------------------- | -------------------------------------------------------------------- | ----------------------------- |
+| `POST /search/news` | Find breaking news per topic (last 24h)                              | Step 2, per topic (KV-cached) |
+| `POST /search`      | Find analysis/articles per topic (last week)                         | Step 2, per topic (KV-cached) |
+| `POST /research`    | NOT used by scout (too slow). Used by writer-agent when auto-writing | Indirectly via writer-agent   |
+| `POST /questions`   | NOT used by scout. Available to writer-agent during writing          | Indirectly via writer-agent   |
+| `POST /crawl`       | NOT used by scout. Writer-agent uses for source verification         | Indirectly via writer-agent   |
 
 **Why only `searchNews` + `search`:** The scout needs fast, broad discovery. The `/research` endpoint takes 1-2 minutes per query (deep multi-source synthesis) — overkill for idea generation. The writer-agent uses `/research` during actual writing when depth matters.
 
@@ -1003,7 +1078,7 @@ Each workflow step has its own retry config. Failures are isolated — a failed 
 
 ## Open Considerations
 
-1. **Token usage:** Each scout run per publication makes 2 LLM calls (dedup + ideas). Estimate ~$0.06-0.12 per publication per day with claude-sonnet-4-5. Can optimize the dedup step to use Haiku later.
+1. **Token usage:** Each scout run per publication makes 2 LLM calls (dedup + ideas). Estimate ~$0.06-0.12 per publication per day with claude-sonnet-4-6. Can optimize the dedup step to use Haiku later.
 
 2. **Auto-write token usage:** Each auto-written post costs ~$0.50-1.00 (full writer-agent conversation with research).
 

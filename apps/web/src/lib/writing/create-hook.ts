@@ -1,6 +1,6 @@
-import { anthropic } from '@ai-sdk/anthropic'
-import { generateText } from 'ai'
-import type { DraftInput } from './index'
+import { anthropic } from "@ai-sdk/anthropic";
+import { generateText } from "ai";
+import type { DraftInput } from "./index";
 
 const HOOK_PROMPT = `You are a senior editor and conversion copywriter.
 
@@ -47,7 +47,7 @@ Given the blog post below, do the following:
 - If you make a claim, the post must support it.
 - Prefer active voice. Prefer short sentences.
 - Make the first line readable as a standalone (scroll-stopper).
-- Must NOT repeat or paraphrase the title.`
+- Must NOT repeat or paraphrase the title.`;
 
 /**
  * Generate a compelling hook for a blog post using Claude Sonnet 4.5.
@@ -55,25 +55,26 @@ Given the blog post below, do the following:
  * Returns empty string on failure (non-blocking).
  */
 export async function createHook(draft: DraftInput): Promise<string> {
-  const contentPreview = draft.content.length > 4000
-    ? draft.content.slice(0, 4000) + '\n\n[truncated]'
-    : draft.content
+  const contentPreview =
+    draft.content.length > 4000
+      ? draft.content.slice(0, 4000) + "\n\n[truncated]"
+      : draft.content;
 
   try {
     const result = await generateText({
-      model: anthropic('claude-sonnet-4-5-20250929'),
+      model: anthropic("claude-sonnet-4-6-20250929"),
       system: HOOK_PROMPT,
       messages: [
         {
-          role: 'user',
-          content: `Title: ${draft.title || 'Untitled'}\n\nContent:\n${contentPreview}`,
+          role: "user",
+          content: `Title: ${draft.title || "Untitled"}\n\nContent:\n${contentPreview}`,
         },
       ],
-    })
+    });
 
-    return result.text.trim()
+    return result.text.trim();
   } catch (err) {
-    console.error('createHook error:', err)
-    return ''
+    console.error("createHook error:", err);
+    return "";
   }
 }

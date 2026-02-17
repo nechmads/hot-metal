@@ -1,32 +1,32 @@
-import { generateText } from 'ai'
-import { createAnthropic } from '@ai-sdk/anthropic'
-import type { Publication, Topic } from '@hotmetal/data-layer'
-import type { FilteredStory, IdeaBrief } from '../types'
+import { generateText } from 'ai';
+import { createAnthropic } from '@ai-sdk/anthropic';
+import type { Publication, Topic } from '@hotmetal/data-layer';
+import type { FilteredStory, IdeaBrief } from '../types';
 
 export async function generateIdeas(
-  apiKey: string,
-  publication: Publication,
-  filteredStories: FilteredStory[],
-  topics: Topic[],
+	apiKey: string,
+	publication: Publication,
+	filteredStories: FilteredStory[],
+	topics: Topic[],
 ): Promise<IdeaBrief[]> {
-  const anthropic = createAnthropic({ apiKey })
+	const anthropic = createAnthropic({ apiKey });
 
-  const result = await generateText({
-    model: anthropic('claude-sonnet-4-5-20250929'),
-    system: buildIdeaSystemPrompt(publication),
-    messages: [
-      {
-        role: 'user',
-        content: buildIdeaUserPrompt(filteredStories, topics),
-      },
-    ],
-  })
+	const result = await generateText({
+		model: anthropic('claude-sonnet-4-6-20250929'),
+		system: buildIdeaSystemPrompt(publication),
+		messages: [
+			{
+				role: 'user',
+				content: buildIdeaUserPrompt(filteredStories, topics),
+			},
+		],
+	});
 
-  return parseIdeaBriefs(result.text)
+	return parseIdeaBriefs(result.text);
 }
 
 function buildIdeaSystemPrompt(publication: Publication): string {
-  return `You are a content scout for a publication called "${publication.name}".
+	return `You are a content scout for a publication called "${publication.name}".
 
 Publication description: ${publication.description || 'No description provided.'}
 
@@ -61,62 +61,64 @@ IMPORTANT: Respond with valid JSON only. Use this exact format:
       ]
     }
   ]
-}`
+}`;
 }
 
 function buildIdeaUserPrompt(filteredStories: FilteredStory[], topics: Topic[]): string {
-  let prompt = '## Topics of Interest\n\n'
+	let prompt = '## Topics of Interest\n\n';
 
-  for (const topic of topics) {
-    prompt += `- **${topic.name}**`
-    if (topic.description) prompt += ` — ${topic.description}`
-    prompt += ` (Priority: ${topic.priority === 3 ? 'URGENT' : topic.priority === 2 ? 'High' : 'Normal'})\n`
-  }
+	for (const topic of topics) {
+		prompt += `- **${topic.name}**`;
+		if (topic.description) prompt += ` — ${topic.description}`;
+		prompt += ` (Priority: ${topic.priority === 3 ? 'URGENT' : topic.priority === 2 ? 'High' : 'Normal'})\n`;
+	}
 
-  prompt += '\n## Relevant Stories\n\n'
+	prompt += '\n## Relevant Stories\n\n';
 
-  for (const story of filteredStories) {
-    prompt += `### ${story.title}\n`
-    prompt += `Topic: ${story.topicName}\n`
-    if (story.url) prompt += `URL: ${story.url}\n`
-    if (story.date) prompt += `Date: ${story.date}\n`
-    prompt += `${story.snippet}\n\n`
-  }
+	for (const story of filteredStories) {
+		prompt += `### ${story.title}\n`;
+		prompt += `Topic: ${story.topicName}\n`;
+		if (story.url) prompt += `URL: ${story.url}\n`;
+		if (story.date) prompt += `Date: ${story.date}\n`;
+		prompt += `${story.snippet}\n\n`;
+	}
 
-  prompt += '---\n\nBased on these stories, generate blog post ideas for this publication.'
+	prompt += '---\n\nBased on these stories, generate blog post ideas for this publication.';
 
-  return prompt
+	return prompt;
 }
 
 function parseIdeaBriefs(text: string): IdeaBrief[] {
-  // Strip markdown code fences if present
-  const cleaned = text.replace(/```json?\n?/g, '').replace(/```/g, '')
-  const jsonMatch = cleaned.match(/\{[\s\S]*\}/)
-  if (!jsonMatch) return []
+	// Strip markdown code fences if present
+	const cleaned = text.replace(/```json?\n?/g, '').replace(/```/g, '');
+	const jsonMatch = cleaned.match(/\{[\s\S]*\}/);
+	if (!jsonMatch) return [];
 
-  try {
-    const parsed = JSON.parse(jsonMatch[0]) as { ideas?: unknown[] }
-    const raw = parsed.ideas ?? []
+	try {
+		const parsed = JSON.parse(jsonMatch[0]) as { ideas?: unknown[] };
+		const raw = parsed.ideas ?? [];
 
-    // Validate and sanitize each idea
-    return raw
-      .filter((item): item is Record<string, unknown> =>
-        typeof item === 'object' && item !== null &&
-        typeof (item as Record<string, unknown>).title === 'string' &&
-        typeof (item as Record<string, unknown>).angle === 'string' &&
-        typeof (item as Record<string, unknown>).summary === 'string' &&
-        (item as Record<string, unknown>).title !== ''
-      )
-      .map((item) => ({
-        title: item.title as string,
-        angle: item.angle as string,
-        summary: item.summary as string,
-        topic: typeof item.topic === 'string' ? item.topic : '',
-        relevance_score: Math.max(0, Math.min(1, Number(item.relevance_score) || 0)),
-        sources: Array.isArray(item.sources) ? item.sources : [],
-      }))
-  } catch {
-    console.error('Failed to parse idea briefs JSON')
-    return []
-  }
+		// Validate and sanitize each idea
+		return raw
+			.filter(
+				(item): item is Record<string, unknown> =>
+					typeof item === 'object' &&
+					item !== null &&
+					typeof (item as Record<string, unknown>).title === 'string' &&
+					typeof (item as Record<string, unknown>).angle === 'string' &&
+					typeof (item as Record<string, unknown>).summary === 'string' &&
+					(item as Record<string, unknown>).title !== '',
+			)
+			.map((item) => ({
+				title: item.title as string,
+				angle: item.angle as string,
+				summary: item.summary as string,
+				topic: typeof item.topic === 'string' ? item.topic : '',
+				relevance_score: Math.max(0, Math.min(1, Number(item.relevance_score) || 0)),
+				sources: Array.isArray(item.sources) ? item.sources : [],
+			}));
+	} catch {
+		console.error('Failed to parse idea briefs JSON');
+		return [];
+	}
 }

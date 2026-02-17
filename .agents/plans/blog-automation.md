@@ -65,6 +65,7 @@ Left sidebar navigation with three centers:
 **Decision:** The scout uses a CF Queue for fan-out (1 message per publication) and CF Workflows for durable multi-step execution per publication. A KV namespace caches Alexander API search results across publications.
 
 **Why:**
+
 - **Queue:** A single cron invocation can't reliably process 100 publications — one failure could block others. The queue isolates each publication, provides automatic retry, and has a dead-letter queue for persistent failures.
 - **Workflow:** The scout pipeline has expensive steps (Alexander API calls, LLM calls). If step 4 fails after step 2 succeeds, the workflow resumes from step 4 without re-running searches. Each step's output is persisted.
 - **KV cache:** Publications with overlapping topics (e.g., "AI") would make redundant Alexander API calls. The KV cache (24h TTL) ensures each unique search query hits the API only once per day.
@@ -365,7 +366,7 @@ When creating a publication:
 
 **Key technology decisions:**
 
-- **LLM model:** `claude-sonnet-4-5` — prioritize quality over cost; we can optimize later
+- **LLM model:** `claude-sonnet-4-6` — prioritize quality over cost; we can optimize later
 - **AI SDK:** Vercel AI SDK V6 (`ai` package) — same version used in writer-agent
 - **Research:** Alexander API (`@hotmetal/shared` AlexanderApi client) — `searchNews`, `search` endpoints for discovery
 - **Publication context:** The scout uses the publication's `description` to understand what to look for, and `writing_tone` when auto-writing content
@@ -375,12 +376,12 @@ When creating a publication:
 
 **CF resources needed:**
 
-| Resource | Name | Purpose |
-|---|---|---|
-| Queue | `hotmetal-scout-queue` | Fan-out: 1 message per publication |
-| Queue (DLQ) | `hotmetal-scout-dlq` | Dead-letter queue for persistent failures |
-| KV Namespace | `hotmetal-scout-cache` | Cache search results across publications |
-| Workflow | `scout-workflow` | Durable 6-step pipeline per publication |
+| Resource     | Name                   | Purpose                                   |
+| ------------ | ---------------------- | ----------------------------------------- |
+| Queue        | `hotmetal-scout-queue` | Fan-out: 1 message per publication        |
+| Queue (DLQ)  | `hotmetal-scout-dlq`   | Dead-letter queue for persistent failures |
+| KV Namespace | `hotmetal-scout-cache` | Cache search results across publications  |
+| Workflow     | `scout-workflow`       | Durable 6-step pipeline per publication   |
 
 #### Task 13: Scaffold the content-scout worker
 
@@ -547,40 +548,40 @@ When a session has `seed_context`:
 
 ### New Files
 
-| File                                                    | Description                                                           |
-| ------------------------------------------------------- | --------------------------------------------------------------------- |
-| `services/writer-agent/migrations/0002_automation.sql`  | New tables: users, publications, topics, ideas + sessions alterations |
-| `services/writer-agent/src/lib/publication-manager.ts`  | Publication CRUD                                                      |
-| `services/writer-agent/src/lib/topic-manager.ts`        | Topic CRUD                                                            |
-| `services/writer-agent/src/lib/idea-manager.ts`         | Idea CRUD + promote                                                   |
-| `services/writer-agent/src/lib/user-manager.ts`         | User CRUD                                                             |
-| `services/writer-agent/src/routes/publications.ts`      | Publication API routes                                                |
-| `services/writer-agent/src/routes/topics.ts`            | Topic API routes                                                      |
-| `services/writer-agent/src/routes/ideas.ts`             | Idea API routes                                                       |
-| `services/content-scout/`                               | **New worker** (scaffold via `npx wrangler init`)                     |
-| `services/content-scout/src/workflow.ts`                | ScoutWorkflow — durable 6-step pipeline                               |
-| `services/content-scout/src/steps/search.ts`            | Alexander API search with KV cache                                    |
-| `services/content-scout/src/steps/dedupe.ts`            | LLM-based story dedup against recent ideas                            |
-| `services/content-scout/src/steps/generate-ideas.ts`    | LLM idea generation from filtered stories                             |
-| `services/content-scout/src/steps/auto-write.ts`        | Auto-write/publish pipeline via writer-agent                          |
-| `apps/web/src/components/layout/Sidebar.tsx`     | Left navigation sidebar                                               |
-| `apps/web/src/components/layout/AppLayout.tsx`   | Layout wrapper with sidebar                                           |
-| `apps/web/src/pages/IdeasPage.tsx`               | Ideas feed page                                                       |
-| `apps/web/src/pages/IdeaDetailPage.tsx`          | Idea detail/promote page                                              |
-| `apps/web/src/pages/SchedulePage.tsx`            | Schedule & publication list                                           |
-| `apps/web/src/pages/PublicationSettingsPage.tsx` | Publication config + topics                                           |
+| File                                                   | Description                                                           |
+| ------------------------------------------------------ | --------------------------------------------------------------------- |
+| `services/writer-agent/migrations/0002_automation.sql` | New tables: users, publications, topics, ideas + sessions alterations |
+| `services/writer-agent/src/lib/publication-manager.ts` | Publication CRUD                                                      |
+| `services/writer-agent/src/lib/topic-manager.ts`       | Topic CRUD                                                            |
+| `services/writer-agent/src/lib/idea-manager.ts`        | Idea CRUD + promote                                                   |
+| `services/writer-agent/src/lib/user-manager.ts`        | User CRUD                                                             |
+| `services/writer-agent/src/routes/publications.ts`     | Publication API routes                                                |
+| `services/writer-agent/src/routes/topics.ts`           | Topic API routes                                                      |
+| `services/writer-agent/src/routes/ideas.ts`            | Idea API routes                                                       |
+| `services/content-scout/`                              | **New worker** (scaffold via `npx wrangler init`)                     |
+| `services/content-scout/src/workflow.ts`               | ScoutWorkflow — durable 6-step pipeline                               |
+| `services/content-scout/src/steps/search.ts`           | Alexander API search with KV cache                                    |
+| `services/content-scout/src/steps/dedupe.ts`           | LLM-based story dedup against recent ideas                            |
+| `services/content-scout/src/steps/generate-ideas.ts`   | LLM idea generation from filtered stories                             |
+| `services/content-scout/src/steps/auto-write.ts`       | Auto-write/publish pipeline via writer-agent                          |
+| `apps/web/src/components/layout/Sidebar.tsx`           | Left navigation sidebar                                               |
+| `apps/web/src/components/layout/AppLayout.tsx`         | Layout wrapper with sidebar                                           |
+| `apps/web/src/pages/IdeasPage.tsx`                     | Ideas feed page                                                       |
+| `apps/web/src/pages/IdeaDetailPage.tsx`                | Idea detail/promote page                                              |
+| `apps/web/src/pages/SchedulePage.tsx`                  | Schedule & publication list                                           |
+| `apps/web/src/pages/PublicationSettingsPage.tsx`       | Publication config + topics                                           |
 
 ### Modified Files
 
 | File                                                                   | Changes                                                     |
 | ---------------------------------------------------------------------- | ----------------------------------------------------------- |
 | `packages/content-core/src/types/`                                     | Add User, PublicationConfig, Topic, Idea types              |
-| `apps/web/src/app.tsx`                                          | New routing structure with sidebar layout                   |
-| `apps/web/src/lib/api.ts`                                       | New API functions for publications, topics, ideas           |
-| `apps/web/src/lib/types.ts`                                     | New frontend types                                          |
-| `apps/web/src/pages/SessionsPage.tsx`                           | Adapt to work within sidebar layout, add publication filter |
-| `apps/web/src/pages/WorkspacePage.tsx`                          | Minor: adapt header for sidebar layout                      |
-| `apps/web/src/components/layout/Header.tsx`                     | Simplify — sidebar handles main nav                         |
+| `apps/web/src/app.tsx`                                                 | New routing structure with sidebar layout                   |
+| `apps/web/src/lib/api.ts`                                              | New API functions for publications, topics, ideas           |
+| `apps/web/src/lib/types.ts`                                            | New frontend types                                          |
+| `apps/web/src/pages/SessionsPage.tsx`                                  | Adapt to work within sidebar layout, add publication filter |
+| `apps/web/src/pages/WorkspacePage.tsx`                                 | Minor: adapt header for sidebar layout                      |
+| `apps/web/src/components/layout/Header.tsx`                            | Simplify — sidebar handles main nav                         |
 | `services/writer-agent/src/index.ts`                                   | Register new routes                                         |
 | `services/writer-agent/src/routes/index.ts`                            | Export new routes                                           |
 | `services/writer-agent/src/routes/sessions.ts`                         | Add publication_id to session creation                      |

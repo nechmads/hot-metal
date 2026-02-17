@@ -1,6 +1,6 @@
-import { anthropic } from '@ai-sdk/anthropic'
-import { generateText } from 'ai'
-import type { DraftInput } from './index'
+import { anthropic } from "@ai-sdk/anthropic";
+import { generateText } from "ai";
+import type { DraftInput } from "./index";
 
 const TITLE_PROMPT = `You are an expert headline copywriter and editor.
 
@@ -44,7 +44,7 @@ CONSTRAINTS
 - Do not invent claims not in the post.
 - Avoid hypey words unless the post tone supports them.
 - No more than 1 colon in a title.
-- Avoid ALL CAPS and excessive punctuation.`
+- Avoid ALL CAPS and excessive punctuation.`;
 
 /**
  * Generate an optimized blog post title using Claude Sonnet 4.5.
@@ -52,26 +52,27 @@ CONSTRAINTS
  * Returns empty string on failure (non-blocking).
  */
 export async function createPostTitle(draft: DraftInput): Promise<string> {
-  const contentPreview = draft.content.length > 4000
-    ? draft.content.slice(0, 4000) + '\n\n[truncated]'
-    : draft.content
+  const contentPreview =
+    draft.content.length > 4000
+      ? draft.content.slice(0, 4000) + "\n\n[truncated]"
+      : draft.content;
 
   try {
     const result = await generateText({
-      model: anthropic('claude-sonnet-4-5-20250929'),
+      model: anthropic("claude-sonnet-4-6-20250929"),
       system: TITLE_PROMPT,
       messages: [
         {
-          role: 'user',
+          role: "user",
           // "Current title" (not just "Title") so the model knows what exists and can improve on it
-          content: `Current title: ${draft.title || 'Untitled'}\n\nContent:\n${contentPreview}`,
+          content: `Current title: ${draft.title || "Untitled"}\n\nContent:\n${contentPreview}`,
         },
       ],
-    })
+    });
 
-    return result.text.trim()
+    return result.text.trim();
   } catch (err) {
-    console.error('createPostTitle error:', err)
-    return ''
+    console.error("createPostTitle error:", err);
+    return "";
   }
 }
