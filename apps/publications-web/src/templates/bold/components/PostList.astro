@@ -5,9 +5,10 @@ import { getPreviewText, getFirstTopic } from '../../../lib/post-utils';
 
 interface Props {
   posts: Post[];
+  heading?: string;
 }
 
-const { posts } = Astro.props;
+const { posts, heading = 'Latest' } = Astro.props;
 
 const items = posts.map((post, i) => ({
   post,
@@ -20,7 +21,7 @@ const items = posts.map((post, i) => ({
 
 <section class="max-w-[var(--max-width-wide)] mx-auto px-6">
   <div class="flex justify-between items-center py-5 border-b border-border">
-    <h2 class="font-display text-sm font-semibold uppercase tracking-[0.06em]">Latest</h2>
+    <h2 class="font-display text-sm font-semibold uppercase tracking-[0.06em]">{heading}</h2>
     <span class="font-mono text-xs text-text-muted">
       {posts.length} {posts.length === 1 ? 'post' : 'posts'}
     </span>

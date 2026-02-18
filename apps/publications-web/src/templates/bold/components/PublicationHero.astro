@@ -6,13 +6,14 @@ import { backgroundImageStyle } from '../../../lib/post-utils';
 
 interface Props {
   name: string;
+  description?: string | null;
   tagline?: string | null;
   headerImageUrl?: string | null;
   socialLinks?: SocialLinks | null;
   featuredPost?: Post | null;
 }
 
-const { name, tagline, headerImageUrl, featuredPost } = Astro.props;
+const { name, description, tagline, headerImageUrl, featuredPost } = Astro.props;
 
 const date = featuredPost?.publishedAt ? formatDate(featuredPost.publishedAt) : null;
 ---
@@ -55,6 +56,11 @@ const date = featuredPost?.publishedAt ? formatDate(featuredPost.publishedAt) : 
           {tagline && (
             <p class="text-lg text-text-muted leading-relaxed">
               {tagline}
+            </p>
+          )}
+          {description && (
+            <p class="text-sm text-text-muted leading-relaxed mt-3 max-w-md">
+              {description}
             </p>
           )}
         </>

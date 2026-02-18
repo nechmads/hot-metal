@@ -3,12 +3,13 @@ import type { SocialLinks } from '@hotmetal/data-layer';
 
 interface Props {
   name: string;
+  description?: string | null;
   tagline?: string | null;
   headerImageUrl?: string | null;
   socialLinks?: SocialLinks | null;
 }
 
-const { tagline, socialLinks } = Astro.props;
+const { description, tagline, socialLinks } = Astro.props;
 ---
 
 <section class="py-4 px-6">
@@ -16,6 +17,12 @@ const { tagline, socialLinks } = Astro.props;
     {tagline && (
       <p class="font-sans text-sm uppercase tracking-[0.08em] text-text-muted">
         {tagline}
+      </p>
+    )}
+
+    {description && (
+      <p class="font-serif text-base text-text-muted leading-relaxed max-w-xl mx-auto mt-3">
+        {description}
       </p>
     )}
 

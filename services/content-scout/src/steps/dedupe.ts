@@ -45,7 +45,7 @@ export async function dedupeStories(
 
 	try {
 		const result = await generateText({
-			model: anthropic('claude-sonnet-4-6-20250929'),
+			model: anthropic('claude-sonnet-4-6'),
 			system: DEDUPE_SYSTEM_PROMPT,
 			messages: [
 				{

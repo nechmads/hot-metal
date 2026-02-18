@@ -12,7 +12,7 @@ export async function generateIdeas(
 	const anthropic = createAnthropic({ apiKey });
 
 	const result = await generateText({
-		model: anthropic('claude-sonnet-4-6-20250929'),
+		model: anthropic('claude-sonnet-4-6'),
 		system: buildIdeaSystemPrompt(publication),
 		messages: [
 			{

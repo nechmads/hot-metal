@@ -59,7 +59,7 @@ export async function createPostTitle(draft: DraftInput): Promise<string> {
 
   try {
     const result = await generateText({
-      model: anthropic("claude-sonnet-4-6-20250929"),
+      model: anthropic("claude-sonnet-4-6"),
       system: TITLE_PROMPT,
       messages: [
         {

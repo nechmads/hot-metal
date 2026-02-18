@@ -5,16 +5,23 @@ import { getFirstTopic, backgroundImageStyle } from '../../../lib/post-utils';
 
 interface Props {
   posts: Post[];
+  heading?: string;
+  showViewAll?: boolean;
 }
 
-const { posts } = Astro.props;
+const { posts, heading = 'More Stories', showViewAll = true } = Astro.props;
 ---
 
 {posts.length > 0 && (
   <section class="px-6 pb-16">
     <div class="max-w-[var(--max-width-wide)] mx-auto">
       <div class="flex justify-between items-baseline mb-8 border-b-2 border-text pb-2">
-        <h2 class="font-display text-2xl font-bold">More Stories</h2>
+        <h2 class="font-display text-2xl font-bold">{heading}</h2>
+        {showViewAll && (
+          <a href="/posts" class="font-sans text-xs text-accent hover:underline transition-colors uppercase tracking-[0.08em]">
+            View All &rarr;
+          </a>
+        )}
       </div>
 
       <div class="grid grid-cols-1 md:grid-cols-2">

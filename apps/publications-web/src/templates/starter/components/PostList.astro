@@ -4,14 +4,23 @@ import PostCard from './PostCard.astro';
 
 interface Props {
   posts: Post[];
+  heading?: string;
+  showViewAll?: boolean;
 }
 
-const { posts } = Astro.props;
+const { posts, heading = 'Recent Posts', showViewAll = true } = Astro.props;
 ---
 
 <section class="px-6 py-16">
   <div class="mx-auto max-w-[var(--max-width-wide)]">
-    <h2 class="text-2xl font-bold mb-10">Recent Posts</h2>
+    <div class="flex justify-between items-baseline mb-10">
+      <h2 class="text-2xl font-bold">{heading}</h2>
+      {showViewAll && (
+        <a href="/posts" class="text-sm text-accent hover:underline transition-colors">
+          View All &rarr;
+        </a>
+      )}
+    </div>
 
     {posts.length > 0 ? (
       <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">

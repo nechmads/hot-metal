@@ -17,6 +17,7 @@ function sanitizeSocialLinks(links: SocialLinks | null): SocialLinks | null {
 export interface PublicationBranding {
   name: string
   slug: string
+  description: string | null
   tagline: string | null
   logoUrl: string | null
   headerImageUrl: string | null
@@ -37,6 +38,7 @@ export function getPublicationBranding(publication: Publication): PublicationBra
   return {
     name: publication.name,
     slug: publication.slug,
+    description: publication.description,
     tagline: publication.tagline,
     logoUrl: publication.logoUrl,
     headerImageUrl: publication.headerImageUrl,

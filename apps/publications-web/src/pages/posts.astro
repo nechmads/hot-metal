@@ -1,0 +1,28 @@
+---
+import { env } from 'cloudflare:workers';
+import { resolvePublication } from '../lib/resolve-publication';
+import { getPublicationBranding } from '../dl/publication';
+import { listPublishedPosts } from '../dl/posts';
+import PostsPage from '../components/PostsPage.astro';
+
+const publication = await resolvePublication(Astro.request, env.DAL, env.DEV_PUBLICATION_SLUG);
+
+if (!publication) {
+  return new Response(null, { status: 404, statusText: 'Publication Not Found' });
+}
+
+const branding = getPublicationBranding(publication);
+const posts = publication.cmsPublicationId
+  ? await listPublishedPosts(env, publication.cmsPublicationId)
+  : [];
+const baseUrl = `https://${publication.slug}.hotmetalapp.com`;
+
+Astro.response.headers.set('Cache-Control', 'public, s-maxage=3600, stale-while-revalidate=86400');
+---
+
+<PostsPage
+  templateId={branding.templateId}
+  {branding}
+  {posts}
+  {baseUrl}
+/>

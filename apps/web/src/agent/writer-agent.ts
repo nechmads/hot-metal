@@ -179,7 +179,7 @@ export class WriterAgent extends AIChatAgent<Env, WriterAgentState> {
     const stream = createUIMessageStream({
       execute: async ({ writer }) => {
         const result = streamText({
-          model: anthropic("claude-sonnet-4-6-20250929"),
+          model: anthropic("claude-sonnet-4-6"),
           system: systemPrompt,
           messages: await convertToModelMessages(cleaned),
           tools,
@@ -288,7 +288,7 @@ export class WriterAgent extends AIChatAgent<Env, WriterAgentState> {
     try {
       const modelMessages = await convertToModelMessages(currentMessages);
       const result = await generateText({
-        model: anthropic("claude-sonnet-4-6-20250929"),
+        model: anthropic("claude-sonnet-4-6"),
         system: systemPrompt,
         messages: modelMessages,
         tools,
