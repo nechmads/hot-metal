@@ -12,3 +12,12 @@ export function createToolSet(agent: WriterAgent) {
     ...createWritingTools(agent),
   }
 }
+
+/** Tool set for autonomous auto-write mode. Excludes publish_to_cms since publishing is handled by the pipeline. */
+export function createAutoWriteToolSet(agent: WriterAgent) {
+  return {
+    ...createDraftTools(agent),
+    ...createResearchTools(agent),
+    ...createWritingTools(agent),
+  }
+}

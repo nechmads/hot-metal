@@ -17,8 +17,11 @@ import {
   INITIAL_STATE,
 } from "./state";
 import { initAgentSqlite } from "./sqlite-schema";
-import { buildSystemPrompt } from "../prompts/system-prompt";
-import { createToolSet } from "../tools";
+import {
+  buildSystemPrompt,
+  buildAutonomousSystemPrompt,
+} from "../prompts/system-prompt";
+import { createToolSet, createAutoWriteToolSet } from "../tools";
 import { cleanupMessages } from "./message-utils";
 import { CmsApi } from "@hotmetal/shared";
 import type { Citation } from "@hotmetal/content-core";
@@ -127,6 +130,25 @@ export class WriterAgent extends AIChatAgent<Env, WriterAgentState> {
     return super.onMessage(connection, message);
   }
 
+  /** Resolve custom writing style: session > publication > default. */
+  private async resolveCustomStyle(): Promise<string | undefined> {
+    const styleId = this.state.styleId;
+    if (styleId) {
+      const style = await this.env.DAL.getWritingStyleById(styleId);
+      if (style) return style.systemPrompt;
+    }
+    if (this.state.publicationId) {
+      const pub = await this.env.DAL.getPublicationById(
+        this.state.publicationId,
+      );
+      if (pub?.styleId) {
+        const style = await this.env.DAL.getWritingStyleById(pub.styleId);
+        if (style) return style.systemPrompt;
+      }
+    }
+    return undefined;
+  }
+
   private async prepareLlmCall() {
     const newPhase =
       this.state.writingPhase === "idle"
@@ -139,22 +161,7 @@ export class WriterAgent extends AIChatAgent<Env, WriterAgentState> {
       writingPhase: newPhase,
     });
 
-    // Resolve custom style: session > publication > default
-    let customStylePrompt: string | undefined;
-    const styleId = this.state.styleId;
-    if (styleId) {
-      const style = await this.env.DAL.getWritingStyleById(styleId);
-      if (style) customStylePrompt = style.systemPrompt;
-    }
-    if (!customStylePrompt && this.state.publicationId) {
-      const pub = await this.env.DAL.getPublicationById(
-        this.state.publicationId,
-      );
-      if (pub?.styleId) {
-        const style = await this.env.DAL.getWritingStyleById(pub.styleId);
-        if (style) customStylePrompt = style.systemPrompt;
-      }
-    }
+    const customStylePrompt = await this.resolveCustomStyle();
 
     const systemPrompt = buildSystemPrompt({
       phase: newPhase,
@@ -254,6 +261,25 @@ export class WriterAgent extends AIChatAgent<Env, WriterAgentState> {
       return this.handleUpdateFeaturedImage(request);
     }
 
+    if (url.pathname.endsWith("/auto-write") && request.method === "POST") {
+      let body: { message?: string };
+      try {
+        body = (await request.json()) as { message?: string };
+      } catch {
+        return Response.json(
+          { error: "Invalid JSON in request body" },
+          { status: 400 },
+        );
+      }
+      if (!body.message?.trim()) {
+        return Response.json(
+          { error: "message is required" },
+          { status: 400 },
+        );
+      }
+      return this.handleAutoWrite(body.message.trim());
+    }
+
     if (url.pathname.endsWith("/chat") && request.method === "POST") {
       let body: { message?: string };
       try {
@@ -311,6 +337,113 @@ export class WriterAgent extends AIChatAgent<Env, WriterAgentState> {
       });
       return Response.json(
         { error: "Failed to generate response" },
+        { status: 500 },
+      );
+    }
+  }
+
+  /**
+   * Autonomous auto-write: writes a complete post without human interaction.
+   * Used by the content-scout auto-write pipeline. Skips interviewing phase,
+   * uses an autonomous system prompt, and returns the draft in the response.
+   */
+  async handleAutoWrite(instruction: string): Promise<Response> {
+    if (this.state.isGenerating) {
+      return Response.json(
+        { error: "An auto-write operation is already in progress." },
+        { status: 429 },
+      );
+    }
+
+    const customStylePrompt = await this.resolveCustomStyle();
+
+    const systemPrompt = buildAutonomousSystemPrompt({
+      seedContext: this.state.seedContext,
+      customStylePrompt,
+    });
+
+    const tools = createAutoWriteToolSet(this);
+
+    // Set phase directly to drafting — skip idle/interviewing
+    this.setState({
+      ...this.state,
+      isGenerating: true,
+      lastError: null,
+      writingPhase: "drafting",
+    });
+
+    // 9-minute safety timeout so the DO doesn't run indefinitely
+    // if the calling workflow step times out (10 min)
+    const abortController = new AbortController();
+    const timeoutId = setTimeout(
+      () => abortController.abort(),
+      9 * 60 * 1000,
+    );
+
+    try {
+      const result = await generateText({
+        model: anthropic("claude-sonnet-4-6"),
+        system: systemPrompt,
+        messages: [{ role: "user", content: instruction }],
+        tools,
+        stopWhen: stepCountIs(30),
+        abortSignal: abortController.signal,
+      });
+
+      clearTimeout(timeoutId);
+      this.setState({ ...this.state, isGenerating: false });
+
+      // Check if a draft was actually saved
+      const draft = this.getCurrentDraft();
+      if (!draft) {
+        return Response.json(
+          {
+            success: false,
+            error: "Agent completed but did not save a draft",
+            finishReason: result.finishReason,
+          },
+          { status: 500 },
+        );
+      }
+
+      return Response.json({
+        success: true,
+        draft: {
+          version: draft.version,
+          title: draft.title,
+          content: draft.content,
+          wordCount: draft.word_count,
+        },
+        finishReason: result.finishReason,
+        usage: result.usage,
+      });
+    } catch (error) {
+      clearTimeout(timeoutId);
+      console.error("Auto-write error:", error);
+      this.setState({
+        ...this.state,
+        isGenerating: false,
+        lastError: error instanceof Error ? error.message : "Unknown error",
+      });
+
+      // Still check if a draft was saved before the error
+      const draft = this.getCurrentDraft();
+      if (draft) {
+        return Response.json({
+          success: true,
+          draft: {
+            version: draft.version,
+            title: draft.title,
+            content: draft.content,
+            wordCount: draft.word_count,
+          },
+          partial: true,
+          error: error instanceof Error ? error.message : "Unknown error",
+        });
+      }
+
+      return Response.json(
+        { success: false, error: "Auto-write failed" },
         { status: 500 },
       );
     }

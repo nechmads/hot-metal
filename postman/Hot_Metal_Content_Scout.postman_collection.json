@@ -1,8 +1,14 @@
 {
 	"info": {
 		"name": "Hot Metal — Content Scout",
-		"description": "# Hot Metal Content Scout Service\n\nThe Content Scout is a Cloudflare Worker that discovers trending stories, generates blog post ideas, and optionally auto-writes posts for publications. It uses CF Queues and Workflows for durable execution.\n\n## Architecture\n\nThe Content Scout follows a **cron -> queue -> workflow** pipeline:\n\n1. **Cron Trigger** (`0 7 * * *` UTC) — Fires daily at 7 AM UTC. Queries D1 for all active publications and enqueues one message per publication to the CF Queue.\n2. **CF Queue** — Receives `{ publicationId }` messages. Each message triggers a new ScoutWorkflow instance.\n3. **ScoutWorkflow** (Durable Execution) — A 6-step workflow that runs durably with automatic retries:\n   - **Step 1: Load Context** — Reads publication config from D1 (topics, tone, audience, auto-publish mode).\n   - **Step 2: Search** — Queries external news/trend APIs and web search for stories matching the publication's topic areas.\n   - **Step 3: Dedupe** — Compares discovered stories against previously generated ideas in D1 to avoid duplicates.\n   - **Step 4: Generate Ideas** — Uses an LLM to turn trending stories into concrete blog post ideas with titles, angles, and outlines.\n   - **Step 5: Store Ideas** — Writes the generated ideas to the web's `ideas` table in D1.\n   - **Step 6: Auto-Write (Conditional)** — If the publication's auto-publish mode allows it, creates a web session and triggers automatic drafting.\n\nManual triggers are also available via the REST API (documented below).\n\n## Auto-Publish Modes\n\nEach publication can be configured with one of these modes:\n\n| Mode | Behavior |\n|------|----------|\n| `off` | Scout generates ideas only. No automatic writing. Ideas appear in the web ideas table for manual selection. |\n| `draft` | Scout generates ideas AND auto-creates a web session to produce a draft. The draft is saved but NOT published. A human must review and publish. |\n| `publish` | Scout generates ideas, auto-writes a draft, and publishes it to the CMS as a draft post (visible in CMS admin but not on the public site). |\n| `full-auto` | Scout generates ideas, auto-writes, and publishes directly to the public site. No human review. Use with caution. |\n\n## Authentication\n\nAll `/api/*` endpoints require an `Authorization: Bearer <token>` header. The token value must match the `SCOUT_API_KEY` environment variable configured on the content-scout worker (same value as `API_KEY`).\n\nThe health endpoint is unauthenticated.\n\n## Endpoints Overview\n\n### Health\n| Method | Path | Auth | Description |\n|--------|------|------|-------------|\n| GET | `/health` | None | Service health check |\n\n### Scout Triggers\n| Method | Path | Auth | Description |\n|--------|------|------|-------------|\n| POST | `/api/scout/run` | Bearer | Trigger scout for a single publication |\n| POST | `/api/scout/run-all` | Bearer | Trigger scout for ALL publications |\n\n## Environment Variables\n\nThis collection uses variables from the Postman environment:\n- `SCOUT_BASE_URL` — Base URL of the content scout (e.g. `http://localhost:8790`)\n- `SCOUT_API_KEY` — API key for Bearer authentication (must match the API_KEY secret on the content-scout worker)\n\nSelect the **Hot Metal — Local Development** environment before sending requests.",
+		"description": "# Hot Metal Content Scout Service\n\nThe Content Scout is a Cloudflare Worker that discovers trending stories, generates blog post ideas, and optionally auto-writes posts for publications. It uses CF Queues and Workflows for durable execution.\n\n## Architecture\n\nThe Content Scout follows a **cron -> queue -> workflow** pipeline:\n\n1. **Cron Trigger** (`0 * * * *` UTC) — Fires hourly. Queries D1 for publications whose `next_scout_at` has passed and enqueues one message per due publication to the CF Queue.\n2. **CF Queue** — Receives `{ publicationId }` messages. Each message triggers a new ScoutWorkflow instance.\n3. **ScoutWorkflow** (Durable Execution) — A 6-step workflow that runs durably with automatic retries:\n   - **Step 1: Load Context** — Reads publication config from DAL (topics, tone, audience, auto-publish mode).\n   - **Step 2: Search** — Queries external news/trend APIs and web search for stories matching the publication's topic areas.\n   - **Step 3: Dedupe** — Compares discovered stories against previously generated ideas to avoid duplicates.\n   - **Step 4: Generate Ideas** — Uses an LLM to turn trending stories into concrete blog post ideas with titles, angles, and outlines.\n   - **Step 5: Store Ideas** — Writes the generated ideas to the ideas table via DAL.\n   - **Step 6: Auto-Write (Conditional)** — If the publication's auto-publish mode allows it, creates a writing session and triggers automatic drafting.\n\nManual triggers are also available via the REST API (documented below).\n\n## Authentication\n\nAll `/api/*` endpoints require an `Authorization: Bearer <token>` header. The token value must match the `API_KEY` secret configured on the content-scout worker.\n\nThe health endpoint is unauthenticated.\n\n## Endpoints Overview\n\n### Health\n| Method | Path | Auth | Description |\n|--------|------|------|-------------|\n| GET | `/health` | None | Service health check |\n\n### Scout Triggers\n| Method | Path | Auth | Description |\n|--------|------|------|-------------|\n| POST | `/api/scout/run` | Bearer | Trigger scout for a single publication |\n| POST | `/api/scout/run-all` | Bearer | Trigger scout for ALL publications |\n\n## Environment Variables\n\nThis collection uses variables from the Postman environment:\n- `SCOUT_BASE_URL` — Base URL of the content scout (e.g. `https://scout.hotmetalapp.com`)\n- `SCOUT_API_KEY` — API key for Bearer authentication (must match the API_KEY secret on the content-scout worker)\n\nSelect the appropriate environment before sending requests.",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"auth": {
+		"type": "bearer",
+		"bearer": [
+			{ "key": "token", "value": "{{SCOUT_API_KEY}}", "type": "string" }
+		]
 	},
 	"variable": [
 		{
@@ -21,6 +27,7 @@
 					"name": "Health Check",
 					"description": "Returns the service status. Use this to verify the content scout worker is running.\n\n### Response\n\n```json\n{\n  \"status\": \"ok\",\n  \"service\": \"content-scout\"\n}\n```\n\nNo authentication required.",
 					"request": {
+						"auth": { "type": "noauth" },
 						"method": "GET",
 						"header": [],
 						"url": {
@@ -45,20 +52,19 @@
 		},
 		{
 			"name": "Scout Triggers",
-			"description": "Manually trigger the content scout pipeline for one or all publications.\n\nThese endpoints enqueue messages to the CF Queue, which in turn starts ScoutWorkflow instances. The workflow runs durably with automatic retries across its 6 steps.\n\n### How It Works\n\n1. **API call** enqueues a message to the CF Queue with the publication ID.\n2. **Queue consumer** receives the message and creates a new ScoutWorkflow instance.\n3. **ScoutWorkflow** runs 6 durable steps:\n   - **Load Context** — Reads publication config (topics, tone, audience, auto-publish mode) from D1.\n   - **Search** — Queries external news/trend APIs for stories matching the publication's topics.\n   - **Dedupe** — Filters out stories that have already been turned into ideas.\n   - **Generate Ideas** — LLM turns trending stories into blog post ideas with titles, angles, and outlines.\n   - **Store Ideas** — Writes ideas to the web's `ideas` table in D1.\n   - **Auto-Write (Conditional)** — If auto-publish mode is `draft`, `publish`, or `full-auto`, creates a web session and triggers automatic drafting.\n\n### Cron vs Manual\n\nThe daily cron trigger (`0 7 * * *` UTC) does the same thing as `POST /api/scout/run-all` — it queries D1 for all publications and enqueues one message per publication. Use the manual endpoints for testing or to trigger an immediate scout run outside the daily schedule.\n\n### Where Do Results Go?\n\nGenerated ideas appear in the web's `ideas` table in D1. They can be viewed and selected from the web UI or API. If auto-write is enabled, a web session is also created automatically.\n\nAll endpoints require `Authorization: Bearer {{SCOUT_API_KEY}}` authentication.",
+			"description": "Manually trigger the content scout pipeline for one or all publications.\n\nThese endpoints enqueue messages to the CF Queue, which in turn starts ScoutWorkflow instances. The workflow runs durably with automatic retries across its 6 steps.\n\nAll endpoints inherit Bearer token authentication from the collection.",
 			"item": [
 				{
 					"name": "Run Scout — Single Publication",
-					"description": "Trigger the content scout for a single publication.\n\nEnqueues one message to the CF Queue with the given `publicationId`. The queue consumer will start a ScoutWorkflow instance that runs the full 6-step pipeline for that publication.\n\n### Request Body\n\n| Field | Type | Required | Description |\n|-------|------|----------|-------------|\n| `publicationId` | string | **Yes** | UUID of the publication to scout for. Must exist in the D1 `publications` table. |\n\n### Response — Queued (200)\n\n```json\n{\n  \"queued\": true,\n  \"publicationId\": \"f47ac10b-58cc-4372-a567-0e02b2c3d479\"\n}\n```\n\nThe response confirms the message was enqueued. The actual scout workflow runs asynchronously — results will appear in the ideas table once the workflow completes.\n\n### Workflow Steps (runs asynchronously after response)\n\n1. **Load Context** — Reads publication config from D1 (topics, tone, audience, auto-publish mode)\n2. **Search** — Queries news/trend APIs for stories matching the publication's topic areas\n3. **Dedupe** — Filters out stories already converted to ideas\n4. **Generate Ideas** — LLM generates blog post ideas from trending stories\n5. **Store Ideas** — Writes ideas to the web's `ideas` table in D1\n6. **Auto-Write** — If auto-publish mode is not `off`, creates a web session and triggers drafting\n\n### Possible Errors\n\n- `400` — Missing or invalid `publicationId`\n- `401` — Missing or invalid Bearer token",
+					"description": "Trigger the content scout for a single publication.\n\nEnqueues one message to the CF Queue with the given `publicationId`. The queue consumer will start a ScoutWorkflow instance that runs the full 6-step pipeline for that publication.\n\n### Request Body\n\n| Field | Type | Required | Description |\n|-------|------|----------|-------------|\n| `publicationId` | string | **Yes** | UUID of the publication to scout for. Must exist in the publications table. |\n\n### Response — Queued (200)\n\n```json\n{\n  \"queued\": true,\n  \"publicationId\": \"f47ac10b-58cc-4372-a567-0e02b2c3d479\"\n}\n```\n\nThe response confirms the message was enqueued. The actual scout workflow runs asynchronously — results will appear in the ideas table once the workflow completes.\n\n### Possible Errors\n\n- `400` — Missing or invalid `publicationId`\n- `401` — Missing or invalid Bearer token",
 					"request": {
 						"method": "POST",
 						"header": [
-							{ "key": "Authorization", "value": "Bearer {{SCOUT_API_KEY}}" },
 							{ "key": "Content-Type", "value": "application/json" }
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n  \"publicationId\": \"f47ac10b-58cc-4372-a567-0e02b2c3d479\"\n}"
+							"raw": "{\n  \"publicationId\": \"{{publicationId}}\"\n}"
 						},
 						"url": {
 							"raw": "{{SCOUT_BASE_URL}}/api/scout/run",
@@ -86,15 +92,6 @@
 							"body": "{\n  \"error\": \"publicationId is required\"\n}"
 						},
 						{
-							"name": "400 — Invalid publicationId",
-							"status": "Bad Request",
-							"code": 400,
-							"header": [
-								{ "key": "Content-Type", "value": "application/json" }
-							],
-							"body": "{\n  \"error\": \"Invalid publicationId format. Must be a valid UUID.\"\n}"
-						},
-						{
 							"name": "401 — Unauthorized",
 							"status": "Unauthorized",
 							"code": 401,
@@ -107,11 +104,10 @@
 				},
 				{
 					"name": "Run Scout — All Publications",
-					"description": "Trigger the content scout for ALL active publications.\n\nQueries D1 for every publication and enqueues one CF Queue message per publication. Each message starts its own ScoutWorkflow instance.\n\nThis is the same operation that the daily cron trigger (`0 7 * * *` UTC) performs automatically. Use this endpoint to trigger an immediate scout run outside the daily schedule, or for testing.\n\n### Request Body\n\nNo body required.\n\n### Response — Queued (200)\n\n```json\n{\n  \"queued\": true,\n  \"count\": 5\n}\n```\n\nThe `count` field indicates how many publications were found and enqueued. If `count` is 0, no publications exist in the database.\n\n### What Happens Next\n\nFor each publication, the queue consumer starts a ScoutWorkflow that runs the full 6-step pipeline:\n\n1. **Load Context** — Reads publication config from D1\n2. **Search** — Queries news/trend APIs for matching stories\n3. **Dedupe** — Filters out already-known stories\n4. **Generate Ideas** — LLM creates blog post ideas\n5. **Store Ideas** — Saves ideas to the web's `ideas` table\n6. **Auto-Write** — Conditionally triggers automatic drafting\n\nEach publication's workflow runs independently. If one fails, the others continue.\n\n### Possible Errors\n\n- `401` — Missing or invalid Bearer token",
+					"description": "Trigger the content scout for ALL active publications.\n\nQueries the DAL for every publication and enqueues one CF Queue message per publication. Each message starts its own ScoutWorkflow instance.\n\nThis is the same operation that the hourly cron trigger performs for due publications. Use this endpoint to trigger an immediate scout run for all publications, regardless of schedule.\n\n### Request Body\n\nNo body required.\n\n### Response — Queued (200)\n\n```json\n{\n  \"queued\": true,\n  \"count\": 5\n}\n```\n\n### Possible Errors\n\n- `401` — Missing or invalid Bearer token",
 					"request": {
 						"method": "POST",
 						"header": [
-							{ "key": "Authorization", "value": "Bearer {{SCOUT_API_KEY}}" },
 							{ "key": "Content-Type", "value": "application/json" }
 						],
 						"body": {

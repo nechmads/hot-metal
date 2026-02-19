@@ -11,18 +11,23 @@ export async function generateIdeas(
 ): Promise<IdeaBrief[]> {
 	const anthropic = createAnthropic({ apiKey });
 
-	const result = await generateText({
-		model: anthropic('claude-sonnet-4-6'),
-		system: buildIdeaSystemPrompt(publication),
-		messages: [
-			{
-				role: 'user',
-				content: buildIdeaUserPrompt(filteredStories, topics),
-			},
-		],
-	});
+	try {
+		const result = await generateText({
+			model: anthropic('claude-sonnet-4-6'),
+			system: buildIdeaSystemPrompt(publication),
+			messages: [
+				{
+					role: 'user',
+					content: buildIdeaUserPrompt(filteredStories, topics),
+				},
+			],
+		});
 
-	return parseIdeaBriefs(result.text);
+		return parseIdeaBriefs(result.text);
+	} catch (err) {
+		console.error('[generate-ideas] LLM call failed:', err instanceof Error ? err.message : err);
+		throw err;
+	}
 }
 
 function buildIdeaSystemPrompt(publication: Publication): string {

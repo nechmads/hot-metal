@@ -29,7 +29,7 @@ export function LandingPage() {
   return <LandingContent />;
 }
 
-function LandingContent() {
+export function LandingContent() {
   return (
     <div className="min-h-screen bg-[var(--color-bg-primary)]">
       <PublicNavbar showWaitlistCta={false} />

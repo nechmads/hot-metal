@@ -11,87 +11,101 @@ export class ScoutWorkflow extends WorkflowEntrypoint<ScoutEnv, ScoutWorkflowPar
   async run(event: WorkflowEvent<ScoutWorkflowParams>, step: WorkflowStep) {
     const { publicationId } = event.payload
 
-    // Step 1: Load publication context from DAL
-    const context = await step.do('load-context', async () => {
-      return await loadPublicationContext(this.env.DAL, publicationId)
-    })
+    try {
+      console.log(`[workflow] Starting scout for publication ${publicationId}`)
 
-    if (context.topics.length === 0) {
-      return { publicationId, ideasGenerated: 0, skipped: 'no active topics' }
-    }
+      // Step 1: Load publication context from DAL
+      const context = await step.do('load-context', async () => {
+        return await loadPublicationContext(this.env.DAL, publicationId)
+      })
+      console.log(`[workflow] Step 1 done: ${context.topics.length} topics, ${context.recentIdeas.length} recent ideas`)
 
-    // Step 2: Search for content via Alexander API (with KV cache)
-    const searchResults = await step.do(
-      'search-content',
-      { retries: { limit: 2, delay: '10 seconds', backoff: 'exponential' }, timeout: '2 minutes' },
-      async () => {
-        return await searchForContent(
-          this.env.ALEXANDER_API_URL,
-          this.env.ALEXANDER_API_KEY,
-          this.env.SCOUT_CACHE,
-          context.topics,
-        )
-      },
-    )
+      if (context.topics.length === 0) {
+        return { publicationId, ideasGenerated: 0, skipped: 'no active topics' }
+      }
 
-    // Step 3: Dedupe stories against recent ideas (LLM call)
-    const filteredStories = await step.do(
-      'dedupe-stories',
-      { retries: { limit: 2, delay: '5 seconds', backoff: 'exponential' }, timeout: '1 minute' },
-      async () => {
-        return await dedupeStories(
-          this.env.ANTHROPIC_API_KEY,
-          searchResults,
-          context.recentIdeas,
-        )
-      },
-    )
-
-    if (filteredStories.length === 0) {
-      return { publicationId, ideasGenerated: 0, skipped: 'no new stories after dedup' }
-    }
-
-    // Step 4: Generate idea briefs from filtered stories (LLM call)
-    const ideas = await step.do(
-      'generate-ideas',
-      { retries: { limit: 2, delay: '5 seconds', backoff: 'exponential' }, timeout: '2 minutes' },
-      async () => {
-        return await generateIdeas(
-          this.env.ANTHROPIC_API_KEY,
-          context.publication,
-          filteredStories,
-          context.topics,
-        )
-      },
-    )
-
-    if (ideas.length === 0) {
-      return { publicationId, ideasGenerated: 0, skipped: 'LLM produced no ideas' }
-    }
-
-    // Step 5: Store ideas via DAL
-    // Deterministic IDs + INSERT OR IGNORE make this idempotent.
-    const stored = await step.do('store-ideas', async () => {
-      return await storeIdeas(this.env.DAL, publicationId, ideas, context.topics)
-    })
-
-    // Step 6: Auto-write (conditional — only for publish/full-auto modes)
-    let autoWritten = 0
-    if (context.publication.autoPublishMode !== 'draft') {
-      autoWritten = await step.do(
-        'auto-write',
-        { retries: { limit: 1, delay: '10 seconds' }, timeout: '10 minutes' },
+      // Step 2: Search for content via Alexander API (with KV cache)
+      const searchResults = await step.do(
+        'search-content',
+        { retries: { limit: 2, delay: '10 seconds', backoff: 'exponential' }, timeout: '2 minutes' },
         async () => {
-          return await autoWriteTopIdea(this.env, context.publication, ideas, stored.ideaIds)
+          return await searchForContent(
+            this.env.ALEXANDER_API_URL,
+            this.env.ALEXANDER_API_KEY,
+            this.env.SCOUT_CACHE,
+            context.topics,
+          )
         },
       )
-    }
+      console.log(`[workflow] Step 2 done: ${searchResults.length} topic result sets`)
 
-    return {
-      publicationId,
-      publicationName: context.publication.name,
-      ideasGenerated: ideas.length,
-      autoWritten,
+      // Step 3: Dedupe stories against recent ideas (LLM call)
+      const filteredStories = await step.do(
+        'dedupe-stories',
+        { retries: { limit: 2, delay: '5 seconds', backoff: 'exponential' }, timeout: '1 minute' },
+        async () => {
+          return await dedupeStories(
+            this.env.ANTHROPIC_API_KEY,
+            searchResults,
+            context.recentIdeas,
+          )
+        },
+      )
+      console.log(`[workflow] Step 3 done: ${filteredStories.length} stories after dedup`)
+
+      if (filteredStories.length === 0) {
+        return { publicationId, ideasGenerated: 0, skipped: 'no new stories after dedup' }
+      }
+
+      // Step 4: Generate idea briefs from filtered stories (LLM call)
+      const ideas = await step.do(
+        'generate-ideas',
+        { retries: { limit: 2, delay: '5 seconds', backoff: 'exponential' }, timeout: '2 minutes' },
+        async () => {
+          return await generateIdeas(
+            this.env.ANTHROPIC_API_KEY,
+            context.publication,
+            filteredStories,
+            context.topics,
+          )
+        },
+      )
+      console.log(`[workflow] Step 4 done: ${ideas.length} ideas generated`)
+
+      if (ideas.length === 0) {
+        return { publicationId, ideasGenerated: 0, skipped: 'LLM produced no ideas' }
+      }
+
+      // Step 5: Store ideas via DAL
+      // Deterministic IDs + INSERT OR IGNORE make this idempotent.
+      const stored = await step.do('store-ideas', async () => {
+        return await storeIdeas(this.env.DAL, publicationId, ideas, context.topics)
+      })
+      console.log(`[workflow] Step 5 done: ${stored.count} ideas stored`)
+
+      // Step 6: Auto-write (conditional — only for publish/full-auto modes)
+      let autoWritten = 0
+      if (context.publication.autoPublishMode !== 'draft') {
+        autoWritten = await step.do(
+          'auto-write',
+          { retries: { limit: 1, delay: '10 seconds' }, timeout: '10 minutes' },
+          async () => {
+            return await autoWriteTopIdea(this.env, context.publication, ideas, stored.ideaIds)
+          },
+        )
+        console.log(`[workflow] Step 6 done: ${autoWritten} auto-written`)
+      }
+
+      return {
+        publicationId,
+        publicationName: context.publication.name,
+        ideasGenerated: ideas.length,
+        autoWritten,
+      }
+    } catch (err) {
+      const error = err instanceof Error ? err : new Error(String(err))
+      console.error(`[workflow] Scout failed for publication ${publicationId}:`, error.message, error.stack)
+      throw error
     }
   }
 }
