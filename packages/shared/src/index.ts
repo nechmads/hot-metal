@@ -25,4 +25,5 @@ export type {
   QuestionParams,
   QuestionResponse,
   QuestionSource,
+  ToneGuideResponse,
 } from './alexander-api'

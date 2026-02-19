@@ -54,19 +54,19 @@ export function QuickActions({ publications, hasCustomStyle }: QuickActionsProps
     <>
       <section
         aria-label="Quick actions"
-        className={`mt-6 grid gap-3 sm:grid-cols-2 ${!hasCustomStyle ? 'lg:grid-cols-3' : ''}`}
+        className={`mt-6 grid gap-4 sm:grid-cols-2 ${!hasCustomStyle ? 'lg:grid-cols-3' : ''}`}
       >
         {/* Start Writing */}
         <button
           type="button"
           onClick={() => setShowSessionModal(true)}
-          className="flex items-center gap-3 rounded-xl border border-[var(--color-border-default)] bg-[var(--color-bg-primary)] p-4 text-left transition-shadow hover:shadow-md"
+          className="flex cursor-pointer flex-col items-center gap-3 rounded-xl border border-[var(--color-border-default)] bg-[var(--color-bg-primary)] px-5 py-8 text-center transition-shadow hover:shadow-md"
         >
-          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-[var(--color-accent-light)] text-[var(--color-accent)]">
-            <PencilLineIcon size={22} />
+          <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-[var(--color-accent-light)] text-[var(--color-accent)]">
+            <PencilLineIcon size={26} />
           </div>
           <div>
-            <p className="text-base font-semibold">Start Writing</p>
+            <p className="text-lg font-semibold">Start Writing</p>
             <p className="text-sm text-[var(--color-text-muted)]">
               New AI writing session
             </p>
@@ -78,17 +78,17 @@ export function QuickActions({ publications, hasCustomStyle }: QuickActionsProps
           type="button"
           onClick={handleGetIdeas}
           disabled={runningScout}
-          className="flex items-center gap-3 rounded-xl border border-[var(--color-border-default)] bg-[var(--color-bg-primary)] p-4 text-left transition-shadow hover:shadow-md disabled:opacity-50"
+          className="flex cursor-pointer flex-col items-center gap-3 rounded-xl border border-[var(--color-border-default)] bg-[var(--color-bg-primary)] px-5 py-8 text-center transition-shadow hover:shadow-md disabled:cursor-not-allowed disabled:opacity-50"
         >
-          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-blue-50 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400">
+          <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-blue-50 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400">
             {runningScout ? (
-              <Loader size={22} />
+              <Loader size={26} />
             ) : (
-              <MagnifyingGlassIcon size={22} />
+              <MagnifyingGlassIcon size={26} />
             )}
           </div>
           <div>
-            <p className="text-base font-semibold">
+            <p className="text-lg font-semibold">
               {runningScout ? 'Finding ideas...' : 'Get New Ideas'}
             </p>
             <p className="text-sm text-[var(--color-text-muted)]">
@@ -101,13 +101,13 @@ export function QuickActions({ publications, hasCustomStyle }: QuickActionsProps
         {!hasCustomStyle && (
           <Link
             to="/styles"
-            className="flex items-center gap-3 rounded-xl border border-[var(--color-border-default)] bg-[var(--color-bg-primary)] p-4 text-left transition-shadow hover:shadow-md"
+            className="flex flex-col items-center gap-3 rounded-xl border border-[var(--color-border-default)] bg-[var(--color-bg-primary)] px-5 py-8 text-center transition-shadow hover:shadow-md"
           >
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-purple-50 text-purple-600 dark:bg-purple-900/30 dark:text-purple-400">
-              <PaletteIcon size={22} />
+            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-purple-50 text-purple-600 dark:bg-purple-900/30 dark:text-purple-400">
+              <PaletteIcon size={26} />
             </div>
             <div>
-              <p className="text-base font-semibold">Create Writing Style</p>
+              <p className="text-lg font-semibold">Create Writing Style</p>
               <p className="text-sm text-[var(--color-text-muted)]">
                 Personalize your AI writer
               </p>

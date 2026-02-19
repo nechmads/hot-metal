@@ -18,6 +18,7 @@ import { Hono } from 'hono'
 import { clerkAuth, type AuthVariables } from './middleware/clerk-auth'
 import { ensureUser } from './middleware/ensure-user'
 import { internalAuth } from './middleware/internal-auth'
+import { adminAuth } from './middleware/admin-auth'
 import { errorHandler } from './middleware/error-handler'
 import { verifyPublicationOwnership } from './middleware/ownership'
 import { verifyChatToken } from './lib/chat-token'
@@ -33,6 +34,7 @@ import publish from './api/publish'
 import images from './api/images'
 import connections from './api/connections'
 import internal from './api/internal'
+import admin from './api/admin'
 import webhooks from './api/webhooks'
 
 // Re-export the WriterAgent DO class for wrangler registration
@@ -77,6 +79,10 @@ app.route('/webhooks', webhooks)
 // ─── Internal service-to-service routes (content-scout auto-write) ──
 app.use('/internal/*', internalAuth)
 app.route('/internal', internal)
+
+// ─── Admin routes (X-Internal-Key only, no user context) ────────────
+app.use('/admin/*', adminAuth)
+app.route('/admin', admin)
 
 // ─── Auth: Clerk JWT + user sync on all /api/* routes ───────────────
 app.use('/api/*', clerkAuth, ensureUser)

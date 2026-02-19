@@ -360,6 +360,26 @@ export async function createStyle(data: {
   toneGuide?: string
   sourceUrl?: string
   sampleText?: string
+  voicePerson?: string
+  voiceFormality?: string
+  voicePersonalityTraits?: string[]
+  sentenceNotablePatterns?: string[]
+  structureOpeningStyle?: string
+  structureClosingStyle?: string
+  structureParagraphLength?: string
+  structureUseOfHeadings?: string
+  structureTransitionStyle?: string
+  vocabularyLevel?: string
+  vocabularyFavoritePhrases?: string[]
+  vocabularyPowerWords?: string[]
+  vocabularyJargonUsage?: string
+  rhetoricalDevices?: string[]
+  contentUseOfExamples?: string
+  contentUseOfData?: string
+  contentStorytellingApproach?: string
+  contentHumorStyle?: string
+  dos?: string[]
+  donts?: string[]
 }): Promise<WritingStyle> {
   return request<WritingStyle>('/api/styles', {
     method: 'POST',
@@ -370,14 +390,7 @@ export async function createStyle(data: {
 
 export async function updateStyle(
   id: string,
-  data: Partial<{
-    name: string
-    description: string | null
-    systemPrompt: string
-    toneGuide: string | null
-    sourceUrl: string | null
-    sampleText: string | null
-  }>,
+  data: Record<string, unknown>,
 ): Promise<WritingStyle> {
   return request<WritingStyle>(`/api/styles/${id}`, {
     method: 'PATCH',

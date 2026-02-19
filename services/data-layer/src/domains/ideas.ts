@@ -143,7 +143,7 @@ export async function listIdeasByPublication(
 		bindings.push(filters.status)
 	}
 
-	query += ' ORDER BY relevance_score DESC, created_at DESC'
+	query += ' ORDER BY created_at DESC'
 
 	const result = await db.prepare(query).bind(...bindings).all<IdeaRow>()
 	return (result.results ?? []).map(mapRow)

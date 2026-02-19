@@ -5,7 +5,7 @@ import { PlusIcon } from '@phosphor-icons/react'
 import { Loader } from '@/components/loader/Loader'
 import { Modal } from '@/components/modal/Modal'
 import { StyleCard } from '@/components/styles/StyleCard'
-import { StyleFormModal } from '@/components/styles/StyleFormModal'
+import { StyleFormModal, type StyleSaveData } from '@/components/styles/StyleFormModal'
 import {
   fetchStyles,
   createStyle,
@@ -57,27 +57,19 @@ export function StylesPage() {
     setShowFormModal(true)
   }
 
-  const handleSave = async (data: {
-    name: string
-    description: string
-    systemPrompt: string
-    toneGuide?: string
-    sourceUrl?: string
-    sampleText?: string
-  }) => {
+  const handleSave = async (data: StyleSaveData) => {
     if (editingStyle) {
       const updated = await updateStyle(editingStyle.id, {
-        name: data.name,
+        ...data,
         description: data.description || null,
-        systemPrompt: data.systemPrompt,
-        toneGuide: data.toneGuide ?? null,
-        sourceUrl: data.sourceUrl ?? null,
-        sampleText: data.sampleText ?? null,
       })
       setStyles((prev) => prev.map((s) => (s.id === updated.id ? updated : s)))
       toast.success('Style updated')
     } else {
-      const created = await createStyle(data)
+      const created = await createStyle({
+        ...data,
+        description: data.description || undefined,
+      })
       setStyles((prev) => [...prev, created])
       toast.success('Style created')
     }

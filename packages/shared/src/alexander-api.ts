@@ -114,20 +114,51 @@ export interface ToneGuideParams {
 }
 
 export interface ToneGuideVoice {
-  overall_tone: string
-  personality_traits: string[]
-  vocabulary_level: string
-  sentence_style: string
-  perspective: string
+  person?: string
+  formality?: string
+  personality_traits?: string[]
+}
+
+export interface ToneGuideSentencePatterns {
+  avg_length?: string
+  complexity?: string
+  notable_patterns?: string[]
+}
+
+export interface ToneGuideStructure {
+  opening_style?: string
+  closing_style?: string
+  paragraph_length?: string
+  use_of_headings?: string
+  transition_style?: string
+}
+
+export interface ToneGuideVocabulary {
+  level?: string
+  favorite_phrases?: string[]
+  jargon_usage?: string
+  power_words?: string[]
+}
+
+export interface ToneGuideContentPatterns {
+  use_of_examples?: string
+  use_of_data?: string
+  storytelling_approach?: string
+  humor_style?: string
 }
 
 export interface ToneGuideResponse {
   success: boolean
-  tone_guide: {
-    system_prompt: string
-    voice: ToneGuideVoice
-    dos: string[]
-    donts: string[]
+  tone_guide?: {
+    system_prompt?: string
+    voice?: ToneGuideVoice
+    sentence_patterns?: ToneGuideSentencePatterns
+    structure?: ToneGuideStructure
+    vocabulary?: ToneGuideVocabulary
+    rhetorical_devices?: string[]
+    content_patterns?: ToneGuideContentPatterns
+    dos?: string[]
+    donts?: string[]
     sample_rewrite?: string
   }
   metadata?: Record<string, unknown>

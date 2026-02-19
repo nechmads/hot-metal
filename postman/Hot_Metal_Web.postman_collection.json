@@ -28,6 +28,12 @@
 			"value": "",
 			"type": "string",
 			"description": "Idea ID — for testing idea endpoints"
+		},
+		{
+			"key": "styleId",
+			"value": "",
+			"type": "string",
+			"description": "Writing Style ID — auto-set when creating a style"
 		}
 	],
 	"item": [
@@ -1280,6 +1286,324 @@
 								{ "key": "Content-Type", "value": "application/json" }
 							],
 							"body": "{\n  \"error\": \"days must be between 1 and 90\"\n}"
+						}
+					]
+				}
+			]
+		},
+		{
+			"name": "Writing Styles",
+			"description": "Manage writing styles that control the AI writer's tone and voice.\n\nStyles can be **prebuilt** (available to all users) or **user-created** (via manual prompt or URL analysis).\n\nURL analysis calls the Alexander API to extract voice, structure, vocabulary, and content patterns from a blog, then uses an LLM to compose a `finalPrompt` injected into the writer agent.\n\nAll endpoints require `Authorization` authentication.",
+			"item": [
+				{
+					"name": "List Styles",
+					"description": "List all writing styles available to the authenticated user (own + prebuilt).",
+					"request": {
+						"method": "GET",
+						"header": [
+							{ "key": "Authorization", "value": "Bearer {{CLERK_JWT_TOKEN}}" }
+						],
+						"url": {
+							"raw": "{{WEB_BASE_URL}}/api/styles",
+							"host": ["{{WEB_BASE_URL}}"],
+							"path": ["api", "styles"]
+						}
+					},
+					"response": [
+						{
+							"name": "200 — Styles listed",
+							"status": "OK",
+							"code": 200,
+							"header": [
+								{ "key": "Content-Type", "value": "application/json" }
+							],
+							"body": "{\n  \"data\": [\n    {\n      \"id\": \"prebuilt-conversational-expert\",\n      \"userId\": null,\n      \"name\": \"Conversational Expert\",\n      \"isPrebuilt\": true,\n      \"systemPrompt\": \"...\",\n      \"finalPrompt\": \"...\"\n    }\n  ]\n}"
+						}
+					]
+				},
+				{
+					"name": "Get Style by ID",
+					"description": "Get a single writing style by ID (own or prebuilt).",
+					"request": {
+						"method": "GET",
+						"header": [
+							{ "key": "Authorization", "value": "Bearer {{CLERK_JWT_TOKEN}}" }
+						],
+						"url": {
+							"raw": "{{WEB_BASE_URL}}/api/styles/{{styleId}}",
+							"host": ["{{WEB_BASE_URL}}"],
+							"path": ["api", "styles", "{{styleId}}"]
+						}
+					},
+					"response": [
+						{
+							"name": "200 — Style found",
+							"status": "OK",
+							"code": 200,
+							"header": [
+								{ "key": "Content-Type", "value": "application/json" }
+							],
+							"body": "{\n  \"id\": \"prebuilt-conversational-expert\",\n  \"userId\": null,\n  \"name\": \"Conversational Expert\",\n  \"isPrebuilt\": true,\n  \"systemPrompt\": \"...\",\n  \"finalPrompt\": \"...\"\n}"
+						},
+						{
+							"name": "404 — Style not found",
+							"status": "Not Found",
+							"code": 404,
+							"header": [
+								{ "key": "Content-Type", "value": "application/json" }
+							],
+							"body": "{\n  \"error\": \"Style not found\"\n}"
+						}
+					]
+				},
+				{
+					"name": "Create Style",
+					"description": "Create a new user writing style.\n\n### Request Body\n\n| Field | Type | Required | Description |\n|-------|------|----------|-------------|\n| `name` | string | **Yes** | Style name |\n| `systemPrompt` | string | **Yes** | Writing instructions for the AI |\n| `description` | string | No | Brief description |\n| `toneGuide` | string | No | JSON blob from URL analysis |\n| `sourceUrl` | string | No | Blog URL the style was learned from |\n| `sampleText` | string | No | Sample rewrite from analysis |\n| `voicePerson` | string | No | Voice person (e.g., \"first\") |\n| `voiceFormality` | string | No | Voice formality level |\n| `dos` | string[] | No | Things to do |\n| `donts` | string[] | No | Things to avoid |\n| ...and other structured fields | | | See ToneGuideFields |\n\nIf structured fields are present, `finalPrompt` is composed via LLM. Otherwise `finalPrompt = systemPrompt`.",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"if (pm.response.code === 201) {",
+									"    var jsonData = pm.response.json();",
+									"    pm.collectionVariables.set('styleId', jsonData.id);",
+									"    console.log('Style ID saved:', jsonData.id);",
+									"}"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{ "key": "Authorization", "value": "Bearer {{CLERK_JWT_TOKEN}}" },
+							{ "key": "Content-Type", "value": "application/json" }
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"name\": \"My Blog Voice\",\n  \"description\": \"Conversational tech writing\",\n  \"systemPrompt\": \"Write in a conversational, approachable tone. Use first person. Keep paragraphs short.\"\n}"
+						},
+						"url": {
+							"raw": "{{WEB_BASE_URL}}/api/styles",
+							"host": ["{{WEB_BASE_URL}}"],
+							"path": ["api", "styles"]
+						}
+					},
+					"response": [
+						{
+							"name": "201 — Style created",
+							"status": "Created",
+							"code": 201,
+							"header": [
+								{ "key": "Content-Type", "value": "application/json" }
+							],
+							"body": "{\n  \"id\": \"abc-123\",\n  \"userId\": \"user_123\",\n  \"name\": \"My Blog Voice\",\n  \"isPrebuilt\": false,\n  \"systemPrompt\": \"Write in a conversational...\",\n  \"finalPrompt\": \"Write in a conversational...\"\n}"
+						}
+					]
+				},
+				{
+					"name": "Update Style",
+					"description": "Update an existing user style. Prebuilt styles cannot be edited.\n\nIf `systemPrompt` or structured fields change, `finalPrompt` is re-composed via LLM.",
+					"request": {
+						"method": "PATCH",
+						"header": [
+							{ "key": "Authorization", "value": "Bearer {{CLERK_JWT_TOKEN}}" },
+							{ "key": "Content-Type", "value": "application/json" }
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"name\": \"Updated Blog Voice\",\n  \"systemPrompt\": \"Write in a friendly, expert tone. Use analogies and examples.\"\n}"
+						},
+						"url": {
+							"raw": "{{WEB_BASE_URL}}/api/styles/{{styleId}}",
+							"host": ["{{WEB_BASE_URL}}"],
+							"path": ["api", "styles", "{{styleId}}"]
+						}
+					},
+					"response": [
+						{
+							"name": "200 — Style updated",
+							"status": "OK",
+							"code": 200,
+							"header": [
+								{ "key": "Content-Type", "value": "application/json" }
+							],
+							"body": "{\n  \"id\": \"abc-123\",\n  \"name\": \"Updated Blog Voice\",\n  \"systemPrompt\": \"Write in a friendly...\",\n  \"finalPrompt\": \"Write in a friendly...\"\n}"
+						},
+						{
+							"name": "403 — Cannot edit prebuilt",
+							"status": "Forbidden",
+							"code": 403,
+							"header": [
+								{ "key": "Content-Type", "value": "application/json" }
+							],
+							"body": "{\n  \"error\": \"Cannot edit prebuilt styles\"\n}"
+						}
+					]
+				},
+				{
+					"name": "Delete Style",
+					"description": "Delete a user style. Prebuilt styles cannot be deleted.\n\nAlso clears `styleId` from any publications or sessions referencing this style.",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{ "key": "Authorization", "value": "Bearer {{CLERK_JWT_TOKEN}}" }
+						],
+						"url": {
+							"raw": "{{WEB_BASE_URL}}/api/styles/{{styleId}}",
+							"host": ["{{WEB_BASE_URL}}"],
+							"path": ["api", "styles", "{{styleId}}"]
+						}
+					},
+					"response": [
+						{
+							"name": "200 — Style deleted",
+							"status": "OK",
+							"code": 200,
+							"header": [
+								{ "key": "Content-Type", "value": "application/json" }
+							],
+							"body": "{\n  \"ok\": true\n}"
+						},
+						{
+							"name": "403 — Cannot delete prebuilt",
+							"status": "Forbidden",
+							"code": 403,
+							"header": [
+								{ "key": "Content-Type", "value": "application/json" }
+							],
+							"body": "{\n  \"error\": \"Cannot delete prebuilt styles\"\n}"
+						}
+					]
+				},
+				{
+					"name": "Duplicate Style",
+					"description": "Duplicate a style into the user's collection. Works for both prebuilt and user styles.",
+					"request": {
+						"method": "POST",
+						"header": [
+							{ "key": "Authorization", "value": "Bearer {{CLERK_JWT_TOKEN}}" }
+						],
+						"url": {
+							"raw": "{{WEB_BASE_URL}}/api/styles/{{styleId}}/duplicate",
+							"host": ["{{WEB_BASE_URL}}"],
+							"path": ["api", "styles", "{{styleId}}", "duplicate"]
+						}
+					},
+					"response": [
+						{
+							"name": "201 — Style duplicated",
+							"status": "Created",
+							"code": 201,
+							"header": [
+								{ "key": "Content-Type", "value": "application/json" }
+							],
+							"body": "{\n  \"id\": \"new-id\",\n  \"name\": \"Conversational Expert (copy)\",\n  \"isPrebuilt\": false\n}"
+						}
+					]
+				},
+				{
+					"name": "Analyze URL",
+					"description": "Analyze a blog URL to generate a writing style profile using the Alexander API.\n\nReturns structured tone guide data (voice, structure, vocabulary, content patterns, dos/donts) that can be passed to the Create Style endpoint.\n\nThis can take several minutes depending on the site.",
+					"request": {
+						"method": "POST",
+						"header": [
+							{ "key": "Authorization", "value": "Bearer {{CLERK_JWT_TOKEN}}" },
+							{ "key": "Content-Type", "value": "application/json" }
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"url\": \"https://www.notboring.co\"\n}"
+						},
+						"url": {
+							"raw": "{{WEB_BASE_URL}}/api/styles/analyze-url",
+							"host": ["{{WEB_BASE_URL}}"],
+							"path": ["api", "styles", "analyze-url"]
+						}
+					},
+					"response": [
+						{
+							"name": "200 — Analysis complete",
+							"status": "OK",
+							"code": 200,
+							"header": [
+								{ "key": "Content-Type", "value": "application/json" }
+							],
+							"body": "{\n  \"success\": true,\n  \"tone_guide\": {\n    \"system_prompt\": \"Write in a...\",\n    \"voice\": { \"person\": \"first\", \"formality\": \"casual\" },\n    \"structure\": { \"opening_style\": \"hook with a question\" },\n    \"dos\": [\"Use analogies\"],\n    \"donts\": [\"Avoid jargon\"],\n    \"sample_rewrite\": \"Here is an example...\"\n  }\n}"
+						},
+						{
+							"name": "502 — Alexander API error",
+							"status": "Bad Gateway",
+							"code": 502,
+							"header": [
+								{ "key": "Content-Type", "value": "application/json" }
+							],
+							"body": "{\n  \"error\": \"Analysis failed\"\n}"
+						}
+					]
+				}
+			]
+		},
+		{
+			"name": "Admin",
+			"description": "Admin-only endpoints for system operations.\n\nAuthenticated via `X-Internal-Key` header (same key as internal service-to-service auth). No user context required.\n\nThese endpoints are mounted at `/admin/*`.",
+			"item": [
+				{
+					"name": "Create Prebuilt Style from URL",
+					"description": "Analyze a blog URL via Alexander and create a **prebuilt** writing style visible to all users.\n\nThis is the admin equivalent of the user-facing URL analysis + style creation flow, but produces a built-in style (`isPrebuilt: true`, `userId: null`).\n\n### Request Body\n\n| Field | Type | Required | Description |\n|-------|------|----------|-------------|\n| `url` | string | **Yes** | Blog URL to analyze |\n| `name` | string | **Yes** | Style display name |\n| `description` | string | No | Brief description |\n\n### Flow\n\n1. Calls Alexander API to analyze the URL\n2. Extracts structured tone guide fields (voice, structure, vocabulary, etc.)\n3. Composes `finalPrompt` via Claude Haiku\n4. Creates the prebuilt style in D1\n\nThis can take several minutes due to Alexander analysis + LLM composition.",
+					"request": {
+						"method": "POST",
+						"header": [
+							{ "key": "X-Internal-Key", "value": "{{INTERNAL_API_KEY}}" },
+							{ "key": "Content-Type", "value": "application/json" }
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"url\": \"https://www.notboring.co\",\n  \"name\": \"Newsletter Essayist\",\n  \"description\": \"Engaging newsletter style inspired by Not Boring\"\n}"
+						},
+						"url": {
+							"raw": "{{WEB_BASE_URL}}/admin/styles/from-url",
+							"host": ["{{WEB_BASE_URL}}"],
+							"path": ["admin", "styles", "from-url"]
+						}
+					},
+					"response": [
+						{
+							"name": "201 — Prebuilt style created",
+							"status": "Created",
+							"code": 201,
+							"header": [
+								{ "key": "Content-Type", "value": "application/json" }
+							],
+							"body": "{\n  \"id\": \"generated-uuid\",\n  \"userId\": null,\n  \"name\": \"Newsletter Essayist\",\n  \"description\": \"Engaging newsletter style inspired by Not Boring\",\n  \"isPrebuilt\": true,\n  \"systemPrompt\": \"Write in a...\",\n  \"finalPrompt\": \"Composed writing instructions...\",\n  \"sourceUrl\": \"https://www.notboring.co\",\n  \"voicePerson\": \"first\",\n  \"dos\": [\"Use analogies\"],\n  \"donts\": [\"Avoid jargon\"]\n}"
+						},
+						{
+							"name": "400 — Missing required fields",
+							"status": "Bad Request",
+							"code": 400,
+							"header": [
+								{ "key": "Content-Type", "value": "application/json" }
+							],
+							"body": "{\n  \"error\": \"name is required\"\n}"
+						},
+						{
+							"name": "401 — Invalid internal key",
+							"status": "Unauthorized",
+							"code": 401,
+							"header": [
+								{ "key": "Content-Type", "value": "application/json" }
+							],
+							"body": "{\n  \"error\": \"Invalid internal key\"\n}"
+						},
+						{
+							"name": "502 — Alexander API error",
+							"status": "Bad Gateway",
+							"code": 502,
+							"header": [
+								{ "key": "Content-Type", "value": "application/json" }
+							],
+							"body": "{\n  \"error\": \"Analysis failed\"\n}"
 						}
 					]
 				}

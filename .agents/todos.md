@@ -172,5 +172,20 @@
   - `QuickActions` component with 3 card-style CTAs: Start Writing (opens NewSessionModal), Get New Ideas (triggers scout, pub picker if >1), Create Writing Style (link to /styles, conditional on no custom styles)
   - Dashboard integration: fetches styles on load, reads `checklistStore$.dismissed`, conditionally renders checklist vs quick actions in same slot
   - Dynamic grid layout: 3-col when style card shows, 2-col when hidden
+- [x] **Structured Writing Styles + LLM-Composed Final Prompt** — Refactored writing styles system to store structured tone guide fields as proper DB columns and use LLM composition for the writer agent prompt. Includes:
+  - D1 migration (`0012_writing_styles_structured.sql`): 21 new nullable columns (finalPrompt, voice_*, sentence_*, structure_*, vocabulary_*, rhetoricalDevices, content_*, dos, donts) with backfill
+  - DAL: `parseJsonArray`/`jsonOrNull` helpers, `FIELD_TO_COLUMN` map for dynamic update builder, expanded `WritingStyleRow` mapping
+  - `compose-style-prompt.ts`: Claude Haiku synthesizes structured fields into 300-600 word `finalPrompt` at style creation time (not on every agent call)
+  - Backend API: `POST /styles` and `PATCH /styles/:id` accept structured fields, compose `finalPrompt` via LLM; `hasStructuredFields` check with full field coverage; `mergedFields` fallback on edit
+  - Frontend: `StyleFormModal` extracts structured fields from Alexander URL analysis, passes through `StyleSaveData`; `StylesPage` passes all fields to API
+  - Writer agent: `resolveCustomStyle()` uses `style.finalPrompt ?? style.systemPrompt` (backward compatible)
+  - Alexander API types updated to match actual snake_case response with all optional nested objects
+- [x] **Ideas Ordering Fix** — Fixed ideas filtered by publication not returning in `created_at DESC` order. Removed `relevance_score DESC` from ORDER BY clause in `listIdeasByPublication` (nullable column caused mixed ordering).
+- [x] **Admin Endpoint: Create Prebuilt Style from URL** — Added `POST /admin/styles/from-url` endpoint for creating built-in writing styles via Alexander URL analysis. Includes:
+  - DAL refactor: `CreateWritingStyleInput` now accepts optional `isPrebuilt` flag and optional `userId` (instead of hardcoded `is_prebuilt = 0`)
+  - Shared `lib/tone-guide.ts`: Extracted `ToneGuideFields` interface, `hasStructuredFields()`, and `extractToneGuideFields()` — used by admin endpoint, API routes, and frontend modal (deduplicated from 2 places)
+  - `StyleSaveData` now extends `ToneGuideFields` instead of redeclaring all fields
+  - `adminAuth` middleware: validates X-Internal-Key only (no X-User-Id required, unlike internalAuth)
+  - Admin route calls Alexander → extracts structured fields → composes finalPrompt via LLM → creates prebuilt style
 - [ ] Writer Agent — Phase 2: Voice input (transcription in `input-processor.ts`)
 - [ ] Writer Agent — Phase 2: D1 session sync (synchronize DO state back to D1 for listing accuracy)

@@ -135,7 +135,7 @@ export class WriterAgent extends AIChatAgent<Env, WriterAgentState> {
     const styleId = this.state.styleId;
     if (styleId) {
       const style = await this.env.DAL.getWritingStyleById(styleId);
-      if (style) return style.systemPrompt;
+      if (style) return style.finalPrompt ?? style.systemPrompt;
     }
     if (this.state.publicationId) {
       const pub = await this.env.DAL.getPublicationById(
@@ -143,7 +143,7 @@ export class WriterAgent extends AIChatAgent<Env, WriterAgentState> {
       );
       if (pub?.styleId) {
         const style = await this.env.DAL.getWritingStyleById(pub.styleId);
-        if (style) return style.systemPrompt;
+        if (style) return style.finalPrompt ?? style.systemPrompt;
       }
     }
     return undefined;

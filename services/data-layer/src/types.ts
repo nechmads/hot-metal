@@ -325,9 +325,36 @@ export interface WritingStyle {
 	name: string
 	description: string | null
 	systemPrompt: string
+	finalPrompt: string | null
 	toneGuide: string | null
 	sourceUrl: string | null
 	sampleText: string | null
+	// Voice
+	voicePerson: string | null
+	voiceFormality: string | null
+	voicePersonalityTraits: string[] | null
+	// Sentence patterns
+	sentenceNotablePatterns: string[] | null
+	// Structure
+	structureOpeningStyle: string | null
+	structureClosingStyle: string | null
+	structureParagraphLength: string | null
+	structureUseOfHeadings: string | null
+	structureTransitionStyle: string | null
+	// Vocabulary
+	vocabularyLevel: string | null
+	vocabularyFavoritePhrases: string[] | null
+	vocabularyPowerWords: string[] | null
+	vocabularyJargonUsage: string | null
+	// Content & rhetorical
+	rhetoricalDevices: string[] | null
+	contentUseOfExamples: string | null
+	contentUseOfData: string | null
+	contentStorytellingApproach: string | null
+	contentHumorStyle: string | null
+	// Rules
+	dos: string[] | null
+	donts: string[] | null
 	isPrebuilt: boolean
 	createdAt: number
 	updatedAt: number
@@ -335,22 +362,65 @@ export interface WritingStyle {
 
 export interface CreateWritingStyleInput {
 	id: string
-	userId: string
+	userId?: string
 	name: string
+	isPrebuilt?: boolean
 	description?: string
 	systemPrompt: string
+	finalPrompt?: string
 	toneGuide?: string
 	sourceUrl?: string
 	sampleText?: string
+	voicePerson?: string
+	voiceFormality?: string
+	voicePersonalityTraits?: string[]
+	sentenceNotablePatterns?: string[]
+	structureOpeningStyle?: string
+	structureClosingStyle?: string
+	structureParagraphLength?: string
+	structureUseOfHeadings?: string
+	structureTransitionStyle?: string
+	vocabularyLevel?: string
+	vocabularyFavoritePhrases?: string[]
+	vocabularyPowerWords?: string[]
+	vocabularyJargonUsage?: string
+	rhetoricalDevices?: string[]
+	contentUseOfExamples?: string
+	contentUseOfData?: string
+	contentStorytellingApproach?: string
+	contentHumorStyle?: string
+	dos?: string[]
+	donts?: string[]
 }
 
 export interface UpdateWritingStyleInput {
 	name?: string
 	description?: string | null
 	systemPrompt?: string
+	finalPrompt?: string | null
 	toneGuide?: string | null
 	sourceUrl?: string | null
 	sampleText?: string | null
+	voicePerson?: string | null
+	voiceFormality?: string | null
+	voicePersonalityTraits?: string[] | null
+	sentenceNotablePatterns?: string[] | null
+	structureOpeningStyle?: string | null
+	structureClosingStyle?: string | null
+	structureParagraphLength?: string | null
+	structureUseOfHeadings?: string | null
+	structureTransitionStyle?: string | null
+	vocabularyLevel?: string | null
+	vocabularyFavoritePhrases?: string[] | null
+	vocabularyPowerWords?: string[] | null
+	vocabularyJargonUsage?: string | null
+	rhetoricalDevices?: string[] | null
+	contentUseOfExamples?: string | null
+	contentUseOfData?: string | null
+	contentStorytellingApproach?: string | null
+	contentHumorStyle?: string | null
+	dos?: string[] | null
+	donts?: string[] | null
 }
 
 // ─── Publication Tokens ──────────────────────────────────────────────

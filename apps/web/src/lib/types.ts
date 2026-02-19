@@ -164,9 +164,30 @@ export interface WritingStyle {
   name: string
   description: string | null
   systemPrompt: string
+  finalPrompt: string | null
   toneGuide: string | null
   sourceUrl: string | null
   sampleText: string | null
+  voicePerson: string | null
+  voiceFormality: string | null
+  voicePersonalityTraits: string[] | null
+  sentenceNotablePatterns: string[] | null
+  structureOpeningStyle: string | null
+  structureClosingStyle: string | null
+  structureParagraphLength: string | null
+  structureUseOfHeadings: string | null
+  structureTransitionStyle: string | null
+  vocabularyLevel: string | null
+  vocabularyFavoritePhrases: string[] | null
+  vocabularyPowerWords: string[] | null
+  vocabularyJargonUsage: string | null
+  rhetoricalDevices: string[] | null
+  contentUseOfExamples: string | null
+  contentUseOfData: string | null
+  contentStorytellingApproach: string | null
+  contentHumorStyle: string | null
+  dos: string[] | null
+  donts: string[] | null
   isPrebuilt: boolean
   createdAt: number
   updatedAt: number
@@ -174,17 +195,38 @@ export interface WritingStyle {
 
 export interface AnalyzeUrlResponse {
   success: boolean
-  tone_guide: {
-    system_prompt: string
-    voice: {
-      overall_tone: string
-      personality_traits: string[]
-      vocabulary_level: string
-      sentence_style: string
-      perspective: string
+  tone_guide?: {
+    system_prompt?: string
+    voice?: {
+      person?: string
+      formality?: string
+      personality_traits?: string[]
     }
-    dos: string[]
-    donts: string[]
+    sentence_patterns?: {
+      notable_patterns?: string[]
+    }
+    structure?: {
+      opening_style?: string
+      closing_style?: string
+      paragraph_length?: string
+      use_of_headings?: string
+      transition_style?: string
+    }
+    vocabulary?: {
+      level?: string
+      favorite_phrases?: string[]
+      jargon_usage?: string
+      power_words?: string[]
+    }
+    rhetorical_devices?: string[]
+    content_patterns?: {
+      use_of_examples?: string
+      use_of_data?: string
+      storytelling_approach?: string
+      humor_style?: string
+    }
+    dos?: string[]
+    donts?: string[]
     sample_rewrite?: string
   }
   metadata?: Record<string, unknown>

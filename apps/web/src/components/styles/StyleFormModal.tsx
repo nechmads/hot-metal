@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { Modal } from '@/components/modal/Modal'
 import { Loader } from '@/components/loader/Loader'
 import { analyzeStyleUrl } from '@/lib/api'
+import { extractToneGuideFields, type ToneGuideFields } from '@/lib/tone-guide'
 import type { WritingStyle } from '@/lib/types'
 
 const ANALYSIS_MESSAGES = [
@@ -24,10 +25,19 @@ function pickRandomMessage(exclude: string): string {
   return candidates[Math.floor(Math.random() * candidates.length)]
 }
 
+export interface StyleSaveData extends ToneGuideFields {
+  name: string
+  description: string
+  systemPrompt: string
+  toneGuide?: string
+  sourceUrl?: string
+  sampleText?: string
+}
+
 interface StyleFormModalProps {
   isOpen: boolean
   onClose: () => void
-  onSave: (data: { name: string; description: string; systemPrompt: string; toneGuide?: string; sourceUrl?: string; sampleText?: string }) => Promise<void>
+  onSave: (data: StyleSaveData) => Promise<void>
   editingStyle?: WritingStyle | null
 }
 
@@ -46,6 +56,9 @@ export function StyleFormModal({ isOpen, onClose, onSave, editingStyle }: StyleF
   const [toneGuide, setToneGuide] = useState<string | null>(null)
   const [sourceUrl, setSourceUrl] = useState<string | null>(null)
   const [sampleText, setSampleText] = useState<string | null>(null)
+
+  // Structured fields extracted from URL analysis (stored as ref since no UI edits them)
+  const structuredFieldsRef = useRef<Partial<StyleSaveData>>({})
 
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
 
@@ -73,6 +86,7 @@ export function StyleFormModal({ isOpen, onClose, onSave, editingStyle }: StyleF
       setAnalyzing(false)
       setAnalyzeError(null)
       setSaving(false)
+      structuredFieldsRef.current = {}
     }
   }, [isOpen, editingStyle])
 
@@ -109,14 +123,23 @@ export function StyleFormModal({ isOpen, onClose, onSave, editingStyle }: StyleF
     try {
       const result = await analyzeStyleUrl(url.trim())
       if (result.success && result.tone_guide) {
-        setSystemPrompt(result.tone_guide.system_prompt)
-        setToneGuide(JSON.stringify(result.tone_guide))
+        const tg = result.tone_guide
+        setSystemPrompt(tg.system_prompt ?? '')
+        setToneGuide(JSON.stringify(tg))
         setSourceUrl(url.trim())
-        if (result.tone_guide.sample_rewrite) {
-          setSampleText(result.tone_guide.sample_rewrite)
+        if (tg.sample_rewrite) {
+          setSampleText(tg.sample_rewrite)
         }
+
+        // Extract structured fields for storage
+        structuredFieldsRef.current = extractToneGuideFields(tg)
+
         if (!name.trim()) {
-          setName(`Style from ${new URL(url.trim()).hostname}`)
+          try {
+            setName(`Style from ${new URL(url.trim()).hostname}`)
+          } catch {
+            setName(`Style from ${url.trim()}`)
+          }
         }
         setActiveTab('prompt')
       } else {
@@ -134,6 +157,7 @@ export function StyleFormModal({ isOpen, onClose, onSave, editingStyle }: StyleF
     setSaving(true)
     try {
       await onSave({
+        ...structuredFieldsRef.current,
         name: name.trim(),
         description: description.trim(),
         systemPrompt: systemPrompt.trim(),
