@@ -6,8 +6,8 @@
   "private": true,
   "scripts": {
     "dev": "vite dev",
-    "build": "vite build",
-    "deploy": "vite build && wrangler deploy",
+    "build": "vite build && tsx --tsconfig tsconfig.prerender.json scripts/prerender.tsx",
+    "deploy": "vite build && tsx --tsconfig tsconfig.prerender.json scripts/prerender.tsx && wrangler deploy",
     "typecheck": "tsc --noEmit",
     "types": "wrangler types env.d.ts --include-runtime false"
   },
@@ -20,6 +20,7 @@
     "@types/react-dom": "^19.2.3",
     "@vitejs/plugin-react": "^5.1.2",
     "tailwindcss": "^4.1.18",
+    "tsx": "^4.19.0",
     "typescript": "^5.9.3",
     "vite": "^7.3.0",
     "wrangler": "4.63.0"

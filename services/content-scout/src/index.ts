@@ -33,6 +33,21 @@ app.post('/api/scout/run-all', async (c) => {
 // Health check (no auth required)
 app.get('/health', (c) => c.json({ status: 'ok', service: 'content-scout' }))
 
+// TODO: Remove after debugging auth issue
+app.get('/debug/auth', (c) => {
+  const apiKey = c.env.API_KEY
+  const authHeader = c.req.header('Authorization')
+  const expected = `Bearer ${apiKey}`
+  return c.json({
+    apiKeySet: !!apiKey,
+    apiKeyLength: apiKey?.length ?? 0,
+    authHeaderPresent: !!authHeader,
+    authHeaderLength: authHeader?.length ?? 0,
+    expectedLength: expected.length,
+    match: authHeader === expected,
+  })
+})
+
 export { ScoutWorkflow }
 
 export default {

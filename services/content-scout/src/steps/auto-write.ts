@@ -44,9 +44,9 @@ async function checkCadence(env: ScoutEnv, publication: Publication): Promise<bo
 /**
  * Calls web worker's /internal/* endpoints via service binding to:
  * 1. Create a writing session with seed context
- * 2. Send a write instruction to the agent
- * 3. Poll for draft completion
- * 4. Publish the draft to CMS
+ * 2. Run autonomous auto-write (returns draft directly, no polling)
+ * 3. Publish the draft to CMS
+ * 4. Update idea status
  */
 async function writeAndPublish(
   env: ScoutEnv,
@@ -76,21 +76,31 @@ async function writeAndPublish(
   if (!sessionRes.ok) throw new Error(`Failed to create session: ${await sessionRes.text()}`)
   const session = (await sessionRes.json()) as { id: string }
 
-  // 2. Send a write instruction to the agent
-  const chatRes = await env.WEB.fetch(
-    new Request(`https://internal/internal/sessions/${session.id}/chat`, {
+  // 2. Run autonomous auto-write — the agent writes the complete post and returns the draft
+  const autoWriteRes = await env.WEB.fetch(
+    new Request(`https://internal/internal/sessions/${session.id}/auto-write`, {
       method: 'POST',
       headers: internalHeaders,
       body: JSON.stringify({ message: buildWriteInstruction(idea, publication) }),
     }),
   )
-  if (!chatRes.ok) throw new Error(`Chat failed for session ${session.id}: ${await chatRes.text()}`)
+  if (!autoWriteRes.ok) {
+    throw new Error(`Auto-write failed for session ${session.id}: ${await autoWriteRes.text()}`)
+  }
 
-  // 3. Wait for draft to be produced (poll)
-  const draft = await pollForDraft(env, session.id, publication.userId)
-  if (!draft) throw new Error(`No draft produced for session ${session.id} within timeout`)
+  const autoWriteResult = (await autoWriteRes.json()) as {
+    success: boolean
+    partial?: boolean
+    error?: string
+  }
+  if (!autoWriteResult.success) {
+    throw new Error(`Auto-write did not produce a draft for session ${session.id}: ${autoWriteResult.error}`)
+  }
+  if (autoWriteResult.partial) {
+    console.warn(`[auto-write] Session ${session.id}: draft is partial — proofread may be incomplete`)
+  }
 
-  // 4. Publish the draft
+  // 3. Publish the draft
   const publishRes = await env.WEB.fetch(
     new Request(`https://internal/internal/sessions/${session.id}/publish`, {
       method: 'POST',
@@ -103,7 +113,7 @@ async function writeAndPublish(
   )
   if (!publishRes.ok) throw new Error(`Publish failed: ${await publishRes.text()}`)
 
-  // 5. Update idea status
+  // 4. Update idea status
   await env.DAL.promoteIdea(idea.id, session.id)
 }
 
@@ -128,7 +138,7 @@ function buildSeedContext(idea: Idea, publication: Publication): string {
 }
 
 function buildWriteInstruction(idea: Idea, publication: Publication): string {
-  let instruction = `Please write a complete blog post based on the research context provided. `
+  let instruction = `Write a complete blog post based on the research context provided. `
   instruction += `The post should be titled "${idea.title}" and take the following angle: ${idea.angle}\n\n`
   instruction += `Key points to cover:\n${idea.summary}\n\n`
 
@@ -136,42 +146,8 @@ function buildWriteInstruction(idea: Idea, publication: Publication): string {
     instruction += `Writing style: ${publication.writingTone}\n\n`
   }
 
-  instruction += `Please research the topic using the available tools, then write a thorough, well-sourced blog post. `
-  instruction += `Include citations where appropriate. The post should be ready for publication.`
+  instruction += `Research the topic using the available tools, then write a thorough, well-sourced blog post. `
+  instruction += `Include citations where appropriate. Save the draft using save_draft when done, then proofread and revise if needed.`
 
   return instruction
-}
-
-async function pollForDraft(
-  env: ScoutEnv,
-  sessionId: string,
-  userId: string,
-  maxAttempts = 30,
-  intervalMs = 10_000,
-): Promise<{ version: number } | null> {
-  const headers: Record<string, string> = {
-    'X-Internal-Key': env.INTERNAL_API_KEY,
-    'X-User-Id': userId,
-  }
-
-  for (let i = 0; i < maxAttempts; i++) {
-    await new Promise((resolve) => setTimeout(resolve, intervalMs))
-
-    const res = await env.WEB.fetch(
-      new Request(`https://internal/internal/sessions/${sessionId}/drafts`, { headers }),
-    )
-    if (!res.ok) continue
-
-    const { data: drafts } = (await res.json()) as {
-      data: Array<{ version: number; is_final: number }>
-    }
-
-    // Return as soon as a draft exists — finalization happens after publish,
-    // not after writing, so polling for is_final would always timeout.
-    if (drafts.length > 0) {
-      return drafts[drafts.length - 1]
-    }
-  }
-
-  return null
 }

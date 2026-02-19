@@ -7,9 +7,12 @@
  *
  * Needed for auto-write pipeline:
  * - POST /sessions — create session
+ * - POST /sessions/:id/auto-write — autonomous write (returns draft directly)
+ * - POST /sessions/:id/publish — publish draft to CMS
+ *
+ * Legacy (kept for backward compatibility):
  * - POST /sessions/:id/chat — send chat message
  * - GET /sessions/:id/drafts — list drafts (poll for completion)
- * - POST /sessions/:id/publish — publish draft to CMS
  */
 
 import { getAgentByName } from 'agents'
@@ -58,6 +61,29 @@ internal.post('/sessions/:sessionId/chat', async (c) => {
 
   const url = new URL(c.req.url)
   url.pathname = '/chat'
+
+  const res = await agent.fetch(new Request(url.toString(), {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: c.req.raw.body,
+  }))
+
+  const data = await res.json()
+  return c.json(data, res.status as ContentfulStatusCode)
+})
+
+/** Autonomous auto-write — proxied to agent DO. Returns the draft directly. */
+internal.post('/sessions/:sessionId/auto-write', async (c) => {
+  const sessionId = c.req.param('sessionId')
+  const userId = c.get('userId')
+
+  const session = await c.env.DAL.getSessionById(sessionId)
+  if (!session || session.userId !== userId) return c.json({ error: 'Session not found' }, 404)
+
+  const agent = await getAgentByName<Env, WriterAgent>(c.env.WRITER_AGENT, sessionId)
+
+  const url = new URL(c.req.url)
+  url.pathname = '/auto-write'
 
   const res = await agent.fetch(new Request(url.toString(), {
     method: 'POST',
