@@ -47,6 +47,8 @@ interface Props {
   articleModifiedTime?: string;
   articleAuthor?: string;
   articleTags?: string[];
+  articleSection?: string;
+  twitterSite?: string;
   commentsEnabled: boolean;
   publicationSlug: string;
   turnstileSiteKey: string;
@@ -73,6 +75,8 @@ const {
   articleModifiedTime,
   articleAuthor,
   articleTags,
+  articleSection,
+  twitterSite,
   commentsEnabled,
   publicationSlug,
   turnstileSiteKey,
@@ -92,6 +96,8 @@ const layoutProps = {
   articleModifiedTime,
   articleAuthor,
   articleTags,
+  articleSection,
+  twitterSite,
 };
 
 const contentProps = {

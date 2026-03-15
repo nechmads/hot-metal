@@ -1,0 +1,247 @@
+{
+	"info": {
+		"name": "Hot Metal \u2014 Content Analyzer",
+		"description": "# Hot Metal Content Analyzer Service\n\nThe Content Analyzer is a standalone Cloudflare Worker that scores any URL for **AEO/GEO (Answer Engine Optimization / Generative Engine Optimization)** readiness.\n\nIt evaluates how well content will perform when AI answer engines (Google AI Overviews, ChatGPT Search, Perplexity, Bing Copilot) decide whether to cite, quote, or reference it.\n\n## Authentication\n\nAll `/api/*` endpoints require an `X-API-Key` header.\n\n## Endpoints Overview\n\n| Method | Path | Auth | Description |\n|--------|------|------|-------------|\n| POST | `/api/v1/analyze` | API Key | Score a URL for AEO/GEO optimization |\n| GET | `/api/v1/rubric` | API Key | Get the scoring rubric metadata |\n| GET | `/health` | None | Service health check |\n\n## Scoring Pipeline\n\n1. **Content extraction**: Fetches the URL, extracts metadata, headings, links, images, structured data, and text content using HTMLRewriter\n2. **Crawler simulation**: Probes the URL as 6 different bots (Googlebot, OAI-SearchBot, PerplexityBot, Bingbot, GPTBot, browser) and parses robots.txt\n3. **Deterministic scoring**: 8 dimensions scored by code (retrieval eligibility, snippet permissions, heading structure, extractable formatting, multimodal accessibility, structured data, freshness, spam risk)\n4. **LLM scoring**: 9 dimensions scored by Claude Haiku (top-of-page answer, Q&A coverage, entity clarity, evidence density, originality, factual consistency, authorship, readability, internal linking)\n5. **Aggregation**: Weighted overall score (0-100), strengths, weaknesses, critical issues, quick wins, rewrite priorities, platform-specific notes\n\n## Error Responses\n\nAll errors return JSON: `{ \"error\": \"<message>\" }`\n\n| Status | Meaning |\n|--------|-------------------------------------------|\n| 400 | Missing/invalid URL or SSRF blocked |\n| 401 | Missing or invalid API key |\n| 422 | URL could not be fetched or is not HTML |\n| 500 | Internal server error |\n\n## Base URL\n\nLocal development: `http://localhost:8793`\nProduction: `https://content-analyzer.hotmetalapp.com`",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "Health",
+			"description": "Service health check. No authentication required.",
+			"item": [
+				{
+					"name": "Health Check",
+					"description": "Returns the service status. Use this to verify the content analyzer worker is running.\n\n### Response\n\n```json\n{\n  \"status\": \"ok\",\n  \"service\": \"hotmetal-content-analyzer\"\n}\n```\n\nNo authentication required.",
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{ANALYZER_BASE_URL}}/health",
+							"host": [
+								"{{ANALYZER_BASE_URL}}"
+							],
+							"path": [
+								"health"
+							]
+						}
+					},
+					"response": [
+						{
+							"name": "200 \u2014 Healthy",
+							"status": "OK",
+							"code": 200,
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"body": "{\n  \"status\": \"ok\",\n  \"service\": \"hotmetal-content-analyzer\"\n}"
+						}
+					]
+				}
+			],
+			"auth": {
+				"type": "noauth"
+			}
+		},
+		{
+			"name": "Analysis",
+			"description": "AEO/GEO content analysis endpoints.\n\nAll endpoints require `X-API-Key` authentication.",
+			"item": [
+				{
+					"name": "Analyze URL",
+					"description": "Score a URL for AEO/GEO optimization readiness.\n\nThis is the main endpoint. It fetches the URL, extracts content, simulates crawler access, and runs 17 scoring dimensions (8 deterministic + 9 LLM-based).\n\n### Request Body\n\n| Field | Type | Required | Description |\n|-------|--------|----------|-------------------------------|\n| `url` | string | Yes | The URL to analyze (http/https) |\n\n### Response \u2014 AnalysisReport\n\nThe response contains a `data` wrapper with the full report:\n\n```json\n{\n  \"data\": {\n    \"url\": \"https://example.com/article\",\n    \"analyzedAt\": \"2026-03-15T12:00:00.000Z\",\n    \"overallScore\": 72,\n    \"scoringVersion\": \"1.0\",\n    \"confidence\": {\n      \"overall\": \"medium\",\n      \"notes\": [\"...\"]\n    },\n    \"dimensions\": [\n      {\n        \"key\": \"retrieval_eligibility\",\n        \"label\": \"Retrieval eligibility\",\n        \"weight\": 10,\n        \"score\": 85,\n        \"severityIfLow\": \"critical\",\n        \"scope\": \"site_and_page\",\n        \"objectivity\": \"semi_objective\",\n        \"signals\": {\n          \"positive\": [\"All major search crawlers can access the content\"],\n          \"negative\": []\n        },\n        \"evidence\": {\n          \"observations\": [\"robots.txt allows all target crawlers\"],\n          \"examples\": []\n        },\n        \"recommendations\": {\n          \"quickWins\": [],\n          \"requiresTechnicalWork\": [],\n          \"requiresEditorialWork\": []\n        }\n      }\n    ],\n    \"strengths\": [\n      {\n        \"summary\": \"Strong retrieval eligibility (85/100)\",\n        \"dimensions\": [\"retrieval_eligibility\"],\n        \"evidenceSnippets\": [\"All major search crawlers can access the content\"]\n      }\n    ],\n    \"weaknesses\": [\n      {\n        \"summary\": \"Weak evidence density (35/100)\",\n        \"dimensions\": [\"evidence_density\"],\n        \"evidenceSnippets\": [\"Few cited sources\"],\n        \"risk\": \"high\"\n      }\n    ],\n    \"criticalIssues\": [],\n    \"quickWins\": [\n      {\n        \"action\": \"Add a meta description tag\",\n        \"expectedImpact\": \"medium\",\n        \"fixType\": \"technical\"\n      }\n    ],\n    \"rewritePriorities\": [\n      {\n        \"priority\": 1,\n        \"goal\": \"Improve evidence density (currently 35/100)\",\n        \"steps\": [\"Add citations to key claims\"],\n        \"doNotChange\": [\"Good heading structure\"]\n      }\n    ],\n    \"platformNotes\": {\n      \"googleAiOverviews\": { \"fit\": \"medium\", \"notes\": [] },\n      \"chatgptSearch\": { \"fit\": \"medium\", \"notes\": [] },\n      \"perplexity\": { \"fit\": \"medium\", \"notes\": [] },\n      \"bingCopilot\": { \"fit\": \"medium\", \"notes\": [] }\n    },\n    \"notes\": [\n      \"Scores reflect on-page signals; off-page authority may change outcomes.\"\n    ]\n  }\n}\n```\n\n### Scoring Dimensions (17)\n\n**Deterministic (code-based):**\n1. Retrieval eligibility (weight: 10) \u2014 Can crawlers access the content?\n2. Snippet & reuse permissions (6) \u2014 Are snippet controls blocking reuse?\n3. Heading structure (7) \u2014 Are sections clearly delimited?\n4. Extractable formatting (6) \u2014 Lists, tables, steps present?\n5. Multimodal accessibility (3) \u2014 Alt text, transcripts?\n6. Structured data (5) \u2014 JSON-LD schema valid?\n7. Freshness (5) \u2014 Dates present and recent?\n8. Spam & policy risk (2) \u2014 Keyword stuffing, thin content?\n\n**LLM-based (Claude Haiku):**\n9. Top-of-page answer (8) \u2014 Direct answer early?\n10. Q&A / intent coverage (6) \u2014 Questions answered?\n11. Entity clarity (6) \u2014 Entities unambiguous?\n12. Evidence density (10) \u2014 Claims supported?\n13. Originality (7) \u2014 Unique value added?\n14. Factual consistency (7) \u2014 No contradictions?\n15. Authorship (5) \u2014 Credible author signals?\n16. Readability (4) \u2014 Clear, parseable prose?\n17. Internal linking (3) \u2014 Topical ecosystem?\n\n### Possible Errors\n\n- `400` \u2014 Missing `url` field, invalid URL format, or SSRF-blocked address\n- `401` \u2014 Missing or invalid API key\n- `422` \u2014 URL could not be fetched, timed out, or did not return HTML\n- `500` \u2014 Internal analysis error\n\n### Notes\n\n- Analysis typically takes 5-15 seconds depending on URL response time and LLM latency\n- If the LLM call fails, deterministic dimensions are still scored and LLM dimensions default to 50/100\n- The service simulates 6 crawler identities (Googlebot, OAI-SearchBot, PerplexityBot, Bingbot, GPTBot, browser control)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "X-API-Key",
+								"value": "{{ANALYZER_API_KEY}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"url\": \"https://example.com/article\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{ANALYZER_BASE_URL}}/api/v1/analyze",
+							"host": [
+								"{{ANALYZER_BASE_URL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"analyze"
+							]
+						}
+					},
+					"response": [
+						{
+							"name": "200 \u2014 Analysis Complete",
+							"status": "OK",
+							"code": 200,
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"body": "{\n  \"data\": {\n    \"url\": \"https://example.com/article\",\n    \"analyzedAt\": \"2026-03-15T12:00:00.000Z\",\n    \"overallScore\": 72,\n    \"scoringVersion\": \"1.0\",\n    \"confidence\": {\n      \"overall\": \"medium\",\n      \"notes\": [\n        \"Platform behaviors are probabilistic and may vary over time.\",\n        \"Limited site-level context (full crawl logs and Search Console data not available).\"\n      ]\n    },\n    \"dimensions\": [\n      {\n        \"key\": \"retrieval_eligibility\",\n        \"label\": \"Retrieval eligibility\",\n        \"weight\": 10,\n        \"score\": 85,\n        \"severityIfLow\": \"critical\",\n        \"scope\": \"site_and_page\",\n        \"objectivity\": \"semi_objective\",\n        \"signals\": {\n          \"positive\": [\"All major search crawlers can access the content\", \"robots.txt allows all target crawlers\"],\n          \"negative\": []\n        },\n        \"evidence\": {\n          \"observations\": [\"5/5 crawlers can access content\"],\n          \"examples\": []\n        },\n        \"recommendations\": {\n          \"quickWins\": [],\n          \"requiresTechnicalWork\": [],\n          \"requiresEditorialWork\": []\n        }\n      }\n    ],\n    \"strengths\": [\n      {\n        \"summary\": \"Strong retrieval eligibility (85/100)\",\n        \"dimensions\": [\"retrieval_eligibility\"],\n        \"evidenceSnippets\": [\"All major search crawlers can access the content\"]\n      }\n    ],\n    \"weaknesses\": [],\n    \"criticalIssues\": [],\n    \"quickWins\": [\n      {\n        \"action\": \"Add a meta description tag\",\n        \"expectedImpact\": \"medium\",\n        \"fixType\": \"editorial\"\n      }\n    ],\n    \"rewritePriorities\": [],\n    \"platformNotes\": {\n      \"googleAiOverviews\": { \"fit\": \"medium\", \"notes\": [] },\n      \"chatgptSearch\": { \"fit\": \"medium\", \"notes\": [] },\n      \"perplexity\": { \"fit\": \"medium\", \"notes\": [] },\n      \"bingCopilot\": { \"fit\": \"medium\", \"notes\": [] }\n    },\n    \"notes\": [\n      \"Scores reflect on-page signals; off-page authority and real crawl/index status may change outcomes.\",\n      \"Platform behaviors are probabilistic and may vary over time.\"\n    ]\n  }\n}"
+						},
+						{
+							"name": "400 \u2014 Missing URL",
+							"status": "Bad Request",
+							"code": 400,
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"body": "{\n  \"error\": \"Missing required field: url (string)\"\n}"
+						},
+						{
+							"name": "400 \u2014 SSRF Blocked",
+							"status": "Bad Request",
+							"code": 400,
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"body": "{\n  \"error\": \"URL points to a private or reserved IP address\"\n}"
+						},
+						{
+							"name": "401 \u2014 Unauthorized",
+							"status": "Unauthorized",
+							"code": 401,
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"body": "{\n  \"error\": \"Unauthorized\"\n}"
+						},
+						{
+							"name": "422 \u2014 Could not fetch URL",
+							"status": "Unprocessable Entity",
+							"code": 422,
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"body": "{\n  \"error\": \"Could not fetch URL: Failed to fetch https://example.com: 404 Not Found\"\n}"
+						}
+					]
+				},
+				{
+					"name": "Get Scoring Rubric",
+					"description": "Returns the scoring rubric metadata: all 17 dimensions with their keys, labels, weights, severity levels, and signal descriptions.\n\nUseful for understanding the scoring system and building UIs that display dimension details.\n\n### Response\n\n```json\n{\n  \"scoringVersion\": \"1.0\",\n  \"totalWeight\": 100,\n  \"dimensions\": [\n    {\n      \"key\": \"retrieval_eligibility\",\n      \"label\": \"Retrieval eligibility\",\n      \"weight\": 10,\n      \"severityIfLow\": \"critical\",\n      \"scope\": \"site_and_page\",\n      \"objectivity\": \"semi_objective\",\n      \"scoringMethod\": \"deterministic\",\n      \"description\": \"Content can be crawled/indexed/fetched by target engines\",\n      \"signals\": [\n        \"No accidental noindex\",\n        \"Not blocking relevant search crawlers\",\n        \"Canonical consistency\"\n      ]\n    }\n  ]\n}\n```",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "X-API-Key",
+								"value": "{{ANALYZER_API_KEY}}"
+							}
+						],
+						"url": {
+							"raw": "{{ANALYZER_BASE_URL}}/api/v1/rubric",
+							"host": [
+								"{{ANALYZER_BASE_URL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"rubric"
+							]
+						}
+					},
+					"response": [
+						{
+							"name": "200 \u2014 Rubric",
+							"status": "OK",
+							"code": 200,
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"body": "{\n  \"scoringVersion\": \"1.0\",\n  \"totalWeight\": 100,\n  \"dimensions\": [\n    {\n      \"key\": \"retrieval_eligibility\",\n      \"label\": \"Retrieval eligibility\",\n      \"weight\": 10,\n      \"severityIfLow\": \"critical\",\n      \"scope\": \"site_and_page\",\n      \"objectivity\": \"semi_objective\",\n      \"scoringMethod\": \"deterministic\",\n      \"description\": \"Content can be crawled/indexed/fetched by target engines\",\n      \"signals\": [\n        \"No accidental noindex\",\n        \"Not blocking relevant search crawlers\",\n        \"Canonical consistency\"\n      ]\n    },\n    {\n      \"key\": \"snippet_reuse_permissions\",\n      \"label\": \"Snippet & reuse permissions\",\n      \"weight\": 6,\n      \"severityIfLow\": \"high\",\n      \"scope\": \"site_and_page\",\n      \"objectivity\": \"semi_objective\",\n      \"scoringMethod\": \"deterministic\",\n      \"description\": \"Page-level controls don't suppress reuse unintentionally\",\n      \"signals\": [\n        \"No blanket nosnippet where citations desired\",\n        \"Careful data-nosnippet use\",\n        \"Avoid Bing NOCACHE/NOARCHIVE if wanting inclusion\"\n      ]\n    },\n    {\n      \"key\": \"top_of_page_answer\",\n      \"label\": \"Top-of-page answer presence\",\n      \"weight\": 8,\n      \"severityIfLow\": \"high\",\n      \"scope\": \"page\",\n      \"objectivity\": \"semi_objective\",\n      \"scoringMethod\": \"llm\",\n      \"description\": \"Direct answer early and easily extractable\",\n      \"signals\": [\n        \"1-3 sentence answer\",\n        \"Definition block\",\n        \"Summary bullets\"\n      ]\n    }\n  ]\n}"
+						},
+						{
+							"name": "401 \u2014 Unauthorized",
+							"status": "Unauthorized",
+							"code": 401,
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"body": "{\n  \"error\": \"Unauthorized\"\n}"
+						}
+					]
+				}
+			],
+			"auth": {
+				"type": "apikey",
+				"apikey": [
+					{
+						"key": "key",
+						"value": "X-API-Key",
+						"type": "string"
+					},
+					{
+						"key": "value",
+						"value": "{{ANALYZER_API_KEY}}",
+						"type": "string"
+					},
+					{
+						"key": "in",
+						"value": "header",
+						"type": "string"
+					}
+				]
+			}
+		}
+	],
+	"auth": {
+		"type": "apikey",
+		"apikey": [
+			{
+				"key": "key",
+				"value": "X-API-Key",
+				"type": "string"
+			},
+			{
+				"key": "value",
+				"value": "{{ANALYZER_API_KEY}}",
+				"type": "string"
+			},
+			{
+				"key": "in",
+				"value": "header",
+				"type": "string"
+			}
+		]
+	}
+}

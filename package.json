@@ -23,6 +23,7 @@
     "deploy:notifications": "pnpm --filter @hotmetal/notifications run deploy",
     "deploy:web": "pnpm --filter @hotmetal/web run deploy",
     "deploy:pub-web": "pnpm --filter @hotmetal/publications-web run deploy",
+    "deploy:analyzer": "pnpm --filter @hotmetal/content-analyzer run deploy",
     "deploy:docs": "pnpm --filter @hotmetal/docs run deploy",
     "deploy:all": "pnpm deploy:cms && pnpm deploy:dal && pnpm deploy:scout && pnpm deploy:publisher && pnpm deploy:notifications && pnpm deploy:web",
     "dev:cms": "pnpm --filter @hotmetal/cms-admin dev",
@@ -34,6 +35,7 @@
     "dev:notifications": "pnpm --filter @hotmetal/notifications dev",
     "dev:pub-web": "pnpm --filter @hotmetal/publications-web dev",
     "dev:docs": "pnpm --filter @hotmetal/docs dev",
+    "dev:analyzer": "pnpm --filter @hotmetal/content-analyzer dev",
     "dev:stack": "STACK=true pnpm --filter @hotmetal/web dev",
     "dev:stack-pub": "STACK=true pnpm --filter @hotmetal/publications-web dev"
   },

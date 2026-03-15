@@ -17,6 +17,9 @@ interface Props {
   articleModifiedTime?: string;
   articleAuthor?: string;
   articleTags?: string[];
+  articleSection?: string;
+  twitterSite?: string;
+  twitterCreator?: string;
 }
 
 const {
@@ -33,6 +36,9 @@ const {
   articleModifiedTime,
   articleAuthor,
   articleTags,
+  articleSection,
+  twitterSite,
+  twitterCreator,
 } = Astro.props;
 
 const HEX_COLOR_PATTERN = /^#[0-9a-fA-F]{3,8}$/;
@@ -68,6 +74,9 @@ const accentStyle = validAccent
       {articleModifiedTime}
       {articleAuthor}
       {articleTags}
+      {articleSection}
+      {twitterSite}
+      {twitterCreator}
     />
 
     <ClientRouter />

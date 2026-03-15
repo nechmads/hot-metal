@@ -1,0 +1,5 @@
+export { extractContentProfile } from './html-parser'
+export { simulateCrawlers, CRAWLERS } from './crawler-sim'
+export { validateUrl, UrlValidationError } from './url-validator'
+export type { ContentProfile, ContentStats, HeadingEntry, ImageEntry, LinkEntry, MetaTags, StructuredDataEntry } from './types'
+export type { CrawlerReport, CrawlerProbeResult, RobotsTxtReport, CrawlerIdentity } from './crawler-sim'

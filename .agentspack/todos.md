@@ -296,5 +296,18 @@
   - Content collection with frontmatter schema (title, description, section, order)
   - Wrangler config for Cloudflare static asset deployment
   - Docs links added to web app: PublicNavbar, PublicFooter, authenticated Sidebar (BookOpenIcon, opens in new tab)
+- [x] **Content Analyzer Service — AEO/GEO Scoring** — New standalone Cloudflare Worker (`services/content-analyzer`) that scores any URL for AI answer engine optimization readiness. Includes:
+  - HTML content extractor using CF Workers HTMLRewriter: streaming extraction of meta tags, headings, images, links, JSON-LD structured data, text content, and content statistics
+  - Crawler simulation module: probes URLs as 6 different bots (Googlebot, OAI-SearchBot, PerplexityBot, Bingbot, GPTBot, browser control), parses robots.txt per RFC 9309, detects blocking signals per-crawler
+  - 17-dimension scoring rubric from AEO/GEO research (weights sum to 100): retrieval eligibility, snippet permissions, top-of-page answer, heading structure, Q&A coverage, extractable formatting, entity clarity, evidence density, originality, factual consistency, authorship, freshness, structured data, readability, multimodal accessibility, internal linking, spam risk
+  - 8 deterministic scorers (code-based): retrieval eligibility, snippet permissions, heading structure, extractable formatting, multimodal accessibility, structured data, freshness, spam risk
+  - 9 LLM-based scorers via single batched Claude Haiku call: top-of-page answer, Q&A coverage, entity clarity, evidence density, originality, factual consistency, authorship, readability, internal linking
+  - Score aggregator: weighted overall score, strengths/weaknesses extraction, critical issues, quick wins, rewrite priorities, platform-specific notes (Google AI Overviews, ChatGPT Search, Perplexity, Bing Copilot)
+  - SSRF protection: URL validation against private/internal IP ranges, cloud metadata endpoints, internal hostnames
+  - Graceful LLM degradation: deterministic scores returned even if Anthropic API fails
+  - Modular architecture: pluggable DimensionScorer interface, add/remove dimensions by editing registry
+  - API: `POST /api/v1/analyze` (score a URL), `GET /api/v1/rubric` (dimension metadata), `GET /health`
+  - Full JSON report schema matching research doc (dimensions, signals, evidence, recommendations, platform notes)
+  - Research doc stored at `docs/aeo-geo-research.md`
 - [ ] Writer Agent — Phase 2: Voice input (transcription in `input-processor.ts`)
 - [ ] Writer Agent — Phase 2: D1 session sync (synchronize DO state back to D1 for listing accuracy)
