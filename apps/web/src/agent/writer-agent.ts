@@ -7,9 +7,11 @@ import {
   generateText,
   streamText,
   stepCountIs,
+  wrapLanguageModel,
   type StreamTextOnFinishCallback,
   type ToolSet,
 } from "ai";
+import type { LanguageModelV3 } from "@ai-sdk/provider";
 import type { Connection, WSMessage } from "partyserver";
 import {
   type WriterAgentState,
@@ -23,7 +25,7 @@ import {
 } from "../prompts/system-prompt";
 import { createToolSet, createAutoWriteToolSet } from "../tools";
 import { cleanupMessages } from "./message-utils";
-import { CmsApi } from "@hotmetal/shared";
+import { CmsApi, initWilson, createWilsonMiddleware } from "@hotmetal/shared";
 import type { Citation } from "@hotmetal/content-core";
 import { marked } from "marked";
 import {
@@ -57,9 +59,11 @@ export interface DraftSummary {
 
 export class WriterAgent extends AIChatAgent<Env, WriterAgentState> {
   initialState: WriterAgentState = INITIAL_STATE;
+  private _cachedUserTier: string | null = null;
 
   async onStart() {
     initAgentSqlite(this.sql.bind(this));
+    initWilson(this.env.WILSON_API_URL, this.env.WILSON_API_KEY);
 
     // Hydrate state from session metadata via DAL if this is a fresh start
     if (!this.state.sessionId) {
@@ -81,6 +85,37 @@ export class WriterAgent extends AIChatAgent<Env, WriterAgentState> {
         });
       }
     }
+  }
+
+  /** Look up the user's tier from the DAL, caching it for the DO lifetime. */
+  private async getUserTier(): Promise<string> {
+    if (this._cachedUserTier) return this._cachedUserTier;
+    try {
+      const user = await this.env.DAL.getUserById(this.state.userId);
+      this._cachedUserTier = user?.tier ?? "creator";
+    } catch {
+      this._cachedUserTier = "creator";
+    }
+    return this._cachedUserTier;
+  }
+
+  /** Create a model wrapped with Wilson tracking middleware. */
+  async trackedModel(
+    modelId: string,
+    featureName: string,
+    trigger: "user" | "scout" = "user",
+  ): Promise<LanguageModelV3> {
+    const userTier = await this.getUserTier();
+    return wrapLanguageModel({
+      model: anthropic(modelId),
+      middleware: createWilsonMiddleware({
+        userId: this.state.userId,
+        userTier,
+        featureName,
+        publicationId: this.state.publicationId ?? undefined,
+        trigger,
+      }),
+    });
   }
 
   /**
@@ -198,12 +233,13 @@ export class WriterAgent extends AIChatAgent<Env, WriterAgentState> {
     }
 
     const cleaned = cleanupMessages(this.messages);
+    const model = await this.trackedModel("claude-sonnet-4-6", "chat");
 
     const stream = createUIMessageStream({
       execute: async ({ writer }) => {
         try {
           const result = streamText({
-            model: anthropic("claude-sonnet-4-6"),
+            model,
             system: systemPrompt,
             messages: await convertToModelMessages(cleaned),
             tools,
@@ -379,9 +415,10 @@ export class WriterAgent extends AIChatAgent<Env, WriterAgentState> {
     await this.persistMessages(currentMessages);
 
     try {
+      const chatModel = await this.trackedModel("claude-sonnet-4-6", "chat");
       const modelMessages = await convertToModelMessages(currentMessages);
       const result = await generateText({
-        model: anthropic("claude-sonnet-4-6"),
+        model: chatModel,
         system: systemPrompt,
         messages: modelMessages,
         tools,
@@ -457,8 +494,9 @@ export class WriterAgent extends AIChatAgent<Env, WriterAgentState> {
     );
 
     try {
+      const autoWriteModel = await this.trackedModel("claude-sonnet-4-6", "auto_write", "scout");
       const result = await generateText({
-        model: anthropic("claude-sonnet-4-6"),
+        model: autoWriteModel,
         system: systemPrompt,
         messages: [{ role: "user", content: instruction }],
         tools,
@@ -570,9 +608,13 @@ export class WriterAgent extends AIChatAgent<Env, WriterAgentState> {
       };
 
       // Run hook (Sonnet) and SEO meta (Haiku) generation in parallel
+      const [hookModel, seoModel] = await Promise.all([
+        this.trackedModel("claude-sonnet-4-6", "publish_hook"),
+        this.trackedModel("claude-haiku-4-5-20251001", "publish_seo"),
+      ]);
       const [hookResult, seoResult] = await Promise.allSettled([
-        createHook(draftInput),
-        createSeoMeta(draftInput),
+        createHook(hookModel, draftInput),
+        createSeoMeta(seoModel, draftInput),
       ]);
 
       const hook = hookResult.status === "fulfilled" ? hookResult.value : "";
@@ -618,7 +660,8 @@ export class WriterAgent extends AIChatAgent<Env, WriterAgentState> {
     };
 
     try {
-      const tweet = await createTweet(draftInput, hook);
+      const tweetModel = await this.trackedModel("claude-haiku-4-5-20251001", "publish_tweet");
+      const tweet = await createTweet(tweetModel, draftInput, hook);
       return Response.json({ tweet });
     } catch (error) {
       console.error("[handleGenerateTweet] Failed:", error);
@@ -649,7 +692,8 @@ export class WriterAgent extends AIChatAgent<Env, WriterAgentState> {
     };
 
     try {
-      const linkedInPost = await optimizeForLinkedIn(draftInput, {
+      const linkedInModel = await this.trackedModel("claude-haiku-4-5-20251001", "publish_linkedin");
+      const linkedInPost = await optimizeForLinkedIn(linkedInModel, draftInput, {
         mode,
         hook: body.hook?.trim() || undefined,
         currentText: body.currentText?.trim() || undefined,

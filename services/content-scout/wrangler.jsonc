@@ -81,6 +81,7 @@
 	"vars": {
 		"ALEXANDER_API_URL": "https://alexanderai.farfarawaylabs.com",
 		"PUBLICATIONS_BASE_DOMAIN": "hotmetalapp.com",
+		"WILSON_API_URL": "https://wilson.farfarawaylabs.com",
 	},
 
 	// Secrets (set via `wrangler secret put`):
@@ -88,4 +89,5 @@
 	// ALEXANDER_API_KEY    — Alexander trend search API
 	// ANTHROPIC_API_KEY    — Claude API for idea generation
 	// INTERNAL_API_KEY     — shared key for service-to-service auth with web
+	// WILSON_API_KEY       — Wilson LLM usage tracking API token
 }

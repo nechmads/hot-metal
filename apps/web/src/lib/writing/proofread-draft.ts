@@ -1,5 +1,5 @@
-import { anthropic } from '@ai-sdk/anthropic'
 import { generateText } from 'ai'
+import type { LanguageModelV3 } from '@ai-sdk/provider'
 import type { DraftInput } from './index'
 import { PROOFREAD_RULES_PROMPT, type ProofreadResult } from '../../prompts/anti-ai-rules'
 
@@ -11,10 +11,10 @@ export type { ProofreadFinding, ProofreadResult } from '../../prompts/anti-ai-ru
  * Returns structured findings with specific issues and suggested fixes.
  * Returns a safe default on failure (non-blocking).
  */
-export async function proofreadDraft(draft: DraftInput): Promise<ProofreadResult> {
+export async function proofreadDraft(model: LanguageModelV3, draft: DraftInput): Promise<ProofreadResult> {
   try {
     const result = await generateText({
-      model: anthropic('claude-sonnet-4-6'),
+      model,
       system: PROOFREAD_RULES_PROMPT,
       messages: [
         {

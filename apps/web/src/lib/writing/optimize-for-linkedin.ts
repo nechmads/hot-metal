@@ -1,5 +1,5 @@
-import { anthropic } from '@ai-sdk/anthropic'
 import { generateText } from 'ai'
+import type { LanguageModelV3 } from '@ai-sdk/provider'
 import type { DraftInput } from './index'
 
 const LINK_POST_PROMPT = `You are a LinkedIn content strategist writing commentary for a link post.
@@ -59,6 +59,7 @@ export interface OptimizeForLinkedInOptions {
  * Returns empty string on failure (non-blocking).
  */
 export async function optimizeForLinkedIn(
+  model: LanguageModelV3,
   draft: DraftInput,
   opts: OptimizeForLinkedInOptions = {},
 ): Promise<string> {
@@ -84,7 +85,7 @@ export async function optimizeForLinkedIn(
 
   try {
     const result = await generateText({
-      model: anthropic('claude-haiku-4-5-20251001'),
+      model,
       system: systemPrompt,
       messages: [{ role: 'user', content: userContent }],
     })

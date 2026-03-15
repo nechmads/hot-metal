@@ -39,6 +39,9 @@ declare namespace Cloudflare {
 		PADDLE_API_KEY: string;
 		PADDLE_WEBHOOK_SECRET: string;
 		PADDLE_ENVIRONMENT: string;
+		// Wilson LLM usage tracking
+		WILSON_API_URL?: string;
+		WILSON_API_KEY?: string;
 		// Notifications service binding (welcome email, etc.)
 		NOTIFICATIONS: {
 			sendWelcomeNotification(params: { userId: string; userEmail: string; userName: string }): Promise<void>;

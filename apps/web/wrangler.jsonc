@@ -81,6 +81,7 @@
     "CLERK_ISSUER": "https://clerk.hotmetalapp.com",
     "NOTIFICATION_EMAIL": "shahar@hotmetalapp.com",
     "PADDLE_ENVIRONMENT": "production",
+    "WILSON_API_URL": "https://wilson.farfarawaylabs.com",
   },
 
   // SPA fallback — serve index.html for unmatched routes (client-side routing)
@@ -110,4 +111,5 @@
   // RESEND_API_KEY       — Resend email API key
   // PADDLE_API_KEY       — Paddle server-side API key
   // PADDLE_WEBHOOK_SECRET — Paddle webhook signing secret
+  // WILSON_API_KEY       — Wilson LLM usage tracking API token
 }

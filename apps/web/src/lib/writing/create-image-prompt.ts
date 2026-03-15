@@ -1,5 +1,5 @@
-import { anthropic } from '@ai-sdk/anthropic'
 import { generateText } from 'ai'
+import type { LanguageModelV3 } from '@ai-sdk/provider'
 import type { DraftInput } from './index'
 
 const IMAGE_PROMPT_SYSTEM = `You are an expert at creating prompts for the Flux AI image generator.
@@ -26,7 +26,7 @@ Keep the prompt under 120 words. Be specific and visual. Respond with ONLY the p
  * Generate an image prompt suitable for AI image generators (Flux).
  * Returns empty string on failure (non-blocking).
  */
-export async function createImagePrompt(draft: DraftInput): Promise<string> {
+export async function createImagePrompt(model: LanguageModelV3, draft: DraftInput): Promise<string> {
   // Image prompts need less context than text generation — 3k chars is sufficient for visual theme extraction
   const contentPreview = draft.content.length > 3000
     ? draft.content.slice(0, 3000) + '\n\n[truncated]'
@@ -34,7 +34,7 @@ export async function createImagePrompt(draft: DraftInput): Promise<string> {
 
   try {
     const result = await generateText({
-      model: anthropic('claude-haiku-4-5-20251001'),
+      model,
       system: IMAGE_PROMPT_SYSTEM,
       messages: [
         {

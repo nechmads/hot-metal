@@ -28,6 +28,10 @@ export interface ScoutEnv extends Omit<Env, 'DAL' | 'NOTIFICATIONS' | 'PUBLICATI
   ALEXANDER_API_KEY: string
   ANTHROPIC_API_KEY: string
   INTERNAL_API_KEY: string
+
+  // Wilson LLM usage tracking (optional — tracking disabled if missing)
+  WILSON_API_URL?: string
+  WILSON_API_KEY?: string
 }
 
 export interface ScoutQueueMessage {

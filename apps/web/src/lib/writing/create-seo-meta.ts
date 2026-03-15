@@ -1,5 +1,5 @@
-import { anthropic } from '@ai-sdk/anthropic'
 import { generateText } from 'ai'
+import type { LanguageModelV3 } from '@ai-sdk/provider'
 import type { DraftInput } from './index'
 
 export interface SeoMetaResult {
@@ -21,14 +21,14 @@ Do not include explanations or markdown. Just the JSON object.`
  * Generate SEO metadata (excerpt + tags) using Claude Haiku.
  * Returns empty strings on failure (non-blocking).
  */
-export async function createSeoMeta(draft: DraftInput): Promise<SeoMetaResult> {
+export async function createSeoMeta(model: LanguageModelV3, draft: DraftInput): Promise<SeoMetaResult> {
   const contentPreview = draft.content.length > 4000
     ? draft.content.slice(0, 4000) + '\n\n[truncated]'
     : draft.content
 
   try {
     const result = await generateText({
-      model: anthropic('claude-haiku-4-5-20251001'),
+      model,
       system: SEO_META_PROMPT,
       messages: [
         {

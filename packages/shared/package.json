@@ -12,7 +12,16 @@
   "dependencies": {
     "@hotmetal/content-core": "workspace:*"
   },
+  "peerDependencies": {
+    "@ai-sdk/provider": ">=3.0.0"
+  },
+  "peerDependenciesMeta": {
+    "@ai-sdk/provider": {
+      "optional": true
+    }
+  },
   "devDependencies": {
+    "@ai-sdk/provider": "^3.0.8",
     "typescript": "^5.5.2"
   }
 }

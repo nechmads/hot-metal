@@ -1,5 +1,5 @@
-import { anthropic } from "@ai-sdk/anthropic";
 import { generateText } from "ai";
+import type { LanguageModelV3 } from "@ai-sdk/provider";
 import type { DraftInput } from "./index";
 
 const HOOK_PROMPT = `You are a senior editor and conversion copywriter.
@@ -54,7 +54,7 @@ Given the blog post below, do the following:
  * Uses a multi-step scoring and polishing process for high-quality output.
  * Returns empty string on failure (non-blocking).
  */
-export async function createHook(draft: DraftInput): Promise<string> {
+export async function createHook(model: LanguageModelV3, draft: DraftInput): Promise<string> {
   const contentPreview =
     draft.content.length > 4000
       ? draft.content.slice(0, 4000) + "\n\n[truncated]"
@@ -62,7 +62,7 @@ export async function createHook(draft: DraftInput): Promise<string> {
 
   try {
     const result = await generateText({
-      model: anthropic("claude-sonnet-4-6"),
+      model,
       system: HOOK_PROMPT,
       messages: [
         {

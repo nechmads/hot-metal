@@ -1,5 +1,5 @@
-import { anthropic } from "@ai-sdk/anthropic";
 import { generateText } from "ai";
+import type { LanguageModelV3 } from "@ai-sdk/provider";
 import type { DraftInput } from "./index";
 
 const TITLE_PROMPT = `You are an expert headline copywriter and editor.
@@ -51,7 +51,7 @@ CONSTRAINTS
  * Uses a multi-step candidate generation, scoring, and refinement process.
  * Returns empty string on failure (non-blocking).
  */
-export async function createPostTitle(draft: DraftInput): Promise<string> {
+export async function createPostTitle(model: LanguageModelV3, draft: DraftInput): Promise<string> {
   const contentPreview =
     draft.content.length > 4000
       ? draft.content.slice(0, 4000) + "\n\n[truncated]"
@@ -59,7 +59,7 @@ export async function createPostTitle(draft: DraftInput): Promise<string> {
 
   try {
     const result = await generateText({
-      model: anthropic("claude-sonnet-4-6"),
+      model,
       system: TITLE_PROMPT,
       messages: [
         {

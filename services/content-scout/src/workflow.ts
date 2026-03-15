@@ -1,4 +1,7 @@
 import { WorkflowEntrypoint, type WorkflowEvent, type WorkflowStep } from 'cloudflare:workers'
+import { createAnthropic } from '@ai-sdk/anthropic'
+import { wrapLanguageModel } from 'ai'
+import { initWilson, createWilsonMiddleware } from '@hotmetal/shared'
 import type { ScoutEnv, ScoutWorkflowParams } from './env'
 import { loadPublicationContext } from './steps/load-context'
 import { searchForContent } from './steps/search'
@@ -40,13 +43,33 @@ export class ScoutWorkflow extends WorkflowEntrypoint<ScoutEnv, ScoutWorkflowPar
       )
       console.log(`[workflow] Step 2 done: ${searchResults.length} topic result sets`)
 
+      // Init Wilson + resolve user tier for LLM tracking
+      initWilson(this.env.WILSON_API_URL, this.env.WILSON_API_KEY)
+      const anthropic = createAnthropic({ apiKey: this.env.ANTHROPIC_API_KEY })
+      let userTier = 'creator'
+      try {
+        const user = await this.env.DAL.getUserById(context.publication.userId)
+        if (user?.tier) userTier = user.tier
+      } catch { /* fall back to creator */ }
+
+      const scoutCtx = {
+        userId: context.publication.userId,
+        userTier,
+        publicationId,
+        trigger: 'scout' as const,
+      }
+
       // Step 3: Dedupe stories against recent ideas (LLM call)
       const filteredStories = await step.do(
         'dedupe-stories',
         { retries: { limit: 2, delay: '5 seconds', backoff: 'exponential' }, timeout: '1 minute' },
         async () => {
+          const dedupeModel = wrapLanguageModel({
+            model: anthropic('claude-sonnet-4-6'),
+            middleware: createWilsonMiddleware({ ...scoutCtx, featureName: 'scout_dedupe' }),
+          })
           return await dedupeStories(
-            this.env.ANTHROPIC_API_KEY,
+            dedupeModel,
             searchResults,
             context.recentIdeas,
           )
@@ -63,8 +86,12 @@ export class ScoutWorkflow extends WorkflowEntrypoint<ScoutEnv, ScoutWorkflowPar
         'generate-ideas',
         { retries: { limit: 2, delay: '5 seconds', backoff: 'exponential' }, timeout: '2 minutes' },
         async () => {
+          const ideasModel = wrapLanguageModel({
+            model: anthropic('claude-sonnet-4-6'),
+            middleware: createWilsonMiddleware({ ...scoutCtx, featureName: 'scout_ideas' }),
+          })
           return await generateIdeas(
-            this.env.ANTHROPIC_API_KEY,
+            ideasModel,
             context.publication,
             filteredStories,
             context.topics,

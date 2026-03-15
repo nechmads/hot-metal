@@ -1,19 +1,17 @@
 import { generateText } from 'ai';
-import { createAnthropic } from '@ai-sdk/anthropic';
+import type { LanguageModelV3 } from '@ai-sdk/provider';
 import type { Publication, Topic } from '@hotmetal/data-layer';
 import type { FilteredStory, IdeaBrief } from '../types';
 
 export async function generateIdeas(
-	apiKey: string,
+	model: LanguageModelV3,
 	publication: Publication,
 	filteredStories: FilteredStory[],
 	topics: Topic[],
 ): Promise<IdeaBrief[]> {
-	const anthropic = createAnthropic({ apiKey });
-
 	try {
 		const result = await generateText({
-			model: anthropic('claude-sonnet-4-6'),
+			model,
 			system: buildIdeaSystemPrompt(publication),
 			messages: [
 				{

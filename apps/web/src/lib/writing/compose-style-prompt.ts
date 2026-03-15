@@ -1,5 +1,5 @@
-import { anthropic } from '@ai-sdk/anthropic'
 import { generateText } from 'ai'
+import type { LanguageModelV3 } from '@ai-sdk/provider'
 
 const COMPOSE_SYSTEM_PROMPT = `You are a writing style prompt engineer. Your job is to take a structured analysis of a writer's style and compose it into a clear, concise set of writing instructions for an AI writer.
 
@@ -95,12 +95,12 @@ function buildStructuredInput(input: ComposeStyleInput): string {
  * Use Claude Haiku to compose structured style analysis into a condensed writing instruction prompt.
  * Falls back to the original systemPrompt on error.
  */
-export async function composeStylePrompt(input: ComposeStyleInput): Promise<string> {
+export async function composeStylePrompt(model: LanguageModelV3, input: ComposeStyleInput): Promise<string> {
   const structuredInput = buildStructuredInput(input)
 
   try {
     const result = await generateText({
-      model: anthropic('claude-haiku-4-5-20251001'),
+      model,
       system: COMPOSE_SYSTEM_PROMPT,
       messages: [
         {

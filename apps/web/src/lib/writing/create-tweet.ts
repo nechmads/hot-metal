@@ -1,5 +1,5 @@
-import { anthropic } from '@ai-sdk/anthropic'
 import { generateText } from 'ai'
+import type { LanguageModelV3 } from '@ai-sdk/provider'
 import type { DraftInput } from './index'
 
 const TWEET_PROMPT = `You are a social media expert crafting tweets that drive clicks to blog posts.
@@ -26,7 +26,7 @@ Return ONLY the tweet text. No labels, no quotes, no explanation.`
  * Leaves room for a t.co link (23 chars) — effective max is 257 chars.
  * Returns empty string on failure (non-blocking).
  */
-export async function createTweet(draft: DraftInput, hook?: string): Promise<string> {
+export async function createTweet(model: LanguageModelV3, draft: DraftInput, hook?: string): Promise<string> {
   const contentPreview = draft.content.length > 3000
     ? draft.content.slice(0, 3000) + '\n\n[truncated]'
     : draft.content
@@ -39,7 +39,7 @@ export async function createTweet(draft: DraftInput, hook?: string): Promise<str
 
   try {
     const result = await generateText({
-      model: anthropic('claude-haiku-4-5-20251001'),
+      model,
       system: TWEET_PROMPT,
       messages: [{ role: 'user', content: userContent }],
     })

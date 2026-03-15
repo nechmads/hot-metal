@@ -1,5 +1,7 @@
 import { Hono } from 'hono'
-import { AlexanderApi, type ToneGuideResponse } from '@hotmetal/shared'
+import { anthropic } from '@ai-sdk/anthropic'
+import { wrapLanguageModel } from 'ai'
+import { AlexanderApi, type ToneGuideResponse, initWilson, createWilsonMiddleware } from '@hotmetal/shared'
 import { composeStylePrompt } from '../lib/writing'
 import { extractToneGuideFields, hasStructuredFields } from '../lib/tone-guide'
 import type { AppEnv } from '../server'
@@ -58,7 +60,14 @@ admin.post('/styles/from-url', async (c) => {
   // 3. Compose finalPrompt via LLM if structured fields present
   let finalPrompt = systemPrompt
   if (hasStructuredFields(structured)) {
-    finalPrompt = await composeStylePrompt({ systemPrompt, ...structured })
+    initWilson(c.env.WILSON_API_URL, c.env.WILSON_API_KEY)
+    const composeModel = wrapLanguageModel({
+      model: anthropic('claude-haiku-4-5-20251001'),
+      middleware: createWilsonMiddleware({
+        userId: 'admin', userTier: 'enterprise', featureName: 'style_compose', trigger: 'user',
+      }),
+    })
+    finalPrompt = await composeStylePrompt(composeModel, { systemPrompt, ...structured })
   }
 
   // 4. Create prebuilt style

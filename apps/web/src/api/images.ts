@@ -1,8 +1,11 @@
 import { getAgentByName } from 'agents'
+import { anthropic } from '@ai-sdk/anthropic'
+import { wrapLanguageModel } from 'ai'
 import { Hono } from 'hono'
 import type { AppEnv } from '../server'
 import type { WriterAgent } from '../agent/writer-agent'
 import { createImagePrompt } from '../lib/writing'
+import { initWilson, createWilsonMiddleware, reportLlmUsage } from '@hotmetal/shared'
 
 const images = new Hono<AppEnv>()
 
@@ -35,7 +38,16 @@ images.post('/sessions/:sessionId/generate-image-prompt', async (c) => {
 
   const draft = await contentRes.json() as { title: string | null; content: string }
 
-  const prompt = await createImagePrompt(draft)
+  initWilson(c.env.WILSON_API_URL, c.env.WILSON_API_KEY)
+  const imgPromptModel = wrapLanguageModel({
+    model: anthropic('claude-haiku-4-5-20251001'),
+    middleware: createWilsonMiddleware({
+      userId: c.get('userId'), userTier: c.get('userTier'),
+      featureName: 'image_prompt', trigger: 'user',
+      publicationId: session.publicationId ?? undefined,
+    }),
+  })
+  const prompt = await createImagePrompt(imgPromptModel, draft)
   if (!prompt) {
     return c.json({ error: 'Failed to generate prompt' }, 502)
   }
@@ -61,7 +73,10 @@ images.post('/sessions/:sessionId/generate-images', async (c) => {
     return c.json({ error: 'prompt must be 1000 characters or less' }, 400)
   }
 
+  initWilson(c.env.WILSON_API_URL, c.env.WILSON_API_KEY)
+
   try {
+    const imageGenStart = Date.now()
     // Generate 4 images in parallel using flux-2-dev (requires multipart)
     function buildMultipart(prompt: string) {
       const form = new FormData()
@@ -83,6 +98,21 @@ images.post('/sessions/:sessionId/generate-images', async (c) => {
     })
 
     const results = await Promise.all(imagePromises)
+
+    // Report Workers AI usage to Wilson (no token count — count-based)
+    reportLlmUsage({
+      provider: 'cloudflare',
+      model: 'flux-2-dev',
+      userId: c.get('userId'),
+      userTier: c.get('userTier'),
+      featureName: 'image_generate',
+      durationMs: Date.now() - imageGenStart,
+      metadata: {
+        trigger: 'user',
+        image_count: 4,
+        ...(session.publicationId ? { publication_id: session.publicationId } : {}),
+      },
+    })
 
     // Store each image in R2 and return URLs
     const imageBaseUrl = c.env.IMAGE_BASE_URL?.trim().replace(/\/$/, '') || ''

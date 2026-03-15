@@ -1,5 +1,7 @@
 import { Hono } from 'hono'
-import { AlexanderApi } from '@hotmetal/shared'
+import { anthropic } from '@ai-sdk/anthropic'
+import { wrapLanguageModel } from 'ai'
+import { AlexanderApi, initWilson, createWilsonMiddleware } from '@hotmetal/shared'
 import { composeStylePrompt } from '../lib/writing'
 import { hasStructuredFields, type ToneGuideFields } from '../lib/tone-guide'
 import { checkCustomStyleQuota } from '../lib/quota'
@@ -43,7 +45,14 @@ styles.post('/styles', async (c) => {
   // Compose finalPrompt: use LLM if structured fields present, otherwise use systemPrompt directly
   let finalPrompt = systemPrompt
   if (hasStructuredFields(body)) {
-    finalPrompt = await composeStylePrompt({ systemPrompt, ...body })
+    initWilson(c.env.WILSON_API_URL, c.env.WILSON_API_KEY)
+    const model = wrapLanguageModel({
+      model: anthropic('claude-haiku-4-5-20251001'),
+      middleware: createWilsonMiddleware({
+        userId, userTier, featureName: 'style_compose', trigger: 'user',
+      }),
+    })
+    finalPrompt = await composeStylePrompt(model, { systemPrompt, ...body })
   }
 
   const style = await c.env.DAL.createWritingStyle({
@@ -231,7 +240,14 @@ styles.patch('/styles/:id', async (c) => {
 
   if (body.systemPrompt !== undefined || hasStructuredFields(body)) {
     if (hasStructuredFields(mergedFields)) {
-      finalPrompt = await composeStylePrompt({ systemPrompt: effectivePrompt, ...mergedFields })
+      initWilson(c.env.WILSON_API_URL, c.env.WILSON_API_KEY)
+      const composeModel = wrapLanguageModel({
+        model: anthropic('claude-haiku-4-5-20251001'),
+        middleware: createWilsonMiddleware({
+          userId, userTier: c.get('userTier'), featureName: 'style_compose', trigger: 'user',
+        }),
+      })
+      finalPrompt = await composeStylePrompt(composeModel, { systemPrompt: effectivePrompt, ...mergedFields })
     } else {
       finalPrompt = effectivePrompt
     }

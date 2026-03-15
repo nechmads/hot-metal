@@ -1,5 +1,5 @@
 import { generateText } from 'ai';
-import { createAnthropic } from '@ai-sdk/anthropic';
+import type { LanguageModelV3 } from '@ai-sdk/provider';
 import type { Idea } from '@hotmetal/data-layer';
 import type { TopicSearchResults, FilteredStory } from '../types';
 
@@ -30,7 +30,7 @@ interface DedupeDecision {
 }
 
 export async function dedupeStories(
-	apiKey: string,
+	model: LanguageModelV3,
 	searchResults: TopicSearchResults[],
 	recentIdeas: Pick<Idea, 'id' | 'title' | 'angle'>[],
 ): Promise<FilteredStory[]> {
@@ -41,11 +41,9 @@ export async function dedupeStories(
 		return allStories;
 	}
 
-	const anthropic = createAnthropic({ apiKey });
-
 	try {
 		const result = await generateText({
-			model: anthropic('claude-sonnet-4-6'),
+			model,
 			system: DEDUPE_SYSTEM_PROMPT,
 			messages: [
 				{
