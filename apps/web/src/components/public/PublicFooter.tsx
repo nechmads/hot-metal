@@ -12,6 +12,10 @@ export function PublicFooter() {
           AI Agents
         </Link>
         <Dot />
+        <Link to="/analyze" className="whitespace-nowrap hover:underline">
+          Analyze
+        </Link>
+        <Dot />
         <Link to="/about" className="whitespace-nowrap hover:underline">
           About
         </Link>

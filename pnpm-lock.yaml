@@ -189,6 +189,9 @@ importers:
       '@hotmetal/analytics':
         specifier: workspace:*
         version: link:../../packages/analytics
+      '@hotmetal/content-analyzer':
+        specifier: workspace:*
+        version: link:../../services/content-analyzer
       '@hotmetal/content-core':
         specifier: workspace:*
         version: link:../../packages/content-core

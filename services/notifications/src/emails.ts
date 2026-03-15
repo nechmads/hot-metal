@@ -187,6 +187,59 @@ export async function sendWelcomeEmail(
 	}
 }
 
+export interface AnalysisReportEmailParams {
+	email: string
+	url: string
+	reportUrl: string
+	overallScore: number
+}
+
+export async function sendAnalysisReportEmail(
+	env: NotificationsEnv,
+	params: AnalysisReportEmailParams,
+): Promise<void> {
+	const resend = getResend(env)
+	if (!resend) return
+
+	const { email, url, reportUrl, overallScore } = params
+
+	const scoreLabel = overallScore >= 80 ? 'Excellent' :
+		overallScore >= 60 ? 'Good' :
+		overallScore >= 40 ? 'Needs work' : 'Needs attention'
+
+	try {
+		await resend.emails.send({
+			from: env.FROM_EMAIL,
+			to: email,
+			subject: `Your AEO/GEO Analysis Report is Ready — ${overallScore}/100`,
+			text: [
+				'Hi,',
+				'',
+				`Your content analysis for ${url} is complete.`,
+				'',
+				`Overall Score: ${overallScore}/100 (${scoreLabel})`,
+				'',
+				'View your full report:',
+				reportUrl,
+				'',
+				'Your report includes:',
+				'  - Scores across 17 AEO/GEO dimensions',
+				'  - Platform-specific fit (Google AI Overviews, ChatGPT Search, Perplexity, Bing Copilot)',
+				'  - Quick wins and rewrite priorities',
+				'  - Critical issues that need attention',
+				'',
+				'Want to optimize your content automatically?',
+				`Try Hot Metal for free: ${env.WEB_APP_URL}/sign-up`,
+				'',
+				'— Hot Metal',
+			].join('\n'),
+		})
+		console.log(`[notifications] Sent analysis report email (score: ${overallScore})`)
+	} catch (err) {
+		console.error('[notifications] Failed to send analysis report email:', err)
+	}
+}
+
 export async function sendPostPublishedEmail(
 	env: NotificationsEnv,
 	params: PostPublishedEmailParams,

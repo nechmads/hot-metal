@@ -46,6 +46,8 @@ declare namespace Cloudflare {
 		NOTIFICATIONS: {
 			sendWelcomeNotification(params: { userId: string; userEmail: string; userName: string }): Promise<void>;
 		};
+		// Content Analyzer service binding (public analysis)
+		CONTENT_ANALYZER: Fetcher;
 	}
 }
 interface Env extends Cloudflare.Env {}

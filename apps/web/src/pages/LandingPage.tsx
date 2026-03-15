@@ -1,6 +1,5 @@
 import { useState } from "react";
-import { useAuth } from "@clerk/clerk-react";
-import { Navigate, Link } from "react-router";
+import { Link } from "react-router";
 import {
   PencilLineIcon,
   RocketLaunchIcon,
@@ -24,12 +23,6 @@ import { PublicFooter } from "@/components/public/PublicFooter";
  * During Clerk's loading state, we show the landing content (no blank flash).
  */
 export function LandingPage() {
-  const { isSignedIn, isLoaded } = useAuth();
-
-  if (isLoaded && isSignedIn) {
-    return <Navigate to="/dashboard" replace />;
-  }
-
   return <LandingContent />;
 }
 

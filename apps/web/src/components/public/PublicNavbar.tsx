@@ -1,6 +1,17 @@
 import { useState } from "react";
 import { Link } from "react-router";
+import { useClerk } from "@clerk/clerk-react";
 import { ListIcon, XIcon } from "@phosphor-icons/react";
+
+/** Safe auth check that works outside ClerkProvider (e.g. during pre-render) */
+function useIsSignedIn(): boolean {
+  try {
+    const clerk = useClerk();
+    return !!clerk?.user;
+  } catch {
+    return false;
+  }
+}
 
 type PublicNavbarProps = {
   /**
@@ -12,6 +23,7 @@ type PublicNavbarProps = {
 
 export function PublicNavbar({ showSignUpCta = true }: PublicNavbarProps) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const isSignedIn = useIsSignedIn();
 
   return (
     <header className="relative px-6 py-4 md:px-12">
@@ -61,21 +73,31 @@ export function PublicNavbar({ showSignUpCta = true }: PublicNavbarProps) {
             Docs
           </a>
 
-          {showSignUpCta ? (
+          {isSignedIn ? (
             <Link
-              to="/sign-up"
+              to="/dashboard"
               className="ml-2 rounded-lg bg-[var(--color-accent)] px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-[var(--color-accent-hover)]"
             >
-              Get Started For Free
+              Go to Dashboard
             </Link>
-          ) : null}
-
-          <Link
-            to="/sign-in"
-            className="rounded-lg border border-[var(--color-border-default)] px-4 py-2 text-sm font-medium text-[var(--color-text-primary)] transition-colors hover:bg-[var(--color-bg-card)]"
-          >
-            Sign in
-          </Link>
+          ) : (
+            <>
+              {showSignUpCta ? (
+                <Link
+                  to="/sign-up"
+                  className="ml-2 rounded-lg bg-[var(--color-accent)] px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-[var(--color-accent-hover)]"
+                >
+                  Get Started For Free
+                </Link>
+              ) : null}
+              <Link
+                to="/sign-in"
+                className="rounded-lg border border-[var(--color-border-default)] px-4 py-2 text-sm font-medium text-[var(--color-text-primary)] transition-colors hover:bg-[var(--color-bg-card)]"
+              >
+                Sign in
+              </Link>
+            </>
+          )}
         </nav>
 
         {/* Mobile hamburger button */}
@@ -140,22 +162,34 @@ export function PublicNavbar({ showSignUpCta = true }: PublicNavbarProps) {
             </a>
 
             <div className="mt-2 flex flex-col gap-2 border-t border-[var(--color-border-default)] pt-2">
-              {showSignUpCta ? (
+              {isSignedIn ? (
                 <Link
-                  to="/sign-up"
+                  to="/dashboard"
                   className="rounded-lg bg-[var(--color-accent)] px-4 py-2.5 text-center text-sm font-semibold text-white transition-colors hover:bg-[var(--color-accent-hover)]"
                   onClick={() => setMobileMenuOpen(false)}
                 >
-                  Get Started For Free
+                  Go to Dashboard
                 </Link>
-              ) : null}
-              <Link
-                to="/sign-in"
-                className="rounded-lg border border-[var(--color-border-default)] px-4 py-2.5 text-center text-sm font-medium text-[var(--color-text-primary)] transition-colors hover:bg-[var(--color-bg-card)]"
-                onClick={() => setMobileMenuOpen(false)}
-              >
-                Sign in
-              </Link>
+              ) : (
+                <>
+                  {showSignUpCta ? (
+                    <Link
+                      to="/sign-up"
+                      className="rounded-lg bg-[var(--color-accent)] px-4 py-2.5 text-center text-sm font-semibold text-white transition-colors hover:bg-[var(--color-accent-hover)]"
+                      onClick={() => setMobileMenuOpen(false)}
+                    >
+                      Get Started For Free
+                    </Link>
+                  ) : null}
+                  <Link
+                    to="/sign-in"
+                    className="rounded-lg border border-[var(--color-border-default)] px-4 py-2.5 text-center text-sm font-medium text-[var(--color-text-primary)] transition-colors hover:bg-[var(--color-bg-card)]"
+                    onClick={() => setMobileMenuOpen(false)}
+                  >
+                    Sign in
+                  </Link>
+                </>
+              )}
             </div>
           </div>
         </nav>

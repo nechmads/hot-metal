@@ -11,6 +11,8 @@ const auxiliaryWorkers = process.env.STACK
       { configPath: "../../services/data-layer/wrangler.jsonc" },
       { configPath: "../../services/content-scout/wrangler.jsonc" },
       { configPath: "../../services/publisher/wrangler.jsonc" },
+      { configPath: "../../services/content-analyzer/wrangler.jsonc" },
+      { configPath: "../../services/notifications/wrangler.jsonc" },
     ]
   : [];
 

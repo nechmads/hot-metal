@@ -58,6 +58,10 @@
       "service": "hotmetal-notifications",
       "entrypoint": "NotificationsService",
     },
+    {
+      "binding": "CONTENT_ANALYZER",
+      "service": "hotmetal-content-analyzer",
+    },
   ],
 
   // Workers AI binding (for image generation)
@@ -94,6 +98,7 @@
       "/admin/*",
       "/agents/*",
       "/agents-api/*",
+      "/public-api/*",
       "/health",
       "/internal/*",
       "/webhooks/*",

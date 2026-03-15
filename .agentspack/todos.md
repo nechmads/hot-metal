@@ -309,5 +309,21 @@
   - API: `POST /api/v1/analyze` (score a URL), `GET /api/v1/rubric` (dimension metadata), `GET /health`
   - Full JSON report schema matching research doc (dimensions, signals, evidence, recommendations, platform notes)
   - Research doc stored at `docs/aeo-geo-research.md`
+- [x] **Publication Meta Tags — AEO/GEO + Social Optimization** — Enhanced all publication post pages with comprehensive meta tags. Includes:
+  - `<meta name="robots">` with `index, follow, max-image-preview:large, max-snippet:-1` (unlimited AI snippet length)
+  - `og:image:width`/`og:image:height` for reliable social card rendering
+  - `twitter:site` (extracted from publication social links) and `twitter:creator` support
+  - `article:section` meta tag (first topic)
+  - Fallback description auto-generated from content when SEO fields empty (word-boundary truncated, ~155 chars)
+  - Enriched JSON-LD: `alternativeHeadline`, `wordCount`, `articleSection`, `keywords`, `inLanguage`, `publisher.url`, `isAccessibleForFree`
+  - Props threaded through PostPage → BaseLayout → HeadMeta across all 3 templates
+- [x] **Public AEO/GEO Content Analysis Tool** — Free public tool at `/analyze` for lead generation + product marketing. Includes:
+  - Content analyzer backend: CF Workflow (`AnalyzerWorkflow` with 4 steps: extract → score → store → email), Queue (`hotmetal-analyzer-queue`), R2 bucket (`hotmetal-analysis-reports`), public routes (no API key auth)
+  - Notifications: `sendAnalysisReportNotification` RPC method for anonymous users, score-in-subject email with report link and sign-up CTA
+  - Web app proxy: `CONTENT_ANALYZER` service binding, `/public-api/analyze` and `/public-api/reports/:reportId` routes mounted before auth middleware
+  - Reusable report viewer: `AnalysisReportViewer` component (8 sub-components: ScoreOverview, DimensionScores, StrengthsWeaknesses, CriticalIssues, QuickWins, RewritePriorities, PlatformNotes + index barrel export). Pure presentational, zero routing/fetching awareness — embeddable anywhere
+  - Public analyze page (`/analyze`): Hero, email+URL form, 4-step analysis animation, success/error states, "What's in your report" feature cards, bottom CTA
+  - Public report page (`/analyze/reports/:reportId`): Fetch + poll for pending reports, skeleton loading, AnalysisReportViewer render, bottom CTA
+  - Nav: "Analyze" link added to PublicNavbar (desktop + mobile)
 - [ ] Writer Agent — Phase 2: Voice input (transcription in `input-processor.ts`)
 - [ ] Writer Agent — Phase 2: D1 session sync (synchronize DO state back to D1 for listing accuracy)

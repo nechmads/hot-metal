@@ -12,6 +12,8 @@ import { TermsPage } from '@/pages/TermsPage'
 import { BlogPage } from '@/pages/BlogPage'
 import { PricingPage } from '@/pages/PricingPage'
 import { AgentsPage } from '@/pages/AgentsPage'
+import { AnalyzePage } from '@/pages/AnalyzePage'
+import { AnalyzeReportPage } from '@/pages/AnalyzeReportPage'
 import { DashboardPage } from '@/pages/DashboardPage'
 import { SessionsPage } from '@/pages/SessionsPage'
 import { WorkspacePage } from '@/pages/WorkspacePage'
@@ -42,6 +44,8 @@ export default function App() {
         <Route path="/blog/*" element={<BlogPage />} />
         <Route path="/pricing/*" element={<PricingPage />} />
         <Route path="/ai-agents/*" element={<AgentsPage />} />
+        <Route path="/analyze" element={<AnalyzePage />} />
+        <Route path="/analyze/reports/:reportId" element={<AnalyzeReportPage />} />
 
         {/* Protected routes — require Clerk auth */}
         <Route

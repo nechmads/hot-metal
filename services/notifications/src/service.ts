@@ -1,6 +1,6 @@
 import { WorkerEntrypoint } from 'cloudflare:workers'
 import type { NotificationsEnv } from './env'
-import { sendNewIdeasEmail, sendDraftReadyEmail, sendPostPublishedEmail, sendNewCommentEmail, sendWelcomeEmail } from './emails'
+import { sendNewIdeasEmail, sendDraftReadyEmail, sendPostPublishedEmail, sendNewCommentEmail, sendWelcomeEmail, sendAnalysisReportEmail } from './emails'
 
 export interface SendNewIdeasParams {
 	userId: string
@@ -34,6 +34,13 @@ export interface SendWelcomeParams {
 	userId: string
 	userEmail: string
 	userName: string
+}
+
+export interface SendAnalysisReportParams {
+	email: string
+	url: string
+	reportUrl: string
+	overallScore: number
 }
 
 /**
@@ -137,6 +144,21 @@ export class NotificationsService extends WorkerEntrypoint<NotificationsEnv> {
 			})
 		} catch (err) {
 			console.error('[notifications] sendWelcomeNotification failed:', err)
+		}
+	}
+
+	// Analysis report email is for anonymous public users — no user lookup or preference check.
+	// Similar to welcome email pattern: caller provides the email directly.
+	async sendAnalysisReportNotification(params: SendAnalysisReportParams): Promise<void> {
+		try {
+			await sendAnalysisReportEmail(this.env, {
+				email: params.email,
+				url: params.url,
+				reportUrl: params.reportUrl,
+				overallScore: params.overallScore,
+			})
+		} catch (err) {
+			console.error('[notifications] sendAnalysisReportNotification failed:', err)
 		}
 	}
 

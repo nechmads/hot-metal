@@ -45,6 +45,7 @@ import internal from './api/internal'
 import admin from './api/admin'
 import webhooks from './api/webhooks'
 import paddleWebhook from './api/paddle-webhook'
+import publicAnalyze from './api/public-analyze'
 import agentsApiV1 from './agents-api/v1'
 import { openapiSpec } from './agents-api/v1/openapi-spec'
 
@@ -99,6 +100,9 @@ app.route('/internal', internal)
 // ─── Admin routes (X-Internal-Key only, no user context) ────────────
 app.use('/admin/*', adminAuth)
 app.route('/admin', admin)
+
+// ─── Public content analysis (no auth — lead gen tool) ───────────────
+app.route('/public-api', publicAnalyze)
 
 // ─── Public Agents API (API key auth, CORS open) ────────────────────
 app.use('/agents-api/*', cors({ origin: '*' }))
