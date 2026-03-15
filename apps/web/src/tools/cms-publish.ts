@@ -38,7 +38,8 @@ export function createPublishTools(agent: WriterAgent) {
 
         const firstContentLine = draft.content.split('\n').find((line) => line.trim().length > 0)
         const hook = firstContentLine
-          ?.replace(/^#+\s*/, '')
+          ?.replace(/\[([^\]]+)\]\([^)]+\)/g, '$1')
+          .replace(/^#+\s*/, '')
           .replace(/\*\*/g, '')
           .replace(/\*/g, '')
           .replace(/`/g, '')

@@ -46,11 +46,15 @@ If the topic relates to recent events, trends, or news, do a quick search (searc
 - A strong conclusion
 - Citations where applicable
 
+**Inline Links:** When you mention or reference external sources, articles, studies, tools, products, or any other resource from your research, embed the link directly in the text as a markdown link — e.g., \`[according to a recent TechCrunch report](https://...)\` or \`[React Server Components](https://...)\`. This makes the content more useful and readable than listing all sources only at the end. Weave links naturally into the prose — don't force them. Not every sentence needs a link, but any claim backed by a specific source, any mention of an external product/project, or any reference to further reading should be linked inline.
+
+You should ALSO still pass all source URLs in the save_draft "citations" array — the inline links and the citations array serve different purposes (inline links help readers, citations provide structured source tracking).
+
 **Important:** Do NOT include the post title as a heading in the markdown content. The title is a separate field — pass it via the save_draft tool's "title" parameter only. The publishing template renders the title automatically. If you put a # Title heading in the content, it will appear twice on the published page.
 
 After saving a draft, call proofread_draft to check for AI writing patterns. If the score is below 7 or there are high/medium severity findings, revise the draft to fix them before presenting to the user. You may do up to 3 rounds of proofread-then-revise. If issues remain after 3 rounds, present the draft to the user, mention the remaining issues, and ask how they would like to proceed. Then briefly summarize what you wrote and ask for feedback.`,
 
-  revising: `You are revising the draft based on user feedback. Focus on the specific changes requested. Use get_current_draft to see the latest version, then use save_draft to save the updated version. After saving, call proofread_draft to check for AI writing patterns. If the score is below 7 or there are high/medium severity findings, fix them before presenting to the user. You may do up to 3 rounds of proofread-then-revise. If issues remain after 3 rounds, present the draft to the user, mention the remaining issues, and ask how they would like to proceed. Be precise about what you changed and why.`,
+  revising: `You are revising the draft based on user feedback. Focus on the specific changes requested. Use get_current_draft to see the latest version, then use save_draft to save the updated version. When revising, preserve existing inline source links and add new ones where applicable — any sourced claim or external reference should be linked inline as a markdown link. After saving, call proofread_draft to check for AI writing patterns. If the score is below 7 or there are high/medium severity findings, fix them before presenting to the user. You may do up to 3 rounds of proofread-then-revise. If issues remain after 3 rounds, present the draft to the user, mention the remaining issues, and ask how they would like to proceed. Be precise about what you changed and why.`,
 
   publishing: `The post is being published to the CMS. This is handled automatically — no action needed from the assistant.`,
 
@@ -60,7 +64,7 @@ After saving a draft, call proofread_draft to check for AI writing patterns. If 
 const TOOL_GUIDELINES = `## Tool Usage Guidelines
 
 ### Draft Tools
-- **save_draft**: Use this whenever you've written or significantly revised content. Always provide a compelling title via the "title" parameter — do NOT include the title as an H1 heading in the content body. The title and content are separate fields. The tool auto-increments the version number. **Important:** Always include the "citations" array with every URL you used during research — from search_web results, search_news results, ask_question sources, research_topic citations, and any URLs you crawled with crawl_url. These are displayed to the user as sources for the post. Include the url, title, and publisher (domain name) for each.
+- **save_draft**: Use this whenever you've written or significantly revised content. Always provide a compelling title via the "title" parameter — do NOT include the title as an H1 heading in the content body. The title and content are separate fields. The tool auto-increments the version number. **Important:** Embed relevant source URLs as inline markdown links in the content itself (e.g., \`[source title](url)\`), AND also include all URLs in the "citations" array. The inline links help readers navigate to sources while reading; the citations array provides structured source tracking. Include the url, title, and publisher (domain name) for each citation.
 - **get_current_draft**: Use this to review the latest draft before making changes. Always read before editing.
 - **list_drafts**: Use this to show the user their draft history or when they ask about previous versions.
 
@@ -128,13 +132,14 @@ Structure the post with:
 - Concrete examples and data points from your research
 - A strong conclusion with a specific takeaway or forward-looking point
 - Citations for all sourced claims
+- **Inline links**: When referencing external sources, articles, tools, or products, embed the link directly in the text as a markdown link (e.g., \`[a recent study by MIT](https://...)\`). Weave links naturally into the prose — not every sentence needs one, but sourced claims, external references, and further reading should be linked inline. Also still include all URLs in the save_draft citations array for structured source tracking.
 
 **Important:** Do NOT include the post title as a heading in the markdown content. The title is a separate field — pass a compelling, specific title (not generic) via the save_draft tool's "title" parameter only. The publishing template renders the title automatically. If you put a # Title heading in the content, it will appear twice on the published page.`
 
 const AUTONOMOUS_TOOL_GUIDELINES = `## Tool Usage Guidelines
 
 ### Draft Tools
-- **save_draft**: Use this to save your completed draft. Always provide a compelling title via the "title" parameter — do NOT include the title as an H1 heading in the content body. The title and content are separate fields. Also include the "citations" array with every URL from your research. Include url, title, and publisher (domain name) for each citation.
+- **save_draft**: Use this to save your completed draft. Always provide a compelling title via the "title" parameter — do NOT include the title as an H1 heading in the content body. The title and content are separate fields. Embed relevant source URLs as inline markdown links in the content itself (e.g., \`[source title](url)\`), AND also include all URLs in the "citations" array for structured source tracking. Include url, title, and publisher (domain name) for each citation.
 - **get_current_draft**: Use this to review your draft before revising.
 - **list_drafts**: Use this to check draft history.
 

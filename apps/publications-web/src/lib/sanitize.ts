@@ -26,6 +26,12 @@ export function sanitizeCmsContent(html: string): string {
       '*': ['class', 'id'],
     },
     allowedSchemes: ['http', 'https', 'mailto'],
+    transformTags: {
+      a: sanitizeHtml.simpleTransform('a', {
+        target: '_blank',
+        rel: 'noopener noreferrer',
+      }),
+    },
   });
 
   return stripLeadingH1(sanitized);
