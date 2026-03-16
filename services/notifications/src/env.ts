@@ -15,4 +15,8 @@ export interface NotificationsEnv extends Omit<Env, 'DAL' | 'FROM_EMAIL' | 'WELC
   // Secrets (set via `wrangler secret put`)
   RESEND_API_KEY: string
   API_KEY: string
+
+  // Axiom logging (optional — falls back to console-only when not set)
+  AXIOM_TOKEN?: string
+  AXIOM_DATASET?: string
 }

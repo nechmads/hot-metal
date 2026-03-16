@@ -2,6 +2,7 @@ import { Hono } from 'hono'
 import type { PublisherEnv } from '../env'
 import { publisherApiKeyAuth } from '../middleware/api-key-auth'
 import { regenerateFeeds, serveFeed } from '../lib/feed-store'
+import { logger } from '@hotmetal/shared'
 
 const feeds = new Hono<{ Bindings: PublisherEnv }>()
 
@@ -46,7 +47,11 @@ feeds.post('/internal/feeds/regenerate/:slug', publisherApiKeyAuth, async (c) =>
     await regenerateFeeds(c.env, slug)
     return c.json({ success: true, slug })
   } catch (err) {
-    console.error(`Feed regeneration failed for "${slug}":`, err)
+    logger('publisher').error('Feed regeneration failed', {
+      component: 'feeds',
+      slug,
+      error: err instanceof Error ? err.message : String(err),
+    })
     return c.json({ error: 'Feed regeneration failed' }, 500)
   }
 })

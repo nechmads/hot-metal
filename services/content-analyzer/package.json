@@ -17,6 +17,7 @@
 		"typecheck": "tsc --noEmit"
 	},
 	"dependencies": {
+		"@hotmetal/shared": "workspace:*",
 		"@ai-sdk/anthropic": "^3.0.39",
 		"ai": "^6.0.77",
 		"hono": "^4.10.7",

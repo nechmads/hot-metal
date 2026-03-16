@@ -1,5 +1,6 @@
 import type { Context, Next } from 'hono'
 import type { AnalyzerEnv } from '../env'
+import { logger } from '@hotmetal/shared'
 
 const encoder = new TextEncoder()
 
@@ -18,7 +19,7 @@ export async function apiKeyAuth(c: Context<{ Bindings: AnalyzerEnv }>, next: Ne
   const expected = c.env.API_KEY
 
   if (!expected) {
-    console.error('[content-analyzer] API_KEY environment variable is not configured')
+    logger('content-analyzer').error('API_KEY environment variable is not configured', { component: 'auth' })
     return c.json({ error: 'Internal server error' }, 500)
   }
 

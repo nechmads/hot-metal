@@ -1,5 +1,6 @@
 import { WorkerEntrypoint } from 'cloudflare:workers'
 import type { NotificationsEnv } from './env'
+import { initLogger, logger } from '@hotmetal/shared'
 import { sendNewIdeasEmail, sendDraftReadyEmail, sendPostPublishedEmail, sendNewCommentEmail, sendWelcomeEmail, sendAnalysisReportEmail } from './emails'
 
 export interface SendNewIdeasParams {
@@ -54,17 +55,28 @@ export interface SendAnalysisReportParams {
  * 4. Never throws — errors are logged and swallowed
  */
 export class NotificationsService extends WorkerEntrypoint<NotificationsEnv> {
+	/** Ensure the singleton logger is configured for RPC calls (no Hono middleware). */
+	private initLog() {
+		initLogger('notifications', this.env.AXIOM_TOKEN && this.env.AXIOM_DATASET
+			? { token: this.env.AXIOM_TOKEN, dataset: this.env.AXIOM_DATASET }
+			: undefined,
+		)
+	}
+
 	async sendNewIdeasNotification(params: SendNewIdeasParams): Promise<void> {
+		this.initLog()
+		const log = logger('notifications')
+
 		try {
 			const prefs = await this.env.DAL.getOrCreateNotificationPreferences(params.userId)
 			if (!prefs.newIdeas) {
-				console.log(`[notifications] User ${params.userId} has new-ideas notifications disabled`)
+				log.info('User has new-ideas notifications disabled', { component: 'rpc', userId: params.userId })
 				return
 			}
 
 			const user = await this.env.DAL.getUserById(params.userId)
 			if (!user) {
-				console.warn(`[notifications] User ${params.userId} not found, skipping notification`)
+				log.warn('User not found, skipping notification', { component: 'rpc', userId: params.userId })
 				return
 			}
 
@@ -76,21 +88,28 @@ export class NotificationsService extends WorkerEntrypoint<NotificationsEnv> {
 				webAppUrl: this.env.WEB_APP_URL,
 			})
 		} catch (err) {
-			console.error('[notifications] sendNewIdeasNotification failed:', err)
+			log.error('sendNewIdeasNotification failed', {
+				component: 'rpc',
+				userId: params.userId,
+				error: err instanceof Error ? err.message : String(err),
+			})
 		}
 	}
 
 	async sendDraftReadyNotification(params: SendDraftReadyParams): Promise<void> {
+		this.initLog()
+		const log = logger('notifications')
+
 		try {
 			const prefs = await this.env.DAL.getOrCreateNotificationPreferences(params.userId)
 			if (!prefs.draftReady) {
-				console.log(`[notifications] User ${params.userId} has draft-ready notifications disabled`)
+				log.info('User has draft-ready notifications disabled', { component: 'rpc', userId: params.userId })
 				return
 			}
 
 			const user = await this.env.DAL.getUserById(params.userId)
 			if (!user) {
-				console.warn(`[notifications] User ${params.userId} not found, skipping notification`)
+				log.warn('User not found, skipping notification', { component: 'rpc', userId: params.userId })
 				return
 			}
 
@@ -102,21 +121,29 @@ export class NotificationsService extends WorkerEntrypoint<NotificationsEnv> {
 				webAppUrl: this.env.WEB_APP_URL,
 			})
 		} catch (err) {
-			console.error('[notifications] sendDraftReadyNotification failed:', err)
+			log.error('sendDraftReadyNotification failed', {
+				component: 'rpc',
+				userId: params.userId,
+				postTitle: params.postTitle,
+				error: err instanceof Error ? err.message : String(err),
+			})
 		}
 	}
 
 	async sendNewCommentNotification(params: SendNewCommentParams): Promise<void> {
+		this.initLog()
+		const log = logger('notifications')
+
 		try {
 			const prefs = await this.env.DAL.getOrCreateNotificationPreferences(params.userId)
 			if (!prefs.newComment) {
-				console.log(`[notifications] User ${params.userId} has new-comment notifications disabled`)
+				log.info('User has new-comment notifications disabled', { component: 'rpc', userId: params.userId })
 				return
 			}
 
 			const user = await this.env.DAL.getUserById(params.userId)
 			if (!user) {
-				console.warn(`[notifications] User ${params.userId} not found, skipping notification`)
+				log.warn('User not found, skipping notification', { component: 'rpc', userId: params.userId })
 				return
 			}
 
@@ -130,26 +157,41 @@ export class NotificationsService extends WorkerEntrypoint<NotificationsEnv> {
 				postUrl: params.postUrl,
 			})
 		} catch (err) {
-			console.error('[notifications] sendNewCommentNotification failed:', err)
+			log.error('sendNewCommentNotification failed', {
+				component: 'rpc',
+				userId: params.userId,
+				postSlug: params.postSlug,
+				error: err instanceof Error ? err.message : String(err),
+			})
 		}
 	}
 
 	// Welcome email is transactional — no preference check needed (new user, no prefs yet)
 	// and no user lookup needed (caller provides email/name directly from JWT).
 	async sendWelcomeNotification(params: SendWelcomeParams): Promise<void> {
+		this.initLog()
+		const log = logger('notifications')
+
 		try {
 			await sendWelcomeEmail(this.env, {
 				userEmail: params.userEmail,
 				userName: params.userName,
 			})
 		} catch (err) {
-			console.error('[notifications] sendWelcomeNotification failed:', err)
+			log.error('sendWelcomeNotification failed', {
+				component: 'rpc',
+				userId: params.userId,
+				error: err instanceof Error ? err.message : String(err),
+			})
 		}
 	}
 
 	// Analysis report email is for anonymous public users — no user lookup or preference check.
 	// Similar to welcome email pattern: caller provides the email directly.
 	async sendAnalysisReportNotification(params: SendAnalysisReportParams): Promise<void> {
+		this.initLog()
+		const log = logger('notifications')
+
 		try {
 			await sendAnalysisReportEmail(this.env, {
 				email: params.email,
@@ -158,21 +200,28 @@ export class NotificationsService extends WorkerEntrypoint<NotificationsEnv> {
 				overallScore: params.overallScore,
 			})
 		} catch (err) {
-			console.error('[notifications] sendAnalysisReportNotification failed:', err)
+			log.error('sendAnalysisReportNotification failed', {
+				component: 'rpc',
+				url: params.url,
+				error: err instanceof Error ? err.message : String(err),
+			})
 		}
 	}
 
 	async sendPostPublishedNotification(params: SendPostPublishedParams): Promise<void> {
+		this.initLog()
+		const log = logger('notifications')
+
 		try {
 			const prefs = await this.env.DAL.getOrCreateNotificationPreferences(params.userId)
 			if (!prefs.postPublished) {
-				console.log(`[notifications] User ${params.userId} has post-published notifications disabled`)
+				log.info('User has post-published notifications disabled', { component: 'rpc', userId: params.userId })
 				return
 			}
 
 			const user = await this.env.DAL.getUserById(params.userId)
 			if (!user) {
-				console.warn(`[notifications] User ${params.userId} not found, skipping notification`)
+				log.warn('User not found, skipping notification', { component: 'rpc', userId: params.userId })
 				return
 			}
 
@@ -184,7 +233,12 @@ export class NotificationsService extends WorkerEntrypoint<NotificationsEnv> {
 				postUrl: params.postUrl,
 			})
 		} catch (err) {
-			console.error('[notifications] sendPostPublishedNotification failed:', err)
+			log.error('sendPostPublishedNotification failed', {
+				component: 'rpc',
+				userId: params.userId,
+				postTitle: params.postTitle,
+				error: err instanceof Error ? err.message : String(err),
+			})
 		}
 	}
 }

@@ -1,28 +1,33 @@
 {
-	"$schema": "node_modules/wrangler/config-schema.json",
-	"account_id": "2174498561748c927a0b968e44a56754",
-	"name": "hotmetal-data-layer",
-	"main": "src/index.ts",
-	"compatibility_date": "2026-02-10",
-	"compatibility_flags": ["nodejs_compat"],
-	"observability": {
-		"enabled": true,
-	},
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "account_id": "2174498561748c927a0b968e44a56754",
+  "name": "hotmetal-data-layer",
+  "main": "src/index.ts",
+  "compatibility_date": "2026-02-10",
+  "compatibility_flags": ["nodejs_compat"],
+  "observability": {
+    "enabled": true,
+  },
 
-	"dev": {
-		"port": 8791,
-	},
+  "dev": {
+    "port": 8791,
+  },
 
-	// Consolidated D1 database (reuses existing hotmetal-writer-db)
-	"d1_databases": [
-		{
-			"binding": "DB",
-			"database_name": "hotmetal-writer-db",
-			"database_id": "5fc8f7a4-e05f-47ce-b638-f78a90057f43",
-			"migrations_dir": "./migrations",
-		},
-	],
+  // Consolidated D1 database (reuses existing hotmetal-writer-db)
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "hotmetal-writer-db",
+      "database_id": "5fc8f7a4-e05f-47ce-b638-f78a90057f43",
+      "migrations_dir": "./migrations",
+    },
+  ],
 
-	// Secrets (set via `wrangler secret put`):
-	// TOKEN_ENCRYPTION_KEY — AES-GCM key for encrypting OAuth tokens in social_connections
+  "vars": {
+    "AXIOM_DATASET": "hotmetal-prod",
+  },
+
+  // Secrets (set via `wrangler secret put`):
+  // TOKEN_ENCRYPTION_KEY — AES-GCM key for encrypting OAuth tokens in social_connections
+  // AXIOM_TOKEN          — Axiom ingest token for structured logging
 }

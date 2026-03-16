@@ -34,9 +34,11 @@
     "FROM_EMAIL": "Hot Metal <subscriptions@mail.hotmetalapp.com>",
     "WELCOME_FROM_EMAIL": "Shahar Nechmad <founder@hotmetalapp.com>",
     "WEB_APP_URL": "https://hotmetalapp.com",
+    "AXIOM_DATASET": "hotmetal-prod",
   },
 
   // Secrets (set via `wrangler secret put`):
   // RESEND_API_KEY       — Resend email API key
   // API_KEY              — authenticates incoming requests to this service
+  // AXIOM_TOKEN          — Axiom ingest token for structured logging
 }

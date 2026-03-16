@@ -1,4 +1,5 @@
 import type { UserApiKey, UserApiKeyWithRawToken } from '../types'
+import { logger } from '@hotmetal/shared'
 
 interface UserApiKeyRow {
 	id: string
@@ -93,7 +94,7 @@ export async function validateUserApiKey(
 	db.prepare('UPDATE user_api_keys SET last_used_at = ? WHERE token_hash = ?')
 		.bind(now, tokenHash)
 		.run()
-		.catch((err) => console.warn('Failed to update last_used_at:', err))
+		.catch((err) => logger('data-layer').warn('Failed to update last_used_at', { error: err instanceof Error ? err : new Error(String(err)) }))
 
 	return row.user_id
 }

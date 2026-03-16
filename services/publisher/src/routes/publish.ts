@@ -1,7 +1,7 @@
 import { Hono } from 'hono'
 import type { PublisherEnv } from '../env'
 import type { DataLayerApi } from '@hotmetal/data-layer'
-import { CmsApi } from '@hotmetal/shared'
+import { CmsApi, logger } from '@hotmetal/shared'
 import { writeAuditLog } from '../lib/audit'
 import { BlogAdapter } from '../adapters/blog-adapter'
 import { LinkedInAdapter } from '../adapters/linkedin-adapter'
@@ -32,7 +32,11 @@ async function resolvePublicationBaseUrl(
 
     return `https://${pub.slug}.${baseDomain}`
   } catch (err) {
-    console.error(`Failed to resolve publication ${publicationId}, using fallback:`, err)
+    logger('publisher').error('Failed to resolve publication, using fallback', {
+      component: 'publish',
+      publicationId,
+      error: err instanceof Error ? err.message : String(err),
+    })
     return fallbackUrl
   }
 }

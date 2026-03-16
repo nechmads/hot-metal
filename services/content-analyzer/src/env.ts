@@ -11,6 +11,8 @@ export interface AnalyzerEnv {
   // Secrets
   API_KEY: string
   ANTHROPIC_API_KEY: string
+  AXIOM_TOKEN?: string
+  AXIOM_DATASET?: string
 
   // R2
   REPORTS_BUCKET: R2Bucket

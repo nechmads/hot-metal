@@ -1,5 +1,6 @@
 import type { Post } from '@hotmetal/content-core'
 import type { CmsApi } from '@hotmetal/shared'
+import { logger } from '@hotmetal/shared'
 import type { OutletAdapter, PreparedRendition, ValidationResult, PublishResult } from './types'
 
 export class BlogAdapter implements OutletAdapter {
@@ -54,7 +55,10 @@ export class BlogAdapter implements OutletAdapter {
       // Revert the post status to avoid inconsistent state
       await this.cmsApi.updatePost(post.id, { status: previousStatus }).catch(() => {
         // Best-effort revert; log but don't mask the original error
-        console.error('Failed to revert post status after rendition creation failure')
+        logger('publisher').error('Failed to revert post status after rendition creation failure', {
+          component: 'blog-adapter',
+          postId: post.id,
+        })
       })
       throw err
     }

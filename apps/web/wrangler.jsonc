@@ -86,6 +86,7 @@
     "NOTIFICATION_EMAIL": "shahar@hotmetalapp.com",
     "PADDLE_ENVIRONMENT": "production",
     "WILSON_API_URL": "https://wilson.farfarawaylabs.com",
+    "AXIOM_DATASET": "hotmetal-prod",
   },
 
   // SPA fallback — serve index.html for unmatched routes (client-side routing)
@@ -118,5 +119,4 @@
   // PADDLE_WEBHOOK_SECRET — Paddle webhook signing secret
   // WILSON_API_KEY       — Wilson LLM usage tracking API token
   // AXIOM_TOKEN          — Axiom structured logging ingest token
-  // AXIOM_DATASET        — Axiom dataset name for log ingestion
 }

@@ -1,5 +1,6 @@
 import { Hono } from 'hono'
 import type { AnalyzerEnv } from '../env'
+import { logger } from '@hotmetal/shared'
 import { apiKeyAuth } from '../middleware/api-key-auth'
 import { DIMENSIONS } from '../scorer/rubric'
 import { extractContentProfile } from '../extractor/html-parser'
@@ -29,6 +30,8 @@ analyze.get('/api/v1/rubric', (c) => {
 
 // Analyze a URL for AEO/GEO optimization
 analyze.post('/api/v1/analyze', async (c) => {
+  const log = logger('content-analyzer').child({ component: 'analyze' })
+
   // Parse and validate request body
   const raw = await c.req.json().catch(() => null)
   if (!raw || typeof raw !== 'object' || Array.isArray(raw)) {
@@ -50,41 +53,34 @@ analyze.post('/api/v1/analyze', async (c) => {
     return c.json({ error: 'Invalid URL' }, 400)
   }
 
-  console.log(`[content-analyzer] Starting analysis for ${body.url}`)
-  const startTime = Date.now()
+  const done = log.time('Analysis', { url: body.url })
 
   try {
-    // Run content extraction and crawler simulation in parallel
     const [profile, crawlerReport] = await Promise.all([
       extractContentProfile(body.url),
       simulateCrawlers(body.url),
     ])
 
-    console.log(
-      `[content-analyzer] Extraction complete (${Date.now() - startTime}ms). ` +
-      `Words: ${profile.stats.wordCount}, Headings: ${profile.headings.length}, ` +
-      `Crawlers tested: ${crawlerReport.probes.length}`,
-    )
+    log.info('Extraction complete', {
+      url: body.url,
+      wordCount: profile.stats.wordCount,
+      headings: profile.headings.length,
+      crawlersTested: crawlerReport.probes.length,
+    })
 
-    // Run scoring pipeline
     const report = await analyzeContent({
       profile,
       crawlerReport,
       anthropicApiKey: c.env.ANTHROPIC_API_KEY,
     })
 
-    const elapsed = Date.now() - startTime
-    console.log(
-      `[content-analyzer] Analysis complete (${elapsed}ms). ` +
-      `Overall score: ${report.overallScore}/100`,
-    )
+    done({ success: true, overallScore: report.overallScore })
 
     return c.json({ data: report })
   } catch (err) {
     const message = err instanceof Error ? err.message : 'Unknown error'
-    console.error(`[content-analyzer] Analysis failed for ${body.url}:`, err)
+    done({ success: false, error: message })
 
-    // Distinguish user-actionable errors from internal errors
     if (message.includes('Failed to fetch') || message.includes('timed out')) {
       return c.json({ error: `Could not fetch URL: ${message}` }, 422)
     }

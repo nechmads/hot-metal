@@ -2,7 +2,7 @@ import type { ScoutEnv } from '../env'
 import type { Publication, Idea } from '@hotmetal/data-layer'
 import type { IdeaBrief } from '../types'
 import { slugify, getWeekStartTimestamp } from '../utils'
-import { getTierLimits, isUnlimited } from '@hotmetal/shared'
+import { getTierLimits, isUnlimited, logger } from '@hotmetal/shared'
 
 export interface AutoWriteResult {
   written: number
@@ -118,7 +118,10 @@ async function writeIdea(
     throw new Error(`Auto-write did not produce a draft for session ${session.id}: ${autoWriteResult.error}`)
   }
   if (autoWriteResult.partial) {
-    console.warn(`[auto-write] Session ${session.id}: draft is partial — proofread may be incomplete`)
+    logger('content-scout').warn('Draft is partial — proofread may be incomplete', {
+      component: 'auto-write',
+      sessionId: session.id,
+    })
   }
 
   // 3. Publish the draft (only in full-auto mode)

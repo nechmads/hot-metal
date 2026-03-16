@@ -1,4 +1,4 @@
-import { CmsApi } from '@hotmetal/shared'
+import { CmsApi, logger } from '@hotmetal/shared'
 import type { PublisherEnv } from '../env'
 import {
   generateRssFeed,
@@ -29,13 +29,13 @@ async function computeEtag(content: string): Promise<string> {
 export async function regenerateFeeds(env: PublisherEnv, slug: string): Promise<void> {
   const publication = await env.DAL.getPublicationBySlug(slug)
   if (!publication) {
-    console.error(`Feed regeneration: publication not found for slug "${slug}"`)
+    logger('publisher').error('Feed regeneration: publication not found', { component: 'feeds', slug })
     return
   }
 
   // Need the CMS publication ID to query posts
   if (!publication.cmsPublicationId) {
-    console.error(`Feed regeneration: no CMS publication ID for "${slug}"`)
+    logger('publisher').error('Feed regeneration: no CMS publication ID', { component: 'feeds', slug })
     return
   }
 

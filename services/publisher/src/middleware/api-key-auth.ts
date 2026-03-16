@@ -1,5 +1,6 @@
 import type { Context, Next } from 'hono'
 import type { PublisherEnv } from '../env'
+import { logger } from '@hotmetal/shared'
 
 const encoder = new TextEncoder()
 
@@ -22,7 +23,7 @@ export async function publisherApiKeyAuth(c: Context<{ Bindings: PublisherEnv }>
   const expected = c.env.PUBLISHER_API_KEY
 
   if (!expected) {
-    console.error('PUBLISHER_API_KEY environment variable is not configured')
+    logger('publisher').error('PUBLISHER_API_KEY environment variable is not configured', { component: 'api-key-auth' })
     return c.json({ error: 'Internal server error' }, 500)
   }
 

@@ -7,6 +7,7 @@
  */
 
 import type { DataLayerApi, OAuthStateResult } from '@hotmetal/data-layer'
+import { logger } from '@hotmetal/shared'
 import { refreshAccessToken } from './oauth'
 
 // ─── Token management ────────────────────────────────────────────────
@@ -45,7 +46,12 @@ export async function storeTwitterToken(
     try {
       await dal.deleteSocialConnection(existing.id)
     } catch (err) {
-      console.error(`Failed to delete old Twitter connection ${existing.id}, duplicate may exist:`, err)
+      logger('publisher').error('Failed to delete old Twitter connection, duplicate may exist', {
+        component: 'twitter-token-store',
+        connectionId: existing.id,
+        userId,
+        error: err instanceof Error ? err.message : String(err),
+      })
     }
   }
 }
@@ -83,7 +89,11 @@ export async function getValidTwitterToken(
         username: decrypted.displayName ?? '',
       }
     } catch (err) {
-      console.error('Twitter token refresh failed:', err)
+      logger('publisher').error('Twitter token refresh failed', {
+        component: 'twitter-token-store',
+        userId,
+        error: err instanceof Error ? err.message : String(err),
+      })
       return null
     }
   }

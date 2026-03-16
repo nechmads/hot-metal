@@ -1,68 +1,68 @@
 {
-	"$schema": "node_modules/wrangler/config-schema.json",
-	"name": "hotmetal-content-analyzer",
-	"main": "src/index.ts",
-	"compatibility_date": "2026-02-05",
-	"compatibility_flags": [
-		"nodejs_compat"
-	],
-	"observability": {
-		"enabled": true,
-	},
-	"dev": {
-		"port": 8793,
-	},
-	// Durable workflow for async analysis pipeline
-	"workflows": [
-		{
-			"name": "analyzer-workflow",
-			"binding": "ANALYZER_WORKFLOW",
-			"class_name": "AnalyzerWorkflow",
-		},
-	],
-	// Queue: async analysis requests
-	"queues": {
-		"producers": [
-			{
-				"queue": "hotmetal-analyzer-queue",
-				"binding": "ANALYZER_QUEUE",
-			},
-		],
-		"consumers": [
-			{
-				"queue": "hotmetal-analyzer-queue",
-				"max_batch_size": 1,
-				"max_retries": 3,
-				"dead_letter_queue": "hotmetal-analyzer-dlq",
-			},
-		],
-	},
-	// R2 bucket for storing completed analysis reports
-	"r2_buckets": [
-		{
-			"binding": "REPORTS_BUCKET",
-			"bucket_name": "hotmetal-analysis-reports",
-		},
-	],
-	// Notifications service for emailing report links
-	"services": [
-		{
-			"binding": "NOTIFICATIONS",
-			"service": "hotmetal-notifications",
-			"entrypoint": "NotificationsService",
-		},
-	],
-	"routes": [
-		{
-			"pattern": "content-analyzer.hotmetalapp.com",
-			"zone_name": "hotmetalapp.com",
-			"custom_domain": true,
-		},
-	],
-	"vars": {
-		"WEB_APP_URL": "https://hotmetalapp.com",
-	},
-	// Secrets (set via `wrangler secret put`):
-	// API_KEY — protects internal API endpoints
-	// ANTHROPIC_API_KEY — for LLM-based scoring dimensions
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "hotmetal-content-analyzer",
+  "main": "src/index.ts",
+  "compatibility_date": "2026-02-05",
+  "compatibility_flags": ["nodejs_compat"],
+  "observability": {
+    "enabled": true,
+  },
+  "dev": {
+    "port": 8793,
+  },
+  // Durable workflow for async analysis pipeline
+  "workflows": [
+    {
+      "name": "analyzer-workflow",
+      "binding": "ANALYZER_WORKFLOW",
+      "class_name": "AnalyzerWorkflow",
+    },
+  ],
+  // Queue: async analysis requests
+  "queues": {
+    "producers": [
+      {
+        "queue": "hotmetal-analyzer-queue",
+        "binding": "ANALYZER_QUEUE",
+      },
+    ],
+    "consumers": [
+      {
+        "queue": "hotmetal-analyzer-queue",
+        "max_batch_size": 1,
+        "max_retries": 3,
+        "dead_letter_queue": "hotmetal-analyzer-dlq",
+      },
+    ],
+  },
+  // R2 bucket for storing completed analysis reports
+  "r2_buckets": [
+    {
+      "binding": "REPORTS_BUCKET",
+      "bucket_name": "hotmetal-analysis-reports",
+    },
+  ],
+  // Notifications service for emailing report links
+  "services": [
+    {
+      "binding": "NOTIFICATIONS",
+      "service": "hotmetal-notifications",
+      "entrypoint": "NotificationsService",
+    },
+  ],
+  "routes": [
+    {
+      "pattern": "content-analyzer.hotmetalapp.com",
+      "zone_name": "hotmetalapp.com",
+      "custom_domain": true,
+    },
+  ],
+  "vars": {
+    "WEB_APP_URL": "https://hotmetalapp.com",
+    "AXIOM_DATASET": "hotmetal-prod",
+  },
+  // Secrets (set via `wrangler secret put`):
+  // API_KEY — protects internal API endpoints
+  // ANTHROPIC_API_KEY — for LLM-based scoring dimensions
+  // AXIOM_TOKEN — Axiom ingest token for structured logging
 }

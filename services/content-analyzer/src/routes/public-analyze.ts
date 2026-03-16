@@ -5,6 +5,7 @@
 
 import { Hono } from 'hono'
 import type { AnalyzerEnv } from '../env'
+import { logger } from '@hotmetal/shared'
 import { validateUrl, UrlValidationError } from '../extractor/url-validator'
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
@@ -51,7 +52,7 @@ publicAnalyze.post('/api/v1/public/analyze', async (c) => {
     url: body.url,
   })
 
-  console.log(`[public-analyze] Queued analysis ${reportId} for ${body.url} (email: ${email})`)
+  logger('content-analyzer').info('Queued analysis', { component: 'public-analyze', reportId, url: body.url, email })
 
   return c.json({ reportId, status: 'queued' })
 })

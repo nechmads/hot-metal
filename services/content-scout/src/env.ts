@@ -32,6 +32,10 @@ export interface ScoutEnv extends Omit<Env, 'DAL' | 'NOTIFICATIONS' | 'PUBLICATI
   // Wilson LLM usage tracking (optional — tracking disabled if missing)
   WILSON_API_URL?: string
   WILSON_API_KEY?: string
+
+  // Axiom logging (optional — structured logs sent to Axiom if both are set)
+  AXIOM_TOKEN?: string
+  AXIOM_DATASET?: string
 }
 
 export interface ScoutQueueMessage {
