@@ -9,6 +9,7 @@
  * 5. Add platform-specific notes
  */
 
+import { logger } from '@hotmetal/shared'
 import type { ContentProfile } from '../extractor/types'
 import type { CrawlerReport } from '../extractor/crawler-sim'
 import type { DimensionScoreResult } from './dimension-scorer'
@@ -49,7 +50,10 @@ export async function analyzeContent(input: AggregatorInput): Promise<AnalysisRe
     const llmResult = await scoreLlmDimensions(profile, anthropicApiKey)
     llmResults = llmResult.dimensions
   } catch (err) {
-    console.error('[content-analyzer] LLM scoring failed, using deterministic scores only:', err)
+    logger('content-analyzer').error('LLM scoring failed, using deterministic scores only', {
+      component: 'aggregator',
+      error: err instanceof Error ? err.message : String(err),
+    })
     llmFailed = true
     // Create fallback entries for all LLM dimensions
     for (const dim of getLlmDimensions()) {

@@ -8,7 +8,7 @@
 import { Hono } from 'hono'
 import type { AppEnv } from '../../server'
 import { NotFoundError, ValidationError } from '../../actions/errors'
-import { validateWebhookUrl } from '@hotmetal/shared'
+import { validateWebhookUrl, logger } from '@hotmetal/shared'
 
 const scout = new Hono<AppEnv>()
 
@@ -64,13 +64,13 @@ scout.post('/publications/:id/scout/run', async (c) => {
 			}),
 		}))
 	} catch (err) {
-		console.error('Failed to reach content-scout service:', err)
+		logger('web').error('Failed to reach content-scout service', { component: 'agents-api', error: err instanceof Error ? err.message : String(err) })
 		return c.json({ error: 'Content scout service is unreachable', code: 'SERVICE_UNAVAILABLE' }, 503)
 	}
 
 	// 6. Handle errors from the scout service
 	if (!res.ok) {
-		console.error(`Scout service error (${res.status}):`, await res.text())
+		logger('web').error('Scout service error', { component: 'agents-api', status: res.status, body: await res.text() })
 		return c.json({ error: 'Content scout failed. Please try again later.', code: 'BAD_GATEWAY' }, 502)
 	}
 

@@ -15,4 +15,6 @@ export interface PublisherEnv {
   TWITTER_CLIENT_SECRET: string
   TWITTER_REDIRECT_URI: string
   WEB_APP_URL: string
+  AXIOM_TOKEN?: string
+  AXIOM_DATASET?: string
 }

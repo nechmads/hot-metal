@@ -1,7 +1,7 @@
 import { WorkflowEntrypoint, type WorkflowEvent, type WorkflowStep } from 'cloudflare:workers'
 import { createAnthropic } from '@ai-sdk/anthropic'
 import { wrapLanguageModel } from 'ai'
-import { initWilson, createWilsonMiddleware } from '@hotmetal/shared'
+import { initWilson, createWilsonMiddleware, createLogger } from '@hotmetal/shared'
 import type { ScoutEnv, ScoutWorkflowParams } from './env'
 import { loadPublicationContext } from './steps/load-context'
 import { searchForContent } from './steps/search'
@@ -15,14 +15,21 @@ export class ScoutWorkflow extends WorkflowEntrypoint<ScoutEnv, ScoutWorkflowPar
   async run(event: WorkflowEvent<ScoutWorkflowParams>, step: WorkflowStep) {
     const { publicationId } = event.payload
 
+    const log = createLogger({
+      service: 'content-scout',
+      axiom: this.env.AXIOM_TOKEN && this.env.AXIOM_DATASET
+        ? { token: this.env.AXIOM_TOKEN, dataset: this.env.AXIOM_DATASET }
+        : undefined,
+    }).child({ component: 'workflow', publicationId })
+
     try {
-      console.log(`[workflow] Starting scout for publication ${publicationId}`)
+      log.info('Starting scout for publication')
 
       // Step 1: Load publication context from DAL
       const context = await step.do('load-context', async () => {
         return await loadPublicationContext(this.env.DAL, publicationId)
       })
-      console.log(`[workflow] Step 1 done: ${context.topics.length} topics, ${context.recentIdeas.length} recent ideas`)
+      log.info('Step 1 done: loaded publication context', { topicCount: context.topics.length, recentIdeaCount: context.recentIdeas.length })
 
       if (context.topics.length === 0) {
         return { publicationId, ideasGenerated: 0, skipped: 'no active topics' }
@@ -41,7 +48,7 @@ export class ScoutWorkflow extends WorkflowEntrypoint<ScoutEnv, ScoutWorkflowPar
           )
         },
       )
-      console.log(`[workflow] Step 2 done: ${searchResults.length} topic result sets`)
+      log.info('Step 2 done: search complete', { topicResultSets: searchResults.length })
 
       // Init Wilson + resolve user tier for LLM tracking
       initWilson(this.env.WILSON_API_URL, this.env.WILSON_API_KEY)
@@ -75,7 +82,7 @@ export class ScoutWorkflow extends WorkflowEntrypoint<ScoutEnv, ScoutWorkflowPar
           )
         },
       )
-      console.log(`[workflow] Step 3 done: ${filteredStories.length} stories after dedup`)
+      log.info('Step 3 done: dedup complete', { storiesAfterDedup: filteredStories.length })
 
       if (filteredStories.length === 0) {
         return { publicationId, ideasGenerated: 0, skipped: 'no new stories after dedup' }
@@ -98,7 +105,7 @@ export class ScoutWorkflow extends WorkflowEntrypoint<ScoutEnv, ScoutWorkflowPar
           )
         },
       )
-      console.log(`[workflow] Step 4 done: ${ideas.length} ideas generated`)
+      log.info('Step 4 done: ideas generated', { ideasGenerated: ideas.length })
 
       if (ideas.length === 0) {
         return { publicationId, ideasGenerated: 0, skipped: 'LLM produced no ideas' }
@@ -109,7 +116,7 @@ export class ScoutWorkflow extends WorkflowEntrypoint<ScoutEnv, ScoutWorkflowPar
       const stored = await step.do('store-ideas', async () => {
         return await storeIdeas(this.env.DAL, publicationId, ideas, context.topics)
       })
-      console.log(`[workflow] Step 5 done: ${stored.count} ideas stored`)
+      log.info('Step 5 done: ideas stored', { ideasStored: stored.count })
 
       // Notify: new ideas gathered
       if (stored.count > 0) {
@@ -120,7 +127,9 @@ export class ScoutWorkflow extends WorkflowEntrypoint<ScoutEnv, ScoutWorkflowPar
             ideasCount: stored.count,
           })
         } catch (err) {
-          console.warn('[workflow] Failed to send new-ideas notification (non-blocking):', err)
+          log.warn('Failed to send new-ideas notification (non-blocking)', {
+            error: err instanceof Error ? err.message : String(err),
+          })
         }
       }
 
@@ -137,7 +146,7 @@ export class ScoutWorkflow extends WorkflowEntrypoint<ScoutEnv, ScoutWorkflowPar
         )
         autoWritten = autoWriteResult.written
         ideaTitle = autoWriteResult.ideaTitle
-        console.log(`[workflow] Step 6 done: ${autoWritten} auto-written`)
+        log.info('Step 6 done: auto-write complete', { autoWritten })
       }
 
       // Notify: draft ready or post published
@@ -161,10 +170,13 @@ export class ScoutWorkflow extends WorkflowEntrypoint<ScoutEnv, ScoutWorkflowPar
             })
           }
         } catch (err) {
-          console.warn('[workflow] Failed to send auto-write notification (non-blocking):', err)
+          log.warn('Failed to send auto-write notification (non-blocking)', {
+            error: err instanceof Error ? err.message : String(err),
+          })
         }
       }
 
+      await log.flush()
       return {
         publicationId,
         publicationName: context.publication.name,
@@ -173,7 +185,11 @@ export class ScoutWorkflow extends WorkflowEntrypoint<ScoutEnv, ScoutWorkflowPar
       }
     } catch (err) {
       const error = err instanceof Error ? err : new Error(String(err))
-      console.error(`[workflow] Scout failed for publication ${publicationId}:`, error.message, error.stack)
+      log.error('Scout failed for publication', {
+        error: error.message,
+        stack: error.stack,
+      })
+      await log.flush()
       throw error
     }
   }

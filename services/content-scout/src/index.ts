@@ -1,9 +1,19 @@
 import { Hono } from 'hono'
 import type { ScoutEnv, ScoutQueueMessage } from './env'
 import { ScoutWorkflow } from './workflow'
-import { computeNextRun } from '@hotmetal/shared'
+import { computeNextRun, initLogger, logger, flushLogs } from '@hotmetal/shared'
 
 const app = new Hono<{ Bindings: ScoutEnv }>()
+
+// Initialize logger on every request and flush after response
+app.use('*', async (c, next) => {
+  initLogger('content-scout', c.env.AXIOM_TOKEN && c.env.AXIOM_DATASET
+    ? { token: c.env.AXIOM_TOKEN, dataset: c.env.AXIOM_DATASET }
+    : undefined,
+  )
+  await next()
+  c.executionCtx.waitUntil(flushLogs())
+})
 
 // API key auth middleware for manual trigger routes
 app.use('/api/*', async (c, next) => {
@@ -55,37 +65,58 @@ export default {
 
   // Hourly cron — enqueue publications whose next_scout_at has passed
   async scheduled(_event: ScheduledEvent, env: ScoutEnv, ctx: ExecutionContext) {
-    console.log('[cron] Scout cron tick started')
+    const log = initLogger('content-scout', env.AXIOM_TOKEN && env.AXIOM_DATASET
+      ? { token: env.AXIOM_TOKEN, dataset: env.AXIOM_DATASET }
+      : undefined,
+    )
+
+    log.info('Scout cron tick started', { component: 'cron' })
     ctx.waitUntil((async () => {
       try {
         await backfillNullSchedules(env)
         const count = await enqueueDuePublications(env)
-        console.log(`[cron] Scout cron tick complete — ${count} publication(s) enqueued`)
+        log.info(`Scout cron tick complete`, { component: 'cron', publicationsEnqueued: count })
       } catch (err) {
-        console.error('[cron] Scout cron tick failed:', err)
+        log.error('Scout cron tick failed', {
+          component: 'cron',
+          error: err instanceof Error ? err.message : String(err),
+        })
+      } finally {
+        await flushLogs()
       }
     })())
   },
 
   // Queue consumer — start a workflow per publication
   async queue(batch: MessageBatch<ScoutQueueMessage>, env: ScoutEnv) {
-    console.log(`[queue] Processing batch of ${batch.messages.length} message(s)`)
+    const log = initLogger('content-scout', env.AXIOM_TOKEN && env.AXIOM_DATASET
+      ? { token: env.AXIOM_TOKEN, dataset: env.AXIOM_DATASET }
+      : undefined,
+    )
+
+    log.info(`Processing batch of ${batch.messages.length} message(s)`, { component: 'queue' })
     for (const message of batch.messages) {
       const { publicationId, triggeredBy } = message.body
 
       try {
         const workflowId = `scout-${publicationId}-${crypto.randomUUID()}`
-        console.log(`[queue] Starting workflow ${workflowId} (trigger: ${triggeredBy})`)
+        log.info(`Starting workflow ${workflowId}`, { component: 'queue', publicationId, triggeredBy })
         await env.SCOUT_WORKFLOW.create({
           id: workflowId,
           params: { publicationId, triggeredBy },
         })
         message.ack()
       } catch (err) {
-        console.error(`[queue] Failed to start workflow for publication ${publicationId}:`, err)
+        log.error(`Failed to start workflow for publication ${publicationId}`, {
+          component: 'queue',
+          publicationId,
+          error: err instanceof Error ? err.message : String(err),
+        })
         message.retry()
       }
     }
+
+    await flushLogs()
   },
 }
 
@@ -98,11 +129,18 @@ async function backfillNullSchedules(env: ScoutEnv): Promise<void> {
   const pubs = await env.DAL.getPublicationsWithNullSchedule()
   if (pubs.length === 0) return
 
-  console.log(`[backfill] Found ${pubs.length} publication(s) with NULL next_scout_at`)
+  const log = logger('content-scout')
+  log.info(`Found ${pubs.length} publication(s) with NULL next_scout_at`, { component: 'backfill', count: pubs.length })
 
   for (const pub of pubs) {
     const nextRun = computeNextRun(pub.scoutSchedule, pub.timezone)
-    console.log(`[backfill] pub=${pub.id} schedule=${JSON.stringify(pub.scoutSchedule)} tz=${pub.timezone} nextRun=${new Date(nextRun * 1000).toISOString()}`)
+    log.info('Backfilling publication schedule', {
+      component: 'backfill',
+      publicationId: pub.id,
+      schedule: pub.scoutSchedule,
+      timezone: pub.timezone,
+      nextRun: new Date(nextRun * 1000).toISOString(),
+    })
 
     await env.DAL.updatePublicationNextScoutAt(pub.id, nextRun)
   }
@@ -115,28 +153,32 @@ async function backfillNullSchedules(env: ScoutEnv): Promise<void> {
  * crash window where a pub could be advanced but not enqueued.
  */
 async function enqueueDuePublications(env: ScoutEnv): Promise<number> {
+  const log = logger('content-scout')
   const now = Math.floor(Date.now() / 1000)
-  console.log(`[enqueue] Checking for due publications (now=${new Date(now * 1000).toISOString()})`)
+  log.info('Checking for due publications', { component: 'enqueue', now: new Date(now * 1000).toISOString() })
 
   const pubs = await env.DAL.getDuePublications(now)
   if (pubs.length === 0) {
-    console.log('[enqueue] No publications due')
+    log.info('No publications due', { component: 'enqueue' })
     return 0
   }
 
-  console.log(`[enqueue] Found ${pubs.length} due publication(s)`)
+  log.info(`Found ${pubs.length} due publication(s)`, { component: 'enqueue', count: pubs.length })
 
   for (const pub of pubs) {
     const nextRun = computeNextRun(pub.scoutSchedule, pub.timezone)
 
-    console.log(`[enqueue] pub=${pub.id} — advancing next_scout_at to ${new Date(nextRun * 1000).toISOString()}`)
+    log.info('Advancing next_scout_at and enqueuing publication', {
+      component: 'enqueue',
+      publicationId: pub.id,
+      nextScoutAt: new Date(nextRun * 1000).toISOString(),
+    })
 
     // Optimistic update BEFORE enqueue to prevent double-enqueue
     await env.DAL.updatePublicationNextScoutAt(pub.id, nextRun)
 
     // Enqueue immediately after update
     await env.SCOUT_QUEUE.send({ publicationId: pub.id, triggeredBy: 'cron' })
-    console.log(`[enqueue] pub=${pub.id} — queued`)
   }
 
   return pubs.length

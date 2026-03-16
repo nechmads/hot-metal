@@ -20,6 +20,7 @@ import {
   validateAndConsumeOAuthState as validateTwitterOAuthState,
 } from '../twitter/token-store'
 import { publisherApiKeyAuth } from '../middleware/api-key-auth'
+import { logger } from '@hotmetal/shared'
 
 const oauth = new Hono<{ Bindings: PublisherEnv }>()
 
@@ -92,7 +93,11 @@ oauth.get('/oauth/linkedin/callback', async (c) => {
 
     await storeLinkedInToken(c.env.DAL, stateResult.userId, tokenResponse.accessToken, personUrn, tokenResponse.expiresIn)
   } catch (err) {
-    console.error('OAuth token exchange failed:', err)
+    logger('publisher').error('LinkedIn OAuth token exchange failed', {
+      component: 'oauth',
+      provider: 'linkedin',
+      error: err instanceof Error ? err.message : String(err),
+    })
     if (c.env.WEB_APP_URL) {
       return c.redirect(`${c.env.WEB_APP_URL}/settings?error=${encodeURIComponent('Failed to complete LinkedIn connection. Please try again.')}`)
     }
@@ -194,7 +199,11 @@ oauth.get('/oauth/twitter/callback', async (c) => {
       tokenResponse.expiresIn,
     )
   } catch (err) {
-    console.error('Twitter OAuth token exchange failed:', err)
+    logger('publisher').error('Twitter OAuth token exchange failed', {
+      component: 'oauth',
+      provider: 'twitter',
+      error: err instanceof Error ? err.message : String(err),
+    })
     if (c.env.WEB_APP_URL) {
       return c.redirect(`${c.env.WEB_APP_URL}/settings?error=${encodeURIComponent('Failed to complete X connection. Please try again.')}`)
     }

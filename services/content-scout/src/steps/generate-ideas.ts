@@ -1,6 +1,7 @@
 import { generateText } from 'ai';
 import type { LanguageModelV3 } from '@ai-sdk/provider';
 import type { Publication, Topic } from '@hotmetal/data-layer';
+import { logger } from '@hotmetal/shared';
 import type { FilteredStory, IdeaBrief } from '../types';
 
 export async function generateIdeas(
@@ -23,7 +24,10 @@ export async function generateIdeas(
 
 		return parseIdeaBriefs(result.text);
 	} catch (err) {
-		console.error('[generate-ideas] LLM call failed:', err instanceof Error ? err.message : err);
+		logger('content-scout').error('LLM call failed', {
+			component: 'generate-ideas',
+			error: err instanceof Error ? err.message : String(err),
+		});
 		throw err;
 	}
 }
@@ -121,7 +125,7 @@ function parseIdeaBriefs(text: string): IdeaBrief[] {
 				sources: Array.isArray(item.sources) ? item.sources : [],
 			}));
 	} catch {
-		console.error('Failed to parse idea briefs JSON');
+		logger('content-scout').error('Failed to parse idea briefs JSON', { component: 'generate-ideas' });
 		return [];
 	}
 }

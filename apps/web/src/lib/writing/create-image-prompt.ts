@@ -1,5 +1,6 @@
 import { generateText } from 'ai'
 import type { LanguageModelV3 } from '@ai-sdk/provider'
+import { logger } from '@hotmetal/shared'
 import type { DraftInput } from './index'
 
 const IMAGE_PROMPT_SYSTEM = `You are an expert at creating prompts for the Flux AI image generator.
@@ -46,7 +47,7 @@ export async function createImagePrompt(model: LanguageModelV3, draft: DraftInpu
 
     return result.text.trim()
   } catch (err) {
-    console.error('createImagePrompt error:', err)
+    logger('web').error('createImagePrompt error', { component: 'writing', error: err instanceof Error ? err.message : String(err) })
     return ''
   }
 }

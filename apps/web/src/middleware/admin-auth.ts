@@ -7,6 +7,7 @@
  */
 
 import { createMiddleware } from 'hono/factory'
+import { logger } from '@hotmetal/shared'
 import type { AppEnv } from '../server'
 
 export const adminAuth = createMiddleware<AppEnv>(async (c, next) => {
@@ -17,7 +18,7 @@ export const adminAuth = createMiddleware<AppEnv>(async (c, next) => {
 
 	const expected = c.env.INTERNAL_API_KEY
 	if (!expected) {
-		console.error('INTERNAL_API_KEY not configured')
+		logger('web').error('INTERNAL_API_KEY not configured', { component: 'admin-auth' })
 		return c.json({ error: 'Internal auth not configured' }, 500)
 	}
 

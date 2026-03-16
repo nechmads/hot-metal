@@ -1,5 +1,6 @@
 import { generateText } from "ai";
 import type { LanguageModelV3 } from "@ai-sdk/provider";
+import { logger } from "@hotmetal/shared";
 import type { DraftInput } from "./index";
 
 const HOOK_PROMPT = `You are a senior editor and conversion copywriter.
@@ -74,7 +75,7 @@ export async function createHook(model: LanguageModelV3, draft: DraftInput): Pro
 
     return result.text.trim();
   } catch (err) {
-    console.error("createHook error:", err);
+    logger("web").error("createHook error", { component: "writing", error: err instanceof Error ? err.message : String(err) });
     return "";
   }
 }

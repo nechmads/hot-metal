@@ -82,6 +82,7 @@
 		"ALEXANDER_API_URL": "https://alexanderai.farfarawaylabs.com",
 		"PUBLICATIONS_BASE_DOMAIN": "hotmetalapp.com",
 		"WILSON_API_URL": "https://wilson.farfarawaylabs.com",
+		"AXIOM_DATASET": "hotmetal-prod",
 	},
 
 	// Secrets (set via `wrangler secret put`):
@@ -90,4 +91,5 @@
 	// ANTHROPIC_API_KEY    — Claude API for idea generation
 	// INTERNAL_API_KEY     — shared key for service-to-service auth with web
 	// WILSON_API_KEY       — Wilson LLM usage tracking API token
+	// AXIOM_TOKEN          — Axiom ingest token for structured logging
 }

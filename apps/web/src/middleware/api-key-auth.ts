@@ -7,6 +7,7 @@
  */
 
 import { createMiddleware } from 'hono/factory'
+import { logger } from '@hotmetal/shared'
 import type { AppEnv } from '../server'
 
 export const apiKeyAuth = createMiddleware<AppEnv>(async (c, next) => {
@@ -24,7 +25,7 @@ export const apiKeyAuth = createMiddleware<AppEnv>(async (c, next) => {
 	try {
 		userId = await c.env.DAL.validateUserApiKey(rawToken)
 	} catch (err) {
-		console.error('API key validation error:', err instanceof Error ? err.message : err)
+		logger('web').error('API key validation error', { component: 'api-key-auth', error: err instanceof Error ? err.message : String(err) })
 		return c.json({ error: 'Authentication service unavailable' }, 503)
 	}
 

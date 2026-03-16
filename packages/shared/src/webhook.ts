@@ -5,6 +5,8 @@
  * and global fetch. No Node.js dependencies.
  */
 
+import { logger } from './logger'
+
 export interface WebhookPayload {
   event: string
   sessionId?: string
@@ -180,7 +182,7 @@ async function sign(body: string, secret: string): Promise<string> {
  * - Signs the JSON body with HMAC-SHA256 (`X-HotMetal-Signature` header).
  * - Retries up to 3 times on non-2xx responses or network errors
  *   with backoff delays of 5 s, 30 s, 120 s.
- * - Logs errors to `console.error` but **never throws** — webhook delivery
+ * - Logs errors via structured logger but **never throws** — webhook delivery
  *   must not crash the calling operation.
  */
 export async function deliverWebhook(
@@ -214,15 +216,22 @@ export async function deliverWebhook(
           return
         }
 
-        console.error(
-          `Webhook delivery failed (attempt ${attempt + 1}/${MAX_ATTEMPTS}): ` +
-            `${response.status} ${response.statusText} — ${webhookUrl}`,
-        )
+        logger('shared').error('Webhook delivery failed', {
+          operation: 'deliverWebhook',
+          attempt: attempt + 1,
+          maxAttempts: MAX_ATTEMPTS,
+          statusCode: response.status,
+          statusText: response.statusText,
+          url: webhookUrl,
+        })
       } catch (err) {
-        console.error(
-          `Webhook delivery error (attempt ${attempt + 1}/${MAX_ATTEMPTS}): ` +
-            `${err instanceof Error ? err.message : String(err)} — ${webhookUrl}`,
-        )
+        logger('shared').error('Webhook delivery error', {
+          operation: 'deliverWebhook',
+          attempt: attempt + 1,
+          maxAttempts: MAX_ATTEMPTS,
+          url: webhookUrl,
+          error: err instanceof Error ? err : new Error(String(err)),
+        })
       }
 
       // Wait before retrying (skip delay after last attempt)
@@ -231,11 +240,16 @@ export async function deliverWebhook(
       }
     }
 
-    console.error(`Webhook delivery exhausted all ${MAX_ATTEMPTS} attempts — ${webhookUrl}`)
+    logger('shared').error('Webhook delivery exhausted all attempts', {
+      operation: 'deliverWebhook',
+      maxAttempts: MAX_ATTEMPTS,
+      url: webhookUrl,
+    })
   } catch (err) {
     // Catch-all: signing failures or unexpected errors must not propagate
-    console.error(
-      `Webhook delivery unexpected error: ${err instanceof Error ? err.message : String(err)}`,
-    )
+    logger('shared').error('Webhook delivery unexpected error', {
+      operation: 'deliverWebhook',
+      error: err instanceof Error ? err : new Error(String(err)),
+    })
   }
 }

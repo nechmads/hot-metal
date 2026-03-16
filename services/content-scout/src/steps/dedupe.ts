@@ -1,6 +1,7 @@
 import { generateText } from 'ai';
 import type { LanguageModelV3 } from '@ai-sdk/provider';
 import type { Idea } from '@hotmetal/data-layer';
+import { logger } from '@hotmetal/shared';
 import type { TopicSearchResults, FilteredStory } from '../types';
 
 const DEDUPE_SYSTEM_PROMPT = `You are a news story deduplication assistant.
@@ -56,7 +57,10 @@ export async function dedupeStories(
 		return parseFilteredStories(result.text, allStories);
 	} catch (err) {
 		// On dedup failure, return all stories unfiltered
-		console.error('Dedup LLM call failed, returning all stories:', err);
+		logger('content-scout').error('Dedup LLM call failed, returning all stories', {
+			component: 'dedupe',
+			error: err instanceof Error ? err.message : String(err),
+		});
 		return allStories;
 	}
 }
@@ -132,7 +136,7 @@ function parseFilteredStories(text: string, allStories: FilteredStory[]): Filter
 			return !decision || decision.verdict === 'keep';
 		});
 	} catch {
-		console.error('Failed to parse dedup JSON, returning all stories');
+		logger('content-scout').error('Failed to parse dedup JSON, returning all stories', { component: 'dedupe' });
 		return allStories;
 	}
 }

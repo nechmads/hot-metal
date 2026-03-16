@@ -4,6 +4,7 @@
  */
 
 import type { DataLayerApi, OAuthStateResult } from '@hotmetal/data-layer'
+import { logger } from '@hotmetal/shared'
 
 // ─── Token management ────────────────────────────────────────────────
 
@@ -36,7 +37,12 @@ export async function storeLinkedInToken(
     try {
       await dal.deleteSocialConnection(existing.id)
     } catch (err) {
-      console.error(`Failed to delete old LinkedIn connection ${existing.id}, duplicate may exist:`, err)
+      logger('publisher').error('Failed to delete old LinkedIn connection, duplicate may exist', {
+        component: 'linkedin-token-store',
+        connectionId: existing.id,
+        userId,
+        error: err instanceof Error ? err.message : String(err),
+      })
     }
   }
 }

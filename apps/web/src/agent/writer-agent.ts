@@ -25,7 +25,7 @@ import {
 } from "../prompts/system-prompt";
 import { createToolSet, createAutoWriteToolSet } from "../tools";
 import { cleanupMessages } from "./message-utils";
-import { CmsApi, initWilson, createWilsonMiddleware } from "@hotmetal/shared";
+import { CmsApi, initWilson, createWilsonMiddleware, logger } from "@hotmetal/shared";
 import type { Citation } from "@hotmetal/content-core";
 import { marked } from "marked";
 import {
@@ -220,7 +220,7 @@ export class WriterAgent extends AIChatAgent<Env, WriterAgentState> {
     try {
       ({ systemPrompt, tools } = await this.prepareLlmCall());
     } catch (error) {
-      console.error("[onChatMessage] prepareLlmCall failed:", error);
+      logger("web").error("onChatMessage prepareLlmCall failed", { component: "writer-agent", error: error instanceof Error ? error.message : String(error) });
       this.setState({
         ...this.state,
         isGenerating: false,
@@ -256,7 +256,7 @@ export class WriterAgent extends AIChatAgent<Env, WriterAgentState> {
               )(event);
             },
             onError: (error) => {
-              console.error("[onChatMessage] Stream error:", error);
+              logger("web").error("onChatMessage stream error", { component: "writer-agent", error: error instanceof Error ? error.message : String(error) });
               this.setState({
                 ...this.state,
                 isGenerating: false,
@@ -268,7 +268,7 @@ export class WriterAgent extends AIChatAgent<Env, WriterAgentState> {
 
           writer.merge(result.toUIMessageStream());
         } catch (error) {
-          console.error("[onChatMessage] Stream execute failed:", error);
+          logger("web").error("onChatMessage stream execute failed", { component: "writer-agent", error: error instanceof Error ? error.message : String(error) });
           this.setState({
             ...this.state,
             isGenerating: false,
@@ -279,7 +279,7 @@ export class WriterAgent extends AIChatAgent<Env, WriterAgentState> {
         }
       },
       onError: (error) => {
-        console.error("[onChatMessage] UIMessageStream error:", error);
+        logger("web").error("onChatMessage UIMessageStream error", { component: "writer-agent", error: error instanceof Error ? error.message : String(error) });
         return error instanceof Error ? error.message : "Unknown stream error";
       },
     });
@@ -372,7 +372,7 @@ export class WriterAgent extends AIChatAgent<Env, WriterAgentState> {
       // Delegate to AIChatAgent base (handles /get-messages, etc.)
       return super.onRequest(request);
     } catch (error) {
-      console.error(`[onRequest] Unhandled error on ${request.method} ${url.pathname}:`, error);
+      logger("web").error("onRequest unhandled error", { component: "writer-agent", method: request.method, pathname: url.pathname, error: error instanceof Error ? error.message : String(error) });
       // Reset isGenerating if it was left stuck
       if (this.state.isGenerating) {
         this.setState({
@@ -394,7 +394,7 @@ export class WriterAgent extends AIChatAgent<Env, WriterAgentState> {
     try {
       ({ systemPrompt, tools } = await this.prepareLlmCall());
     } catch (error) {
-      console.error("[handleChat] prepareLlmCall failed:", error);
+      logger("web").error("handleChat prepareLlmCall failed", { component: "writer-agent", error: error instanceof Error ? error.message : String(error) });
       this.setState({
         ...this.state,
         isGenerating: false,
@@ -433,7 +433,7 @@ export class WriterAgent extends AIChatAgent<Env, WriterAgentState> {
         usage: result.usage,
       });
     } catch (error) {
-      console.error("[handleChat] generateText failed:", error);
+      logger("web").error("handleChat generateText failed", { component: "writer-agent", error: error instanceof Error ? error.message : String(error) });
       this.setState({
         ...this.state,
         isGenerating: false,
@@ -470,7 +470,7 @@ export class WriterAgent extends AIChatAgent<Env, WriterAgentState> {
       });
       tools = createAutoWriteToolSet(this);
     } catch (error) {
-      console.error("[handleAutoWrite] Setup failed:", error);
+      logger("web").error("handleAutoWrite setup failed", { component: "writer-agent", error: error instanceof Error ? error.message : String(error) });
       return Response.json(
         { success: false, error: "Failed to prepare auto-write" },
         { status: 500 },
@@ -533,7 +533,7 @@ export class WriterAgent extends AIChatAgent<Env, WriterAgentState> {
       });
     } catch (error) {
       clearTimeout(timeoutId);
-      console.error("[handleAutoWrite] generateText failed:", error);
+      logger("web").error("handleAutoWrite generateText failed", { component: "writer-agent", error: error instanceof Error ? error.message : String(error) });
       this.setState({
         ...this.state,
         isGenerating: false,
@@ -545,7 +545,7 @@ export class WriterAgent extends AIChatAgent<Env, WriterAgentState> {
       try {
         draft = this.getCurrentDraft();
       } catch (draftError) {
-        console.error("[handleAutoWrite] Failed to check for partial draft:", draftError);
+        logger("web").error("handleAutoWrite failed to check for partial draft", { component: "writer-agent", error: draftError instanceof Error ? draftError.message : String(draftError) });
       }
 
       if (draft) {
@@ -624,15 +624,15 @@ export class WriterAgent extends AIChatAgent<Env, WriterAgentState> {
           : { excerpt: "", tags: "" };
 
       if (hookResult.status === "rejected") {
-        console.error("[handleGenerateSeo] Hook generation failed:", hookResult.reason);
+        logger("web").error("handleGenerateSeo hook generation failed", { component: "writer-agent", error: hookResult.reason instanceof Error ? hookResult.reason.message : String(hookResult.reason) });
       }
       if (seoResult.status === "rejected") {
-        console.error("[handleGenerateSeo] SEO meta generation failed:", seoResult.reason);
+        logger("web").error("handleGenerateSeo SEO meta generation failed", { component: "writer-agent", error: seoResult.reason instanceof Error ? seoResult.reason.message : String(seoResult.reason) });
       }
 
       return Response.json({ hook, excerpt, tags });
     } catch (error) {
-      console.error("[handleGenerateSeo] Failed:", error);
+      logger("web").error("handleGenerateSeo failed", { component: "writer-agent", error: error instanceof Error ? error.message : String(error) });
       return Response.json(
         { error: "Failed to generate SEO metadata" },
         { status: 500 },
@@ -664,7 +664,7 @@ export class WriterAgent extends AIChatAgent<Env, WriterAgentState> {
       const tweet = await createTweet(tweetModel, draftInput, hook);
       return Response.json({ tweet });
     } catch (error) {
-      console.error("[handleGenerateTweet] Failed:", error);
+      logger("web").error("handleGenerateTweet failed", { component: "writer-agent", error: error instanceof Error ? error.message : String(error) });
       return Response.json(
         { error: "Failed to generate tweet" },
         { status: 500 },
@@ -700,7 +700,7 @@ export class WriterAgent extends AIChatAgent<Env, WriterAgentState> {
       });
       return Response.json({ linkedInPost });
     } catch (error) {
-      console.error("[handleGenerateLinkedInPost] Failed:", error);
+      logger("web").error("handleGenerateLinkedInPost failed", { component: "writer-agent", error: error instanceof Error ? error.message : String(error) });
       return Response.json(
         { error: "Failed to generate LinkedIn post" },
         { status: 500 },
@@ -732,7 +732,7 @@ export class WriterAgent extends AIChatAgent<Env, WriterAgentState> {
       });
       return cmsPub.id;
     } catch (err) {
-      console.error(`Failed to create CMS publication for ${pub.id}:`, err);
+      logger("web").error("Failed to create CMS publication", { component: "writer-agent", publicationId: pub.id, error: err instanceof Error ? err.message : String(err) });
       return undefined;
     }
   }
@@ -824,9 +824,7 @@ export class WriterAgent extends AIChatAgent<Env, WriterAgentState> {
           ? (JSON.parse(draft.citations) as Citation[])
           : undefined;
       } catch {
-        console.warn(
-          `Invalid citations JSON for draft v${draft.version}, skipping`,
-        );
+        logger("web").warn("Invalid citations JSON, skipping", { component: "writer-agent", draftVersion: draft.version });
         parsedCitations = undefined;
       }
 

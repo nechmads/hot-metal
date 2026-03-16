@@ -42,3 +42,6 @@ export type { LlmUsageEvent } from './wilson'
 
 export { createWilsonMiddleware } from './llm-tracking'
 export type { LlmTrackingContext } from './llm-tracking'
+
+export { AppLogger, createLogger, initLogger, logger, flushLogs } from './logger'
+export type { LogLevel, LogContext, AxiomConfig, LoggerConfig } from './logger'

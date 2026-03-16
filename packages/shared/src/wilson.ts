@@ -2,6 +2,8 @@
 // Wilson API client — fire-and-forget LLM usage tracking
 // ---------------------------------------------------------------------------
 
+import { logger } from './logger'
+
 /** Parameters accepted by reportLlmUsage(). */
 export interface LlmUsageEvent {
   /** LLM provider, e.g. "anthropic", "cloudflare" */
@@ -62,7 +64,10 @@ export class WilsonClient {
       },
       body: JSON.stringify(body),
     }).catch((err) => {
-      console.error('[wilson] Failed to send event:', err instanceof Error ? err.message : err)
+      logger('shared').error('Failed to send Wilson event', {
+        component: 'wilson',
+        error: err instanceof Error ? err : new Error(String(err)),
+      })
     })
   }
 }

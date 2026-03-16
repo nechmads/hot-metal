@@ -21,6 +21,7 @@ import {
 	isUnlimited,
 	validateWebhookUrl,
 	deliverWebhook,
+	logger,
 } from '@hotmetal/shared'
 import type { WebhookPayload } from '@hotmetal/shared'
 import type { WriterAgent, DraftRow, DraftSummary } from '../../agent/writer-agent'
@@ -211,10 +212,7 @@ drafts.post('/publications/:id/drafts/generate', async (c) => {
 								publicationId: first.publicationId,
 							})
 						} catch (err) {
-							console.error(
-								`Failed to update session ${sessionId} after publish:`,
-								err,
-							)
+							logger('web').error('Failed to update session after publish', { component: 'agents-api', sessionId, error: err instanceof Error ? err.message : String(err) })
 						}
 					}
 					return {
@@ -260,10 +258,7 @@ drafts.post('/publications/:id/drafts/generate', async (c) => {
 						}
 					}
 				} catch (err) {
-					console.error(
-						`[drafts/generate] Background generation failed for session ${sessionId}:`,
-						err,
-					)
+					logger('web').error('Background generation failed', { component: 'agents-api', sessionId, error: err instanceof Error ? err.message : String(err) })
 					payload = {
 						event: 'draft.failed',
 						sessionId,
@@ -341,10 +336,7 @@ drafts.get('/sessions/:id', async (c) => {
 		}
 	} catch (err) {
 		// Non-fatal: the DO may not have been instantiated yet
-		console.error(
-			`[sessions/:id] Failed to fetch drafts from DO for session ${sessionId}:`,
-			err,
-		)
+		logger('web').error('Failed to fetch drafts from DO for session', { component: 'agents-api', sessionId, error: err instanceof Error ? err.message : String(err) })
 	}
 
 	return c.json({
@@ -450,12 +442,12 @@ async function dispatchSocialShares(
 					)
 					if (!res.ok) {
 						const errBody = await res.text().catch(() => '')
-						console.error(`LinkedIn publish failed (${res.status}): ${errBody}`)
+						logger('web').error('LinkedIn publish failed', { component: 'agents-api', status: res.status, body: errBody })
 						return { platform: 'linkedin', success: false, error: 'Failed to share on LinkedIn' }
 					}
 					return { platform: 'linkedin', success: true }
 				} catch (err) {
-					console.error('LinkedIn publish failed:', err)
+					logger('web').error('LinkedIn publish failed', { component: 'agents-api', error: err instanceof Error ? err.message : String(err) })
 					return { platform: 'linkedin', success: false, error: 'Failed to share on LinkedIn' }
 				}
 			})(),
@@ -483,12 +475,12 @@ async function dispatchSocialShares(
 					)
 					if (!res.ok) {
 						const errBody = await res.text().catch(() => '')
-						console.error(`Twitter publish failed (${res.status}): ${errBody}`)
+						logger('web').error('Twitter publish failed', { component: 'agents-api', status: res.status, body: errBody })
 						return { platform: 'twitter', success: false, error: 'Failed to post on X' }
 					}
 					return { platform: 'twitter', success: true }
 				} catch (err) {
-					console.error('Twitter publish failed:', err)
+					logger('web').error('Twitter publish failed', { component: 'agents-api', error: err instanceof Error ? err.message : String(err) })
 					return { platform: 'twitter', success: false, error: 'Failed to post on X' }
 				}
 			})(),
@@ -600,7 +592,7 @@ drafts.post('/sessions/:id/publish', async (c) => {
 				publicationId: publishedResult.publicationId,
 			})
 		} catch (err) {
-			console.error(`Failed to update session ${sessionId} after successful publish:`, err)
+			logger('web').error('Failed to update session after successful publish', { component: 'agents-api', sessionId, error: err instanceof Error ? err.message : String(err) })
 		}
 	}
 
@@ -619,10 +611,10 @@ drafts.post('/sessions/:id/publish', async (c) => {
 					)
 					if (!feedRes.ok) {
 						const errBody = await feedRes.text().catch(() => '')
-						console.error(`Feed regeneration returned ${feedRes.status} for "${pub.slug}": ${errBody}`)
+						logger('web').error('Feed regeneration returned error', { component: 'agents-api', status: feedRes.status, slug: pub.slug, body: errBody })
 					}
 				} catch (err) {
-					console.error(`Feed regeneration failed for publication ${publishedResult.publicationId}:`, err)
+					logger('web').error('Feed regeneration failed', { component: 'agents-api', publicationId: publishedResult.publicationId, error: err instanceof Error ? err.message : String(err) })
 				}
 			})(),
 		)

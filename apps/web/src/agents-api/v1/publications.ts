@@ -9,7 +9,7 @@ import { Hono } from 'hono'
 import type { AppEnv } from '../../server'
 import { NotFoundError, ValidationError, QuotaExceededError } from '../../actions/errors'
 import { AUTO_PUBLISH_MODES, type AutoPublishMode, type ScoutSchedule } from '@hotmetal/content-core'
-import { validateSchedule, validateTimezone, computeNextRun, CmsApi, getTierLimits, isUnlimited } from '@hotmetal/shared'
+import { validateSchedule, validateTimezone, computeNextRun, CmsApi, getTierLimits, isUnlimited, logger } from '@hotmetal/shared'
 
 const publications = new Hono<AppEnv>()
 
@@ -152,7 +152,7 @@ publications.post('/publications', async (c) => {
 		await c.env.DAL.updatePublication(id, { cmsPublicationId: cmsPub.id })
 		publication.cmsPublicationId = cmsPub.id
 	} catch (err) {
-		console.error('Failed to create CMS publication (non-blocking):', err)
+		logger('web').error('Failed to create CMS publication (non-blocking)', { component: 'agents-api', error: err instanceof Error ? err.message : String(err) })
 	}
 
 	return c.json({ data: publication }, 201)

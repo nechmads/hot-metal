@@ -1,5 +1,6 @@
 import { generateText } from 'ai'
 import type { LanguageModelV3 } from '@ai-sdk/provider'
+import { logger } from '@hotmetal/shared'
 import type { DraftInput } from './index'
 
 const LINK_POST_PROMPT = `You are a LinkedIn content strategist writing commentary for a link post.
@@ -99,7 +100,7 @@ export async function optimizeForLinkedIn(
 
     return text
   } catch (err) {
-    console.error('optimizeForLinkedIn error:', err)
+    logger('web').error('optimizeForLinkedIn error', { component: 'writing', error: err instanceof Error ? err.message : String(err) })
     return ''
   }
 }

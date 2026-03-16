@@ -5,7 +5,7 @@ import { Hono } from 'hono'
 import type { AppEnv } from '../server'
 import type { WriterAgent } from '../agent/writer-agent'
 import { createImagePrompt } from '../lib/writing'
-import { initWilson, createWilsonMiddleware, reportLlmUsage } from '@hotmetal/shared'
+import { initWilson, createWilsonMiddleware, reportLlmUsage, logger } from '@hotmetal/shared'
 
 const images = new Hono<AppEnv>()
 
@@ -142,7 +142,7 @@ images.post('/sessions/:sessionId/generate-images', async (c) => {
 
     return c.json({ images: imageEntries })
   } catch (err) {
-    console.error('generate-images error:', err)
+    logger('web').error('generate-images error', { component: 'images', error: err instanceof Error ? err.message : String(err) })
     const message = err instanceof Error ? err.message : 'Failed to generate images'
     return c.json({ error: message }, 502)
   }
@@ -186,7 +186,7 @@ images.post('/sessions/:sessionId/select-image', async (c) => {
   }))
 
   if (!doRes.ok) {
-    console.error(`Failed to update DO state for session ${sessionId}:`, await doRes.text().catch(() => ''))
+    logger('web').error('Failed to update DO state for session', { component: 'images', sessionId, body: await doRes.text().catch(() => '') })
   }
 
   return c.json({ featuredImageUrl: updated.featuredImageUrl })
@@ -236,7 +236,7 @@ images.post('/sessions/:sessionId/upload-inline-image', async (c) => {
       httpMetadata: { contentType: file.type },
     })
   } catch (err) {
-    console.error('R2 inline image upload error:', err)
+    logger('web').error('R2 inline image upload error', { component: 'images', error: err instanceof Error ? err.message : String(err) })
     return c.json({ error: 'Upload failed, please try again' }, 502)
   }
 

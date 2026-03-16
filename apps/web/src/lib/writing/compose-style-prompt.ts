@@ -1,5 +1,6 @@
 import { generateText } from 'ai'
 import type { LanguageModelV3 } from '@ai-sdk/provider'
+import { logger } from '@hotmetal/shared'
 
 const COMPOSE_SYSTEM_PROMPT = `You are a writing style prompt engineer. Your job is to take a structured analysis of a writer's style and compose it into a clear, concise set of writing instructions for an AI writer.
 
@@ -112,7 +113,7 @@ export async function composeStylePrompt(model: LanguageModelV3, input: ComposeS
 
     return result.text.trim()
   } catch (err) {
-    console.error('composeStylePrompt error:', err)
+    logger('web').error('composeStylePrompt error', { component: 'writing', error: err instanceof Error ? err.message : String(err) })
     return input.systemPrompt
   }
 }

@@ -1,7 +1,7 @@
 import { tool } from 'ai'
 import { z } from 'zod'
 import { marked } from 'marked'
-import { CmsApi } from '@hotmetal/shared'
+import { CmsApi, logger } from '@hotmetal/shared'
 import type { Citation } from '@hotmetal/content-core'
 import type { WriterAgent } from '../agent/writer-agent'
 
@@ -60,7 +60,7 @@ export function createPublishTools(agent: WriterAgent) {
               cmsPublicationId = cmsPub.id
               await env.DAL.updatePublication(agent.state.publicationId, { cmsPublicationId: cmsPub.id })
             } catch (err) {
-              console.error('Failed to create CMS publication during tool publish:', err)
+              logger('web').error('Failed to create CMS publication during tool publish', { component: 'tools', error: err instanceof Error ? err.message : String(err) })
             }
           }
         }

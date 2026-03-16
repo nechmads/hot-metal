@@ -1,9 +1,12 @@
 import { Resend } from 'resend'
+import { logger } from '@hotmetal/shared'
 import type { NotificationsEnv } from './env'
+
+const log = () => logger('notifications')
 
 function getResend(env: NotificationsEnv): Resend | null {
 	if (!env.RESEND_API_KEY) {
-		console.warn('[notifications] RESEND_API_KEY not configured, skipping email')
+		log().warn('RESEND_API_KEY not configured, skipping email', { component: 'emails' })
 		return null
 	}
 	return new Resend(env.RESEND_API_KEY)
@@ -43,9 +46,13 @@ export async function sendNewIdeasEmail(
 				`Manage your notification preferences: ${webAppUrl}/settings`,
 			].join('\n'),
 		})
-		console.log(`[notifications] Sent new-ideas email (${ideasCount} ideas for ${publicationName})`)
+		log().info('Sent new-ideas email', { component: 'emails', ideasCount, publicationName })
 	} catch (err) {
-		console.error('[notifications] Failed to send new-ideas email:', err)
+		log().error('Failed to send new-ideas email', {
+			component: 'emails',
+			publicationName,
+			error: err instanceof Error ? err.message : String(err),
+		})
 	}
 }
 
@@ -85,9 +92,13 @@ export async function sendDraftReadyEmail(
 				`Manage your notification preferences: ${webAppUrl}/settings`,
 			].join('\n'),
 		})
-		console.log(`[notifications] Sent draft-ready email for "${postTitle}"`)
+		log().info('Sent draft-ready email', { component: 'emails', postTitle })
 	} catch (err) {
-		console.error('[notifications] Failed to send draft-ready email:', err)
+		log().error('Failed to send draft-ready email', {
+			component: 'emails',
+			postTitle,
+			error: err instanceof Error ? err.message : String(err),
+		})
 	}
 }
 
@@ -137,9 +148,13 @@ export async function sendNewCommentEmail(
 				`Manage your notification preferences: ${env.WEB_APP_URL}/settings`,
 			].join('\n'),
 		})
-		console.log(`[notifications] Sent new-comment email for "${postSlug}"`)
+		log().info('Sent new-comment email', { component: 'emails', postSlug })
 	} catch (err) {
-		console.error('[notifications] Failed to send new-comment email:', err)
+		log().error('Failed to send new-comment email', {
+			component: 'emails',
+			postSlug,
+			error: err instanceof Error ? err.message : String(err),
+		})
 	}
 }
 
@@ -181,9 +196,12 @@ export async function sendWelcomeEmail(
 				'Shahar',
 			].join('\n'),
 		})
-		console.log(`[notifications] Sent welcome email to user`)
+		log().info('Sent welcome email', { component: 'emails' })
 	} catch (err) {
-		console.error('[notifications] Failed to send welcome email:', err)
+		log().error('Failed to send welcome email', {
+			component: 'emails',
+			error: err instanceof Error ? err.message : String(err),
+		})
 	}
 }
 
@@ -234,9 +252,14 @@ export async function sendAnalysisReportEmail(
 				'— Hot Metal',
 			].join('\n'),
 		})
-		console.log(`[notifications] Sent analysis report email (score: ${overallScore})`)
+		log().info('Sent analysis report email', { component: 'emails', overallScore, url })
 	} catch (err) {
-		console.error('[notifications] Failed to send analysis report email:', err)
+		log().error('Failed to send analysis report email', {
+			component: 'emails',
+			url,
+			overallScore,
+			error: err instanceof Error ? err.message : String(err),
+		})
 	}
 }
 
@@ -268,8 +291,12 @@ export async function sendPostPublishedEmail(
 				`Manage your notification preferences: ${env.WEB_APP_URL}/settings`,
 			].join('\n'),
 		})
-		console.log(`[notifications] Sent post-published email for "${postTitle}"`)
+		log().info('Sent post-published email', { component: 'emails', postTitle })
 	} catch (err) {
-		console.error('[notifications] Failed to send post-published email:', err)
+		log().error('Failed to send post-published email', {
+			component: 'emails',
+			postTitle,
+			error: err instanceof Error ? err.message : String(err),
+		})
 	}
 }

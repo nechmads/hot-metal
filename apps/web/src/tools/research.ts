@@ -1,6 +1,6 @@
 import { tool } from 'ai'
 import { z } from 'zod'
-import { AlexanderApi } from '@hotmetal/shared'
+import { AlexanderApi, logger } from '@hotmetal/shared'
 import type { WriterAgent } from '../agent/writer-agent'
 
 function transitionToResearching(agent: WriterAgent): void {
@@ -20,7 +20,7 @@ export function createResearchTools(agent: WriterAgent) {
       url: z.string().url().describe('The URL to crawl and extract content from'),
     }),
     execute: async ({ url }) => {
-      console.log('[research] crawl_url called:', url)
+      logger('web').info('crawl_url called', { component: 'research', url })
       try {
         transitionToResearching(agent)
 
@@ -56,7 +56,7 @@ export function createResearchTools(agent: WriterAgent) {
       seedUrls: z.array(z.string()).optional().describe('Optional seed URLs to include in research'),
     }),
     execute: async ({ question, level, seedUrls }) => {
-      console.log('[research] research_topic called:', { question, level })
+      logger('web').info('research_topic called', { component: 'research', question, level })
       try {
         transitionToResearching(agent)
 
@@ -96,7 +96,7 @@ export function createResearchTools(agent: WriterAgent) {
       recency: z.enum(['day', 'week', 'month', 'year']).optional().describe('Filter results by recency'),
     }),
     execute: async ({ query, maxResults, recency }) => {
-      console.log('[research] search_web called:', { query, maxResults, recency })
+      logger('web').info('search_web called', { component: 'research', query, maxResults, recency })
       try {
         transitionToResearching(agent)
 
@@ -132,7 +132,7 @@ export function createResearchTools(agent: WriterAgent) {
       recency: z.enum(['day', 'week', 'month', 'year']).optional().describe('Filter by recency'),
     }),
     execute: async ({ query, maxResults, recency }) => {
-      console.log('[research] search_news called:', { query, maxResults, recency })
+      logger('web').info('search_news called', { component: 'research', query, maxResults, recency })
       try {
         transitionToResearching(agent)
 
@@ -173,7 +173,7 @@ export function createResearchTools(agent: WriterAgent) {
       context: z.string().optional().describe('Optional context to help refine the answer'),
     }),
     execute: async ({ question, context }) => {
-      console.log('[research] ask_question called:', { question })
+      logger('web').info('ask_question called', { component: 'research', question })
       try {
         transitionToResearching(agent)
 

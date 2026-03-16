@@ -1,5 +1,6 @@
 import { generateText } from 'ai'
 import type { LanguageModelV3 } from '@ai-sdk/provider'
+import { logger } from '@hotmetal/shared'
 import type { DraftInput } from './index'
 
 export interface SeoMetaResult {
@@ -41,7 +42,7 @@ export async function createSeoMeta(model: LanguageModelV3, draft: DraftInput): 
     const text = result.text.trim()
     const jsonMatch = text.match(/\{[\s\S]*\}/)
     if (!jsonMatch) {
-      console.error('createSeoMeta: Failed to extract JSON from response')
+      logger('web').error('createSeoMeta failed to extract JSON from response', { component: 'writing' })
       return { excerpt: '', tags: '' }
     }
 
@@ -51,7 +52,7 @@ export async function createSeoMeta(model: LanguageModelV3, draft: DraftInput): 
       tags: parsed.tags || '',
     }
   } catch (err) {
-    console.error('createSeoMeta error:', err)
+    logger('web').error('createSeoMeta error', { component: 'writing', error: err instanceof Error ? err.message : String(err) })
     return { excerpt: '', tags: '' }
   }
 }

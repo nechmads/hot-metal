@@ -1,4 +1,4 @@
-import { AlexanderApi } from '@hotmetal/shared'
+import { AlexanderApi, logger } from '@hotmetal/shared'
 import type { Topic } from '@hotmetal/data-layer'
 import type { TopicSearchResults } from '../types'
 import { hashQuery } from '../utils'
@@ -57,7 +57,11 @@ async function cachedSearch<T>(
     await cache.put(cacheKey, JSON.stringify(result), { expirationTtl: CACHE_TTL_SECONDS })
     return result
   } catch (err) {
-    console.error(`Search failed for "${key}":`, err)
+    logger('content-scout').error(`Search failed for key`, {
+      component: 'search',
+      key,
+      error: err instanceof Error ? err.message : String(err),
+    })
     return null
   }
 }

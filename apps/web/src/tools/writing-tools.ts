@@ -1,5 +1,6 @@
 import { tool } from 'ai'
 import { z } from 'zod'
+import { logger } from '@hotmetal/shared'
 import type { WriterAgent } from '../agent/writer-agent'
 import { createPostTitle, proofreadDraft } from '../lib/writing'
 
@@ -23,7 +24,7 @@ export function createWritingTools(agent: WriterAgent) {
 
         return { success: true, title }
       } catch (error) {
-        console.error('[generate_title] Unexpected error:', error)
+        logger('web').error('generate_title unexpected error', { component: 'tools', error: error instanceof Error ? error.message : String(error) })
         return { success: false, error: 'Title generation failed unexpectedly.' }
       }
     },
@@ -40,10 +41,10 @@ export function createWritingTools(agent: WriterAgent) {
           return { success: false, error: 'No draft exists yet. Write a draft first.' }
         }
 
-        console.log(`[proofread_draft] Running on draft v${draft.version} (${draft.word_count} words)`)
+        logger('web').info('proofread_draft running', { component: 'tools', draftVersion: draft.version, wordCount: draft.word_count })
         const proofModel = await agent.trackedModel('claude-sonnet-4-6', 'proofread')
         const result = await proofreadDraft(proofModel, { title: draft.title, content: draft.content })
-        console.log(`[proofread_draft] Score: ${result.overallScore}/10, findings: ${result.findings.length} (${result.summary})`)
+        logger('web').info('proofread_draft completed', { component: 'tools', score: result.overallScore, findingsCount: result.findings.length, summary: result.summary })
 
         return {
           success: true,
@@ -53,7 +54,7 @@ export function createWritingTools(agent: WriterAgent) {
           findings: result.findings,
         }
       } catch (error) {
-        console.error('[proofread_draft] Unexpected error:', error)
+        logger('web').error('proofread_draft unexpected error', { component: 'tools', error: error instanceof Error ? error.message : String(error) })
         return { success: false, error: 'Proofreading failed unexpectedly.' }
       }
     },

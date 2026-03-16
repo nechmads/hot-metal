@@ -1,7 +1,7 @@
 import { Hono } from 'hono'
 import { anthropic } from '@ai-sdk/anthropic'
 import { wrapLanguageModel } from 'ai'
-import { AlexanderApi, initWilson, createWilsonMiddleware } from '@hotmetal/shared'
+import { AlexanderApi, initWilson, createWilsonMiddleware, logger } from '@hotmetal/shared'
 import { composeStylePrompt } from '../lib/writing'
 import { hasStructuredFields, type ToneGuideFields } from '../lib/tone-guide'
 import { checkCustomStyleQuota } from '../lib/quota'
@@ -123,7 +123,7 @@ styles.post('/styles/analyze-url', async (c) => {
     })
     return c.json(result)
   } catch (err) {
-    console.error('Alexander tone guide error:', err)
+    logger('web').error('Alexander tone guide error', { component: 'styles', error: err instanceof Error ? err.message : String(err) })
     const message = err instanceof Error ? err.message : 'Analysis failed'
     return c.json({ error: message }, 502)
   }

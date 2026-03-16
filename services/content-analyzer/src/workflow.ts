@@ -1,5 +1,6 @@
 import { WorkflowEntrypoint, type WorkflowEvent, type WorkflowStep } from 'cloudflare:workers'
 import type { AnalyzerEnv, AnalyzerWorkflowParams } from './env'
+import { createLogger } from '@hotmetal/shared'
 import { extractContentProfile } from './extractor/html-parser'
 import { simulateCrawlers } from './extractor/crawler-sim'
 import { analyzeContent } from './scorer/aggregator'
@@ -8,10 +9,16 @@ export class AnalyzerWorkflow extends WorkflowEntrypoint<AnalyzerEnv, AnalyzerWo
   async run(event: WorkflowEvent<AnalyzerWorkflowParams>, step: WorkflowStep) {
     const { reportId, email, url } = event.payload
 
-    console.log(`[workflow] Starting analysis ${reportId} for ${url}`)
+    const log = createLogger({
+      service: 'content-analyzer',
+      axiom: this.env.AXIOM_TOKEN && this.env.AXIOM_DATASET
+        ? { token: this.env.AXIOM_TOKEN, dataset: this.env.AXIOM_DATASET }
+        : undefined,
+    }).child({ component: 'workflow', reportId, url })
+
+    log.info('Starting analysis')
 
     // Step 1: Extract content and simulate crawlers in parallel
-    // Serialize to JSON string to cross the step boundary cleanly
     const extractionJson = await step.do(
       'extract-content',
       { retries: { limit: 2, delay: '10 seconds', backoff: 'exponential' }, timeout: '3 minutes' },
@@ -24,10 +31,10 @@ export class AnalyzerWorkflow extends WorkflowEntrypoint<AnalyzerEnv, AnalyzerWo
       },
     )
     const extraction = JSON.parse(extractionJson as string)
-    console.log(
-      `[workflow] Step 1 done: ${extraction.profile.stats.wordCount} words, ` +
-      `${extraction.crawlerReport.probes.length} crawlers tested`,
-    )
+    log.info('Step 1 done: extraction complete', {
+      wordCount: extraction.profile.stats.wordCount,
+      crawlersTested: extraction.crawlerReport.probes.length,
+    })
 
     // Step 2: Score content (deterministic + LLM)
     const reportJson = await step.do(
@@ -43,7 +50,7 @@ export class AnalyzerWorkflow extends WorkflowEntrypoint<AnalyzerEnv, AnalyzerWo
       },
     )
     const report = JSON.parse(reportJson as string)
-    console.log(`[workflow] Step 2 done: overall score ${report.overallScore}/100`)
+    log.info('Step 2 done: scoring complete', { overallScore: report.overallScore })
 
     // Step 3: Store report in R2
     await step.do(
@@ -67,7 +74,7 @@ export class AnalyzerWorkflow extends WorkflowEntrypoint<AnalyzerEnv, AnalyzerWo
         return 'stored'
       },
     )
-    console.log(`[workflow] Step 3 done: report stored at reports/${reportId}.json`)
+    log.info('Step 3 done: report stored')
 
     // Step 4: Email report link (non-critical — never fails the workflow)
     await step.do('send-email', async () => {
@@ -79,13 +86,16 @@ export class AnalyzerWorkflow extends WorkflowEntrypoint<AnalyzerEnv, AnalyzerWo
           reportUrl,
           overallScore: report.overallScore,
         })
-        console.log(`[workflow] Step 4 done: email sent to ${email}`)
+        log.info('Step 4 done: email sent', { email })
       } catch (err) {
-        console.error('[workflow] Email send failed (non-critical):', err)
+        log.error('Email send failed (non-critical)', {
+          error: err instanceof Error ? err.message : String(err),
+        })
       }
       return 'done'
     })
 
+    await log.flush()
     return { reportId, overallScore: report.overallScore }
   }
 }

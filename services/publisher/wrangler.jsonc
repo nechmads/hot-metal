@@ -42,9 +42,11 @@
 		"LINKEDIN_REDIRECT_URI": "https://publisher.hotmetalapp.com/oauth/linkedin/callback",
 		"TWITTER_REDIRECT_URI": "https://publisher.hotmetalapp.com/oauth/twitter/callback",
 		"WEB_APP_URL": "https://hotmetalapp.com",
+		"AXIOM_DATASET": "hotmetal-prod",
 	},
 
 	// Secrets (set via `wrangler secret put`):
 	// CMS_API_KEY, PUBLISHER_API_KEY, LINKEDIN_CLIENT_ID, LINKEDIN_CLIENT_SECRET
 	// TWITTER_CLIENT_ID, TWITTER_CLIENT_SECRET
+	// AXIOM_TOKEN — Axiom ingest token for structured logging
 }

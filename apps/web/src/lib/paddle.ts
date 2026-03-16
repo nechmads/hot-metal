@@ -4,6 +4,7 @@
  * Uses Web Crypto API (no Node.js crypto) for Cloudflare Workers compatibility.
  */
 
+import { logger } from '@hotmetal/shared'
 import { PADDLE_PRICE_IDS } from './paddle-config'
 
 // ─── Price ID → Tier mapping ────────────────────────────────────────
@@ -21,7 +22,7 @@ export function resolveTierFromPriceId(priceId: string | undefined | null): stri
 	if (!priceId) return 'creator'
 	const tier = PRICE_TO_TIER[priceId]
 	if (!tier) {
-		console.warn(`[Paddle] Unknown price ID: ${priceId}, falling back to 'creator'`)
+		logger('web').warn('Unknown Paddle price ID, falling back to creator', { component: 'paddle', priceId })
 		return 'creator'
 	}
 	return tier
@@ -59,7 +60,7 @@ export async function verifyPaddleWebhook(
 	// 2. Check timestamp freshness (5 minute tolerance)
 	const timestampAge = Math.floor(Date.now() / 1000) - parseInt(ts, 10)
 	if (Math.abs(timestampAge) > 300) {
-		console.warn(`[Paddle] Webhook timestamp too old: ${timestampAge}s`)
+		logger('web').warn('Paddle webhook timestamp too old', { component: 'paddle', timestampAge })
 		return false
 	}
 

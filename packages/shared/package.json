@@ -10,6 +10,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@axiomhq/js": "^1.4.0",
     "@hotmetal/content-core": "workspace:*"
   },
   "peerDependencies": {
