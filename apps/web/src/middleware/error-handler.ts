@@ -1,8 +1,8 @@
 import type { ErrorHandler } from 'hono'
-import { CmsApiError } from '@hotmetal/shared'
+import { CmsApiError, logger } from '@hotmetal/shared'
 
 export const errorHandler: ErrorHandler = (err, c) => {
-  console.error('Unhandled error:', err)
+  logger('web').error('Unhandled error', { component: 'error-handler', error: err.message, stack: err.stack })
 
   if (err instanceof CmsApiError) {
     return c.json(

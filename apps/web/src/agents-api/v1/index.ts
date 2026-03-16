@@ -8,7 +8,7 @@
 import { Hono } from 'hono'
 import type { AppEnv } from '../../server'
 import { ActionError, QuotaExceededError } from '../../actions/errors'
-import { UPGRADE_EMAIL } from '@hotmetal/shared'
+import { UPGRADE_EMAIL, logger } from '@hotmetal/shared'
 
 import me from './me'
 import publications from './publications'
@@ -55,7 +55,7 @@ agentsApiV1.onError((err, c) => {
 		return c.json({ error: 'Invalid JSON in request body', code: 'INVALID_JSON' }, 400)
 	}
 
-	console.error('Agents API unhandled error:', err)
+	logger('web').error('Agents API unhandled error', { component: 'agents-api', error: err.message, stack: err.stack })
 	return c.json({ error: 'Internal server error', code: 'INTERNAL_ERROR' }, 500)
 })
 

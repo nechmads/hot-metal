@@ -1,5 +1,6 @@
 import { getAgentByName } from 'agents'
 import { Hono } from 'hono'
+import { logger } from '@hotmetal/shared'
 import type { ContentfulStatusCode } from 'hono/utils/http-status'
 import type { AppEnv } from '../server'
 import type { WriterAgent } from '../agent/writer-agent'
@@ -48,12 +49,12 @@ async function dispatchSocialShares(
           )
           if (!res.ok) {
             const errBody = await res.text().catch(() => '')
-            console.error(`LinkedIn publish failed (${res.status}): ${errBody}`)
+            logger('web').error('LinkedIn publish failed', { component: 'publish', status: res.status, body: errBody })
             return { platform: 'linkedin', success: false, error: 'Failed to share on LinkedIn' }
           }
           return { platform: 'linkedin', success: true }
         } catch (err) {
-          console.error('LinkedIn publish failed:', err)
+          logger('web').error('LinkedIn publish failed', { component: 'publish', error: err instanceof Error ? err.message : String(err) })
           return { platform: 'linkedin', success: false, error: 'Failed to share on LinkedIn' }
         }
       })(),
@@ -81,12 +82,12 @@ async function dispatchSocialShares(
           )
           if (!res.ok) {
             const errBody = await res.text().catch(() => '')
-            console.error(`Twitter publish failed (${res.status}): ${errBody}`)
+            logger('web').error('Twitter publish failed', { component: 'publish', status: res.status, body: errBody })
             return { platform: 'twitter', success: false, error: 'Failed to post on X' }
           }
           return { platform: 'twitter', success: true }
         } catch (err) {
-          console.error('Twitter publish failed:', err)
+          logger('web').error('Twitter publish failed', { component: 'publish', error: err instanceof Error ? err.message : String(err) })
           return { platform: 'twitter', success: false, error: 'Failed to post on X' }
         }
       })(),
@@ -261,7 +262,7 @@ publish.post('/sessions/:sessionId/publish', async (c) => {
           publicationId: publishedResult.publicationId,
         })
       } catch (err) {
-        console.error(`Failed to update session ${sessionId} after successful publish:`, err)
+        logger('web').error('Failed to update session after successful publish', { component: 'publish', sessionId, error: err instanceof Error ? err.message : String(err) })
       }
 
       // Regenerate RSS/Atom feed (fire-and-forget — not user-facing)
@@ -278,10 +279,10 @@ publish.post('/sessions/:sessionId/publish', async (c) => {
             )
             if (!feedRes.ok) {
               const errBody = await feedRes.text().catch(() => '')
-              console.error(`Feed regeneration returned ${feedRes.status} for "${pub.slug}": ${errBody}`)
+              logger('web').error('Feed regeneration returned error', { component: 'publish', status: feedRes.status, slug: pub.slug, body: errBody })
             }
           } catch (err) {
-            console.error(`Feed regeneration failed for publication ${publishedResult.publicationId}:`, err)
+            logger('web').error('Feed regeneration failed', { component: 'publish', publicationId: publishedResult.publicationId, error: err instanceof Error ? err.message : String(err) })
           }
         })(),
       )

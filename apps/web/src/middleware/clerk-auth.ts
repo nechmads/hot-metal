@@ -19,6 +19,7 @@
 import { createMiddleware } from 'hono/factory'
 import type { JWTPayload } from 'jose'
 import { createRemoteJWKSet, jwtVerify } from 'jose'
+import { logger } from '@hotmetal/shared'
 
 /** Variables set by this middleware, available via `c.get('userId')` etc. */
 export interface AuthVariables {
@@ -68,7 +69,7 @@ function extractName(payload: JWTPayload): string {
 export async function verifyClerkJwt(token: string, env: Env): Promise<JWTPayload | null> {
 	const issuer = env.CLERK_ISSUER
 	if (!issuer) {
-		console.error('CLERK_ISSUER not configured')
+		logger('web').error('CLERK_ISSUER not configured', { component: 'clerk-auth' })
 		return null
 	}
 
@@ -84,7 +85,7 @@ export async function verifyClerkJwt(token: string, env: Env): Promise<JWTPayloa
 		return payload
 	} catch (err) {
 		const message = err instanceof Error ? err.message : 'Token verification failed'
-		console.error('JWT verification failed:', message)
+		logger('web').error('JWT verification failed', { component: 'clerk-auth', error: message })
 		return null
 	}
 }
@@ -108,7 +109,7 @@ export const clerkAuth = createMiddleware<AuthEnv>(async (c, next) => {
 
 	const issuer = c.env.CLERK_ISSUER
 	if (!issuer) {
-		console.error('CLERK_ISSUER not configured')
+		logger('web').error('CLERK_ISSUER not configured', { component: 'clerk-auth' })
 		return c.json({ error: 'Auth not configured' }, 500)
 	}
 
@@ -133,7 +134,7 @@ export const clerkAuth = createMiddleware<AuthEnv>(async (c, next) => {
 		await next()
 	} catch (err) {
 		const message = err instanceof Error ? err.message : 'Token verification failed'
-		console.error('JWT verification failed:', message)
+		logger('web').error('JWT verification failed', { component: 'clerk-auth', error: message })
 		return c.json({ error: 'Invalid or expired token' }, 401)
 	}
 })

@@ -15,6 +15,7 @@
 
 import { routeAgentRequest } from 'agents'
 import { Hono } from 'hono'
+import { initLogger, logger, flushLogs } from '@hotmetal/shared'
 
 import { cors } from 'hono/cors'
 import { clerkAuth, type AuthVariables } from './middleware/clerk-auth'
@@ -58,6 +59,18 @@ export type AppEnv = {
 }
 
 const app = new Hono<AppEnv>()
+
+// ─── Logger initialization (must be first) ──────────────────────────
+app.use('*', async (c, next) => {
+  initLogger(
+    'web',
+    c.env.AXIOM_TOKEN && c.env.AXIOM_DATASET
+      ? { token: c.env.AXIOM_TOKEN, dataset: c.env.AXIOM_DATASET }
+      : undefined,
+  )
+  await next()
+  c.executionCtx.waitUntil(flushLogs())
+})
 
 // ─── Error handler ──────────────────────────────────────────────────
 app.onError(errorHandler)
@@ -156,12 +169,12 @@ app.post('/api/publications/:pubId/scout', async (c) => {
       body: JSON.stringify({ publicationId: c.req.param('pubId') }),
     }))
   } catch (err) {
-    console.error('Failed to reach content-scout service:', err)
+    logger('web').error('Failed to reach content-scout service', { component: 'scout', error: err instanceof Error ? err.message : String(err) })
     return c.json({ error: 'Content scout service is unreachable.' }, 503)
   }
 
   if (!res.ok) {
-    console.error(`Scout service error (${res.status}):`, await res.text())
+    logger('web').error('Scout service error', { component: 'scout', status: res.status, body: await res.text() })
     return c.json({ error: 'Content scout failed. Please try again later.' }, 502)
   }
 

@@ -1,5 +1,6 @@
 import { generateText } from 'ai'
 import type { LanguageModelV3 } from '@ai-sdk/provider'
+import { logger } from '@hotmetal/shared'
 import type { DraftInput } from './index'
 
 const TWEET_PROMPT = `You are a social media expert crafting tweets that drive clicks to blog posts.
@@ -53,7 +54,7 @@ export async function createTweet(model: LanguageModelV3, draft: DraftInput, hoo
 
     return tweet
   } catch (err) {
-    console.error('createTweet error:', err)
+    logger('web').error('createTweet error', { component: 'writing', error: err instanceof Error ? err.message : String(err) })
     return ''
   }
 }

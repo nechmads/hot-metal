@@ -4,7 +4,7 @@ import type { AppEnv } from '../server'
 import type { WriterAgent } from '../agent/writer-agent'
 import { verifyPublicationOwnership } from '../middleware/ownership'
 import { AUTO_PUBLISH_MODES, type AutoPublishMode, type ScoutSchedule } from '@hotmetal/content-core'
-import { validateSchedule, validateTimezone, computeNextRun, CmsApi, getTierLimits, getTierDisplayName, isUnlimited } from '@hotmetal/shared'
+import { validateSchedule, validateTimezone, computeNextRun, CmsApi, getTierLimits, getTierDisplayName, isUnlimited, logger } from '@hotmetal/shared'
 import { checkPublicationQuota, checkScoutScheduleQuota, quotaExceededResponse } from '../lib/quota'
 
 const publications = new Hono<AppEnv>()
@@ -97,7 +97,7 @@ publications.post('/publications', async (c) => {
     await c.env.DAL.updatePublication(id, { cmsPublicationId: cmsPub.id })
     publication.cmsPublicationId = cmsPub.id
   } catch (err) {
-    console.error('Failed to create CMS publication (non-blocking):', err)
+    logger('web').error('Failed to create CMS publication (non-blocking)', { component: 'publications', error: err instanceof Error ? err.message : String(err) })
   }
 
   return c.json(publication, 201)
@@ -303,7 +303,7 @@ publications.post('/publications/:id/posts/:postId/edit', async (c) => {
     }),
   )
   if (!seedRes.ok) {
-    console.error(`Failed to seed draft for edit session ${sessionId}:`, await seedRes.text())
+    logger('web').error('Failed to seed draft for edit session', { component: 'publications', sessionId, body: await seedRes.text() })
     return c.json({ error: 'Failed to load post content into the new session' }, 502)
   }
 

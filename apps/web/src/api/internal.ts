@@ -17,6 +17,7 @@
 
 import { getAgentByName } from 'agents'
 import { Hono } from 'hono'
+import { logger } from '@hotmetal/shared'
 import type { ContentfulStatusCode } from 'hono/utils/http-status'
 import type { AppEnv } from '../server'
 import type { WriterAgent } from '../agent/writer-agent'
@@ -156,7 +157,7 @@ internal.post('/sessions/:sessionId/publish', async (c) => {
           publicationId: first.publicationId,
         })
       } catch (err) {
-        console.error(`Failed to update session ${sessionId} after successful publish:`, err)
+        logger('web').error('Failed to update session after successful publish', { component: 'internal', sessionId, error: err instanceof Error ? err.message : String(err) })
       }
     }
   }

@@ -1,5 +1,6 @@
 import { generateText } from 'ai'
 import type { LanguageModelV3 } from '@ai-sdk/provider'
+import { logger } from '@hotmetal/shared'
 import type { DraftInput } from './index'
 import { PROOFREAD_RULES_PROMPT, type ProofreadResult } from '../../prompts/anti-ai-rules'
 
@@ -42,7 +43,7 @@ export async function proofreadDraft(model: LanguageModelV3, draft: DraftInput):
     }
     return parsed as ProofreadResult
   } catch (err) {
-    console.error('proofreadDraft error:', err)
+    logger('web').error('proofreadDraft error', { component: 'writing', error: err instanceof Error ? err.message : String(err) })
     return { findings: [], overallScore: 5, summary: 'Proofreading failed.' }
   }
 }

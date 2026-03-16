@@ -9,6 +9,7 @@
  */
 
 import { createMiddleware } from 'hono/factory'
+import { logger } from '@hotmetal/shared'
 import type { AppEnv } from '../server'
 
 export const internalAuth = createMiddleware<AppEnv>(async (c, next) => {
@@ -19,7 +20,7 @@ export const internalAuth = createMiddleware<AppEnv>(async (c, next) => {
 
 	const expected = c.env.INTERNAL_API_KEY
 	if (!expected) {
-		console.error('INTERNAL_API_KEY not configured')
+		logger('web').error('INTERNAL_API_KEY not configured', { component: 'internal-auth' })
 		return c.json({ error: 'Internal auth not configured' }, 500)
 	}
 
@@ -53,7 +54,7 @@ export const internalAuth = createMiddleware<AppEnv>(async (c, next) => {
 		const user = await c.env.DAL.getUserById(userId)
 		c.set('userTier', user?.tier ?? 'creator')
 	} catch (err) {
-		console.warn('internalAuth tier lookup:', err instanceof Error ? err.message : err)
+		logger('web').warn('internalAuth tier lookup failed', { component: 'internal-auth', error: err instanceof Error ? err.message : String(err) })
 		c.set('userTier', 'creator')
 	}
 

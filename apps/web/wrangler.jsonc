@@ -117,4 +117,6 @@
   // PADDLE_API_KEY       — Paddle server-side API key
   // PADDLE_WEBHOOK_SECRET — Paddle webhook signing secret
   // WILSON_API_KEY       — Wilson LLM usage tracking API token
+  // AXIOM_TOKEN          — Axiom structured logging ingest token
+  // AXIOM_DATASET        — Axiom dataset name for log ingestion
 }

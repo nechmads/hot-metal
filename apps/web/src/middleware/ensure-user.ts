@@ -9,6 +9,7 @@
  */
 
 import { createMiddleware } from 'hono/factory'
+import { logger } from '@hotmetal/shared'
 import type { AppEnv } from '../server'
 
 export const ensureUser = createMiddleware<AppEnv>(async (c, next) => {
@@ -40,7 +41,7 @@ export const ensureUser = createMiddleware<AppEnv>(async (c, next) => {
 					userEmail,
 					userName,
 				}).catch((err) => {
-					console.warn('ensureUser welcome email:', err instanceof Error ? err.message : err)
+					logger('web').warn('ensureUser welcome email failed', { component: 'ensure-user', error: err instanceof Error ? err.message : String(err) })
 				})
 			}
 		} else {
@@ -62,12 +63,12 @@ export const ensureUser = createMiddleware<AppEnv>(async (c, next) => {
 					})
 				}
 			} catch (syncErr) {
-				console.warn('ensureUser profile sync:', syncErr instanceof Error ? syncErr.message : syncErr)
+				logger('web').warn('ensureUser profile sync failed', { component: 'ensure-user', error: syncErr instanceof Error ? syncErr.message : String(syncErr) })
 			}
 		}
 	} catch (err) {
 		// Don't block the request — the userId from the JWT is valid regardless
-		console.warn('ensureUser sync:', err instanceof Error ? err.message : err)
+		logger('web').warn('ensureUser sync failed', { component: 'ensure-user', error: err instanceof Error ? err.message : String(err) })
 		c.set('userTier', 'creator') // safe fallback
 	}
 

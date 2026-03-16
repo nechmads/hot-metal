@@ -8,6 +8,7 @@
  */
 
 import { Hono } from 'hono'
+import { logger } from '@hotmetal/shared'
 import type { AppEnv } from '../server'
 
 const billing = new Hono<AppEnv>()
@@ -15,7 +16,7 @@ const billing = new Hono<AppEnv>()
 // Guard: all billing routes require PADDLE_API_KEY
 billing.use('*', async (c, next) => {
 	if (!c.env.PADDLE_API_KEY) {
-		console.error('[Billing] PADDLE_API_KEY not configured')
+		logger('web').error('PADDLE_API_KEY not configured', { component: 'billing' })
 		return c.json({ error: 'Billing not configured' }, 503)
 	}
 	await next()
@@ -83,7 +84,7 @@ billing.post('/billing/portal-session', async (c) => {
 
 	if (!res.ok) {
 		const err = await res.text()
-		console.error(`[Billing] Failed to create portal session: ${err}`)
+		logger('web').error('Failed to create portal session', { component: 'billing', error: err })
 		return c.json({ error: 'Failed to create billing portal session' }, 502)
 	}
 
@@ -124,7 +125,7 @@ billing.post('/billing/cancel', async (c) => {
 
 	if (!res.ok) {
 		const err = await res.text()
-		console.error(`[Billing] Failed to cancel subscription: ${err}`)
+		logger('web').error('Failed to cancel subscription', { component: 'billing', error: err })
 		return c.json({ error: 'Failed to cancel subscription' }, 502)
 	}
 

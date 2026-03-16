@@ -1,5 +1,6 @@
 import { tool } from 'ai'
 import { z } from 'zod'
+import { logger } from '@hotmetal/shared'
 import type { WriterAgent } from '../agent/writer-agent'
 
 export function createDraftTools(agent: WriterAgent) {
@@ -37,7 +38,7 @@ export function createDraftTools(agent: WriterAgent) {
           title: draft.title,
         }
       } catch (error) {
-        console.error('[save_draft] Failed:', error)
+        logger('web').error('save_draft failed', { component: 'tools', error: error instanceof Error ? error.message : String(error) })
         return { success: false, error: 'Failed to save draft.' }
       }
     },
@@ -58,7 +59,7 @@ export function createDraftTools(agent: WriterAgent) {
         try {
           citations = draft.citations ? JSON.parse(draft.citations) : []
         } catch {
-          console.error(`[get_current_draft] Invalid citations JSON in draft v${draft.version}`)
+          logger('web').error('get_current_draft invalid citations JSON', { component: 'tools', draftVersion: draft.version })
         }
 
         return {
@@ -71,7 +72,7 @@ export function createDraftTools(agent: WriterAgent) {
           isFinal: draft.is_final === 1,
         }
       } catch (error) {
-        console.error('[get_current_draft] Failed:', error)
+        logger('web').error('get_current_draft failed', { component: 'tools', error: error instanceof Error ? error.message : String(error) })
         return { found: false, message: 'Failed to retrieve current draft.' }
       }
     },
@@ -94,7 +95,7 @@ export function createDraftTools(agent: WriterAgent) {
         try {
           citations = draft.citations ? JSON.parse(draft.citations) : []
         } catch {
-          console.error(`[get_draft] Invalid citations JSON in draft v${draft.version}`)
+          logger('web').error('get_draft invalid citations JSON', { component: 'tools', draftVersion: draft.version })
         }
 
         return {
@@ -107,7 +108,7 @@ export function createDraftTools(agent: WriterAgent) {
           isFinal: draft.is_final === 1,
         }
       } catch (error) {
-        console.error(`[get_draft] Failed for version ${version}:`, error)
+        logger('web').error('get_draft failed', { component: 'tools', version, error: error instanceof Error ? error.message : String(error) })
         return { found: false, message: `Failed to retrieve draft version ${version}.` }
       }
     },
@@ -130,7 +131,7 @@ export function createDraftTools(agent: WriterAgent) {
           })),
         }
       } catch (error) {
-        console.error('[list_drafts] Failed:', error)
+        logger('web').error('list_drafts failed', { component: 'tools', error: error instanceof Error ? error.message : String(error) })
         return { count: 0, drafts: [], error: 'Failed to list drafts.' }
       }
     },

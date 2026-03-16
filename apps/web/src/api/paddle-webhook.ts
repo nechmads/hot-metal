@@ -15,6 +15,7 @@
  */
 
 import { Hono } from 'hono'
+import { logger } from '@hotmetal/shared'
 import type { AppEnv } from '../server'
 import { verifyPaddleWebhook, resolveTierFromPriceId } from '../lib/paddle'
 
@@ -54,7 +55,7 @@ interface PaddleWebhookPayload {
 paddleWebhook.post('/paddle', async (c) => {
 	const secret = c.env.PADDLE_WEBHOOK_SECRET
 	if (!secret) {
-		console.error('[Paddle] PADDLE_WEBHOOK_SECRET not configured')
+		logger('web').error('PADDLE_WEBHOOK_SECRET not configured', { component: 'paddle' })
 		return c.json({ error: 'Webhook not configured' }, 500)
 	}
 
@@ -65,7 +66,7 @@ paddleWebhook.post('/paddle', async (c) => {
 	// 2. Verify signature
 	const isValid = await verifyPaddleWebhook(rawBody, signature ?? null, secret)
 	if (!isValid) {
-		console.error('[Paddle] Invalid webhook signature')
+		logger('web').error('Invalid webhook signature', { component: 'paddle' })
 		return c.json({ error: 'Invalid signature' }, 401)
 	}
 
@@ -74,7 +75,7 @@ paddleWebhook.post('/paddle', async (c) => {
 	try {
 		event = JSON.parse(rawBody)
 	} catch {
-		console.error('[Paddle] Failed to parse webhook body')
+		logger('web').error('Failed to parse webhook body', { component: 'paddle' })
 		return c.json({ error: 'Invalid JSON' }, 400)
 	}
 
@@ -82,7 +83,7 @@ paddleWebhook.post('/paddle', async (c) => {
 	//    Process the event asynchronously via waitUntil
 	c.executionCtx.waitUntil(
 		processEvent(c.env, event).catch((err) => {
-			console.error(`[Paddle] Error processing event ${event.event_id} (${event.event_type}):`, err)
+			logger('web').error('Error processing paddle event', { component: 'paddle', eventId: event.event_id, eventType: event.event_type, error: err instanceof Error ? err.message : String(err) })
 		}),
 	)
 
@@ -95,20 +96,20 @@ async function processEvent(env: Env, event: PaddleWebhookPayload): Promise<void
 	// Idempotency check — skip if already processed
 	const alreadyProcessed = await env.DAL.hasPaddleEvent(event_id)
 	if (alreadyProcessed) {
-		console.log(`[Paddle] Skipping duplicate event: ${event_id}`)
+		logger('web').info('Skipping duplicate paddle event', { component: 'paddle', eventId: event_id })
 		return
 	}
 
 	const userId = data.custom_data?.userId
 	if (!userId) {
-		console.error(`[Paddle] No userId in custom_data for event ${event_id} (${event_type})`)
+		logger('web').error('No userId in custom_data for paddle event', { component: 'paddle', eventId: event_id, eventType: event_type })
 		return
 	}
 
 	const priceId = data.items?.[0]?.price?.id
 	const tier = resolveTierFromPriceId(priceId)
 
-	console.log(`[Paddle] Processing ${event_type} for user ${userId}, subscription ${data.id}, tier ${tier}`)
+	logger('web').info('Processing paddle event', { component: 'paddle', eventType: event_type, userId, subscriptionId: data.id, tier })
 
 	switch (event_type) {
 		case 'subscription.created':
@@ -145,7 +146,7 @@ async function processEvent(env: Env, event: PaddleWebhookPayload): Promise<void
 
 			// Update user tier
 			await env.DAL.updateUser(userId, { tier })
-			console.log(`[Paddle] User ${userId} upgraded to ${tier}`)
+			logger('web').info('User upgraded', { component: 'paddle', userId, tier })
 			break
 		}
 
@@ -178,10 +179,10 @@ async function processEvent(env: Env, event: PaddleWebhookPayload): Promise<void
 			if (!effectiveAt || new Date(effectiveAt) <= new Date()) {
 				// Cancel is immediate or already past — revert tier now
 				await env.DAL.updateUser(userId, { tier: 'creator' })
-				console.log(`[Paddle] User ${userId} subscription canceled, reverted to creator`)
+				logger('web').info('Subscription canceled, reverted to creator', { component: 'paddle', userId })
 			} else {
 				// Cancel is deferred — user keeps tier until effectiveAt
-				console.log(`[Paddle] User ${userId} subscription canceled, access until ${effectiveAt}`)
+				logger('web').info('Subscription canceled, deferred access', { component: 'paddle', userId, effectiveAt })
 			}
 			break
 		}
@@ -191,7 +192,7 @@ async function processEvent(env: Env, event: PaddleWebhookPayload): Promise<void
 				status: 'paused',
 			})
 			// Keep tier during pause — user paid for the period
-			console.log(`[Paddle] User ${userId} subscription paused`)
+			logger('web').info('Subscription paused', { component: 'paddle', userId })
 			break
 		}
 
@@ -203,7 +204,7 @@ async function processEvent(env: Env, event: PaddleWebhookPayload): Promise<void
 			})
 			// Ensure tier is correct
 			await env.DAL.updateUser(userId, { tier })
-			console.log(`[Paddle] User ${userId} subscription resumed`)
+			logger('web').info('Subscription resumed', { component: 'paddle', userId })
 			break
 		}
 
@@ -212,12 +213,12 @@ async function processEvent(env: Env, event: PaddleWebhookPayload): Promise<void
 				status: 'past_due',
 			})
 			// Keep tier — Paddle is retrying payment
-			console.log(`[Paddle] User ${userId} subscription past_due (Paddle retrying)`)
+			logger('web').info('Subscription past_due, Paddle retrying', { component: 'paddle', userId })
 			break
 		}
 
 		default:
-			console.log(`[Paddle] Unhandled event type: ${event_type}`)
+			logger('web').info('Unhandled paddle event type', { component: 'paddle', eventType: event_type })
 	}
 
 	// Record event AFTER successful processing for idempotency
@@ -226,7 +227,7 @@ async function processEvent(env: Env, event: PaddleWebhookPayload): Promise<void
 	} catch (err) {
 		// Processing succeeded but event recording failed.
 		// A retry from Paddle may re-process this event, but handlers are idempotent.
-		console.error(`[Paddle] Failed to record event ${event_id} after successful processing:`, err)
+		logger('web').error('Failed to record paddle event after successful processing', { component: 'paddle', eventId: event_id, error: err instanceof Error ? err.message : String(err) })
 	}
 }
 

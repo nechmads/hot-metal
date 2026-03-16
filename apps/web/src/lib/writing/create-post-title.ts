@@ -1,5 +1,6 @@
 import { generateText } from "ai";
 import type { LanguageModelV3 } from "@ai-sdk/provider";
+import { logger } from "@hotmetal/shared";
 import type { DraftInput } from "./index";
 
 const TITLE_PROMPT = `You are an expert headline copywriter and editor.
@@ -72,7 +73,7 @@ export async function createPostTitle(model: LanguageModelV3, draft: DraftInput)
 
     return result.text.trim();
   } catch (err) {
-    console.error("createPostTitle error:", err);
+    logger("web").error("createPostTitle error", { component: "writing", error: err instanceof Error ? err.message : String(err) });
     return "";
   }
 }
