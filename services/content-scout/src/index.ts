@@ -1,16 +1,12 @@
 import { Hono } from 'hono'
 import type { ScoutEnv, ScoutQueueMessage } from './env'
 import { ScoutWorkflow } from './workflow'
-import { computeNextRun, initLogger, logger, flushLogs } from '@hotmetal/shared'
+import { computeNextRun, logger, flushLogs } from '@hotmetal/shared'
 
 const app = new Hono<{ Bindings: ScoutEnv }>()
 
-// Initialize logger on every request and flush after response
+// Flush Axiom logs after each request
 app.use('*', async (c, next) => {
-  initLogger('content-scout', c.env.AXIOM_TOKEN && c.env.AXIOM_DATASET
-    ? { token: c.env.AXIOM_TOKEN, dataset: c.env.AXIOM_DATASET }
-    : undefined,
-  )
   await next()
   c.executionCtx.waitUntil(flushLogs())
 })
@@ -65,11 +61,7 @@ export default {
 
   // Hourly cron — enqueue publications whose next_scout_at has passed
   async scheduled(_event: ScheduledEvent, env: ScoutEnv, ctx: ExecutionContext) {
-    const log = initLogger('content-scout', env.AXIOM_TOKEN && env.AXIOM_DATASET
-      ? { token: env.AXIOM_TOKEN, dataset: env.AXIOM_DATASET }
-      : undefined,
-    )
-
+    const log = logger('content-scout')
     log.info('Scout cron tick started', { component: 'cron' })
     ctx.waitUntil((async () => {
       try {
@@ -89,11 +81,7 @@ export default {
 
   // Queue consumer — start a workflow per publication
   async queue(batch: MessageBatch<ScoutQueueMessage>, env: ScoutEnv) {
-    const log = initLogger('content-scout', env.AXIOM_TOKEN && env.AXIOM_DATASET
-      ? { token: env.AXIOM_TOKEN, dataset: env.AXIOM_DATASET }
-      : undefined,
-    )
-
+    const log = logger('content-scout')
     log.info(`Processing batch of ${batch.messages.length} message(s)`, { component: 'queue' })
     for (const message of batch.messages) {
       const { publicationId, triggeredBy } = message.body

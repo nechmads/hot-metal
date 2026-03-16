@@ -13,6 +13,8 @@ export interface AnalyzerEnv {
   ANTHROPIC_API_KEY: string
   AXIOM_TOKEN?: string
   AXIOM_DATASET?: string
+  GOOGLE_SERVICE_ACCOUNT_EMAIL?: string
+  GOOGLE_PRIVATE_KEY?: string
 
   // R2
   REPORTS_BUCKET: R2Bucket
@@ -28,6 +30,7 @@ export interface AnalyzerEnv {
 
   // Vars
   WEB_APP_URL: string
+  LEADS_SPREADSHEET_ID?: string
 }
 
 export interface AnalyzerQueueMessage {

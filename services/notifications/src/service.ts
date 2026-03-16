@@ -1,6 +1,6 @@
 import { WorkerEntrypoint } from 'cloudflare:workers'
 import type { NotificationsEnv } from './env'
-import { initLogger, logger } from '@hotmetal/shared'
+import { logger } from '@hotmetal/shared'
 import { sendNewIdeasEmail, sendDraftReadyEmail, sendPostPublishedEmail, sendNewCommentEmail, sendWelcomeEmail, sendAnalysisReportEmail } from './emails'
 
 export interface SendNewIdeasParams {
@@ -55,16 +55,7 @@ export interface SendAnalysisReportParams {
  * 4. Never throws — errors are logged and swallowed
  */
 export class NotificationsService extends WorkerEntrypoint<NotificationsEnv> {
-	/** Ensure the singleton logger is configured for RPC calls (no Hono middleware). */
-	private initLog() {
-		initLogger('notifications', this.env.AXIOM_TOKEN && this.env.AXIOM_DATASET
-			? { token: this.env.AXIOM_TOKEN, dataset: this.env.AXIOM_DATASET }
-			: undefined,
-		)
-	}
-
 	async sendNewIdeasNotification(params: SendNewIdeasParams): Promise<void> {
-		this.initLog()
 		const log = logger('notifications')
 
 		try {
@@ -97,7 +88,6 @@ export class NotificationsService extends WorkerEntrypoint<NotificationsEnv> {
 	}
 
 	async sendDraftReadyNotification(params: SendDraftReadyParams): Promise<void> {
-		this.initLog()
 		const log = logger('notifications')
 
 		try {
@@ -131,7 +121,6 @@ export class NotificationsService extends WorkerEntrypoint<NotificationsEnv> {
 	}
 
 	async sendNewCommentNotification(params: SendNewCommentParams): Promise<void> {
-		this.initLog()
 		const log = logger('notifications')
 
 		try {
@@ -169,7 +158,6 @@ export class NotificationsService extends WorkerEntrypoint<NotificationsEnv> {
 	// Welcome email is transactional — no preference check needed (new user, no prefs yet)
 	// and no user lookup needed (caller provides email/name directly from JWT).
 	async sendWelcomeNotification(params: SendWelcomeParams): Promise<void> {
-		this.initLog()
 		const log = logger('notifications')
 
 		try {
@@ -189,7 +177,6 @@ export class NotificationsService extends WorkerEntrypoint<NotificationsEnv> {
 	// Analysis report email is for anonymous public users — no user lookup or preference check.
 	// Similar to welcome email pattern: caller provides the email directly.
 	async sendAnalysisReportNotification(params: SendAnalysisReportParams): Promise<void> {
-		this.initLog()
 		const log = logger('notifications')
 
 		try {
@@ -209,7 +196,6 @@ export class NotificationsService extends WorkerEntrypoint<NotificationsEnv> {
 	}
 
 	async sendPostPublishedNotification(params: SendPostPublishedParams): Promise<void> {
-		this.initLog()
 		const log = logger('notifications')
 
 		try {

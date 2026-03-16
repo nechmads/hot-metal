@@ -1,6 +1,6 @@
 import { Hono } from 'hono'
 import type { AnalyzerEnv, AnalyzerQueueMessage } from './env'
-import { initLogger, logger, flushLogs } from '@hotmetal/shared'
+import { logger, flushLogs } from '@hotmetal/shared'
 import { errorHandler } from './middleware/error-handler'
 import { healthRoutes, analyzeRoutes } from './routes'
 import publicAnalyzeRoutes from './routes/public-analyze'
@@ -8,12 +8,8 @@ import { AnalyzerWorkflow } from './workflow'
 
 const app = new Hono<{ Bindings: AnalyzerEnv }>()
 
-// Initialize logger on every request and flush after response
+// Flush Axiom logs after each request
 app.use('*', async (c, next) => {
-  initLogger('content-analyzer', c.env.AXIOM_TOKEN && c.env.AXIOM_DATASET
-    ? { token: c.env.AXIOM_TOKEN, dataset: c.env.AXIOM_DATASET }
-    : undefined,
-  )
   await next()
   c.executionCtx.waitUntil(flushLogs())
 })
@@ -34,11 +30,7 @@ export default {
 
   // Queue consumer — start a workflow per analysis request
   async queue(batch: MessageBatch<AnalyzerQueueMessage>, env: AnalyzerEnv) {
-    const log = initLogger('content-analyzer', env.AXIOM_TOKEN && env.AXIOM_DATASET
-      ? { token: env.AXIOM_TOKEN, dataset: env.AXIOM_DATASET }
-      : undefined,
-    )
-
+    const log = logger('content-analyzer')
     log.info(`Processing batch of ${batch.messages.length} message(s)`, { component: 'queue' })
 
     for (const message of batch.messages) {

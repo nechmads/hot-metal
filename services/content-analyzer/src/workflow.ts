@@ -1,6 +1,6 @@
 import { WorkflowEntrypoint, type WorkflowEvent, type WorkflowStep } from 'cloudflare:workers'
 import type { AnalyzerEnv, AnalyzerWorkflowParams } from './env'
-import { createLogger } from '@hotmetal/shared'
+import { createLogger, addLead } from '@hotmetal/shared'
 import { extractContentProfile } from './extractor/html-parser'
 import { simulateCrawlers } from './extractor/crawler-sim'
 import { analyzeContent } from './scorer/aggregator'
@@ -9,12 +9,8 @@ export class AnalyzerWorkflow extends WorkflowEntrypoint<AnalyzerEnv, AnalyzerWo
   async run(event: WorkflowEvent<AnalyzerWorkflowParams>, step: WorkflowStep) {
     const { reportId, email, url } = event.payload
 
-    const log = createLogger({
-      service: 'content-analyzer',
-      axiom: this.env.AXIOM_TOKEN && this.env.AXIOM_DATASET
-        ? { token: this.env.AXIOM_TOKEN, dataset: this.env.AXIOM_DATASET }
-        : undefined,
-    }).child({ component: 'workflow', reportId, url })
+    const log = createLogger({ service: 'content-analyzer' })
+      .child({ component: 'workflow', reportId, url })
 
     log.info('Starting analysis')
 
@@ -76,7 +72,39 @@ export class AnalyzerWorkflow extends WorkflowEntrypoint<AnalyzerEnv, AnalyzerWo
     )
     log.info('Step 3 done: report stored')
 
-    // Step 4: Email report link (non-critical — never fails the workflow)
+    // Step 4: Record lead in Google Sheet (non-critical)
+    if (this.env.LEADS_SPREADSHEET_ID && this.env.GOOGLE_SERVICE_ACCOUNT_EMAIL && this.env.GOOGLE_PRIVATE_KEY) {
+      await step.do(
+        'record-lead',
+        { retries: { limit: 0, delay: '1 second' }, timeout: '15 seconds' },
+        async () => {
+          try {
+            await addLead(
+              {
+                googleSheets: {
+                  serviceAccountEmail: this.env.GOOGLE_SERVICE_ACCOUNT_EMAIL!,
+                  privateKey: this.env.GOOGLE_PRIVATE_KEY!,
+                  spreadsheetId: this.env.LEADS_SPREADSHEET_ID!,
+                },
+              },
+              {
+                email,
+                source: 'analyzer',
+                metadata: { url, reportId, overallScore: String(report.overallScore) },
+              },
+            )
+            log.info('record-lead step done')
+          } catch (err) {
+            log.error('Lead recording failed (non-critical)', {
+              error: err instanceof Error ? err.message : String(err),
+            })
+          }
+          return 'done'
+        },
+      )
+    }
+
+    // Step 5: Email report link (non-critical — never fails the workflow)
     await step.do('send-email', async () => {
       try {
         const reportUrl = `${this.env.WEB_APP_URL}/analyze/reports/${reportId}`
@@ -86,7 +114,7 @@ export class AnalyzerWorkflow extends WorkflowEntrypoint<AnalyzerEnv, AnalyzerWo
           reportUrl,
           overallScore: report.overallScore,
         })
-        log.info('Step 4 done: email sent', { email })
+        log.info('send-email step done')
       } catch (err) {
         log.error('Email send failed (non-critical)', {
           error: err instanceof Error ? err.message : String(err),

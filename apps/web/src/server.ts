@@ -15,7 +15,7 @@
 
 import { routeAgentRequest } from 'agents'
 import { Hono } from 'hono'
-import { initLogger, logger, flushLogs } from '@hotmetal/shared'
+import { logger, flushLogs } from '@hotmetal/shared'
 
 import { cors } from 'hono/cors'
 import { clerkAuth, type AuthVariables } from './middleware/clerk-auth'
@@ -60,14 +60,8 @@ export type AppEnv = {
 
 const app = new Hono<AppEnv>()
 
-// ─── Logger initialization (must be first) ──────────────────────────
+// ─── Flush Axiom logs after each request ─────────────────────────────
 app.use('*', async (c, next) => {
-  initLogger(
-    'web',
-    c.env.AXIOM_TOKEN && c.env.AXIOM_DATASET
-      ? { token: c.env.AXIOM_TOKEN, dataset: c.env.AXIOM_DATASET }
-      : undefined,
-  )
   await next()
   c.executionCtx.waitUntil(flushLogs())
 })
