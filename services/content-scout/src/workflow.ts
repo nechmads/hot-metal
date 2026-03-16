@@ -15,12 +15,8 @@ export class ScoutWorkflow extends WorkflowEntrypoint<ScoutEnv, ScoutWorkflowPar
   async run(event: WorkflowEvent<ScoutWorkflowParams>, step: WorkflowStep) {
     const { publicationId } = event.payload
 
-    const log = createLogger({
-      service: 'content-scout',
-      axiom: this.env.AXIOM_TOKEN && this.env.AXIOM_DATASET
-        ? { token: this.env.AXIOM_TOKEN, dataset: this.env.AXIOM_DATASET }
-        : undefined,
-    }).child({ component: 'workflow', publicationId })
+    const log = createLogger({ service: 'content-scout' })
+      .child({ component: 'workflow', publicationId })
 
     try {
       log.info('Starting scout for publication')

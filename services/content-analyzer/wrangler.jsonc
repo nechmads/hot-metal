@@ -60,9 +60,12 @@
   "vars": {
     "WEB_APP_URL": "https://hotmetalapp.com",
     "AXIOM_DATASET": "hotmetal-prod",
+    "LEADS_SPREADSHEET_ID": "1SaAv0kPfCeSxYw_B7C_9YxdYNe8ZVwoEWV_hxJj6z4o",
   },
   // Secrets (set via `wrangler secret put`):
   // API_KEY — protects internal API endpoints
   // ANTHROPIC_API_KEY — for LLM-based scoring dimensions
   // AXIOM_TOKEN — Axiom ingest token for structured logging
+  // GOOGLE_SERVICE_ACCOUNT_EMAIL — Google service account for Sheets API
+  // GOOGLE_PRIVATE_KEY — RSA private key (PEM) for the service account
 }

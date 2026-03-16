@@ -45,3 +45,9 @@ export type { LlmTrackingContext } from './llm-tracking'
 
 export { AppLogger, createLogger, initLogger, logger, flushLogs } from './logger'
 export type { LogLevel, LogContext, AxiomConfig, LoggerConfig } from './logger'
+
+export { appendRows } from './google-sheets'
+export type { GoogleSheetsConfig, CellValue } from './google-sheets'
+
+export { addLead } from './leads'
+export type { LeadEntry, LeadsConfig } from './leads'

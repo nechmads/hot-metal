@@ -182,40 +182,84 @@ export class AppLogger {
   }
 }
 
+// ── Axiom auto-detection from Cloudflare Workers env ────────────────
+
+let _envModule: { env: Record<string, string | undefined> } | null | false = null;
+
 /**
- * Create a logger for a specific service.
- *
- * @example
- * const logger = createLogger({
- *   service: "hotmetal-content-analyzer",
- *   axiom: { token: env.AXIOM_TOKEN, dataset: env.AXIOM_DATASET },
- * });
+ * Lazily resolve `cloudflare:workers` and cache the result.
+ * Returns the module on success, `false` if unavailable (cached for the isolate lifetime).
  */
-export function createLogger(config: LoggerConfig): AppLogger {
-  return new AppLogger(config);
+function getCfEnvModule(): { env: Record<string, string | undefined> } | false {
+  if (_envModule !== null) return _envModule;
+  try {
+    // Wrangler resolves `cloudflare:workers` at build time.
+    // nodejs_compat is enabled in all workspaces so require() is available.
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    _envModule = require("cloudflare:workers") as { env: Record<string, string | undefined> };
+    return _envModule;
+  } catch {
+    _envModule = false;
+    return false;
+  }
 }
 
-// ── Singleton helpers for Cloudflare Workers ─────────────────────────
+/**
+ * Try to read AXIOM_TOKEN + AXIOM_DATASET from `cloudflare:workers` env.
+ * Returns undefined if env is unavailable or vars are not set.
+ */
+function tryGetAxiomFromEnv(): AxiomConfig | undefined {
+  const mod = getCfEnvModule();
+  if (!mod) return undefined;
+
+  const token = mod.env.AXIOM_TOKEN;
+  const dataset = mod.env.AXIOM_DATASET;
+
+  if (token && dataset) return { token, dataset };
+
+  // Warn on partial config — likely a misconfigured deployment
+  if (token || dataset) {
+    console.warn(
+      `[logger] Axiom partially configured: AXIOM_TOKEN=${token ? "set" : "missing"}, AXIOM_DATASET=${dataset ? "set" : "missing"}. Falling back to console-only.`,
+    );
+  }
+  return undefined;
+}
+
+// ── Factory & singleton ─────────────────────────────────────────────
+
+/**
+ * Create a logger instance.
+ * If no `axiom` config is provided, auto-detects from cloudflare:workers env.
+ */
+export function createLogger(config: LoggerConfig): AppLogger {
+  const resolved: LoggerConfig = {
+    ...config,
+    axiom: config.axiom ?? tryGetAxiomFromEnv(),
+  };
+  return new AppLogger(resolved);
+}
 
 let _singleton: AppLogger | null = null;
 
 /**
- * Initialize the singleton logger with Axiom config from env.
- * Call once per request in middleware / queue / scheduled handler.
+ * Explicitly initialize the singleton logger with Axiom config.
+ * Use this in Durable Objects where `cloudflare:workers` env is not available.
+ * In regular Workers, prefer `logger()` which auto-detects Axiom from env.
  */
 export function initLogger(
   service: string,
   axiom?: AxiomConfig,
 ): AppLogger {
   if (!_singleton) {
-    _singleton = createLogger({ service, axiom });
+    _singleton = new AppLogger({ service, axiom });
   }
   return _singleton;
 }
 
 /**
- * Get the current singleton logger instance.
- * Falls back to a console-only logger if initLogger hasn't been called.
+ * Get the singleton logger. Auto-configures Axiom from cloudflare:workers env
+ * on first call. Falls back to console-only if env is unavailable.
  */
 export function logger(service = "hotmetal"): AppLogger {
   if (!_singleton) {
