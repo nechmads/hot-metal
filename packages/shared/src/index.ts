@@ -37,7 +37,7 @@ export type {
 export { validateWebhookUrl, deliverWebhook } from './webhook'
 export type { WebhookPayload } from './webhook'
 
-export { WilsonClient, initWilson, reportLlmUsage } from './wilson'
+export { WilsonClient, reportLlmUsage } from './wilson'
 export type { LlmUsageEvent } from './wilson'
 
 export { createWilsonMiddleware } from './llm-tracking'

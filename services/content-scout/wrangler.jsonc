@@ -81,7 +81,7 @@
 	"vars": {
 		"ALEXANDER_API_URL": "https://alexanderai.farfarawaylabs.com",
 		"PUBLICATIONS_BASE_DOMAIN": "hotmetalapp.com",
-		"WILSON_API_URL": "https://wilson.farfarawaylabs.com",
+		"WILSON_API_URL": "https://api.getllmetrics.com",
 		"AXIOM_DATASET": "hotmetal-prod",
 	},
 

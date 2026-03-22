@@ -2,6 +2,7 @@
 // Wilson API client — fire-and-forget LLM usage tracking
 // ---------------------------------------------------------------------------
 
+import { env } from 'cloudflare:workers'
 import { logger } from './logger'
 
 /** Parameters accepted by reportLlmUsage(). */
@@ -73,33 +74,26 @@ export class WilsonClient {
 }
 
 // ---------------------------------------------------------------------------
-// Convenience function — works without instantiating a client each time
+// Lazy singleton — reads WILSON_API_URL / WILSON_API_KEY from the
+// Cloudflare Workers env on first use. No manual init required.
 // ---------------------------------------------------------------------------
 
-// Module-level singleton. In Cloudflare Workers, the module scope is shared
-// across warm requests within a single isolate. This assumes WILSON_API_URL
-// and WILSON_API_KEY are the same for all requests in a deployment.
 let _defaultClient: WilsonClient | null = null
 
-/**
- * Initialise the default Wilson client. Safe to call multiple times —
- * only creates the client if both values are provided. Missing env vars
- * result in a silent no-op (all tracking disabled).
- */
-export function initWilson(apiUrl?: string, apiToken?: string): void {
-  if (!apiUrl || !apiToken) return
-  if (!_defaultClient) {
-    _defaultClient = new WilsonClient(apiUrl, apiToken)
-  }
+function getClient(): WilsonClient | null {
+  if (_defaultClient) return _defaultClient
+  const workerEnv = env as { WILSON_API_URL?: string; WILSON_API_KEY?: string }
+  if (!workerEnv.WILSON_API_URL || !workerEnv.WILSON_API_KEY) return null
+  _defaultClient = new WilsonClient(workerEnv.WILSON_API_URL, workerEnv.WILSON_API_KEY)
+  return _defaultClient
 }
 
 /**
  * Report an LLM usage event to Wilson. Fire-and-forget, never throws.
  *
- * If Wilson is not initialised (missing env vars), this is a silent no-op —
- * the rest of the application is never affected.
+ * Lazily reads WILSON_API_URL and WILSON_API_KEY from the Cloudflare
+ * Workers env. If either is missing, this is a silent no-op.
  */
 export function reportLlmUsage(event: LlmUsageEvent): void {
-  if (!_defaultClient) return
-  _defaultClient.sendEvent(event)
+  getClient()?.sendEvent(event)
 }

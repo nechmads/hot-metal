@@ -25,7 +25,7 @@ import {
 } from "../prompts/system-prompt";
 import { createToolSet, createAutoWriteToolSet } from "../tools";
 import { cleanupMessages } from "./message-utils";
-import { CmsApi, initWilson, createWilsonMiddleware, logger } from "@hotmetal/shared";
+import { CmsApi, createWilsonMiddleware, logger } from "@hotmetal/shared";
 import type { Citation } from "@hotmetal/content-core";
 import { marked } from "marked";
 import {
@@ -63,7 +63,6 @@ export class WriterAgent extends AIChatAgent<Env, WriterAgentState> {
 
   async onStart() {
     initAgentSqlite(this.sql.bind(this));
-    initWilson(this.env.WILSON_API_URL, this.env.WILSON_API_KEY);
 
     // Hydrate state from session metadata via DAL if this is a fresh start
     if (!this.state.sessionId) {

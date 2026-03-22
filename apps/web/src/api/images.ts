@@ -5,7 +5,7 @@ import { Hono } from 'hono'
 import type { AppEnv } from '../server'
 import type { WriterAgent } from '../agent/writer-agent'
 import { createImagePrompt } from '../lib/writing'
-import { initWilson, createWilsonMiddleware, reportLlmUsage, logger } from '@hotmetal/shared'
+import { createWilsonMiddleware, reportLlmUsage, logger } from '@hotmetal/shared'
 
 const images = new Hono<AppEnv>()
 
@@ -38,7 +38,6 @@ images.post('/sessions/:sessionId/generate-image-prompt', async (c) => {
 
   const draft = await contentRes.json() as { title: string | null; content: string }
 
-  initWilson(c.env.WILSON_API_URL, c.env.WILSON_API_KEY)
   const imgPromptModel = wrapLanguageModel({
     model: anthropic('claude-haiku-4-5-20251001'),
     middleware: createWilsonMiddleware({
@@ -72,8 +71,6 @@ images.post('/sessions/:sessionId/generate-images', async (c) => {
   if (body.prompt.length > 1000) {
     return c.json({ error: 'prompt must be 1000 characters or less' }, 400)
   }
-
-  initWilson(c.env.WILSON_API_URL, c.env.WILSON_API_KEY)
 
   try {
     const imageGenStart = Date.now()

@@ -85,7 +85,7 @@
     "CLERK_ISSUER": "https://clerk.hotmetalapp.com",
     "NOTIFICATION_EMAIL": "shahar@hotmetalapp.com",
     "PADDLE_ENVIRONMENT": "production",
-    "WILSON_API_URL": "https://wilson.farfarawaylabs.com",
+    "WILSON_API_URL": "https://api.getllmetrics.com",
     "AXIOM_DATASET": "hotmetal-prod",
   },
 

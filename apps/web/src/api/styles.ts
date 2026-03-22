@@ -1,7 +1,7 @@
 import { Hono } from 'hono'
 import { anthropic } from '@ai-sdk/anthropic'
 import { wrapLanguageModel } from 'ai'
-import { AlexanderApi, initWilson, createWilsonMiddleware, logger } from '@hotmetal/shared'
+import { AlexanderApi, createWilsonMiddleware, logger } from '@hotmetal/shared'
 import { composeStylePrompt } from '../lib/writing'
 import { hasStructuredFields, type ToneGuideFields } from '../lib/tone-guide'
 import { checkCustomStyleQuota } from '../lib/quota'
@@ -45,7 +45,6 @@ styles.post('/styles', async (c) => {
   // Compose finalPrompt: use LLM if structured fields present, otherwise use systemPrompt directly
   let finalPrompt = systemPrompt
   if (hasStructuredFields(body)) {
-    initWilson(c.env.WILSON_API_URL, c.env.WILSON_API_KEY)
     const model = wrapLanguageModel({
       model: anthropic('claude-haiku-4-5-20251001'),
       middleware: createWilsonMiddleware({
@@ -240,7 +239,6 @@ styles.patch('/styles/:id', async (c) => {
 
   if (body.systemPrompt !== undefined || hasStructuredFields(body)) {
     if (hasStructuredFields(mergedFields)) {
-      initWilson(c.env.WILSON_API_URL, c.env.WILSON_API_KEY)
       const composeModel = wrapLanguageModel({
         model: anthropic('claude-haiku-4-5-20251001'),
         middleware: createWilsonMiddleware({

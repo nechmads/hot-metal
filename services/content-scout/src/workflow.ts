@@ -1,7 +1,7 @@
 import { WorkflowEntrypoint, type WorkflowEvent, type WorkflowStep } from 'cloudflare:workers'
 import { createAnthropic } from '@ai-sdk/anthropic'
 import { wrapLanguageModel } from 'ai'
-import { initWilson, createWilsonMiddleware, createLogger } from '@hotmetal/shared'
+import { createWilsonMiddleware, createLogger } from '@hotmetal/shared'
 import type { ScoutEnv, ScoutWorkflowParams } from './env'
 import { loadPublicationContext } from './steps/load-context'
 import { searchForContent } from './steps/search'
@@ -46,8 +46,6 @@ export class ScoutWorkflow extends WorkflowEntrypoint<ScoutEnv, ScoutWorkflowPar
       )
       log.info('Step 2 done: search complete', { topicResultSets: searchResults.length })
 
-      // Init Wilson + resolve user tier for LLM tracking
-      initWilson(this.env.WILSON_API_URL, this.env.WILSON_API_KEY)
       const anthropic = createAnthropic({ apiKey: this.env.ANTHROPIC_API_KEY })
       let userTier = 'creator'
       try {
