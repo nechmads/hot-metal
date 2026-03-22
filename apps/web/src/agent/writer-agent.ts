@@ -25,7 +25,8 @@ import {
 } from "../prompts/system-prompt";
 import { createToolSet, createAutoWriteToolSet } from "../tools";
 import { cleanupMessages } from "./message-utils";
-import { CmsApi, createWilsonMiddleware, logger } from "@hotmetal/shared";
+import { CmsApi, logger } from "@hotmetal/shared";
+import { createWilsonMiddleware } from "@hotmetal/shared/server";
 import type { Citation } from "@hotmetal/content-core";
 import { marked } from "marked";
 import {

@@ -5,7 +5,8 @@ import { Hono } from 'hono'
 import type { AppEnv } from '../server'
 import type { WriterAgent } from '../agent/writer-agent'
 import { createImagePrompt } from '../lib/writing'
-import { createWilsonMiddleware, reportLlmUsage, logger } from '@hotmetal/shared'
+import { logger } from '@hotmetal/shared'
+import { createWilsonMiddleware, reportLlmUsage } from '@hotmetal/shared/server'
 
 const images = new Hono<AppEnv>()
 
