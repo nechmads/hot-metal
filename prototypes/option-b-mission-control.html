@@ -1,0 +1,1101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Hot Metal — Option B: Mission Control</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  :root {
+    --amber: #f59e0b;
+    --amber-light: #fbbf24;
+    --amber-dark: #d97706;
+    --surface: #0f0f0f;
+    --surface-raised: #1a1a1a;
+    --surface-overlay: #222222;
+    --border: #2a2a2a;
+    --border-hover: #3a3a3a;
+    --text: #f5f5f5;
+    --text-muted: #888888;
+    --text-dim: #666666;
+    --green: #22c55e;
+    --blue: #3b82f6;
+    --purple: #a855f7;
+    --rose: #f43f5e;
+    --teal: #14b8a6;
+  }
+
+  body {
+    font-family: 'Inter', -apple-system, sans-serif;
+    background: var(--surface);
+    color: var(--text);
+    min-height: 100vh;
+  }
+
+  .screen { display: none; min-height: 100vh; }
+  .screen.active { display: block; }
+
+  /* ─── Option Label ─── */
+  .option-label {
+    position: fixed;
+    top: 16px;
+    right: 16px;
+    padding: 6px 14px;
+    border-radius: 8px;
+    background: var(--surface-overlay);
+    border: 1px solid var(--border);
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.05em;
+    color: var(--text-dim);
+    text-transform: uppercase;
+    z-index: 100;
+  }
+
+  /* ═══════════════════════════════
+     SCREEN 1: Goal Selection (Full Page)
+     ═══════════════════════════════ */
+  .goal-select-screen {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 60px 24px;
+  }
+
+  .goal-select-screen.active { display: flex; }
+
+  .gs-header {
+    text-align: center;
+    margin-bottom: 56px;
+  }
+
+  .gs-header .logo {
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--amber);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    margin-bottom: 24px;
+  }
+
+  .gs-header h1 {
+    font-size: 40px;
+    font-weight: 800;
+    line-height: 1.2;
+    margin-bottom: 12px;
+  }
+
+  .gs-header p {
+    font-size: 17px;
+    color: var(--text-muted);
+    max-width: 540px;
+  }
+
+  /* Goal cards — large, immersive */
+  .goal-cards {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 20px;
+    max-width: 860px;
+    width: 100%;
+  }
+
+  .gc {
+    background: var(--surface-raised);
+    border: 2px solid var(--border);
+    border-radius: 20px;
+    padding: 32px 28px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .gc::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 3px;
+    opacity: 0;
+    transition: opacity 0.3s;
+  }
+
+  .gc:hover::before { opacity: 1; }
+  .gc:hover { border-color: transparent; transform: translateY(-3px); }
+
+  .gc.brand::before { background: linear-gradient(90deg, var(--purple), #c084fc); }
+  .gc.brand:hover { border-color: var(--purple); box-shadow: 0 12px 40px rgba(168, 85, 247, 0.12); }
+  .gc.awareness::before { background: linear-gradient(90deg, var(--blue), #60a5fa); }
+  .gc.awareness:hover { border-color: var(--blue); box-shadow: 0 12px 40px rgba(59, 130, 246, 0.12); }
+  .gc.sales::before { background: linear-gradient(90deg, var(--green), #4ade80); }
+  .gc.sales:hover { border-color: var(--green); box-shadow: 0 12px 40px rgba(34, 197, 94, 0.12); }
+  .gc.traffic::before { background: linear-gradient(90deg, var(--rose), #fb7185); }
+  .gc.traffic:hover { border-color: var(--rose); box-shadow: 0 12px 40px rgba(244, 63, 94, 0.12); }
+
+  .gc .gc-icon {
+    font-size: 32px;
+    margin-bottom: 16px;
+  }
+
+  .gc h3 { font-size: 20px; font-weight: 700; margin-bottom: 8px; }
+
+  .gc .gc-desc {
+    font-size: 14px;
+    color: var(--text-muted);
+    line-height: 1.5;
+    margin-bottom: 20px;
+  }
+
+  .gc .gc-what {
+    font-size: 12px;
+    color: var(--text-dim);
+    line-height: 1.6;
+    padding-top: 16px;
+    border-top: 1px solid var(--border);
+  }
+
+  .gc .gc-what strong { color: var(--text-muted); }
+
+  /* ═══════════════════════════════
+     SCREEN 2: Wizard Steps
+     ═══════════════════════════════ */
+  .wizard-screen {
+    display: flex;
+    height: 100vh;
+  }
+
+  .wizard-screen.active { display: flex; }
+
+  /* Left: Wizard Steps Nav */
+  .wizard-nav {
+    width: 280px;
+    background: var(--surface-raised);
+    border-right: 1px solid var(--border);
+    padding: 24px 0;
+    flex-shrink: 0;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .wizard-nav .wn-header {
+    padding: 0 20px 20px;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 8px;
+  }
+
+  .wizard-nav .wn-back {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: var(--text-muted);
+    font-size: 13px;
+    cursor: pointer;
+    margin-bottom: 16px;
+    background: none;
+    border: none;
+    font-family: inherit;
+    transition: color 0.2s;
+  }
+
+  .wizard-nav .wn-back:hover { color: var(--text); }
+
+  .wizard-nav .wn-goal {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 15px;
+    font-weight: 700;
+  }
+
+  .wizard-nav .wn-goal .badge {
+    padding: 3px 10px;
+    border-radius: 6px;
+    font-size: 11px;
+    font-weight: 600;
+  }
+
+  .wizard-nav .wn-goal .badge.awareness { background: rgba(59, 130, 246, 0.15); color: #60a5fa; }
+
+  .wn-steps {
+    padding: 8px 12px;
+    flex: 1;
+  }
+
+  .wn-step {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: all 0.2s;
+    margin-bottom: 2px;
+  }
+
+  .wn-step:hover { background: var(--surface-overlay); }
+  .wn-step.active { background: var(--surface-overlay); }
+
+  .wn-step .step-num {
+    width: 28px;
+    height: 28px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    font-weight: 700;
+    flex-shrink: 0;
+  }
+
+  .wn-step .step-num.pending { background: var(--surface); border: 1px solid var(--border); color: var(--text-dim); }
+  .wn-step .step-num.active { background: var(--amber); color: #000; }
+  .wn-step .step-num.done { background: var(--green); color: #fff; }
+
+  .wn-step .step-info h4 { font-size: 13px; font-weight: 600; }
+  .wn-step .step-info p { font-size: 11px; color: var(--text-dim); margin-top: 2px; }
+  .wn-step.active .step-info h4 { color: var(--text); }
+  .wn-step:not(.active) .step-info h4 { color: var(--text-muted); }
+
+  /* Right: Wizard Content */
+  .wizard-content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  .wizard-content-header {
+    padding: 24px 40px 0;
+    flex-shrink: 0;
+  }
+
+  .wizard-content-header h2 { font-size: 24px; font-weight: 700; margin-bottom: 6px; }
+  .wizard-content-header p { font-size: 14px; color: var(--text-muted); }
+
+  .wizard-content-body {
+    flex: 1;
+    padding: 32px 40px;
+    overflow-y: auto;
+  }
+
+  .wizard-content-footer {
+    padding: 16px 40px;
+    border-top: 1px solid var(--border);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-shrink: 0;
+  }
+
+  /* ─── Form Elements ─── */
+  .form-group { margin-bottom: 24px; }
+  .form-group label {
+    display: block;
+    font-size: 13px;
+    font-weight: 600;
+    margin-bottom: 8px;
+  }
+  .form-group .hint {
+    font-size: 12px;
+    color: var(--text-dim);
+    margin-top: 4px;
+  }
+
+  .text-input {
+    width: 100%;
+    padding: 12px 16px;
+    border-radius: 10px;
+    border: 1px solid var(--border);
+    background: var(--surface);
+    color: var(--text);
+    font-size: 14px;
+    font-family: 'Inter', sans-serif;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+
+  .text-input:focus { border-color: var(--amber); }
+  .text-input::placeholder { color: var(--text-dim); }
+
+  textarea.text-input { min-height: 80px; resize: vertical; }
+
+  /* ─── Scan Results Card ─── */
+  .scan-result {
+    background: var(--surface-overlay);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 20px;
+    margin-top: 20px;
+  }
+
+  .scan-result .sr-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 16px;
+  }
+
+  .scan-result .sr-header h4 {
+    font-size: 14px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .scan-result .sr-header .verified {
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 11px;
+    font-weight: 600;
+    background: rgba(34, 197, 94, 0.15);
+    color: var(--green);
+  }
+
+  .sr-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+  }
+
+  .sr-field label {
+    font-size: 11px;
+    color: var(--text-dim);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    margin-bottom: 4px;
+    display: block;
+  }
+
+  .sr-field .value {
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--text);
+  }
+
+  .sr-field .value.editable {
+    padding: 6px 10px;
+    border-radius: 6px;
+    border: 1px solid transparent;
+    cursor: text;
+    transition: all 0.2s;
+  }
+
+  .sr-field .value.editable:hover { border-color: var(--border); background: var(--surface); }
+
+  /* ─── Competitor Cards ─── */
+  .competitor-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 16px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    margin-bottom: 8px;
+  }
+
+  .competitor-row .comp-logo {
+    width: 36px;
+    height: 36px;
+    border-radius: 8px;
+    background: var(--surface-overlay);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 14px;
+    color: var(--text-muted);
+    flex-shrink: 0;
+  }
+
+  .competitor-row .comp-info { flex: 1; }
+  .competitor-row .comp-info h5 { font-size: 14px; font-weight: 600; }
+  .competitor-row .comp-info p { font-size: 12px; color: var(--text-dim); margin-top: 2px; }
+
+  .competitor-row .comp-content-score {
+    text-align: right;
+  }
+
+  .competitor-row .comp-content-score .score {
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--amber);
+  }
+
+  .competitor-row .comp-content-score .score-label {
+    font-size: 10px;
+    color: var(--text-dim);
+    text-transform: uppercase;
+  }
+
+  /* ─── Content Pillar Cards ─── */
+  .pillar-cards {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+  }
+
+  .pillar-card {
+    background: var(--surface);
+    border: 2px solid var(--border);
+    border-radius: 14px;
+    padding: 20px;
+    cursor: pointer;
+    transition: all 0.25s;
+    position: relative;
+  }
+
+  .pillar-card:hover { border-color: var(--border-hover); }
+  .pillar-card.selected { border-color: var(--amber); background: rgba(245, 158, 11, 0.04); }
+
+  .pillar-card .check {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    width: 22px;
+    height: 22px;
+    border-radius: 6px;
+    border: 2px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    transition: all 0.2s;
+  }
+
+  .pillar-card.selected .check {
+    border-color: var(--amber);
+    background: var(--amber);
+    color: #000;
+  }
+
+  .pillar-card .pillar-emoji { font-size: 28px; margin-bottom: 12px; }
+  .pillar-card h4 { font-size: 15px; font-weight: 700; margin-bottom: 6px; }
+  .pillar-card p { font-size: 12px; color: var(--text-muted); line-height: 1.5; }
+
+  .pillar-card .pillar-meta {
+    margin-top: 12px;
+    padding-top: 12px;
+    border-top: 1px solid var(--border);
+    display: flex;
+    gap: 12px;
+    font-size: 11px;
+    color: var(--text-dim);
+  }
+
+  .pillar-card .pillar-meta .pm-val { color: var(--text-muted); font-weight: 600; }
+
+  /* ─── Buttons ─── */
+  .btn {
+    padding: 10px 24px;
+    border-radius: 10px;
+    font-size: 14px;
+    font-weight: 600;
+    font-family: 'Inter', sans-serif;
+    cursor: pointer;
+    transition: all 0.2s;
+    border: none;
+  }
+
+  .btn-primary { background: var(--amber); color: #000; }
+  .btn-primary:hover { background: var(--amber-light); }
+  .btn-secondary { background: var(--surface-overlay); color: var(--text); border: 1px solid var(--border); }
+  .btn-secondary:hover { border-color: var(--border-hover); }
+  .btn-ghost { background: transparent; color: var(--text-muted); }
+  .btn-ghost:hover { color: var(--text); }
+
+  .btn-analyze {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 20px;
+    border-radius: 10px;
+    border: 1px solid var(--amber);
+    background: rgba(245, 158, 11, 0.08);
+    color: var(--amber);
+    font-size: 13px;
+    font-weight: 600;
+    font-family: 'Inter', sans-serif;
+    cursor: pointer;
+    transition: all 0.2s;
+    margin-top: 12px;
+  }
+
+  .btn-analyze:hover { background: rgba(245, 158, 11, 0.15); }
+
+  /* ─── AI Suggestion Banner ─── */
+  .ai-suggestion {
+    background: linear-gradient(135deg, rgba(245, 158, 11, 0.06), rgba(245, 158, 11, 0.02));
+    border: 1px solid rgba(245, 158, 11, 0.2);
+    border-radius: 12px;
+    padding: 16px 20px;
+    margin-top: 20px;
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+  }
+
+  .ai-suggestion .ai-icon {
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    background: var(--amber);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+    flex-shrink: 0;
+  }
+
+  .ai-suggestion .ai-text { font-size: 13px; line-height: 1.6; color: var(--text-muted); }
+  .ai-suggestion .ai-text strong { color: var(--text); }
+
+  /* ═══════════════════════════════
+     SCREEN 3: Dashboard (post-setup)
+     ═══════════════════════════════ */
+  .dashboard-screen {
+    display: flex;
+    height: 100vh;
+  }
+
+  .dashboard-screen.active { display: flex; }
+
+  /* Sidebar */
+  .sidebar {
+    width: 240px;
+    background: var(--surface-raised);
+    border-right: 1px solid var(--border);
+    padding: 16px 0;
+    flex-shrink: 0;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .sidebar .sb-logo {
+    padding: 4px 20px 20px;
+    font-size: 15px;
+    font-weight: 800;
+    color: var(--amber);
+    letter-spacing: 0.04em;
+  }
+
+  .sidebar nav { flex: 1; }
+
+  .sidebar .nav-section {
+    padding: 0 10px;
+    margin-bottom: 24px;
+  }
+
+  .sidebar .nav-section-label {
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--text-dim);
+    padding: 0 10px;
+    margin-bottom: 6px;
+  }
+
+  .sidebar .nav-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 9px 12px;
+    border-radius: 8px;
+    font-size: 13px;
+    color: var(--text-muted);
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+
+  .sidebar .nav-item:hover { background: var(--surface-overlay); color: var(--text); }
+  .sidebar .nav-item.active { background: var(--surface-overlay); color: var(--text); font-weight: 600; }
+  .sidebar .nav-item .nav-icon { font-size: 16px; width: 20px; text-align: center; }
+
+  /* Main content */
+  .dash-main {
+    flex: 1;
+    overflow-y: auto;
+    padding: 32px 40px;
+  }
+
+  .dash-main .dm-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 32px;
+  }
+
+  .dash-main .dm-header h1 { font-size: 24px; font-weight: 700; }
+
+  .dash-main .dm-header .goal-context {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 14px;
+    border-radius: 8px;
+    background: rgba(59, 130, 246, 0.1);
+    font-size: 13px;
+    font-weight: 600;
+    color: #60a5fa;
+  }
+
+  /* Goal Scorecard */
+  .scorecard {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px;
+    margin-bottom: 32px;
+  }
+
+  .scorecard .sc-card {
+    background: var(--surface-raised);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 20px;
+  }
+
+  .scorecard .sc-card .sc-label {
+    font-size: 12px;
+    color: var(--text-dim);
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .scorecard .sc-card .sc-value {
+    font-size: 28px;
+    font-weight: 800;
+    margin-bottom: 4px;
+  }
+
+  .scorecard .sc-card .sc-change {
+    font-size: 12px;
+    font-weight: 600;
+  }
+
+  .sc-change.up { color: var(--green); }
+  .sc-change.down { color: var(--rose); }
+
+  /* Strategy Panel */
+  .strategy-banner {
+    background: linear-gradient(135deg, rgba(59, 130, 246, 0.08), rgba(59, 130, 246, 0.02));
+    border: 1px solid rgba(59, 130, 246, 0.2);
+    border-radius: 16px;
+    padding: 24px;
+    margin-bottom: 32px;
+    display: flex;
+    gap: 24px;
+  }
+
+  .strategy-banner .sb-main { flex: 1; }
+  .strategy-banner .sb-main h3 { font-size: 16px; font-weight: 700; margin-bottom: 8px; display: flex; align-items: center; gap: 8px; }
+  .strategy-banner .sb-main p { font-size: 13px; color: var(--text-muted); line-height: 1.6; }
+
+  .strategy-banner .sb-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    flex-shrink: 0;
+  }
+
+  /* Content Queue */
+  .section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+  }
+
+  .section-header h3 { font-size: 16px; font-weight: 700; }
+  .section-header a { font-size: 13px; color: var(--amber); text-decoration: none; }
+
+  .content-queue {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .cq-item {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 16px 20px;
+    background: var(--surface-raised);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    transition: all 0.2s;
+    cursor: pointer;
+  }
+
+  .cq-item:hover { border-color: var(--border-hover); }
+
+  .cq-item .cq-type {
+    padding: 4px 10px;
+    border-radius: 6px;
+    font-size: 11px;
+    font-weight: 600;
+    flex-shrink: 0;
+  }
+
+  .cq-item .cq-type.seo { background: rgba(244, 63, 94, 0.12); color: #fb7185; }
+  .cq-item .cq-type.thought { background: rgba(168, 85, 247, 0.12); color: #c084fc; }
+  .cq-item .cq-type.comparison { background: rgba(34, 197, 94, 0.12); color: #4ade80; }
+  .cq-item .cq-type.education { background: rgba(59, 130, 246, 0.12); color: #60a5fa; }
+
+  .cq-item .cq-info { flex: 1; }
+  .cq-item .cq-info h4 { font-size: 14px; font-weight: 600; margin-bottom: 3px; }
+  .cq-item .cq-info p { font-size: 12px; color: var(--text-dim); }
+
+  .cq-item .cq-score {
+    text-align: center;
+    flex-shrink: 0;
+  }
+
+  .cq-item .cq-score .s-val { font-size: 16px; font-weight: 700; color: var(--amber); }
+  .cq-item .cq-score .s-label { font-size: 10px; color: var(--text-dim); }
+
+  .cq-item .cq-status {
+    padding: 4px 10px;
+    border-radius: 6px;
+    font-size: 11px;
+    font-weight: 600;
+    flex-shrink: 0;
+  }
+
+  .cq-item .cq-status.draft { background: var(--surface-overlay); color: var(--text-muted); }
+  .cq-item .cq-status.ready { background: rgba(34, 197, 94, 0.12); color: var(--green); }
+  .cq-item .cq-status.idea { background: rgba(245, 158, 11, 0.12); color: var(--amber); }
+</style>
+</head>
+<body>
+
+<div class="option-label">Option B — Mission Control</div>
+
+<!-- ═══ SCREEN 1: Goal Selection ═══ -->
+<div id="screen-goals" class="screen goal-select-screen active">
+  <div class="gs-header">
+    <div class="logo">🔥 Hot Metal</div>
+    <h1>What are you trying to achieve?</h1>
+    <p>Your goal shapes your entire content strategy — what to write, where to publish, and how we measure success.</p>
+  </div>
+
+  <div class="goal-cards">
+    <div class="gc brand" onclick="showWizard()">
+      <div class="gc-icon">👤</div>
+      <h3>Build Personal Authority</h3>
+      <p class="gc-desc">Become a recognized voice in your space through thought leadership and expertise.</p>
+      <div class="gc-what">
+        <strong>We'll learn about:</strong> Your background, expertise, opinions, target audience, existing presence
+      </div>
+    </div>
+    <div class="gc awareness" onclick="showWizard()">
+      <div class="gc-icon">📢</div>
+      <h3>Product Awareness</h3>
+      <p class="gc-desc">Get your product in front of the right people. Educate, differentiate, build mindshare.</p>
+      <div class="gc-what">
+        <strong>We'll learn about:</strong> Your product, competitors, ICP, market positioning, keyword landscape
+      </div>
+    </div>
+    <div class="gc sales" onclick="showWizard()">
+      <div class="gc-icon">💰</div>
+      <h3>Drive Sales</h3>
+      <p class="gc-desc">Content that converts. Case studies, comparisons, and bottom-of-funnel plays.</p>
+      <div class="gc-what">
+        <strong>We'll learn about:</strong> Your product, pricing, buyer objections, sales cycle, success stories
+      </div>
+    </div>
+    <div class="gc traffic" onclick="showWizard()">
+      <div class="gc-icon">📈</div>
+      <h3>Grow Organic Traffic</h3>
+      <p class="gc-desc">Rank higher, get more clicks. SEO-driven content strategy for sustainable growth.</p>
+      <div class="gc-what">
+        <strong>We'll learn about:</strong> Your site, current rankings, target keywords, content gaps, competitor SEO
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ SCREEN 2: Wizard ═══ -->
+<div id="screen-wizard" class="screen wizard-screen">
+  <div class="wizard-nav">
+    <div class="wn-header">
+      <button class="wn-back" onclick="showGoals()">← Change goal</button>
+      <div class="wn-goal">
+        📢 <span class="badge awareness">Awareness</span>
+      </div>
+    </div>
+    <div class="wn-steps">
+      <div class="wn-step" onclick="showWizardStep(1)">
+        <div class="step-num done">✓</div>
+        <div class="step-info">
+          <h4>Your Product</h4>
+          <p>URL, value props, audience</p>
+        </div>
+      </div>
+      <div class="wn-step active" onclick="showWizardStep(2)">
+        <div class="step-num active">2</div>
+        <div class="step-info">
+          <h4>Competitors</h4>
+          <p>Market landscape</p>
+        </div>
+      </div>
+      <div class="wn-step" onclick="showWizardStep(3)">
+        <div class="step-num pending">3</div>
+        <div class="step-info">
+          <h4>Content Pillars</h4>
+          <p>Topics & angles</p>
+        </div>
+      </div>
+      <div class="wn-step" onclick="showWizardStep(4)">
+        <div class="step-num pending">4</div>
+        <div class="step-info">
+          <h4>Publishing Plan</h4>
+          <p>Cadence & outlets</p>
+        </div>
+      </div>
+      <div class="wn-step" onclick="showWizardStep(5)">
+        <div class="step-num pending">5</div>
+        <div class="step-info">
+          <h4>Review Strategy</h4>
+          <p>Confirm & launch</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="wizard-content">
+    <!-- Step 2: Competitors (shown as active) -->
+    <div class="wizard-content-header">
+      <h2>Map the Competitive Landscape</h2>
+      <p>We found these competitors from analyzing your product. Add or remove as needed.</p>
+    </div>
+
+    <div class="wizard-content-body">
+      <div class="competitor-row">
+        <div class="comp-logo">B</div>
+        <div class="comp-info">
+          <h5>BambooHR</h5>
+          <p>bamboohr.com — All-in-one HR software for SMBs</p>
+        </div>
+        <div class="comp-content-score">
+          <div class="score">72</div>
+          <div class="score-label">Content Score</div>
+        </div>
+      </div>
+
+      <div class="competitor-row">
+        <div class="comp-logo">R</div>
+        <div class="comp-info">
+          <h5>Rippling</h5>
+          <p>rippling.com — HR, IT, and Finance in one platform</p>
+        </div>
+        <div class="comp-content-score">
+          <div class="score">85</div>
+          <div class="score-label">Content Score</div>
+        </div>
+      </div>
+
+      <div class="competitor-row">
+        <div class="comp-logo">G</div>
+        <div class="comp-info">
+          <h5>Gusto</h5>
+          <p>gusto.com — Payroll, benefits, and HR for small businesses</p>
+        </div>
+        <div class="comp-content-score">
+          <div class="score">68</div>
+          <div class="score-label">Content Score</div>
+        </div>
+      </div>
+
+      <div class="form-group" style="margin-top: 20px;">
+        <div style="display: flex; gap: 8px;">
+          <input class="text-input" placeholder="Add a competitor URL..." style="flex: 1;">
+          <button class="btn btn-secondary">+ Add</button>
+        </div>
+      </div>
+
+      <div class="ai-suggestion">
+        <div class="ai-icon">🔥</div>
+        <div class="ai-text">
+          <strong>Opportunity spotted:</strong> Rippling has strong content (score 85) but it's heavily product-focused. BambooHR covers "culture" topics well. <strong>Your gap:</strong> Nobody is owning the "scaling HR operations" narrative for companies hitting 50-100 employees. That's your wedge.
+        </div>
+      </div>
+    </div>
+
+    <div class="wizard-content-footer">
+      <button class="btn btn-ghost">← Back</button>
+      <div style="display: flex; gap: 8px;">
+        <button class="btn btn-secondary">Skip</button>
+        <button class="btn btn-primary" onclick="showDashboard()">Next: Content Pillars →</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ SCREEN 3: Dashboard (post-setup) ═══ -->
+<div id="screen-dashboard" class="screen dashboard-screen">
+  <div class="sidebar">
+    <div class="sb-logo">🔥 Hot Metal</div>
+    <nav>
+      <div class="nav-section">
+        <div class="nav-section-label">Overview</div>
+        <div class="nav-item active"><span class="nav-icon">🎯</span> Goal Dashboard</div>
+        <div class="nav-item"><span class="nav-icon">📊</span> Analytics</div>
+      </div>
+      <div class="nav-section">
+        <div class="nav-section-label">Content</div>
+        <div class="nav-item"><span class="nav-icon">💡</span> Opportunities</div>
+        <div class="nav-item"><span class="nav-icon">✍️</span> Writing</div>
+        <div class="nav-item"><span class="nav-icon">📅</span> Schedule</div>
+        <div class="nav-item"><span class="nav-icon">📰</span> Published</div>
+      </div>
+      <div class="nav-section">
+        <div class="nav-section-label">Strategy</div>
+        <div class="nav-item"><span class="nav-icon">🧭</span> Content Strategy</div>
+        <div class="nav-item"><span class="nav-icon">🏢</span> Competitors</div>
+        <div class="nav-item"><span class="nav-icon">🔑</span> Keywords</div>
+      </div>
+      <div class="nav-section">
+        <div class="nav-section-label">Settings</div>
+        <div class="nav-item"><span class="nav-icon">🎨</span> Writing Styles</div>
+        <div class="nav-item"><span class="nav-icon">🔗</span> Connections</div>
+        <div class="nav-item"><span class="nav-icon">⚙️</span> Settings</div>
+      </div>
+    </nav>
+  </div>
+
+  <div class="dash-main">
+    <div class="dm-header">
+      <div>
+        <h1>Acme HR</h1>
+        <p style="color: var(--text-dim); font-size: 14px; margin-top: 4px;">Product Awareness Campaign</p>
+      </div>
+      <div class="goal-context">📢 Awareness Goal</div>
+    </div>
+
+    <!-- Goal-Specific Scorecard -->
+    <div class="scorecard">
+      <div class="sc-card">
+        <div class="sc-label">📢 Brand Mentions</div>
+        <div class="sc-value">47</div>
+        <div class="sc-change up">↑ 23% vs last month</div>
+      </div>
+      <div class="sc-card">
+        <div class="sc-label">🎯 Keyword Rankings</div>
+        <div class="sc-value">12</div>
+        <div class="sc-change up">↑ 4 new this week</div>
+      </div>
+      <div class="sc-card">
+        <div class="sc-label">👥 Reach</div>
+        <div class="sc-value">8.2K</div>
+        <div class="sc-change up">↑ 31% vs last month</div>
+      </div>
+      <div class="sc-card">
+        <div class="sc-label">📝 Content Velocity</div>
+        <div class="sc-value">3/wk</div>
+        <div class="sc-change" style="color: var(--text-dim);">On target</div>
+      </div>
+    </div>
+
+    <!-- Strategy Banner -->
+    <div class="strategy-banner">
+      <div class="sb-main">
+        <h3>🧭 This Week's Strategy Focus</h3>
+        <p>Your competitor Rippling published a popular piece on "HR automation ROI." Your content scout found 3 angle opportunities to counter with your unique "scaling operations" positioning. Two keyword gaps identified with low competition.</p>
+      </div>
+      <div class="sb-actions">
+        <button class="btn btn-primary" style="font-size: 13px;">View Opportunities</button>
+        <button class="btn btn-secondary" style="font-size: 13px;">Adjust Strategy</button>
+      </div>
+    </div>
+
+    <!-- Content Queue — Goal-Aligned -->
+    <div class="section-header">
+      <h3>Content Queue</h3>
+      <a href="#">View all →</a>
+    </div>
+
+    <div class="content-queue">
+      <div class="cq-item">
+        <div class="cq-type seo">SEO</div>
+        <div class="cq-info">
+          <h4>How to Scale HR Operations Without Losing the Human Touch</h4>
+          <p>Targets: "scale hr operations", "hr for growing companies" · Est. 2.4K monthly searches</p>
+        </div>
+        <div class="cq-score">
+          <div class="s-val">92</div>
+          <div class="s-label">Goal Fit</div>
+        </div>
+        <div class="cq-status ready">Ready</div>
+      </div>
+
+      <div class="cq-item">
+        <div class="cq-type comparison">VS</div>
+        <div class="cq-info">
+          <h4>Acme HR vs BambooHR: Which Is Right for Your Growing Team?</h4>
+          <p>Counter-positioning · Competitor weakness: enterprise complexity</p>
+        </div>
+        <div class="cq-score">
+          <div class="s-val">88</div>
+          <div class="s-label">Goal Fit</div>
+        </div>
+        <div class="cq-status draft">Draft</div>
+      </div>
+
+      <div class="cq-item">
+        <div class="cq-type education">EDU</div>
+        <div class="cq-info">
+          <h4>The First 90 Days: Building an HR Function from Scratch</h4>
+          <p>Top-of-funnel awareness · Targets first-time HR hires at startups</p>
+        </div>
+        <div class="cq-score">
+          <div class="s-val">85</div>
+          <div class="s-label">Goal Fit</div>
+        </div>
+        <div class="cq-status idea">Idea</div>
+      </div>
+
+      <div class="cq-item">
+        <div class="cq-type thought">POV</div>
+        <div class="cq-info">
+          <h4>Why Most HR Software Fails Growing Companies (And What to Do Instead)</h4>
+          <p>Thought leadership · LinkedIn-first, reshare to blog</p>
+        </div>
+        <div class="cq-score">
+          <div class="s-val">79</div>
+          <div class="s-label">Goal Fit</div>
+        </div>
+        <div class="cq-status idea">Idea</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  function showGoals() {
+    document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+    document.getElementById('screen-goals').classList.add('active');
+  }
+
+  function showWizard() {
+    document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+    document.getElementById('screen-wizard').classList.add('active');
+  }
+
+  function showDashboard() {
+    document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+    document.getElementById('screen-dashboard').classList.add('active');
+  }
+
+  function showWizardStep(n) {
+    // Static demo — just visual
+  }
+</script>
+
+</body>
+</html>
