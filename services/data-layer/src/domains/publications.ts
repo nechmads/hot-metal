@@ -7,6 +7,7 @@ interface PublicationRow {
 	id: string
 	user_id: string
 	cms_publication_id: string | null
+	project_id: string | null
 	name: string
 	slug: string
 	description: string | null
@@ -48,6 +49,7 @@ function mapRow(row: PublicationRow): Publication {
 		id: row.id,
 		userId: row.user_id,
 		cmsPublicationId: row.cms_publication_id,
+		projectId: row.project_id ?? null,
 		name: row.name,
 		slug: row.slug,
 		description: row.description,
@@ -87,16 +89,17 @@ export async function createPublication(
 
 	await db
 		.prepare(
-			`INSERT INTO publications (id, user_id, name, slug, description, writing_tone,
+			`INSERT INTO publications (id, user_id, project_id, name, slug, description, writing_tone,
 			 default_author, auto_publish_mode, cadence_posts_per_week, scout_schedule,
 			 timezone, next_scout_at, style_id, feed_full_enabled, feed_partial_enabled,
 			 template_id, tagline, logo_url, header_image_url, accent_color, social_links,
 			 comments_enabled, comments_moderation, meta_description, created_at, updated_at)
-			 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+			 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
 		)
 		.bind(
 			data.id,
 			data.userId,
+			data.projectId ?? null,
 			data.name,
 			data.slug,
 			data.description ?? null,
@@ -128,6 +131,7 @@ export async function createPublication(
 		id: data.id,
 		userId: data.userId,
 		cmsPublicationId: null,
+		projectId: data.projectId ?? null,
 		name: data.name,
 		slug: data.slug,
 		description: data.description ?? null,
@@ -202,6 +206,10 @@ export async function updatePublication(
 	if (data.slug !== undefined) {
 		sets.push('slug = ?')
 		bindings.push(data.slug)
+	}
+	if (data.projectId !== undefined) {
+		sets.push('project_id = ?')
+		bindings.push(data.projectId)
 	}
 	if (data.description !== undefined) {
 		sets.push('description = ?')
@@ -369,4 +377,15 @@ export async function getAllPublicationIds(db: D1Database): Promise<string[]> {
 		.prepare('SELECT id FROM publications')
 		.all<{ id: string }>()
 	return (result.results ?? []).map((row) => row.id)
+}
+
+export async function listByProject(
+	db: D1Database,
+	projectId: string
+): Promise<Publication[]> {
+	const result = await db
+		.prepare('SELECT * FROM publications WHERE project_id = ? ORDER BY created_at DESC')
+		.bind(projectId)
+		.all<PublicationRow>()
+	return (result.results ?? []).map(mapRow)
 }

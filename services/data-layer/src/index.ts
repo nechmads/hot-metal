@@ -17,6 +17,9 @@ import * as notificationPreferences from './domains/notification-preferences'
 import * as comments from './domains/comments'
 import * as subscriptions from './domains/subscriptions'
 import * as userApiKeys from './domains/user-api-keys'
+import * as projects from './domains/projects'
+import * as projectKnowledge from './domains/project-knowledge'
+import * as strategies from './domains/strategies'
 
 import type {
 	CreateUserInput,
@@ -44,6 +47,11 @@ import type {
 	ListCommentsFilters,
 	CreateSubscriptionInput,
 	UpdateSubscriptionInput,
+	CreateProjectInput,
+	UpdateProjectInput,
+	UpsertKnowledgeInput,
+	CreateStrategyInput,
+	UpdateStrategyInput,
 } from './types'
 
 // Re-export types for consumers
@@ -68,6 +76,9 @@ import type {
 	NotificationPreferences,
 	Comment,
 	Subscription,
+	Project,
+	KnowledgeItem,
+	Strategy,
 } from './types'
 
 /**
@@ -189,6 +200,30 @@ export interface DataLayerApi {
 	updateWritingStyle(id: string, data: UpdateWritingStyleInput): Promise<WritingStyle | null>
 	deleteWritingStyle(id: string): Promise<void>
 	countCustomWritingStylesByUser(userId: string): Promise<number>
+
+	// Projects
+	createProject(data: CreateProjectInput): Promise<Project>
+	getProjectById(id: string): Promise<Project | null>
+	listProjectsByUser(userId: string): Promise<Project[]>
+	updateProject(id: string, data: UpdateProjectInput): Promise<Project | null>
+	deleteProject(id: string): Promise<void>
+
+	// Project Knowledge
+	upsertKnowledge(data: UpsertKnowledgeInput): Promise<KnowledgeItem[]>
+	listKnowledgeByProject(projectId: string): Promise<KnowledgeItem[]>
+	deleteKnowledgeByProject(projectId: string): Promise<void>
+
+	// Strategies
+	createStrategy(data: CreateStrategyInput): Promise<Strategy>
+	getActiveStrategyByProject(projectId: string): Promise<Strategy | null>
+	listStrategyVersions(projectId: string): Promise<Strategy[]>
+	getStrategyByVersion(projectId: string, version: number): Promise<Strategy | null>
+	updateStrategy(id: string, data: UpdateStrategyInput): Promise<Strategy | null>
+	deactivateStrategiesForProject(projectId: string): Promise<void>
+	deleteStrategiesByProject(projectId: string): Promise<void>
+
+	// Publications (project-scoped)
+	listPublicationsByProject(projectId: string): Promise<Publication[]>
 }
 
 /**
@@ -320,6 +355,30 @@ export class DataLayer extends WorkerEntrypoint<Env> {
 	updateWritingStyle(id: string, data: UpdateWritingStyleInput) { return writingStyles.updateWritingStyle(this.env.DB, id, data) }
 	deleteWritingStyle(id: string) { return writingStyles.deleteWritingStyle(this.env.DB, id) }
 	countCustomWritingStylesByUser(userId: string) { return writingStyles.countCustomWritingStylesByUser(this.env.DB, userId) }
+
+	// ─── Projects ─────────────────────────────────────────────────────
+	createProject(data: CreateProjectInput) { return projects.createProject(this.env.DB, data) }
+	getProjectById(id: string) { return projects.getProjectById(this.env.DB, id) }
+	listProjectsByUser(userId: string) { return projects.listProjectsByUser(this.env.DB, userId) }
+	updateProject(id: string, data: UpdateProjectInput) { return projects.updateProject(this.env.DB, id, data) }
+	deleteProject(id: string) { return projects.deleteProject(this.env.DB, id) }
+
+	// ─── Project Knowledge ────────────────────────────────────────────
+	upsertKnowledge(data: UpsertKnowledgeInput) { return projectKnowledge.upsertKnowledge(this.env.DB, data) }
+	listKnowledgeByProject(projectId: string) { return projectKnowledge.listByProject(this.env.DB, projectId) }
+	deleteKnowledgeByProject(projectId: string) { return projectKnowledge.deleteByProject(this.env.DB, projectId) }
+
+	// ─── Strategies ───────────────────────────────────────────────────
+	createStrategy(data: CreateStrategyInput) { return strategies.createStrategy(this.env.DB, data) }
+	getActiveStrategyByProject(projectId: string) { return strategies.getActiveByProject(this.env.DB, projectId) }
+	listStrategyVersions(projectId: string) { return strategies.listVersionsByProject(this.env.DB, projectId) }
+	getStrategyByVersion(projectId: string, version: number) { return strategies.getByVersion(this.env.DB, projectId, version) }
+	updateStrategy(id: string, data: UpdateStrategyInput) { return strategies.updateStrategy(this.env.DB, id, data) }
+	deactivateStrategiesForProject(projectId: string) { return strategies.deactivateAllForProject(this.env.DB, projectId) }
+	deleteStrategiesByProject(projectId: string) { return strategies.deleteByProject(this.env.DB, projectId) }
+
+	// ─── Publications (project-scoped) ────────────────────────────────
+	listPublicationsByProject(projectId: string) { return publications.listByProject(this.env.DB, projectId) }
 }
 
 // Default HTTP handler — health check only

@@ -42,6 +42,7 @@ import apiKeys from './api/api-keys'
 import comments from './api/comments'
 import me from './api/me'
 import billing from './api/billing'
+import projectRoutes from './api/projects'
 import internal from './api/internal'
 import admin from './api/admin'
 import webhooks from './api/webhooks'
@@ -141,6 +142,7 @@ app.route('/api', apiKeys)
 app.route('/api', comments)
 app.route('/api', billing)
 app.route('/api', images)
+app.route('/api', projectRoutes)
 
 // ─── Scout trigger (proxied to content-scout) ───────────────────────
 app.post('/api/publications/:pubId/scout', async (c) => {

@@ -106,6 +106,7 @@ export interface Publication {
 	id: string
 	userId: string
 	cmsPublicationId: string | null
+	projectId: string | null
 	name: string
 	slug: string
 	description: string | null
@@ -138,6 +139,7 @@ export interface CreatePublicationInput {
 	userId: string
 	name: string
 	slug: string
+	projectId?: string
 	description?: string
 	writingTone?: string
 	defaultAuthor?: string
@@ -162,6 +164,7 @@ export interface CreatePublicationInput {
 export interface UpdatePublicationInput {
 	name?: string
 	slug?: string
+	projectId?: string | null
 	description?: string | null
 	writingTone?: string | null
 	defaultAuthor?: string
@@ -573,4 +576,105 @@ export interface PublicationToken {
 export interface PublicationTokenWithRawToken {
 	token: PublicationToken
 	rawToken: string
+}
+
+// ─── Projects ───────────────────────────────────────────────────────
+
+export type GoalType = 'personal_brand' | 'product_awareness'
+export type ProjectStatus = 'active' | 'archived'
+
+export interface Project {
+	id: string
+	userId: string
+	name: string
+	goalType: GoalType
+	status: ProjectStatus
+	createdAt: number
+	updatedAt: number
+}
+
+export interface CreateProjectInput {
+	id: string
+	userId: string
+	name: string
+	goalType: GoalType
+}
+
+export interface UpdateProjectInput {
+	name?: string
+	goalType?: GoalType
+	status?: ProjectStatus
+}
+
+// ─── Project Knowledge ──────────────────────────────────────────────
+
+export interface KnowledgeItem {
+	id: string
+	projectId: string
+	fieldKey: string
+	fieldValue: string
+	createdAt: number
+	updatedAt: number
+}
+
+export interface UpsertKnowledgeInput {
+	projectId: string
+	items: Array<{ fieldKey: string; fieldValue: string }>
+}
+
+// ─── Strategies ─────────────────────────────────────────────────────
+
+export interface ContentPillar {
+	name: string
+	description: string
+	exampleTopics: string[]
+}
+
+export interface ChannelRecommendation {
+	type: string
+	cadence: string
+	rationale: string
+}
+
+export interface SampleWeekEntry {
+	dayOfWeek: string
+	channel: string
+	contentType: string
+	topicIdea: string
+}
+
+export interface Strategy {
+	id: string
+	projectId: string
+	version: number
+	targetAudience: string | null
+	contentPillars: ContentPillar[] | null
+	recommendedChannels: ChannelRecommendation[] | null
+	toneAndVoice: string | null
+	sampleWeek: SampleWeekEntry[] | null
+	fullMarkdown: string
+	isActive: boolean
+	generatedAt: number
+	editedAt: number | null
+}
+
+export interface CreateStrategyInput {
+	id: string
+	projectId: string
+	version?: number
+	targetAudience?: string
+	contentPillars?: ContentPillar[]
+	recommendedChannels?: ChannelRecommendation[]
+	toneAndVoice?: string
+	sampleWeek?: SampleWeekEntry[]
+	fullMarkdown: string
+}
+
+export interface UpdateStrategyInput {
+	fullMarkdown?: string
+	targetAudience?: string
+	contentPillars?: ContentPillar[]
+	recommendedChannels?: ChannelRecommendation[]
+	toneAndVoice?: string
+	sampleWeek?: SampleWeekEntry[]
 }

@@ -121,8 +121,12 @@ export async function generateStrategy(projectId: string): Promise<Strategy> {
 export async function fetchStrategy(projectId: string): Promise<Strategy | null> {
   try {
     return await request<Strategy>(`/api/projects/${projectId}/strategy`)
-  } catch {
-    return null
+  } catch (err) {
+    // 404 or "no strategy" is expected — return null
+    if (err instanceof Error && (err.message.includes('not found') || err.message.includes('Not found'))) {
+      return null
+    }
+    throw err
   }
 }
 
