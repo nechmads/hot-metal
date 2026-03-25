@@ -26,6 +26,9 @@ import { PublishedPostsPage } from '@/pages/PublishedPostsPage'
 import { StylesPage } from '@/pages/StylesPage'
 import { SettingsPage } from '@/pages/SettingsPage'
 import { CommentsPage } from '@/pages/CommentsPage'
+import { ProjectWizardPage } from '@/pages/ProjectWizardPage'
+import { ProjectHomePage_v2 } from '@/pages/ProjectHomePage_v2'
+import { StrategyPage } from '@/pages/StrategyPage'
 
 export default function App() {
   return (
@@ -65,6 +68,9 @@ export default function App() {
           <Route path="/publications/:id/posts" element={<PublishedPostsPage />} />
           <Route path="/publications/:id/settings" element={<PublicationPage />} />
           <Route path="/publications/:id/comments" element={<CommentsPage />} />
+          <Route path="/projects/new" element={<ProjectWizardPage />} />
+          <Route path="/projects/:id" element={<ProjectHomePage_v2 />} />
+          <Route path="/projects/:id/strategy" element={<StrategyPage />} />
           <Route path="/styles" element={<StylesPage />} />
           <Route path="/settings" element={<SettingsPage />} />
         </Route>

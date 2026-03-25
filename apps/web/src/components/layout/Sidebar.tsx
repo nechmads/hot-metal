@@ -1,11 +1,12 @@
 import { NavLink } from 'react-router'
-import { HouseIcon, LightbulbIcon, PencilLineIcon, NewspaperIcon, PaletteIcon, GearSixIcon, ListIcon, XIcon, BookOpenIcon } from '@phosphor-icons/react'
+import { HouseIcon, LightbulbIcon, PencilLineIcon, NewspaperIcon, PaletteIcon, GearSixIcon, ListIcon, XIcon, BookOpenIcon, FolderSimpleIcon } from '@phosphor-icons/react'
 import { UserButton } from '@clerk/clerk-react'
 import { useValue } from '@legendapp/state/react'
 import { scoutStore$ } from '@/stores/scout-store'
 
 const NAV_ITEMS = [
   { to: '/dashboard', label: 'Home', icon: HouseIcon },
+  { to: '/projects/new', label: 'New Project', icon: FolderSimpleIcon },
   { to: '/publications', label: 'Publications', icon: NewspaperIcon },
   { to: '/ideas', label: 'Ideas', icon: LightbulbIcon },
   { to: '/writing', label: 'Writing', icon: PencilLineIcon },

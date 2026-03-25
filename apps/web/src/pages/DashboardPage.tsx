@@ -4,26 +4,31 @@ import { useUser } from '@clerk/clerk-react'
 import { useValue } from '@legendapp/state/react'
 import {
   ArrowRightIcon,
+  FolderSimpleIcon,
   MagnifyingGlassIcon,
   PencilLineIcon,
+  PlusIcon,
   RocketLaunchIcon,
 } from '@phosphor-icons/react'
 import { Loader } from '@/components/loader/Loader'
-import { EmptyPublications } from '@/components/publications/EmptyPublications'
 import { PublicationWizard } from '@/components/publications/wizard/PublicationWizard'
 import { PublicationCard } from '@/components/publications/PublicationCard'
+import { ProjectCard } from '@/components/projects/ProjectCard'
 import { GettingStartedChecklist } from '@/components/dashboard/GettingStartedChecklist'
 import { QuickActions } from '@/components/dashboard/QuickActions'
 import { checklistStore$ } from '@/stores/checklist-store'
 import { IDEA_STATUS_COLORS } from '@/lib/constants'
 import { formatRelativeTime } from '@/lib/format'
 import { fetchPublications, fetchRecentIdeas, fetchSessions, fetchStyles } from '@/lib/api'
+import { fetchProjects } from '@/lib/projects-api'
 import type { PublicationConfig, Idea, Session, WritingStyle } from '@/lib/types'
+import type { Project } from '@/lib/projects-api'
 
 export function DashboardPage() {
   const { user } = useUser()
   const navigate = useNavigate()
   const checklistDismissed = useValue(checklistStore$.dismissed)
+  const [projects, setProjects] = useState<Project[]>([])
   const [publications, setPublications] = useState<PublicationConfig[]>([])
   const [ideas, setIdeas] = useState<Idea[]>([])
   const [sessions, setSessions] = useState<Session[]>([])
@@ -35,12 +40,14 @@ export function DashboardPage() {
   const loadData = useCallback(async () => {
     try {
       setError(null)
-      const [pubs, recentIdeas, allSessions, allStyles] = await Promise.all([
+      const [allProjects, pubs, recentIdeas, allSessions, allStyles] = await Promise.all([
+        fetchProjects().catch(() => [] as Project[]),
         fetchPublications(),
         fetchRecentIdeas(8).catch(() => [] as Idea[]),
         fetchSessions().catch(() => [] as Session[]),
         fetchStyles().catch(() => [] as WritingStyle[]),
       ])
+      setProjects(allProjects)
       setPublications(pubs)
       setIdeas(recentIdeas)
       setSessions(allSessions.filter((s) => s.status === 'active'))
@@ -64,8 +71,8 @@ export function DashboardPage() {
     )
   }
 
-  // Empty state — no publications yet
-  if (publications.length === 0) {
+  // Empty state — no projects and no publications
+  if (projects.length === 0 && publications.length === 0) {
     return (
       <div className="mx-auto max-w-2xl px-6 py-16 text-center">
         <h2 className="text-2xl font-bold">
@@ -81,8 +88,27 @@ export function DashboardPage() {
           </div>
         )}
 
+        {/* Project-first hero */}
         <div className="mt-10">
-          <EmptyPublications onCreateClick={() => setShowCreateModal(true)} />
+          <div className="mx-auto max-w-md rounded-xl border border-[var(--color-border-default)] bg-[var(--color-bg-primary)] p-8 shadow-sm">
+            <div className="mx-auto mb-5 flex h-14 w-14 items-center justify-center rounded-full bg-[var(--color-accent-light)]">
+              <FolderSimpleIcon size={28} className="text-[var(--color-accent)]" />
+            </div>
+            <h3 className="text-center text-lg font-semibold">Start Your First Content Project</h3>
+            <p className="mx-auto mt-2 max-w-sm text-center text-sm leading-relaxed text-[var(--color-text-muted)]">
+              A project gives your content a purpose — whether you're building a personal brand or growing a product.
+            </p>
+            <div className="mt-6 text-center">
+              <button
+                type="button"
+                onClick={() => navigate('/projects/new')}
+                className="inline-flex items-center gap-2 rounded-lg bg-[var(--color-accent)] px-5 py-2.5 text-sm font-medium text-white transition-colors hover:bg-[var(--color-accent-hover)]"
+              >
+                <PlusIcon size={16} />
+                Create Project
+              </button>
+            </div>
+          </div>
         </div>
 
         <div className="mt-12 grid gap-6 sm:grid-cols-3">
@@ -128,29 +154,80 @@ export function DashboardPage() {
         </div>
       )}
 
-      {/* Getting Started Checklist or Quick Actions */}
-      {!checklistDismissed ? (
-        <GettingStartedChecklist publication={publications[0]} />
-      ) : (
-        <QuickActions
-          publications={publications}
-          hasCustomStyle={styles.some((s) => !s.isPrebuilt)}
-        />
+      {/* Getting Started Checklist or Quick Actions (only when publications exist) */}
+      {publications.length > 0 && (
+        !checklistDismissed ? (
+          <GettingStartedChecklist publication={publications[0]} />
+        ) : (
+          <QuickActions
+            publications={publications}
+            hasCustomStyle={styles.some((s) => !s.isPrebuilt)}
+          />
+        )
+      )}
+
+      {/* Projects */}
+      {projects.length > 0 && (
+        <section className="mt-8">
+          <div className="flex items-center justify-between">
+            <h3 className="text-lg font-semibold">Projects</h3>
+            <button
+              type="button"
+              onClick={() => navigate('/projects/new')}
+              className="flex items-center gap-1 text-sm font-medium text-[var(--color-accent)] transition-colors hover:text-[var(--color-accent-hover)]"
+            >
+              <PlusIcon size={14} />
+              New Project
+            </button>
+          </div>
+          <div className="mt-3 grid gap-3 sm:grid-cols-2">
+            {projects.map((project) => (
+              <ProjectCard
+                key={project.id}
+                project={project}
+                onClick={() => navigate(`/projects/${project.id}`)}
+              />
+            ))}
+          </div>
+        </section>
+      )}
+
+      {/* New Project CTA when no projects exist but publications do */}
+      {projects.length === 0 && publications.length > 0 && (
+        <section className="mt-8">
+          <div className="rounded-xl border border-dashed border-[var(--color-border-default)] bg-[var(--color-bg-card)] p-6 text-center">
+            <FolderSimpleIcon size={24} className="mx-auto text-[var(--color-text-muted)]" />
+            <p className="mt-2 text-sm font-medium">Organize your content with a Project</p>
+            <p className="mt-1 text-xs text-[var(--color-text-muted)]">
+              Get an AI-generated content strategy tailored to your goals.
+            </p>
+            <button
+              type="button"
+              onClick={() => navigate('/projects/new')}
+              className="mt-3 inline-flex items-center gap-1.5 rounded-lg bg-[var(--color-accent)] px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-[var(--color-accent-hover)]"
+            >
+              <PlusIcon size={14} />
+              Create Project
+            </button>
+          </div>
+        </section>
       )}
 
       {/* Publications */}
-      <section className="mt-8">
-        <SectionHeader title="Publications" linkTo="/publications" />
-        <div className="mt-3 grid gap-3 sm:grid-cols-2">
-          {publications.map((pub) => (
-            <PublicationCard
-              key={pub.id}
-              publication={pub}
-              onClick={() => navigate(`/publications/${pub.id}`)}
-            />
-          ))}
-        </div>
-      </section>
+      {publications.length > 0 && (
+        <section className="mt-8">
+          <SectionHeader title="Publications" linkTo="/publications" />
+          <div className="mt-3 grid gap-3 sm:grid-cols-2">
+            {publications.map((pub) => (
+              <PublicationCard
+                key={pub.id}
+                publication={pub}
+                onClick={() => navigate(`/publications/${pub.id}`)}
+              />
+            ))}
+          </div>
+        </section>
+      )}
 
       {/* Latest Ideas */}
       {ideas.length > 0 && (

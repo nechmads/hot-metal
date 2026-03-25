@@ -53,7 +53,7 @@ async function getAuthHeaders(): Promise<Record<string, string>> {
   return { Authorization: `Bearer ${token}` }
 }
 
-async function request<T>(url: string, init?: RequestInit): Promise<T> {
+export async function request<T>(url: string, init?: RequestInit): Promise<T> {
   const headers = new Headers(init?.headers)
   // When body is FormData, browser must set Content-Type with the multipart boundary
   if (init?.body instanceof FormData) {
