@@ -2,7 +2,8 @@
 
 **Owner:** Shahar
 **Created:** 2026-03-23
-**Status:** Planning
+**Updated:** 2026-03-25
+**Status:** Phase 1 Planning
 **Branch:** `hot-metal-v2` (long-lived base branch; feature branches merge into this)
 
 ---
@@ -11,13 +12,17 @@
 
 Shift Hot Metal from being **publication-centric** (create a publication → write into it) to being **goal-centric** (pick an outcome → get a strategy → execute across channels).
 
-Users come to Hot Metal for outcomes like:
-- **Build their personal brand** — become known as the go-to expert in a domain
-- **Increase exposure for a product** — get a SaaS/product noticed by the right audience
-- **Increase sales** — generate leads and conversions through content
-- **Thought leadership** — shape industry conversations with original perspectives
+Users come to Hot Metal for outcomes. V1 goal types:
+- **Build their personal brand** — become recognized as an expert in a domain
+- **Build awareness for a product** — get a SaaS/product noticed by the right audience
 
-Each goal requires different knowledge, different content strategies, and different channel mixes. Publications become one channel type among many (LinkedIn posts, X posts, newsletter, etc.).
+Future goal types (not in V1): Increase sales, Thought leadership, Custom/just write.
+
+Each goal requires different knowledge, different content strategies, and different channel mixes.
+
+**Key entity change:** The new top-level entity is a **Project**. A Project has a goal (one goal per project for now). A Project owns one or more Publications. Publications remain fully functional — they're just now scoped to a project.
+
+See `hot-metal-v2-phase-1.md` for detailed Phase 1 plan.
 
 ---
 
@@ -109,11 +114,7 @@ The user reviews and tweaks. This strategy guides the scout, the writer agent, a
 
 ## 5) Migration Path
 
-Existing users with publications get auto-migrated:
-- Auto-create a "Content Creation" goal (generic type)
-- Existing publication becomes a channel under that goal
-- Existing topics, ideas, styles carry over
-- No breaking changes — everything works as before, just wrapped in goal context
+No automatic migration for V1. Existing publications remain as-is. Users create new projects when ready. Future: "Import existing publication into a project" feature.
 
 ---
 
