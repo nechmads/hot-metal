@@ -325,5 +325,17 @@
   - Public analyze page (`/analyze`): Hero, email+URL form, 4-step analysis animation, success/error states, "What's in your report" feature cards, bottom CTA
   - Public report page (`/analyze/reports/:reportId`): Fetch + poll for pending reports, skeleton loading, AnalysisReportViewer render, bottom CTA
   - Nav: "Analyze" link added to PublicNavbar (desktop + mobile)
+- [x] **Hot Metal V2 — Phase 1: Projects, Goals & Strategy** — New "Project" top-level entity with goal-driven content strategy. See `.agentspack/plans/hot-metal-v2-phase-1.md` for full plan. Includes:
+  - D1 migration (`0020_projects.sql`): `projects`, `project_knowledge`, `strategies` tables (with ON DELETE CASCADE, UNIQUE version constraint), `project_id` column on publications
+  - Data layer: 3 new domain files (projects, project-knowledge, strategies) with full CRUD, atomic batch upsert for knowledge, JSON parsing for strategy fields
+  - Business logic layer: `ProjectService` (ownership verification, cascading deletes, publication creation within projects), `StrategyService` (AI strategy generation via Claude Sonnet, goal-type-specific prompts, versioning, discriminated null returns)
+  - API routes: 14 endpoints under `/api/projects` (project CRUD, knowledge CRUD, strategy generate/edit/versions, project publications)
+  - 3-tier architecture: thin API routes → BL services → DAL domain files
+  - Frontend: 6-step project creation wizard (name → goal → knowledge → strategy → publication → done), Legend State store, goal-type-specific knowledge fields
+  - `StrategyDisplay` shared component used by both wizard and strategy viewer
+  - Project home page, strategy viewer/editor page with version history
+  - Dashboard updates: project cards for existing users, hero CTA for new users
+  - `GoalTypeBadge` reusable component, `ProjectCard` dashboard card
+  - Two goal types: `personal_brand` and `product_awareness`
 - [ ] Writer Agent — Phase 2: Voice input (transcription in `input-processor.ts`)
 - [ ] Writer Agent — Phase 2: D1 session sync (synchronize DO state back to D1 for listing accuracy)
