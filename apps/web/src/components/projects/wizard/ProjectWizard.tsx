@@ -98,7 +98,7 @@ export function ProjectWizard({ onComplete }: ProjectWizardProps) {
   const isLastActionStep = currentStep === 5
 
   return (
-    <div className="mx-auto max-w-2xl px-6 py-8">
+    <div className="mx-auto max-w-4xl px-6 py-8">
       {/* Header with progress */}
       <div className="mb-8">
         <div className="flex items-center justify-between">
