@@ -119,6 +119,8 @@ export interface PublicationConfig {
   feedPartialEnabled: boolean
   commentsEnabled: boolean
   commentsModeration: 'auto-approve' | 'pre-approve'
+  customDomain: string | null
+  domainStatus: 'pending_dns' | 'pending_ssl' | 'active' | 'failed' | null
   createdAt: number
   updatedAt: number
   topics?: Topic[]

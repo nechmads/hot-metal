@@ -324,6 +324,44 @@ export async function deletePublication(id: string): Promise<void> {
   await request(`/api/publications/${id}`, { method: 'DELETE' })
 }
 
+// --- Custom Domains ---
+
+export interface DomainDnsRecord {
+  type: string
+  name: string
+  target: string
+}
+
+export interface DomainStatus {
+  domain: string | null
+  status: 'pending_dns' | 'pending_ssl' | 'active' | 'failed' | null
+  sslStatus: string | null
+  cnameTarget: string
+  verificationTxt?: string | null
+  instructions?: {
+    required: DomainDnsRecord
+    optional_dcv_delegation?: DomainDnsRecord
+  }
+  errors: string[]
+  stale?: boolean
+}
+
+export async function connectDomain(pubId: string, domain: string): Promise<DomainStatus> {
+  return request<DomainStatus>(`/api/publications/${pubId}/domain`, {
+    method: 'POST',
+    headers: JSON_HEADERS,
+    body: JSON.stringify({ domain }),
+  })
+}
+
+export async function checkDomainStatus(pubId: string): Promise<DomainStatus> {
+  return request<DomainStatus>(`/api/publications/${pubId}/domain`)
+}
+
+export async function disconnectDomain(pubId: string): Promise<void> {
+  await request(`/api/publications/${pubId}/domain`, { method: 'DELETE' })
+}
+
 // --- Topics ---
 
 export async function fetchTopics(pubId: string): Promise<Topic[]> {

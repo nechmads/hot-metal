@@ -1,15 +1,15 @@
 ---
 import { env } from 'cloudflare:workers';
-import { resolvePublication } from '../lib/resolve-publication';
+import { resolveOrRedirect } from '../lib/resolve-or-redirect';
 import { getPublicationBranding } from '../dl/publication';
 import NotFoundPage from '../components/NotFoundPage.astro';
 
 let branding = null;
 
 try {
-  const publication = await resolvePublication(Astro.request, env.DAL, env.DEV_PUBLICATION_SLUG);
-  if (publication) {
-    branding = getPublicationBranding(publication);
+  const resolved = await resolveOrRedirect(Astro.request, env.DAL, env.DEV_PUBLICATION_SLUG, env.DOMAIN_CACHE);
+  if (resolved && !(resolved instanceof Response)) {
+    branding = getPublicationBranding(resolved.publication);
   }
 } catch {
   // If publication resolution fails, render a generic 404

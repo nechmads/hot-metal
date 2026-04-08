@@ -1,7 +1,7 @@
 import type { AutoPublishMode, ScoutSchedule } from '@hotmetal/content-core'
 import { DEFAULT_SCHEDULE, DEFAULT_TIMEZONE } from '@hotmetal/content-core'
 import { computeNextRun, parseSchedule } from '@hotmetal/shared'
-import type { CommentModeration, Publication, CreatePublicationInput, UpdatePublicationInput, SocialLinks } from '../types'
+import type { CommentModeration, DomainStatus, Publication, CreatePublicationInput, UpdatePublicationInput, SocialLinks } from '../types'
 
 interface PublicationRow {
 	id: string
@@ -29,6 +29,9 @@ interface PublicationRow {
 	comments_enabled: number
 	comments_moderation: string
 	custom_domain: string | null
+	domain_status: string | null
+	cf_hostname_id: string | null
+	domain_verification_txt: string | null
 	meta_description: string | null
 	created_at: number
 	updated_at: number
@@ -70,6 +73,9 @@ function mapRow(row: PublicationRow): Publication {
 		commentsEnabled: row.comments_enabled === 1,
 		commentsModeration: row.comments_moderation as CommentModeration,
 		customDomain: row.custom_domain,
+		domainStatus: row.domain_status as DomainStatus | null,
+		cfHostnameId: row.cf_hostname_id,
+		domainVerificationTxt: row.domain_verification_txt,
 		metaDescription: row.meta_description,
 		createdAt: row.created_at,
 		updatedAt: row.updated_at,
@@ -150,6 +156,9 @@ export async function createPublication(
 		commentsEnabled: data.commentsEnabled ?? true,
 		commentsModeration: data.commentsModeration ?? 'auto-approve',
 		customDomain: null,
+		domainStatus: null,
+		cfHostnameId: null,
+		domainVerificationTxt: null,
 		metaDescription: data.metaDescription ?? null,
 		createdAt: now,
 		updatedAt: now,
@@ -168,6 +177,14 @@ export async function getPublicationBySlug(db: D1Database, slug: string): Promis
 	const row = await db
 		.prepare('SELECT * FROM publications WHERE slug = ?')
 		.bind(slug)
+		.first<PublicationRow>()
+	return row ? mapRow(row) : null
+}
+
+export async function getPublicationByCustomDomain(db: D1Database, domain: string): Promise<Publication | null> {
+	const row = await db
+		.prepare('SELECT * FROM publications WHERE custom_domain = ? AND domain_status = ?')
+		.bind(domain, 'active')
 		.first<PublicationRow>()
 	return row ? mapRow(row) : null
 }
@@ -286,6 +303,18 @@ export async function updatePublication(
 	if (data.customDomain !== undefined) {
 		sets.push('custom_domain = ?')
 		bindings.push(data.customDomain)
+	}
+	if (data.domainStatus !== undefined) {
+		sets.push('domain_status = ?')
+		bindings.push(data.domainStatus)
+	}
+	if (data.cfHostnameId !== undefined) {
+		sets.push('cf_hostname_id = ?')
+		bindings.push(data.cfHostnameId)
+	}
+	if (data.domainVerificationTxt !== undefined) {
+		sets.push('domain_verification_txt = ?')
+		bindings.push(data.domainVerificationTxt)
 	}
 	if (data.metaDescription !== undefined) {
 		sets.push('meta_description = ?')

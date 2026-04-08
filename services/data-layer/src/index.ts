@@ -95,6 +95,7 @@ export interface DataLayerApi {
 	createPublication(data: CreatePublicationInput): Promise<Publication>
 	getPublicationById(id: string): Promise<Publication | null>
 	getPublicationBySlug(slug: string): Promise<Publication | null>
+	getPublicationByCustomDomain(domain: string): Promise<Publication | null>
 	listPublicationsByUser(userId: string): Promise<Publication[]>
 	listAllPublications(): Promise<Publication[]>
 	updatePublication(id: string, data: UpdatePublicationInput): Promise<Publication | null>
@@ -220,6 +221,7 @@ export class DataLayer extends WorkerEntrypoint<Env> {
 	createPublication(data: CreatePublicationInput) { return publications.createPublication(this.env.DB, data) }
 	getPublicationById(id: string) { return publications.getPublicationById(this.env.DB, id) }
 	getPublicationBySlug(slug: string) { return publications.getPublicationBySlug(this.env.DB, slug) }
+	getPublicationByCustomDomain(domain: string) { return publications.getPublicationByCustomDomain(this.env.DB, domain) }
 	listPublicationsByUser(userId: string) { return publications.listPublicationsByUser(this.env.DB, userId) }
 	listAllPublications() { return publications.listAllPublications(this.env.DB) }
 	updatePublication(id: string, data: UpdatePublicationInput) { return publications.updatePublication(this.env.DB, id, data) }

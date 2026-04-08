@@ -1,0 +1,159 @@
+---
+title: "Custom Domains"
+description: "Connect your own domain name to your Hot Metal publication."
+section: "Publications"
+order: 7
+---
+
+# Custom Domains
+
+By default, every Hot Metal publication is available at `yourslug.hotmetalapp.com`. With custom domains, you can serve your publication from your own domain name -- like `blog.example.com` or `news.yourcompany.com`. Visitors see your brand, not ours, and all links point to your domain.
+
+Custom domains include automatic SSL certificate provisioning and renewal, so your site is always served over HTTPS with no manual certificate management required.
+
+## Prerequisites
+
+Before connecting a custom domain, make sure you have:
+
+- **A registered domain name** that you own or control.
+- **Access to your domain's DNS settings** -- you'll need to add a CNAME record.
+- **A Hot Metal publication** -- the publication must already exist before you can connect a domain.
+
+## Setting up a custom domain
+
+### Step 1: Open your publication settings
+
+Go to your publication in the Hot Metal dashboard and click **Settings**. Scroll down to the **Custom Domain** section.
+
+### Step 2: Enter your domain
+
+Type the domain you want to use (for example, `blog.example.com`) into the domain field. Do not include `https://` or a trailing slash -- just the bare hostname.
+
+### Step 3: Click Connect Domain
+
+Click the **Connect Domain** button. Hot Metal will register the domain and display the DNS records you need to add.
+
+### Step 4: Add the CNAME record at your DNS provider
+
+Log in to your DNS provider and add a CNAME record with the following values:
+
+| Field  | Value                      |
+|--------|----------------------------|
+| Type   | `CNAME`                    |
+| Name   | Your domain (e.g. `blog`)  |
+| Target | `custom.hotmetalapp.com`   |
+| TTL    | Auto or 300                |
+
+The **Name** field varies by provider. Some want just the subdomain part (`blog`), while others want the full hostname (`blog.example.com`). Check your provider's documentation if you're unsure.
+
+### Step 5: Add the DCV delegation CNAME (recommended)
+
+To ensure your SSL certificate renews automatically without any future action on your part, add a second CNAME record for DCV (Domain Control Validation) delegation:
+
+| Field  | Value                                          |
+|--------|-------------------------------------------------|
+| Type   | `CNAME`                                         |
+| Name   | `_acme-challenge.yourdomain`                    |
+| Target | `yourdomain.dcv.hotmetalapp.com`                |
+
+Replace `yourdomain` with your actual domain. For example, if your domain is `blog.example.com`, the name would be `_acme-challenge.blog.example.com` and the target would be `blog.example.com.dcv.hotmetalapp.com`.
+
+This record is optional but strongly recommended. Without it, you may need to manually re-verify domain ownership when the SSL certificate comes up for renewal.
+
+### Step 6: Wait for verification
+
+After adding the DNS records, return to the publication settings page. The domain status will show as **Pending** while DNS propagates and the SSL certificate is provisioned.
+
+This usually takes **1 to 15 minutes**, but can occasionally take longer depending on your DNS provider's propagation speed. You can refresh the settings page to check the current status.
+
+Once verification completes, the status changes to **Active** and your publication is live on your custom domain.
+
+## DNS provider tips
+
+Here are quick pointers for some popular DNS providers:
+
+### Cloudflare DNS
+
+**Important**: When adding the CNAME record in Cloudflare, you **must** set the proxy status to **"DNS only"** (gray cloud icon). Do **not** use "Proxied" (orange cloud). Cloudflare's proxy intercepts traffic in a way that prevents Hot Metal from issuing and serving your SSL certificate. If you see SSL errors after setup, this is almost always the cause.
+
+### GoDaddy
+
+Go to **DNS Management** for your domain, click **Add Record**, select **CNAME** as the type, and fill in the host and target values.
+
+### Namecheap
+
+Go to **Advanced DNS** for your domain, click **Add New Record**, select **CNAME Record**, and enter the host and value.
+
+### Amazon Route 53
+
+Go to **Hosted Zones**, select your domain, click **Create Record**, choose **CNAME** as the record type, and enter the record name and value.
+
+### Squarespace Domains
+
+Go to **DNS Settings** for your domain, scroll to **Custom Records**, click **Add**, select **CNAME** as the type, and fill in the host and data fields.
+
+## Apex domains
+
+An **apex domain** (also called a root domain or naked domain) is a domain without a subdomain prefix -- for example, `example.com` rather than `blog.example.com`.
+
+Standard DNS does not allow CNAME records on apex domains because a CNAME must be the only record at a name, and apex domains typically need other records (like MX for email). However, some DNS providers support **CNAME flattening** (Cloudflare calls this "CNAME at the apex"), which resolves the CNAME to an A record behind the scenes.
+
+If your DNS provider supports CNAME flattening, you can use your apex domain. Otherwise, the safest option is to use a **`www` subdomain** (e.g., `www.example.com`) or another subdomain like `blog.example.com`.
+
+**Recommended approach**: Use a subdomain like `blog.example.com` or `www.example.com`. This works with every DNS provider and avoids compatibility issues.
+
+## Troubleshooting
+
+### Domain still pending after 30 minutes
+
+- **Check the CNAME target**: Make sure it points to exactly `custom.hotmetalapp.com` with no typos.
+- **Check the CNAME name**: Verify the record name matches your domain. Some providers want just the subdomain part, others want the full hostname.
+- **Check TTL**: If you set a high TTL on a previous record for the same name, the old value may be cached. Lower the TTL or wait for the old cache to expire.
+- **Check for conflicting records**: If an A record or another CNAME already exists for the same name, remove it before adding the new CNAME.
+
+### SSL certificate not provisioning
+
+- **Check for CAA records**: If your domain has CAA (Certificate Authority Authorization) DNS records, make sure they allow certificates from the issuers Hot Metal uses. The easiest fix is to add a CAA record permitting `letsencrypt.org` and `pki.goog`, or remove overly restrictive CAA records.
+- **Check DCV delegation**: If you skipped the `_acme-challenge` CNAME record, try adding it and waiting a few minutes.
+
+### ERR_SSL_VERSION_OR_CIPHER_MISMATCH
+
+This error means your browser is trying to connect over HTTPS but the SSL certificate has not been provisioned yet. Wait a few minutes and try again. If the error persists after 30 minutes, check the troubleshooting steps above.
+
+### Cloudflare DNS users seeing SSL errors
+
+If you're using Cloudflare DNS and seeing SSL errors, the most common cause is having the proxy status set to **"Proxied"** (orange cloud) instead of **"DNS only"** (gray cloud). Switch the CNAME record to DNS only, wait a few minutes, and try again.
+
+## Removing a custom domain
+
+To disconnect a custom domain, go to your publication settings, find the Custom Domain section, and click **Remove Domain**.
+
+When you remove a custom domain:
+
+- Your publication reverts to its default `yourslug.hotmetalapp.com` URL.
+- The SSL certificate for your custom domain is revoked.
+- Any visitors going to the old custom domain will no longer reach your publication.
+
+You should also remove the CNAME and DCV delegation records from your DNS provider to keep your DNS clean.
+
+## FAQ
+
+### Can I use a subdomain like blog.example.com?
+
+Yes. Subdomains are the recommended setup. Enter the full subdomain (e.g. `blog.example.com`) when connecting your domain.
+
+### Can I use my apex domain (example.com)?
+
+It depends on your DNS provider. If your provider supports CNAME flattening (Cloudflare, Route 53, and others do), then yes. Otherwise, use a subdomain. See the [Apex domains](#apex-domains) section above for details.
+
+### How long until my domain is active?
+
+Usually 1 to 15 minutes after adding the DNS records. In rare cases it can take up to an hour if your DNS provider has slow propagation.
+
+### Will my old subdomain URL still work?
+
+Yes. Your `yourslug.hotmetalapp.com` URL continues to work and automatically redirects visitors to your custom domain. Existing links and bookmarks won't break.
+
+### Do I need to configure SSL manually?
+
+No. Hot Metal automatically provisions and renews SSL certificates for your custom domain. There is nothing to configure on your end. Adding the DCV delegation CNAME record (Step 5) ensures renewals happen seamlessly.

@@ -62,6 +62,14 @@ export enum AnalyticsEvent {
   StyleDuplicated = 'Style Duplicated',
   StyleDeleted = 'Style Deleted',
 
+  // Custom Domains
+  CustomDomainConnectStarted = 'Custom Domain Connect Started',
+  CustomDomainConnectSucceeded = 'Custom Domain Connect Succeeded',
+  CustomDomainConnectFailed = 'Custom Domain Connect Failed',
+  CustomDomainActivated = 'Custom Domain Activated',
+  CustomDomainRemoved = 'Custom Domain Removed',
+  CustomDomainCheckStatus = 'Custom Domain Check Status',
+
   // Social Connections
   SocialConnected = 'Social Connected',
   SocialDisconnected = 'Social Disconnected',
@@ -140,6 +148,14 @@ export interface AnalyticsEventProperties {
   [AnalyticsEvent.StyleUpdated]: { styleId: string }
   [AnalyticsEvent.StyleDuplicated]: { sourceStyleId: string; newStyleId: string }
   [AnalyticsEvent.StyleDeleted]: { styleId: string; isPrebuilt: boolean }
+
+  // Custom Domains
+  [AnalyticsEvent.CustomDomainConnectStarted]: { publicationId: string; domain: string }
+  [AnalyticsEvent.CustomDomainConnectSucceeded]: { publicationId: string; domain: string }
+  [AnalyticsEvent.CustomDomainConnectFailed]: { publicationId: string; domain: string; error: string }
+  [AnalyticsEvent.CustomDomainActivated]: { publicationId: string; domain: string }
+  [AnalyticsEvent.CustomDomainRemoved]: { publicationId: string; domain: string }
+  [AnalyticsEvent.CustomDomainCheckStatus]: { publicationId: string; domain: string; status: string }
 
   // Social Connections
   [AnalyticsEvent.SocialConnected]: { provider: string }

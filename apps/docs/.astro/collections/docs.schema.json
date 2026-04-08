@@ -23,6 +23,5 @@
     "description",
     "section",
     "order"
-  ],
-  "additionalProperties": false
+  ]
 }

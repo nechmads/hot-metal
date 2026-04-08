@@ -15,6 +15,7 @@ import { Modal } from '@/components/modal/Modal'
 import { Loader } from '@/components/loader/Loader'
 import { ScheduleSummary } from '@/components/publications/ScheduleSummary'
 import { ScheduleEditor } from '@/components/publications/ScheduleEditor'
+import { CustomDomainSection } from '@/components/publications/CustomDomainSection'
 import type { ScheduleEditorState } from '@/components/publications/ScheduleEditor'
 import { buildSchedule } from '@/components/publications/schedule-utils'
 import {
@@ -784,6 +785,16 @@ export function PublicationPage() {
           </>
         )}
       </section>
+
+      {/* Custom Domain */}
+      {publication && (
+        <CustomDomainSection
+          publicationId={publication.id}
+          slug={publication.slug}
+          initialDomain={publication.customDomain}
+          initialDomainStatus={publication.domainStatus}
+        />
+      )}
 
       {/* Danger Zone */}
       <section className="mt-8 rounded-xl border border-red-200 p-5">

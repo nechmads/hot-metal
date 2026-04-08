@@ -31,6 +31,12 @@
       "bucket_name": "hotmetal-cms-bucket",
     },
   ],
+  "kv_namespaces": [
+    {
+      "binding": "HotMetal_DOMAIN_CACHE_PROD",
+      "id": "5f0148367c734a0a987358f13f33e546",
+    },
+  ],
   "vars": {
     "CMS_URL": "https://cms.hotmetalapp.com",
     "TURNSTILE_SITE_KEY": "0x4AAAAAACk8MjvpV7HFhXQ9",
