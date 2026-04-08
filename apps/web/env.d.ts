@@ -51,6 +51,11 @@ declare namespace Cloudflare {
 		};
 		// Content Analyzer service binding (public analysis)
 		CONTENT_ANALYZER: Fetcher;
+		// Cloudflare for SaaS — Custom Hostnames API
+		CF_ZONE_ID: string;
+		CF_API_TOKEN: string;
+		CF_CNAME_TARGET: string;
+		CF_DCV_DELEGATION_HOST?: string;
 	}
 }
 interface Env extends Cloudflare.Env {}

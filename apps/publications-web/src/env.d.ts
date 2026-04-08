@@ -21,5 +21,6 @@ declare namespace Cloudflare {
     TURNSTILE_SECRET_KEY: string
     TURNSTILE_SITE_KEY: string
     IMAGE_BUCKET: R2Bucket
+    DOMAIN_CACHE?: KVNamespace
   }
 }

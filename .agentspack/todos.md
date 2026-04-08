@@ -325,5 +325,18 @@
   - Public analyze page (`/analyze`): Hero, email+URL form, 4-step analysis animation, success/error states, "What's in your report" feature cards, bottom CTA
   - Public report page (`/analyze/reports/:reportId`): Fetch + poll for pending reports, skeleton loading, AnalysisReportViewer render, bottom CTA
   - Nav: "Analyze" link added to PublicNavbar (desktop + mobile)
+- [x] **Custom Domains for Publications** — Full custom domain support using Cloudflare for SaaS (Custom Hostnames). Allows publication owners to connect their own domain (e.g., `myblog.com`) instead of using `slug.hotmetalapp.com`. Includes:
+  - D1 migration (`0020_custom_domains.sql`): `domain_status`, `cf_hostname_id`, `domain_verification_txt` columns + unique partial index on `custom_domain`
+  - Data layer: `getPublicationByCustomDomain()`, `DomainStatus` type, new fields on Publication/UpdatePublicationInput
+  - Cloudflare Custom Hostnames API client (`packages/shared/src/cloudflare-hostnames.ts`): typed create/get/delete/list with error handling
+  - Backend API: `POST/GET/DELETE /api/publications/:id/domain` with domain validation, uniqueness enforcement (UNIQUE constraint + app-level catch), CF API error mapping (409, 5xx), graceful GET fallback to last-known status
+  - Publication resolution update: custom domain lookup path in `resolve-publication.ts`, `resolveOrRedirect` helper with GET-only 301 redirect from subdomain to active custom domain
+  - Canonical URL helper (`getCanonicalBase`): used across all 10 pages + feeds + sitemap for SEO-correct URLs
+  - Frontend: `CustomDomainSection` component with 5 states (empty, pending_dns, pending_ssl, active, failed), DNS record display with copy buttons, status polling (10s interval, 3min max), apex domain tip, remove confirmation modal
+  - Social sharing guard: `resolvePublicationBaseUrl` now checks `domainStatus === 'active'` before using custom domain
+  - KV cache: write-through `DOMAIN_CACHE` for custom domain resolution, cache-purge endpoint extended for domain invalidation
+  - Documentation: `custom-domains.mdx` with setup guide, DNS provider tips, apex domains, troubleshooting, FAQ
+  - Analytics: 6 domain lifecycle events (ConnectStarted/Succeeded/Failed, Activated, Removed, CheckStatus)
+  - Plan: `.agentspack/plans/custom_domains.md`
 - [ ] Writer Agent — Phase 2: Voice input (transcription in `input-processor.ts`)
 - [ ] Writer Agent — Phase 2: D1 session sync (synchronize DO state back to D1 for listing accuracy)

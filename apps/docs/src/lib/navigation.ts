@@ -26,6 +26,7 @@ export const navigation: NavSection[] = [
       { title: 'Scout Scheduling', slug: 'publications/scout-scheduling' },
       { title: 'Comments', slug: 'publications/comments' },
       { title: 'RSS & Atom Feeds', slug: 'publications/rss-feeds' },
+      { title: 'Custom Domains', slug: 'publications/custom-domains' },
     ],
   },
   {

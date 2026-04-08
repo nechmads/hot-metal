@@ -46,3 +46,6 @@ export type { GoogleSheetsConfig, CellValue } from './google-sheets'
 
 export { addLead } from './leads'
 export type { LeadEntry, LeadsConfig } from './leads'
+
+export { createCloudflareHostnamesClient, CloudflareHostnamesError } from './cloudflare-hostnames'
+export type { CloudflareHostnamesClient, CloudflareHostnamesClientOptions, CustomHostnameResult } from './cloudflare-hostnames'

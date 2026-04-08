@@ -1,9 +1,13 @@
 import type { APIContext } from 'astro';
 import { env } from 'cloudflare:workers';
 
+import { invalidateDomainCache } from '../../lib/resolve-publication';
+
 interface CachePurgeBody {
   publicationSlug: string;
   postSlug?: string;
+  /** When set, invalidates the KV cache entry for this custom domain */
+  domain?: string;
 }
 
 export async function POST(context: APIContext): Promise<Response> {
@@ -95,11 +99,23 @@ export async function POST(context: APIContext): Promise<Response> {
     }
   }
 
+  // Invalidate domain KV cache if requested
+  let domainCachePurged = false;
+  if (body.domain && env.DOMAIN_CACHE) {
+    try {
+      await invalidateDomainCache(env.DOMAIN_CACHE, body.domain);
+      domainCachePurged = true;
+    } catch {
+      // Non-critical — TTL will expire the entry
+    }
+  }
+
   return new Response(
     JSON.stringify({
       success: true,
       purged,
       attempted: urlsToPurge,
+      domainCachePurged,
     }),
     {
       status: 200,

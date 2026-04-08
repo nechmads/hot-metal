@@ -1,6 +1,6 @@
 ---
 import { env } from 'cloudflare:workers';
-import { resolvePublication } from '../lib/resolve-publication';
+import { resolveOrRedirect } from '../lib/resolve-or-redirect';
 import { getPublicationBranding } from '../dl/publication';
 import { getPostBySlug } from '../dl/posts';
 import { sanitizeCmsContent } from '../lib/sanitize';
@@ -8,11 +8,13 @@ import { formatDate } from '../lib/format';
 import PostPage from '../components/PostPage.astro';
 
 const turnstileSiteKey = env.TURNSTILE_SITE_KEY ?? '';
-const publication = await resolvePublication(Astro.request, env.DAL, env.DEV_PUBLICATION_SLUG);
+const resolved = await resolveOrRedirect(Astro.request, env.DAL, env.DEV_PUBLICATION_SLUG, env.DOMAIN_CACHE);
 
-if (!publication) {
+if (!resolved) {
   return new Response(null, { status: 404, statusText: 'Publication Not Found' });
 }
+if (resolved instanceof Response) return resolved;
+const { publication, canonicalBase } = resolved;
 
 if (!publication.cmsPublicationId) {
   return new Response(null, { status: 404, statusText: 'Publication not configured' });
@@ -51,8 +53,8 @@ const rawDescription = post.seoDescription ?? post.excerpt ?? post.hook ?? '';
 const description = rawDescription || generateDescription(post.content, post.title);
 
 const ogImage = post.ogImage ?? post.featuredImage;
-const canonicalUrl = post.canonicalUrl ?? `https://${publication.slug}.hotmetalapp.com/${post.slug}`;
-const postUrl = `https://${publication.slug}.hotmetalapp.com/${post.slug}`;
+const canonicalUrl = post.canonicalUrl ?? `${canonicalBase}/${post.slug}`;
+const postUrl = `${canonicalBase}/${post.slug}`;
 
 // Extract Twitter handle from publication social links
 const twitterUrl = branding.socialLinks?.twitter;

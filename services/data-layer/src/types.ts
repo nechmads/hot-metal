@@ -102,6 +102,8 @@ export interface SocialLinks {
 	website?: string
 }
 
+export type DomainStatus = 'pending_dns' | 'pending_ssl' | 'active' | 'failed'
+
 export interface Publication {
 	id: string
 	userId: string
@@ -128,6 +130,9 @@ export interface Publication {
 	commentsEnabled: boolean
 	commentsModeration: CommentModeration
 	customDomain: string | null
+	domainStatus: DomainStatus | null
+	cfHostnameId: string | null
+	domainVerificationTxt: string | null
 	metaDescription: string | null
 	createdAt: number
 	updatedAt: number
@@ -183,6 +188,9 @@ export interface UpdatePublicationInput {
 	commentsEnabled?: boolean
 	commentsModeration?: CommentModeration
 	customDomain?: string | null
+	domainStatus?: DomainStatus | null
+	cfHostnameId?: string | null
+	domainVerificationTxt?: string | null
 	metaDescription?: string | null
 }
 

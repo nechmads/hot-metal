@@ -1,11 +1,12 @@
 import type { APIContext } from 'astro';
 import { env } from 'cloudflare:workers';
-import { resolvePublication } from '../lib/resolve-publication';
+import { resolveOrRedirect } from '../lib/resolve-or-redirect';
 
 export async function GET(context: APIContext): Promise<Response> {
-  const publication = await resolvePublication(context.request, env.DAL, env.DEV_PUBLICATION_SLUG);
+  const resolved = await resolveOrRedirect(context.request, env.DAL, env.DEV_PUBLICATION_SLUG, env.DOMAIN_CACHE);
 
-  if (!publication) {
+  if (!resolved || resolved instanceof Response) {
+    if (resolved instanceof Response) return resolved;
     const robotsTxt = `User-agent: *
 Allow: /
 `;
@@ -16,7 +17,7 @@ Allow: /
     });
   }
 
-  const baseUrl = `https://${publication.slug}.hotmetalapp.com`;
+  const { canonicalBase: baseUrl } = resolved;
 
   const robotsTxt = `User-agent: *
 Allow: /

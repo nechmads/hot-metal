@@ -122,6 +122,11 @@ The Agents API is a REST API that gives AI agents full programmatic access to th
   - Optional: `publishToLinkedIn`, `publishToTwitter` with custom text
   - Optional: `draftVersion` to publish a specific version (defaults to latest)
 
+#### Custom Domains
+- `POST /publications/:id/domain` — Connect a custom domain to a publication (provide `hostname`)
+- `GET /publications/:id/domain` — Get the current custom domain status for a publication
+- `DELETE /publications/:id/domain` — Remove the custom domain from a publication
+
 #### Content Scout
 - `POST /publications/:id/scout/run` — Trigger the content scout manually
   - Optional: `webhookUrl` to receive results asynchronously

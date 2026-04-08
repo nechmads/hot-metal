@@ -1,6 +1,6 @@
 import type { APIContext } from 'astro';
 import { env } from 'cloudflare:workers';
-import { resolvePublication } from '../../lib/resolve-publication';
+import { resolveOrRedirect } from '../../lib/resolve-or-redirect';
 import { listPublishedPosts } from '../../dl/posts';
 
 function escapeXml(str: string): string {
@@ -13,14 +13,18 @@ function escapeXml(str: string): string {
 }
 
 export async function GET(context: APIContext): Promise<Response> {
-  const publication = await resolvePublication(context.request, env.DAL, env.DEV_PUBLICATION_SLUG);
+  const resolved = await resolveOrRedirect(context.request, env.DAL, env.DEV_PUBLICATION_SLUG, env.DOMAIN_CACHE);
 
-  if (!publication || !publication.cmsPublicationId) {
+  if (!resolved || resolved instanceof Response) {
+    return resolved ?? new Response('Publication not found', { status: 404 });
+  }
+
+  const { publication, canonicalBase: baseUrl } = resolved;
+  if (!publication.cmsPublicationId) {
     return new Response('Publication not found', { status: 404 });
   }
 
   const posts = await listPublishedPosts(env, publication.cmsPublicationId);
-  const baseUrl = `https://${publication.slug}.hotmetalapp.com`;
   const description = publication.description ?? publication.name;
 
   const feedUpdated = posts.length > 0

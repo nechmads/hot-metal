@@ -26,7 +26,7 @@ async function resolvePublicationBaseUrl(
     const pub = await dal.getPublicationById(publicationId)
     if (!pub) return fallbackUrl
 
-    if (pub.customDomain) {
+    if (pub.customDomain && pub.domainStatus === 'active') {
       return `https://${pub.customDomain}`
     }
 

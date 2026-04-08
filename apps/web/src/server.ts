@@ -28,6 +28,7 @@ import { verifyPublicationOwnership } from './middleware/ownership'
 import { verifyChatToken } from './lib/chat-token'
 import sessions from './api/sessions'
 import publications from './api/publications'
+import domain from './api/domain'
 import topics from './api/topics'
 import ideas from './api/ideas'
 import activity from './api/activity'
@@ -128,6 +129,7 @@ app.use('/api/*', clerkAuth, ensureUser)
 app.route('/api', me)
 app.route('/api', sessions)
 app.route('/api', publications)
+app.route('/api', domain)
 app.route('/api', topics)
 app.route('/api', ideas)
 app.route('/api', activity)
