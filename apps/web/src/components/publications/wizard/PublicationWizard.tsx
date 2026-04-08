@@ -124,7 +124,7 @@ export function PublicationWizard({ isOpen, onClose, onCreated }: PublicationWiz
         </div>
 
         {/* Step content */}
-        <div className="px-6 py-5">
+        <div className="overflow-y-auto px-6 py-5" style={{ maxHeight: '60vh' }}>
           {currentStep === 1 && <WizardStepBasics />}
           {currentStep === 2 && <WizardStepTopics />}
           {currentStep === 3 && <WizardStepStyle />}
