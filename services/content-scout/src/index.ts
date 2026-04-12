@@ -36,6 +36,14 @@ app.post('/api/scout/run-all', async (c) => {
   return c.json({ queued: true, count })
 })
 
+// Admin: list ideas for a publication (ordered by created_at DESC)
+app.get('/api/ideas/:publicationId', async (c) => {
+  const publicationId = c.req.param('publicationId')
+  const status = c.req.query('status') as import('@hotmetal/content-core').IdeaStatus | undefined
+  const ideas = await c.env.DAL.listIdeasByPublication(publicationId, status ? { status } : undefined)
+  return c.json({ data: ideas, count: ideas.length })
+})
+
 // Health check (no auth required)
 app.get('/health', (c) => c.json({ status: 'ok', service: 'content-scout' }))
 

@@ -1,7 +1,7 @@
 {
 	"info": {
 		"name": "Hot Metal — Content Scout",
-		"description": "# Hot Metal Content Scout Service\n\nThe Content Scout is a Cloudflare Worker that discovers trending stories, generates blog post ideas, and optionally auto-writes posts for publications. It uses CF Queues and Workflows for durable execution.\n\n## Architecture\n\nThe Content Scout follows a **cron -> queue -> workflow** pipeline:\n\n1. **Cron Trigger** (`0 * * * *` UTC) — Fires hourly. Queries D1 for publications whose `next_scout_at` has passed and enqueues one message per due publication to the CF Queue.\n2. **CF Queue** — Receives `{ publicationId }` messages. Each message triggers a new ScoutWorkflow instance.\n3. **ScoutWorkflow** (Durable Execution) — A 6-step workflow that runs durably with automatic retries:\n   - **Step 1: Load Context** — Reads publication config from DAL (topics, tone, audience, auto-publish mode).\n   - **Step 2: Search** — Queries external news/trend APIs and web search for stories matching the publication's topic areas.\n   - **Step 3: Dedupe** — Compares discovered stories against previously generated ideas to avoid duplicates.\n   - **Step 4: Generate Ideas** — Uses an LLM to turn trending stories into concrete blog post ideas with titles, angles, and outlines.\n   - **Step 5: Store Ideas** — Writes the generated ideas to the ideas table via DAL.\n   - **Step 6: Auto-Write (Conditional)** — If the publication's auto-publish mode allows it, creates a writing session and triggers automatic drafting.\n\nManual triggers are also available via the REST API (documented below).\n\n## Authentication\n\nAll `/api/*` endpoints require an `Authorization: Bearer <token>` header. The token value must match the `API_KEY` secret configured on the content-scout worker.\n\nThe health endpoint is unauthenticated.\n\n## Endpoints Overview\n\n### Health\n| Method | Path | Auth | Description |\n|--------|------|------|-------------|\n| GET | `/health` | None | Service health check |\n\n### Scout Triggers\n| Method | Path | Auth | Description |\n|--------|------|------|-------------|\n| POST | `/api/scout/run` | Bearer | Trigger scout for a single publication |\n| POST | `/api/scout/run-all` | Bearer | Trigger scout for ALL publications |\n\n## Environment Variables\n\nThis collection uses variables from the Postman environment:\n- `SCOUT_BASE_URL` — Base URL of the content scout (e.g. `https://scout.hotmetalapp.com`)\n- `SCOUT_API_KEY` — API key for Bearer authentication (must match the API_KEY secret on the content-scout worker)\n\nSelect the appropriate environment before sending requests.",
+		"description": "# Hot Metal Content Scout Service\n\nThe Content Scout is a Cloudflare Worker that discovers trending stories, generates blog post ideas, and optionally auto-writes posts for publications. It uses CF Queues and Workflows for durable execution.\n\n## Architecture\n\nThe Content Scout follows a **cron -> queue -> workflow** pipeline:\n\n1. **Cron Trigger** (`0 * * * *` UTC) — Fires hourly. Queries D1 for publications whose `next_scout_at` has passed and enqueues one message per due publication to the CF Queue.\n2. **CF Queue** — Receives `{ publicationId }` messages. Each message triggers a new ScoutWorkflow instance.\n3. **ScoutWorkflow** (Durable Execution) — A 6-step workflow that runs durably with automatic retries:\n   - **Step 1: Load Context** — Reads publication config from DAL (topics, tone, audience, auto-publish mode).\n   - **Step 2: Search** — Queries external news/trend APIs and web search for stories matching the publication's topic areas.\n   - **Step 3: Dedupe** — Compares discovered stories against previously generated ideas to avoid duplicates.\n   - **Step 4: Generate Ideas** — Uses an LLM to turn trending stories into concrete blog post ideas with titles, angles, and outlines.\n   - **Step 5: Store Ideas** — Writes the generated ideas to the ideas table via DAL.\n   - **Step 6: Auto-Write (Conditional)** — If the publication's auto-publish mode allows it, creates a writing session and triggers automatic drafting.\n\nManual triggers are also available via the REST API (documented below).\n\n## Authentication\n\nAll `/api/*` endpoints require an `Authorization: Bearer <token>` header. The token value must match the `API_KEY` secret configured on the content-scout worker.\n\nThe health endpoint is unauthenticated.\n\n## Endpoints Overview\n\n### Health\n| Method | Path | Auth | Description |\n|--------|------|------|-------------|\n| GET | `/health` | None | Service health check |\n\n### Scout Triggers\n| Method | Path | Auth | Description |\n|--------|------|------|-------------|\n| POST | `/api/scout/run` | Bearer | Trigger scout for a single publication |\n| POST | `/api/scout/run-all` | Bearer | Trigger scout for ALL publications |\n\n### Ideas\n| Method | Path | Auth | Description |\n|--------|------|------|-------------|\n| GET | `/api/ideas/:publicationId` | Bearer | List all ideas for a publication |\n\n## Environment Variables\n\nThis collection uses variables from the Postman environment:\n- `SCOUT_BASE_URL` — Base URL of the content scout (e.g. `https://scout.hotmetalapp.com`)\n- `SCOUT_API_KEY` — API key for Bearer authentication (must match the API_KEY secret on the content-scout worker)\n\nSelect the appropriate environment before sending requests.",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
 	},
 	"auth": {
@@ -138,6 +138,62 @@
 								{ "key": "Content-Type", "value": "application/json" }
 							],
 							"body": "{\n  \"queued\": true,\n  \"count\": 0\n}"
+						},
+						{
+							"name": "401 — Unauthorized",
+							"status": "Unauthorized",
+							"code": 401,
+							"header": [
+								{ "key": "Content-Type", "value": "application/json" }
+							],
+							"body": "{\n  \"error\": \"Unauthorized\"\n}"
+						}
+					]
+				}
+			]
+		},
+		{
+			"name": "Ideas",
+			"description": "Query ideas generated by the scout pipeline.\n\nIdeas are stored in D1 after each successful scout run (workflow step 5). Use these endpoints to inspect what the scout produced.\n\nAll endpoints inherit Bearer token authentication from the collection.",
+			"item": [
+				{
+					"name": "List Ideas — By Publication",
+					"description": "List all ideas generated for a specific publication, ordered by `created_at` descending (newest first).\n\nOptionally filter by status using the `status` query parameter.\n\n### Path Parameters\n\n| Parameter | Type | Required | Description |\n|-----------|------|----------|-------------|\n| `publicationId` | string | **Yes** | UUID of the publication |\n\n### Query Parameters\n\n| Parameter | Type | Required | Description |\n|-----------|------|----------|-------------|\n| `status` | string | No | Filter by idea status. One of: `new`, `reviewed`, `promoted`, `dismissed` |\n\n### Response — Success (200)\n\n```json\n{\n  \"data\": [\n    {\n      \"id\": \"a1b2c3d4-e5f6-7890-abcd-ef1234567890\",\n      \"publicationId\": \"f47ac10b-58cc-4372-a567-0e02b2c3d479\",\n      \"topicId\": \"topic-uuid-here\",\n      \"title\": \"Why Edge Computing Is Reshaping API Design\",\n      \"angle\": \"Explore how moving compute to the edge forces developers to rethink stateless API patterns\",\n      \"summary\": \"A deep dive into how edge-first architectures like Cloudflare Workers are changing the way we design APIs...\",\n      \"sources\": [\n        {\n          \"url\": \"https://example.com/article\",\n          \"title\": \"Edge Computing Trends 2026\",\n          \"publisher\": \"TechCrunch\",\n          \"snippet\": \"Edge computing adoption has grown 340% year over year...\"\n        }\n      ],\n      \"status\": \"new\",\n      \"sessionId\": null,\n      \"relevanceScore\": 0.92,\n      \"createdAt\": 1712937600,\n      \"updatedAt\": 1712937600\n    }\n  ],\n  \"count\": 1\n}\n```\n\n### Possible Errors\n\n- `401` — Missing or invalid Bearer token",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{SCOUT_BASE_URL}}/api/ideas/{{publicationId}}",
+							"host": ["{{SCOUT_BASE_URL}}"],
+							"path": ["api", "ideas", "{{publicationId}}"],
+							"query": [
+								{
+									"key": "status",
+									"value": "new",
+									"description": "Filter by idea status (new, reviewed, promoted, dismissed). Leave blank for all.",
+									"disabled": true
+								}
+							]
+						}
+					},
+					"response": [
+						{
+							"name": "200 — Ideas found",
+							"status": "OK",
+							"code": 200,
+							"header": [
+								{ "key": "Content-Type", "value": "application/json" }
+							],
+							"body": "{\n  \"data\": [\n    {\n      \"id\": \"a1b2c3d4-e5f6-7890-abcd-ef1234567890\",\n      \"publicationId\": \"f47ac10b-58cc-4372-a567-0e02b2c3d479\",\n      \"topicId\": \"topic-uuid-here\",\n      \"title\": \"Why Edge Computing Is Reshaping API Design\",\n      \"angle\": \"Explore how moving compute to the edge forces developers to rethink stateless API patterns\",\n      \"summary\": \"A deep dive into how edge-first architectures like Cloudflare Workers are changing the way we design APIs...\",\n      \"sources\": [\n        {\n          \"url\": \"https://example.com/article\",\n          \"title\": \"Edge Computing Trends 2026\",\n          \"publisher\": \"TechCrunch\",\n          \"snippet\": \"Edge computing adoption has grown 340% year over year...\"\n        }\n      ],\n      \"status\": \"new\",\n      \"sessionId\": null,\n      \"relevanceScore\": 0.92,\n      \"createdAt\": 1712937600,\n      \"updatedAt\": 1712937600\n    }\n  ],\n  \"count\": 1\n}"
+						},
+						{
+							"name": "200 — No ideas yet",
+							"status": "OK",
+							"code": 200,
+							"header": [
+								{ "key": "Content-Type", "value": "application/json" }
+							],
+							"body": "{\n  \"data\": [],\n  \"count\": 0\n}"
 						},
 						{
 							"name": "401 — Unauthorized",
