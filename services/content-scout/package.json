@@ -13,17 +13,17 @@
 		"typecheck": "tsc --noEmit"
 	},
 	"dependencies": {
-		"@ai-sdk/anthropic": "^3.0.39",
+		"@ai-sdk/anthropic": "^3.0.84",
 		"@hotmetal/data-layer": "workspace:*",
 		"@hotmetal/shared": "workspace:*",
-		"ai": "^6.0.77",
-		"hono": "^4.11.8"
+		"ai": "^6.0.204",
+		"hono": "^4.12.25"
 	},
 	"devDependencies": {
-		"@cloudflare/vitest-pool-workers": "^0.12.4",
+		"@cloudflare/vitest-pool-workers": "^0.12.21",
 		"@types/node": "^25.2.2",
 		"typescript": "^5.5.2",
-		"vitest": "~3.2.0",
-		"wrangler": "^4.63.0"
+		"vitest": "~4.1.8",
+		"wrangler": "^4.100.0"
 	}
 }

@@ -14,7 +14,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@axiomhq/js": "^1.4.0",
+    "@axiomhq/js": "^1.6.1",
     "@hotmetal/content-core": "workspace:*"
   },
   "peerDependencies": {
@@ -26,7 +26,7 @@
     }
   },
   "devDependencies": {
-    "@ai-sdk/provider": "^3.0.8",
+    "@ai-sdk/provider": "^3.0.10",
     "typescript": "^5.5.2"
   }
 }

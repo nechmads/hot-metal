@@ -14,21 +14,21 @@
     "deploy": "astro build && wrangler deploy"
   },
   "dependencies": {
-    "@astrojs/cloudflare": "13.0.0-beta.5",
-    "@astrojs/preact": "^4.0.0",
+    "@astrojs/cloudflare": "13.7.0",
+    "@astrojs/preact": "^5.1.5",
     "@hotmetal/content-core": "workspace:*",
     "@hotmetal/data-layer": "workspace:*",
     "@hotmetal/shared": "workspace:*",
-    "astro": "^6.0.0-beta.6",
-    "preact": "^10.25.0",
-    "sanitize-html": "^2.17.0",
-    "wrangler": "^4.63.0"
+    "astro": "^6.4.6",
+    "preact": "^10.29.2",
+    "sanitize-html": "^2.17.5",
+    "wrangler": "^4.100.0"
   },
   "devDependencies": {
-    "@astrojs/check": "^0.9.6",
-    "@cloudflare/workers-types": "^4.20260207.0",
-    "@tailwindcss/vite": "^4.1.18",
-    "@types/sanitize-html": "^2.16.0",
-    "tailwindcss": "^4.1.18"
+    "@astrojs/check": "^0.9.9",
+    "@cloudflare/workers-types": "^4.20260613.1",
+    "@tailwindcss/vite": "^4.3.1",
+    "@types/sanitize-html": "^2.16.1",
+    "tailwindcss": "^4.3.1"
   }
 }
