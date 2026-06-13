@@ -42,7 +42,7 @@ feeds.get('/:slug/atom/full', (c) => {
 
 feeds.post('/internal/feeds/regenerate/:slug', publisherApiKeyAuth, async (c) => {
   const slug = c.req.param('slug')
-  if (!isValidSlug(slug)) return c.json({ error: 'Invalid slug' }, 400)
+  if (!slug || !isValidSlug(slug)) return c.json({ error: 'Invalid slug' }, 400)
   try {
     await regenerateFeeds(c.env, slug)
     return c.json({ success: true, slug })

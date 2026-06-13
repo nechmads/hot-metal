@@ -9,6 +9,7 @@ const drafts = new Hono<AppEnv>()
 /** Verify session ownership before draft access. */
 async function verifySessionOwnership(c: Context<AppEnv>): Promise<boolean> {
   const sessionId = c.req.param('sessionId')
+  if (!sessionId) return false
   const session = await c.env.DAL.getSessionById(sessionId)
   if (!session || session.userId !== c.get('userId')) {
     return false
