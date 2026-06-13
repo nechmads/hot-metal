@@ -19,6 +19,7 @@ export enum AnalyticsEvent {
   // Content Scout
   ScoutTriggered = 'Scout Triggered',
   ScoutScheduleUpdated = 'Scout Schedule Updated',
+  ScoutAutomationToggled = 'Scout Automation Toggled',
 
   // Ideas
   IdeasFiltered = 'Ideas Filtered',
@@ -106,6 +107,7 @@ export interface AnalyticsEventProperties {
   // Content Scout
   [AnalyticsEvent.ScoutTriggered]: { publicationId: string; source: string }
   [AnalyticsEvent.ScoutScheduleUpdated]: { publicationId: string; scheduleType: string; publishMode: string }
+  [AnalyticsEvent.ScoutAutomationToggled]: { publicationId: string; enabled: boolean }
 
   // Ideas
   [AnalyticsEvent.IdeasFiltered]: { publicationId: string; filter: string }

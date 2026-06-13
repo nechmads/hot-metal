@@ -178,6 +178,7 @@ publications.patch('/publications/:id', async (c) => {
 		cmsPublicationId?: string | null
 		scoutSchedule?: ScoutSchedule
 		timezone?: string
+		scoutEnabled?: boolean
 		styleId?: string | null
 		templateId?: string
 		feedFullEnabled?: boolean
@@ -232,16 +233,23 @@ publications.patch('/publications/:id', async (c) => {
 		throw new ValidationError('Invalid timezone')
 	}
 
-	// Recompute nextScoutAt only if schedule or timezone actually changed
-	let nextScoutAt: number | undefined
-	if (body.scoutSchedule !== undefined || body.timezone !== undefined) {
-		const effectiveSchedule = body.scoutSchedule ?? pub.scoutSchedule
-		const effectiveTz = body.timezone ?? pub.timezone
+	// Recompute next_scout_at when the schedule, timezone, or enabled state changes.
+	// Invariant: a disabled publication has next_scout_at = null (the cron skips it);
+	// enabling re-arms it from the saved schedule.
+	let nextScoutAt: number | null | undefined
+	const effectiveSchedule = body.scoutSchedule ?? pub.scoutSchedule
+	const effectiveTz = body.timezone ?? pub.timezone
+	if (body.scoutEnabled === false) {
+		nextScoutAt = null
+	} else if (body.scoutEnabled === true) {
+		nextScoutAt = computeNextRun(effectiveSchedule, effectiveTz)
+	} else if (body.scoutSchedule !== undefined || body.timezone !== undefined) {
 		const scheduleChanged = body.scoutSchedule !== undefined &&
 			JSON.stringify(body.scoutSchedule) !== JSON.stringify(pub.scoutSchedule)
 		const tzChanged = body.timezone !== undefined && body.timezone !== pub.timezone
 		if (scheduleChanged || tzChanged) {
-			nextScoutAt = computeNextRun(effectiveSchedule, effectiveTz)
+			// Don't arm a paused publication just because its schedule/timezone changed.
+			nextScoutAt = pub.scoutEnabled ? computeNextRun(effectiveSchedule, effectiveTz) : null
 		}
 	}
 
@@ -256,6 +264,7 @@ publications.patch('/publications/:id', async (c) => {
 		cmsPublicationId: body.cmsPublicationId,
 		scoutSchedule: body.scoutSchedule,
 		timezone: body.timezone,
+		scoutEnabled: body.scoutEnabled,
 		styleId: body.styleId,
 		templateId: body.templateId,
 		feedFullEnabled: body.feedFullEnabled,

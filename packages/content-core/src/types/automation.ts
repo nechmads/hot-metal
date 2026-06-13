@@ -33,6 +33,8 @@ export interface PublicationConfig {
   scoutSchedule: ScoutSchedule
   timezone: string
   nextScoutAt: number | null
+  /** When false, automation is paused: the cron skips this publication entirely. */
+  scoutEnabled: boolean
   createdAt: number
   updatedAt: number
 }

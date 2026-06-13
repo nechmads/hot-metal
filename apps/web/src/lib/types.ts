@@ -113,6 +113,7 @@ export interface PublicationConfig {
   scoutSchedule: ScoutSchedule
   timezone: string
   nextScoutAt: number | null
+  scoutEnabled: boolean
   styleId: string | null
   templateId: string
   feedFullEnabled: boolean

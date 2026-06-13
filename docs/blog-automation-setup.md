@@ -120,6 +120,8 @@ curl http://localhost:8790/health
 4. If Full Auto, set **Posts per week** cadence
 5. Click **Save Changes**
 
+> **Pausing automation:** Each publication has an **Automatic scouting** toggle (in the Schedule summary and editor). Turning it off pauses *all* automation for that publication — the scout stops running on its schedule (no idea gathering, drafting, or publishing) and "Run Scout Now" is disabled. Your schedule settings are preserved; turning it back on resumes from the saved schedule.
+
 ### 3. Add Topics
 
 1. Click **Add Topic**

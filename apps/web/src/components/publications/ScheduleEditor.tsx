@@ -1,5 +1,6 @@
 import { FloppyDiskIcon, MagnifyingGlassIcon } from "@phosphor-icons/react";
 import { Loader } from "@/components/loader/Loader";
+import { Toggle } from "@/components/toggle/Toggle";
 import type { AutoPublishMode, ScheduleType } from "@/lib/types";
 import {
   MODE_OPTIONS,
@@ -18,6 +19,7 @@ export interface ScheduleEditorState {
   scheduleCount: number;
   scheduleDays: number;
   nextScoutAt: number | null;
+  scoutEnabled: boolean;
 }
 
 interface ScheduleEditorProps {
@@ -26,6 +28,8 @@ interface ScheduleEditorProps {
   onRunScout: () => void;
   onSave: () => void;
   onCancel: () => void;
+  onScoutEnabledChange: (enabled: boolean) => void;
+  togglingScout: boolean;
   saving: boolean;
   scouting: boolean;
   topicsExist: boolean;
@@ -41,6 +45,8 @@ export function ScheduleEditor({
   onRunScout,
   onSave,
   onCancel,
+  onScoutEnabledChange,
+  togglingScout,
   saving,
   scouting,
   topicsExist,
@@ -51,6 +57,26 @@ export function ScheduleEditor({
 }: ScheduleEditorProps) {
   return (
     <div className="space-y-6">
+      {/* Automatic scouting on/off */}
+      <section className="rounded-xl border border-[var(--color-border-default)] bg-[var(--color-bg-primary)] p-5">
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <h3 className="font-semibold">Automatic Scouting</h3>
+            <p className="mt-1 text-sm text-[var(--color-text-muted)]">
+              {state.scoutEnabled
+                ? "The scout runs automatically on the schedule below."
+                : "Paused — nothing runs automatically for this publication until you turn this back on."}
+            </p>
+          </div>
+          <Toggle
+            size="lg"
+            toggled={state.scoutEnabled}
+            disabled={togglingScout}
+            onClick={() => onScoutEnabledChange(!state.scoutEnabled)}
+          />
+        </div>
+      </section>
+
       {/* Publish Mode */}
       <section className="space-y-4 rounded-xl border border-[var(--color-border-default)] bg-[var(--color-bg-primary)] p-5">
         <h3 className="font-semibold">Publish Mode</h3>
@@ -117,7 +143,7 @@ export function ScheduleEditor({
           <button
             type="button"
             onClick={onRunScout}
-            disabled={scouting || !topicsExist}
+            disabled={scouting || !topicsExist || !state.scoutEnabled}
             className="flex items-center gap-2 rounded-lg border border-[var(--color-accent)] px-4 py-2 text-sm font-medium text-[var(--color-accent)] transition-colors hover:bg-[var(--color-accent-light)] disabled:opacity-50"
           >
             <MagnifyingGlassIcon
@@ -126,11 +152,15 @@ export function ScheduleEditor({
             />
             {scouting ? "Running Scout..." : "Run Scout Now"}
           </button>
-          {!topicsExist && (
+          {!state.scoutEnabled ? (
+            <p className="mt-1.5 text-xs text-[var(--color-text-muted)]">
+              Turn on automatic scouting to run the scout.
+            </p>
+          ) : !topicsExist ? (
             <p className="mt-1.5 text-xs text-[var(--color-text-muted)]">
               Add at least one topic before running the scout.
             </p>
-          )}
+          ) : null}
         </div>
       </section>
 
