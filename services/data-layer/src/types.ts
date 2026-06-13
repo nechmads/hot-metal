@@ -118,6 +118,7 @@ export interface Publication {
 	scoutSchedule: ScoutSchedule
 	timezone: string
 	nextScoutAt: number | null
+	scoutEnabled: boolean
 	styleId: string | null
 	feedFullEnabled: boolean
 	feedPartialEnabled: boolean
@@ -150,6 +151,7 @@ export interface CreatePublicationInput {
 	cadencePostsPerWeek?: number
 	scoutSchedule?: ScoutSchedule
 	timezone?: string
+	scoutEnabled?: boolean
 	styleId?: string
 	feedFullEnabled?: boolean
 	feedPartialEnabled?: boolean
@@ -176,6 +178,7 @@ export interface UpdatePublicationInput {
 	scoutSchedule?: ScoutSchedule
 	timezone?: string
 	nextScoutAt?: number | null
+	scoutEnabled?: boolean
 	styleId?: string | null
 	feedFullEnabled?: boolean
 	feedPartialEnabled?: boolean

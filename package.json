@@ -44,11 +44,18 @@
   },
   "pnpm": {
     "onlyBuiltDependencies": [
+      "@clerk/shared",
+      "@mongodb-js/zstd",
       "better-sqlite3",
       "esbuild",
+      "node-liblzma",
       "sharp",
       "workerd"
-    ]
+    ],
+    "overrides": {
+      "react": "19.2.7",
+      "react-dom": "19.2.7"
+    }
   },
   "devDependencies": {
     "@types/better-sqlite3": "^7.6.13",

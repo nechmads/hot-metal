@@ -21,19 +21,19 @@
   },
   "dependencies": {
     "@hotmetal/content-core": "workspace:*",
-    "@sonicjs-cms/core": "^2.8.0"
+    "@sonicjs-cms/core": "^2.19.0"
   },
   "devDependencies": {
-    "@cloudflare/workers-types": "^4.20251202.0",
+    "@cloudflare/workers-types": "^4.20260613.1",
     "@types/node": "^24.10.1",
-    "drizzle-kit": "^0.31.7",
-    "drizzle-orm": "^0.44.7",
-    "hono": "^4.10.7",
+    "drizzle-kit": "^0.31.10",
+    "drizzle-orm": "^0.45.2",
+    "hono": "^4.12.25",
     "tsx": "^4.21.0",
     "typescript": "^5.9.3",
-    "vitest": "^4.0.15",
-    "wrangler": "^4.52.1",
-    "zod": "^4.1.13"
+    "vitest": "^4.1.8",
+    "wrangler": "^4.100.0",
+    "zod": "^4.4.3"
   },
   "engines": {
     "node": ">=18.0.0"

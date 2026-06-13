@@ -305,6 +305,7 @@ export async function updatePublication(
     cadencePostsPerWeek: number
     scoutSchedule: ScoutSchedule
     timezone: string
+    scoutEnabled: boolean
     styleId: string | null
     templateId: string
     feedFullEnabled: boolean

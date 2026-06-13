@@ -78,7 +78,7 @@ pub-web ---> DAL, NOTIFICATIONS
 - `hotmetal-scout-queue` - triggers ScoutWorkflow
 - `hotmetal-analyzer-queue` - triggers AnalyzerWorkflow
 
-**Cron**: Content scout runs hourly (`0 * * * *`), checks for publications with `next_scout_at <= now`.
+**Cron**: Content scout runs hourly (`0 * * * *`), checks for publications with `scout_enabled = 1 AND next_scout_at <= now`. Publications with `scout_enabled = 0` (automation paused) are skipped entirely — no idea gathering, drafting, or publishing. The `ScoutWorkflow` also re-checks `scout_enabled` after loading context, so manual triggers honor the pause too.
 
 ---
 
@@ -91,7 +91,7 @@ Shared D1 at `/.wrangler/shared-state/v3/d1/` (dev). Only accessed via DAL servi
 **Core:**
 - `users` - id, email, name, tier (creator/growth/enterprise), first_name, last_name
 - `sessions` - id, user_id, publication_id, idea_id, title, status, current_draft_version, cms_post_id, style_id, seed_context, featured_image_url
-- `publications` - id, user_id, cms_publication_id, name, slug, custom_domain, description, writing_tone, auto_publish_mode (ideas-only/draft/full-auto), publish_mode, cadence_posts_per_week, branding (JSON), comments_enabled/moderation, style_id, timezone, next_scout_at
+- `publications` - id, user_id, cms_publication_id, name, slug, custom_domain, description, writing_tone, auto_publish_mode (ideas-only/draft/full-auto), publish_mode, cadence_posts_per_week, branding (JSON), comments_enabled/moderation, style_id, timezone, scout_schedule (JSON), scout_enabled (automation kill switch), next_scout_at
 - `topics` - id, publication_id, name, description, priority (1-3), is_active
 - `ideas` - id, publication_id, topic_id, title, angle, summary, sources (JSON), status (new/reviewed/promoted/dismissed), session_id, relevance_score
 

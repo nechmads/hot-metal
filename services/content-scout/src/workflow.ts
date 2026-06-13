@@ -28,6 +28,16 @@ export class ScoutWorkflow extends WorkflowEntrypoint<ScoutEnv, ScoutWorkflowPar
       })
       log.info('Step 1 done: loaded publication context', { topicCount: context.topics.length, recentIdeaCount: context.recentIdeas.length })
 
+      // Honor the per-publication automation switch. The cron query already
+      // excludes disabled publications, but this guard also covers manual
+      // run / run-all triggers and the enqueue→start race (a publication
+      // paused after it was enqueued). A paused publication never produces
+      // ideas, drafts, or posts regardless of how the workflow was triggered.
+      if (!context.publication.scoutEnabled) {
+        log.info('Skipping scout: automation disabled for publication')
+        return { publicationId, ideasGenerated: 0, skipped: 'scout disabled' }
+      }
+
       if (context.topics.length === 0) {
         return { publicationId, ideasGenerated: 0, skipped: 'no active topics' }
       }

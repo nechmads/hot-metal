@@ -1,27 +1,27 @@
 {
-	"name": "@hotmetal/notifications",
-	"version": "0.0.0",
-	"private": true,
-	"type": "module",
-	"scripts": {
-		"deploy": "wrangler deploy",
-		"dev": "wrangler dev",
-		"start": "wrangler dev",
-		"test": "vitest",
-		"cf-typegen": "wrangler types",
-		"build": "wrangler deploy --dry-run --outdir=dist",
-		"typecheck": "tsc --noEmit"
-	},
-	"dependencies": {
-		"@hotmetal/data-layer": "workspace:*",
-		"hono": "^4.11.8",
-		"resend": "^4.5.1"
-	},
-	"devDependencies": {
-		"@cloudflare/vitest-pool-workers": "^0.12.4",
-		"@types/node": "^25.3.0",
-		"typescript": "^5.5.2",
-		"vitest": "~3.2.0",
-		"wrangler": "^4.68.0"
-	}
+  "name": "@hotmetal/notifications",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "deploy": "wrangler deploy",
+    "dev": "wrangler dev",
+    "start": "wrangler dev",
+    "test": "vitest",
+    "cf-typegen": "wrangler types",
+    "build": "wrangler deploy --dry-run --outdir=dist",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@hotmetal/data-layer": "workspace:*",
+    "hono": "^4.12.25",
+    "resend": "^6.12.4"
+  },
+  "devDependencies": {
+    "@cloudflare/vitest-pool-workers": "^0.16.15",
+    "@types/node": "^25.3.0",
+    "typescript": "^5.5.2",
+    "vitest": "~4.1.8",
+    "wrangler": "^4.100.0"
+  }
 }

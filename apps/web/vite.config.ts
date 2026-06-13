@@ -30,5 +30,10 @@ export default defineConfig({
     alias: {
       "@": path.resolve(__dirname, "./src"),
     },
+    // Force a single copy of React in the bundle. Workspace packages consumed as
+    // source (e.g. @hotmetal/analytics) can otherwise pull their own React via a
+    // devDependency, producing two React instances and a null hook dispatcher
+    // ("Cannot read properties of null (reading 'useContext')").
+    dedupe: ["react", "react-dom"],
   },
 });

@@ -2,6 +2,14 @@
 
 ## Completed
 
+- [x] **Disable Automation per Publication** — Added a per-publication "Automatic scouting" on/off switch (`scout_enabled`, default on) so a user can pause *all* automation for a publication without losing their schedule config. Includes:
+  - D1 migration (`0021_scout_enabled.sql`): `scout_enabled INTEGER NOT NULL DEFAULT 1`
+  - Data layer: `scoutEnabled` on Publication/Create/Update types + `mapRow`/insert; cron queries (`getDuePublications`, `getPublicationsWithNullSchedule`) now filter `scout_enabled = 1` (the backfill filter is what stops a paused publication being re-armed)
+  - Invariant: disabling sets `next_scout_at = NULL`; enabling recomputes it from the saved schedule. Logic added to both the web PATCH (`api/publications.ts`) and external agents PATCH (`agents-api/v1/publications.ts` + OpenAPI spec)
+  - Central guard in `ScoutWorkflow.run` — a paused publication never produces ideas/drafts/posts regardless of trigger (cron, manual `run`/`run-all`, or enqueue→start race)
+  - Frontend: `Toggle` gains a `disabled` prop; always-visible Automation toggle + Active/Paused status in `ScheduleSummary` (dims schedule grid when paused), automation card + gated "Run Scout Now" in `ScheduleEditor`, "Automation paused" pill on `PublicationCard`, optimistic dual-store update with in-flight guard in `PublicationPage`, `ScoutAutomationToggled` analytics event
+  - Docs/Postman: `SYSTEM_REFERENCE.md`, `blog-automation-setup.md`, Web Postman collection
+  - Incidental: fixed two pre-existing Hono `c.req.param` typecheck errors (`api/drafts.ts`, `publisher/routes/feeds.ts`) surfaced by the recent package upgrades, so the workspace typecheck passes
 - [x] **Three-Mode Publish System** — Added `'ideas-only'` mode to the automation system. Renamed misleading `'draft'` (which only gathered ideas) to `'ideas-only'`. New `'draft'` mode finds ideas AND writes drafts but doesn't publish. `'full-auto'` unchanged. Includes D1 migration, workflow guard update, auto-write refactor with `publish` flag, and all frontend UI (wizard, schedule editor, cards).
 
 - [x] **Draft Version Publishing** — Users can now publish any draft version, not just the latest. The publish modal shows "Publish Post - Draft N". When publishing an older draft, all subsequent drafts are deleted to keep history clean. Threaded `draftVersion` through DraftPanel → PublishModal → API → agent DO.

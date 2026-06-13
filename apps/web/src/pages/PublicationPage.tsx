@@ -81,6 +81,7 @@ export function PublicationPage() {
     scheduleCount: 3,
     scheduleDays: 2,
     nextScoutAt: null,
+    scoutEnabled: true,
   })
 
   // Topic modal
@@ -93,6 +94,9 @@ export function PublicationPage() {
 
   // Scout trigger
   const [scouting, setScouting] = useState(false)
+
+  // Automatic-scouting on/off toggle (in-flight guard)
+  const [togglingScout, setTogglingScout] = useState(false)
 
   // Delete confirmation
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
@@ -254,6 +258,7 @@ export function PublicationPage() {
         autoPublishMode: data.autoPublishMode,
         cadencePostsPerWeek: data.cadencePostsPerWeek,
         nextScoutAt: data.nextScoutAt,
+        scoutEnabled: data.scoutEnabled,
       }
       if (data.timezone) sched.timezone = data.timezone
       if (data.scoutSchedule) {
@@ -311,6 +316,32 @@ export function PublicationPage() {
       toast.error(err instanceof Error ? err.message : 'Failed to save schedule')
     } finally {
       setSavingSchedule(false)
+    }
+  }
+
+  // Toggle automatic scouting on/off. Pausing clears next_scout_at server-side;
+  // resuming recomputes it — so we sync nextScoutAt from the returned publication.
+  // The toggle is rendered from two state stores: ScheduleSummary reads
+  // `publication`, ScheduleEditor reads `scheduleState`. We update both
+  // optimistically (and revert both on error) so either entry point feels instant.
+  // `togglingScout` guards against rapid double-clicks landing out-of-order writes.
+  const handleScoutEnabledChange = async (enabled: boolean) => {
+    if (!id || togglingScout) return
+    setTogglingScout(true)
+    setScheduleState((prev) => ({ ...prev, scoutEnabled: enabled }))
+    setPublication((prev) => (prev ? { ...prev, scoutEnabled: enabled } : prev))
+    try {
+      const updated = await updatePublication(id, { scoutEnabled: enabled })
+      setPublication(updated)
+      setScheduleState((prev) => ({ ...prev, scoutEnabled: updated.scoutEnabled, nextScoutAt: updated.nextScoutAt }))
+      toast.success(enabled ? 'Automatic scouting resumed' : 'Automatic scouting paused')
+      AnalyticsManager.track(AnalyticsEvent.ScoutAutomationToggled, { publicationId: id, enabled })
+    } catch (err) {
+      setScheduleState((prev) => ({ ...prev, scoutEnabled: !enabled }))
+      setPublication((prev) => (prev ? { ...prev, scoutEnabled: !enabled } : prev))
+      toast.error(err instanceof Error ? err.message : 'Failed to update automatic scouting')
+    } finally {
+      setTogglingScout(false)
     }
   }
 
@@ -648,6 +679,8 @@ export function PublicationPage() {
             onRunScout={handleRunScout}
             onSave={handleSaveSchedule}
             onCancel={() => setEditingSchedule(false)}
+            onScoutEnabledChange={handleScoutEnabledChange}
+            togglingScout={togglingScout}
             saving={savingSchedule}
             scouting={scouting}
             topicsExist={topics.length > 0}
@@ -657,7 +690,12 @@ export function PublicationPage() {
             isTimesPerDayAllowed={tierLimits.timesPerDayScheduleAllowed}
           />
         ) : (
-          <ScheduleSummary publication={publication} onEdit={() => setEditingSchedule(true)} />
+          <ScheduleSummary
+            publication={publication}
+            onEdit={() => setEditingSchedule(true)}
+            onToggleScoutEnabled={handleScoutEnabledChange}
+            togglingScout={togglingScout}
+          />
         )}
       </div>
 

@@ -17,6 +17,7 @@ interface PublicationRow {
 	scout_schedule: string
 	timezone: string
 	next_scout_at: number | null
+	scout_enabled: number
 	style_id: string | null
 	feed_full_enabled: number
 	feed_partial_enabled: number
@@ -61,6 +62,7 @@ function mapRow(row: PublicationRow): Publication {
 		scoutSchedule: parseSchedule(row.scout_schedule),
 		timezone: row.timezone ?? DEFAULT_TIMEZONE,
 		nextScoutAt: row.next_scout_at,
+		scoutEnabled: row.scout_enabled === 1,
 		styleId: row.style_id ?? null,
 		feedFullEnabled: row.feed_full_enabled === 1,
 		feedPartialEnabled: row.feed_partial_enabled === 1,
@@ -89,16 +91,18 @@ export async function createPublication(
 	const now = Math.floor(Date.now() / 1000)
 	const schedule = data.scoutSchedule ?? DEFAULT_SCHEDULE
 	const tz = data.timezone ?? DEFAULT_TIMEZONE
-	const nextScoutAt = computeNextRun(schedule, tz)
+	const scoutEnabled = data.scoutEnabled ?? true
+	// A disabled publication has no next run; the cron skips it until re-enabled.
+	const nextScoutAt = scoutEnabled ? computeNextRun(schedule, tz) : null
 
 	await db
 		.prepare(
 			`INSERT INTO publications (id, user_id, name, slug, description, writing_tone,
 			 default_author, auto_publish_mode, cadence_posts_per_week, scout_schedule,
-			 timezone, next_scout_at, style_id, feed_full_enabled, feed_partial_enabled,
+			 timezone, next_scout_at, scout_enabled, style_id, feed_full_enabled, feed_partial_enabled,
 			 template_id, tagline, logo_url, header_image_url, accent_color, social_links,
 			 comments_enabled, comments_moderation, meta_description, created_at, updated_at)
-			 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+			 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
 		)
 		.bind(
 			data.id,
@@ -113,6 +117,7 @@ export async function createPublication(
 			JSON.stringify(schedule),
 			tz,
 			nextScoutAt,
+			scoutEnabled ? 1 : 0,
 			data.styleId ?? null,
 			(data.feedFullEnabled ?? true) ? 1 : 0,
 			(data.feedPartialEnabled ?? true) ? 1 : 0,
@@ -144,6 +149,7 @@ export async function createPublication(
 		scoutSchedule: schedule,
 		timezone: tz,
 		nextScoutAt,
+		scoutEnabled,
 		styleId: data.styleId ?? null,
 		feedFullEnabled: data.feedFullEnabled ?? true,
 		feedPartialEnabled: data.feedPartialEnabled ?? true,
@@ -256,6 +262,10 @@ export async function updatePublication(
 		sets.push('next_scout_at = ?')
 		bindings.push(data.nextScoutAt)
 	}
+	if (data.scoutEnabled !== undefined) {
+		sets.push('scout_enabled = ?')
+		bindings.push(data.scoutEnabled ? 1 : 0)
+	}
 	if (data.styleId !== undefined) {
 		sets.push('style_id = ?')
 		bindings.push(data.styleId)
@@ -348,7 +358,7 @@ export async function getDuePublications(
 ): Promise<Array<{ id: string; scoutSchedule: ScoutSchedule; timezone: string }>> {
 	const result = await db
 		.prepare(
-			'SELECT id, scout_schedule, timezone FROM publications WHERE next_scout_at IS NOT NULL AND next_scout_at <= ?'
+			'SELECT id, scout_schedule, timezone FROM publications WHERE scout_enabled = 1 AND next_scout_at IS NOT NULL AND next_scout_at <= ?'
 		)
 		.bind(now)
 		.all<{ id: string; scout_schedule: string | null; timezone: string | null }>()
@@ -364,7 +374,7 @@ export async function getPublicationsWithNullSchedule(
 	db: D1Database
 ): Promise<Array<{ id: string; scoutSchedule: ScoutSchedule; timezone: string }>> {
 	const result = await db
-		.prepare('SELECT id, scout_schedule, timezone FROM publications WHERE next_scout_at IS NULL')
+		.prepare('SELECT id, scout_schedule, timezone FROM publications WHERE scout_enabled = 1 AND next_scout_at IS NULL')
 		.all<{ id: string; scout_schedule: string | null; timezone: string | null }>()
 
 	return (result.results ?? []).map((row) => ({
