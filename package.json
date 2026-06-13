@@ -44,8 +44,11 @@
   },
   "pnpm": {
     "onlyBuiltDependencies": [
+      "@clerk/shared",
+      "@mongodb-js/zstd",
       "better-sqlite3",
       "esbuild",
+      "node-liblzma",
       "sharp",
       "workerd"
     ]
