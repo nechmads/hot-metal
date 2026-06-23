@@ -1,5 +1,15 @@
 # Hot Metal - Task Tracker
 
+## In Progress
+
+- [x] **EmDash CMS — Phase 2: EmDash-rendered frontend** (branch `feature/emdash-phase2`) — **COMPLETE**. EmDash serves the public blog for EmDash publications at parity with `apps/publications-web`. New app `apps/emdash-blog` (full pnpm-workspace member). Build + `astro check` clean; pub-web regression-clean; 4 senior-code-reviewer passes clean. Plan: `.agents/plans/emdash-fleet-implementation.md`; parity checklist: `docs/emdash-phase2-parity.md`; deploy runbook: `docs/emdash-instance-deploy.md`. Next: Phase 3 (provisioning fleet).
+  - [x] **Scaffold `apps/emdash-blog`** — brought the proven spike into the monorepo as a full pnpm-workspace member (Astro 7 + EmDash 0.22.0 pinned, coexists with the Astro-6 apps under one lockfile, no monorepo-wide upgrade). Builds + serves; committed schema types (`emdash-env.d.ts`).
+  - [x] **Port design system + Portable Text rendering** — starter/editorial/bold templates copied verbatim from pub-web; post body rendered from EmDash Portable Text via `@portabletext/to-html` through the byte-identical `PostContent` components. Branding from DAL (`getPublicationBySlug`) with env/default fallback. Pages: home, `/posts`, `/[slug]`, 404. Feeds: rss/atom/sitemap/robots. Build ✓, `astro check` ✓, senior-code-reviewer clean.
+  - [x] **Port feature stack** — comments (React island CommentSection/Form/Item → `/api/comments` GET + `/api/comments/submit` POST → DAL, Turnstile-gated, `checkContent` filter, threading validation, fire-and-forget notifications). Island SSR+hydration verified; graceful degradation without DAL. No public analytics (parity; PostHog lives only in `apps/web`). senior-code-reviewer clean.
+  - [x] **Image pipeline** — generated images use absolute URLs (prod `IMAGE_BASE_URL` CDN) → resolve cross-host on EmDash pages; added `/api/images` proxy + shared `IMAGE_BUCKET` binding as fallback for host-relative refs + local dev.
+  - [x] **Custom hostname** — deploy config (`wrangler.jsonc` route template, single instance) + runbook `docs/emdash-instance-deploy.md`; specific route wins over pub-web's `*.hotmetalapp.com/*` wildcard, or Workers Custom Domain. Reuses `custom_domains` (migration 0020). Multi-tenant Cloudflare-for-SaaS is Phase 3.
+  - [x] **Final gate** — emdash-blog build + `astro check` clean; pub-web regression-clean; holistic review clean (confirmed `PluginBridge` is a `WorkerEntrypoint`, no DO binding needed); README + AGENTS.md/CLAUDE.md de-staled.
+
 ## Completed
 
 - [x] **Disable Automation per Publication** — Added a per-publication "Automatic scouting" on/off switch (`scout_enabled`, default on) so a user can pause *all* automation for a publication without losing their schedule config. Includes:

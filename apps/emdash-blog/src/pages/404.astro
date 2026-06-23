@@ -1,0 +1,16 @@
+---
+import { getBranding } from '../dl/publication';
+import NotFoundPage from '../components/NotFoundPage.astro';
+
+let branding = null;
+try {
+  branding = await getBranding();
+} catch {
+  // Render a generic 404 if branding resolution fails.
+}
+---
+
+<NotFoundPage
+  templateId={branding?.templateId ?? 'starter'}
+  {branding}
+/>

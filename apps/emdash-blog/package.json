@@ -1,0 +1,41 @@
+{
+  "name": "@hotmetal/emdash-blog",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "emdash": {
+    "label": "Blog",
+    "seed": "seed/seed.json"
+  },
+  "scripts": {
+    "dev": "astro dev",
+    "build": "astro build",
+    "preview": "astro preview --port 4321",
+    "deploy": "astro build && wrangler deploy",
+    "typecheck": "astro check"
+  },
+  "dependencies": {
+    "@astrojs/cloudflare": "^14.0.0",
+    "@astrojs/react": "^6.0.0",
+    "@emdash-cms/cloudflare": "0.22.0",
+    "@emdash-cms/plugin-forms": "0.2.4",
+    "@emdash-cms/plugin-webhook-notifier": "0.2.0",
+    "@hotmetal/content-core": "workspace:*",
+    "@hotmetal/data-layer": "workspace:*",
+    "@hotmetal/shared": "workspace:*",
+    "@portabletext/to-html": "^2.0.13",
+    "astro": "^7.0.0",
+    "emdash": "0.22.0",
+    "react": "19.2.7",
+    "react-dom": "19.2.7",
+    "sanitize-html": "^2.17.5"
+  },
+  "devDependencies": {
+    "@astrojs/check": "^0.9.7",
+    "@cloudflare/workers-types": "^4.20260305.1",
+    "@tailwindcss/vite": "^4.3.1",
+    "@types/sanitize-html": "^2.16.1",
+    "tailwindcss": "^4.3.1",
+    "wrangler": "^4.99.0"
+  }
+}

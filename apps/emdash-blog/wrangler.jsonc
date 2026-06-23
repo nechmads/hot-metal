@@ -1,0 +1,79 @@
+{
+	"$schema": "node_modules/wrangler/config-schema.json",
+	"name": "hotmetal-emdash-blog",
+	"main": "./src/worker.ts",
+	"compatibility_date": "2026-02-24",
+	"compatibility_flags": ["nodejs_compat"],
+	// Local `astro preview`/dev use miniflare's local D1 (no id needed). A real
+	// deploy needs `database_id` here — created + filled in when the manual
+	// instance's custom hostname is wired (Phase 2 subtask) / per-tenant in Phase 3.
+	"d1_databases": [
+		{
+			"binding": "DB",
+			"database_name": "hotmetal-emdash-blog",
+		},
+	],
+	"r2_buckets": [
+		{
+			"binding": "MEDIA",
+			"bucket_name": "hotmetal-emdash-media",
+		},
+		// Shared Hot Metal generated-image bucket — read-only, served by the
+		// /api/images proxy as a fallback for host-relative refs + local dev.
+		// (Production images use absolute IMAGE_BASE_URL CDN URLs and bypass this.)
+		{
+			"binding": "IMAGE_BUCKET",
+			"bucket_name": "hotmetal-cms-bucket",
+		},
+	],
+	// Worker Loader for plugin sandboxing
+	"worker_loaders": [
+		{
+			"binding": "LOADER",
+		},
+	],
+	// Shared data-layer (publication branding + comments). Absent in a bare
+	// `astro preview`; the frontend degrades to env-var/default branding.
+	"services": [
+		{
+			"binding": "DAL",
+			"service": "hotmetal-data-layer",
+			"entrypoint": "DataLayer",
+		},
+		{
+			"binding": "NOTIFICATIONS",
+			"service": "hotmetal-notifications",
+			"entrypoint": "NotificationsService",
+		},
+	],
+	// TURNSTILE_SECRET_KEY is a secret (comment-submit bot verification), set via
+	// `wrangler secret put TURNSTILE_SECRET_KEY` for deploys and `.dev.vars` locally.
+	// One EmDash instance == one publication. `PUBLICATION_SLUG` ties this
+	// instance to its DAL record (branding source of truth). The PUBLICATION_*
+	// fallbacks render the blog when the DAL is unreachable (local preview);
+	// per-tenant values are injected at provision time in Phase 3.
+	"vars": {
+		"PUBLICATION_SLUG": "demo",
+		"PUBLICATION_NAME": "Hot Metal Demo",
+		"PUBLICATION_TEMPLATE": "starter",
+		"TURNSTILE_SITE_KEY": "0x4AAAAAACk8MjvpV7HFhXQ9",
+	},
+	// Drives scheduled publishing, plugin cron, and maintenance (see src/worker.ts).
+	// EmDash's default cadence is 1-minute; revisit per-tenant cost in Phase 4
+	// fleet cost controls (most aggressive cron in the monorepo).
+	"triggers": {
+		"crons": ["* * * * *"],
+	},
+	// ── Custom hostname (single manual instance — Phase 2) ──────────────────
+	// One publication is served from this instance on its own hostname. Uncomment
+	// and set the real host. A SPECIFIC route wins over publications-web's wildcard
+	// `*.hotmetalapp.com/*`, carving this publication out to EmDash. For an external
+	// custom domain, use `"custom_domain": true` instead (a Workers Custom Domain).
+	// The multi-tenant Cloudflare-for-SaaS routing is Phase 3, not this.
+	// See docs/emdash-instance-deploy.md.
+	//
+	// "routes": [
+	// 	{ "pattern": "<slug>.hotmetalapp.com/*", "zone_name": "hotmetalapp.com" }
+	// 	// or external: { "pattern": "blog.example.com", "custom_domain": true }
+	// ],
+}

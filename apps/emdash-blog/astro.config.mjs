@@ -1,0 +1,51 @@
+import cloudflare from "@astrojs/cloudflare";
+import react from "@astrojs/react";
+import { d1, r2, sandbox } from "@emdash-cms/cloudflare";
+import { formsPlugin } from "@emdash-cms/plugin-forms";
+import webhookNotifier from "@emdash-cms/plugin-webhook-notifier";
+import tailwindcss from "@tailwindcss/vite";
+import { defineConfig, fontProviders } from "astro/config";
+import emdash from "emdash/astro";
+
+export default defineConfig({
+	output: "server",
+	adapter: cloudflare(),
+	image: {
+		layout: "constrained",
+		responsiveStyles: true,
+	},
+	// Tailwind v4 powers our Hot Metal publication templates (starter/editorial/
+	// bold). Each template's theme.css does `@import "tailwindcss"`; only our
+	// BaseLayouts import those, so Tailwind never leaks into the EmDash admin SPA.
+	vite: {
+		plugins: [tailwindcss()],
+	},
+	integrations: [
+		react(),
+		emdash({
+			database: d1({ binding: "DB", session: "auto" }),
+			storage: r2({ binding: "MEDIA" }),
+			plugins: [formsPlugin()],
+			sandboxed: [webhookNotifier],
+			sandboxRunner: sandbox(),
+			marketplace: "https://marketplace.emdashcms.com",
+		}),
+	],
+	fonts: [
+		{
+			provider: fontProviders.google(),
+			name: "Inter",
+			cssVariable: "--font-sans",
+			weights: [400, 500, 600, 700],
+			fallbacks: ["sans-serif"],
+		},
+		{
+			provider: fontProviders.google(),
+			name: "JetBrains Mono",
+			cssVariable: "--font-mono",
+			weights: [400, 500],
+			fallbacks: ["monospace"],
+		},
+	],
+	devToolbar: { enabled: false },
+});

@@ -1,0 +1,149 @@
+---
+import { getBranding } from '../dl/publication';
+import { getPostBySlug } from '../dl/posts';
+import { blogEnv } from '../lib/runtime';
+import { sanitizeCmsContent } from '../lib/sanitize';
+import { formatDate } from '../lib/format';
+import PostPage from '../components/PostPage.astro';
+
+const turnstileSiteKey = blogEnv.TURNSTILE_SITE_KEY ?? '';
+const { slug } = Astro.params;
+
+if (!slug) {
+  return new Response(null, { status: 404, statusText: 'Not Found' });
+}
+
+const [branding, { post, cacheHint }] = await Promise.all([getBranding(), getPostBySlug(slug)]);
+
+if (!post) {
+  return new Response(null, { status: 404, statusText: 'Post Not Found' });
+}
+
+if (Astro.cache?.enabled) Astro.cache.set(cacheHint);
+
+const canonicalBase = Astro.url.origin;
+const sanitizedContent = sanitizeCmsContent(post.content);
+const date = post.publishedAt ? formatDate(post.publishedAt) : null;
+
+const tags = post.tags
+  ? post.tags.split(',').map((t) => t.trim()).filter(Boolean)
+  : [];
+
+const topics = post.topics
+  ? post.topics.split(',').map((t) => t.trim()).filter(Boolean)
+  : [];
+
+const allLabels = [...topics, ...tags];
+
+const title = post.seoTitle ?? post.title;
+
+// Fallback chain for description: SEO description > excerpt > hook > auto-generated from content
+const rawDescription = post.seoDescription ?? post.excerpt ?? post.hook ?? '';
+const description = rawDescription || generateDescription(post.content, post.title);
+
+const ogImage = post.ogImage ?? post.featuredImage;
+const canonicalUrl = post.canonicalUrl ?? `${canonicalBase}/${post.slug}`;
+const postUrl = `${canonicalBase}/${post.slug}`;
+
+// Extract Twitter handle from publication social links
+const twitterUrl = branding.socialLinks?.twitter;
+const twitterSite = twitterUrl ? extractTwitterHandle(twitterUrl) : undefined;
+
+// Approximate word count from content for JSON-LD
+const wordCount = post.content ? post.content.replace(/<[^>]*>/g, '').split(/\s+/).filter(Boolean).length : undefined;
+
+// Primary topic as article section
+const articleSection = topics.length > 0 ? topics[0] : undefined;
+
+Astro.response.headers.set('Cache-Control', 'public, s-maxage=3600, stale-while-revalidate=86400');
+
+const jsonLd: Record<string, unknown> = {
+  '@context': 'https://schema.org',
+  '@type': 'Article',
+  headline: post.title,
+  ...(post.subtitle ? { alternativeHeadline: post.subtitle } : {}),
+  author: {
+    '@type': 'Person',
+    name: post.author,
+  },
+  datePublished: post.publishedAt ?? post.createdAt,
+  dateModified: post.updatedAt,
+  url: postUrl,
+  ...(description ? { description } : {}),
+  ...(ogImage ? { image: ogImage } : {}),
+  ...(wordCount ? { wordCount } : {}),
+  ...(articleSection ? { articleSection } : {}),
+  ...(allLabels.length > 0 ? { keywords: allLabels.join(', ') } : {}),
+  inLanguage: 'en',
+  publisher: {
+    '@type': 'Organization',
+    name: branding.name,
+    ...(branding.logoUrl ? { logo: { '@type': 'ImageObject', url: branding.logoUrl } } : {}),
+    url: canonicalBase,
+  },
+  mainEntityOfPage: {
+    '@type': 'WebPage',
+    '@id': postUrl,
+  },
+  isAccessibleForFree: true,
+};
+
+const encodedTitle = encodeURIComponent(post.title);
+const encodedUrl = encodeURIComponent(postUrl);
+const twitterShareUrl = `https://twitter.com/intent/tweet?text=${encodedTitle}&url=${encodedUrl}`;
+const linkedinShareUrl = `https://www.linkedin.com/sharing/share-offsite/?url=${encodedUrl}`;
+
+/**
+ * Generate a description from HTML content when no explicit description exists.
+ * Strips HTML tags, takes the first ~155 characters, and ends at a word boundary.
+ */
+function generateDescription(html: string, fallbackTitle: string): string {
+  if (!html) return fallbackTitle;
+  const text = html
+    .replace(/<[^>]*>/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+  if (text.length <= 160) return text;
+  const truncated = text.slice(0, 155);
+  const lastSpace = truncated.lastIndexOf(' ');
+  return (lastSpace > 80 ? truncated.slice(0, lastSpace) : truncated) + '...';
+}
+
+/** Extract @handle from a Twitter/X URL */
+function extractTwitterHandle(url: string): string | undefined {
+  try {
+    const pathname = new URL(url).pathname;
+    const handle = pathname.split('/').filter(Boolean)[0];
+    if (handle) return handle.startsWith('@') ? handle : `@${handle}`;
+  } catch { /* ignore invalid URLs */ }
+  return undefined;
+}
+---
+
+<PostPage
+  templateId={branding.templateId}
+  {branding}
+  {post}
+  {sanitizedContent}
+  {date}
+  {allLabels}
+  {postUrl}
+  {twitterShareUrl}
+  {linkedinShareUrl}
+  {title}
+  {description}
+  {ogImage}
+  {canonicalUrl}
+  ogType="article"
+  {jsonLd}
+  rssUrl={`${canonicalBase}/rss`}
+  articlePublishedTime={post.publishedAt}
+  articleModifiedTime={post.updatedAt}
+  articleAuthor={post.author}
+  articleTags={allLabels.length > 0 ? allLabels : undefined}
+  {articleSection}
+  {twitterSite}
+  commentsEnabled={branding.commentsEnabled && Boolean(turnstileSiteKey)}
+  publicationSlug={branding.slug}
+  turnstileSiteKey={turnstileSiteKey}
+/>
