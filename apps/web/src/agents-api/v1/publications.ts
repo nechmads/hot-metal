@@ -9,7 +9,7 @@ import { Hono } from 'hono'
 import type { AppEnv } from '../../server'
 import { NotFoundError, ValidationError, QuotaExceededError } from '../../actions/errors'
 import { AUTO_PUBLISH_MODES, type AutoPublishMode, type ScoutSchedule } from '@hotmetal/content-core'
-import { validateSchedule, validateTimezone, computeNextRun, CmsApi, getTierLimits, isUnlimited, logger } from '@hotmetal/shared'
+import { validateSchedule, validateTimezone, computeNextRun, getCmsClient, getTierLimits, isUnlimited, logger } from '@hotmetal/shared'
 
 const publications = new Hono<AppEnv>()
 
@@ -47,7 +47,7 @@ publications.get('/publications/:id/posts', async (c) => {
 		return c.json({ data: [] })
 	}
 
-	const cmsApi = new CmsApi(c.env.CMS_URL, c.env.CMS_API_KEY)
+	const cmsApi = await getCmsClient(pub, c.env.DAL, c.env)
 	const result = await cmsApi.listPosts({
 		publicationId: pub.cmsPublicationId,
 		status: 'published',
@@ -144,7 +144,7 @@ publications.post('/publications', async (c) => {
 
 	// Create matching publication in the CMS (non-blocking — errors are logged but not thrown)
 	try {
-		const cmsApi = new CmsApi(c.env.CMS_URL, c.env.CMS_API_KEY)
+		const cmsApi = await getCmsClient(publication, c.env.DAL, c.env)
 		const cmsPub = await cmsApi.createPublication({
 			title: body.name.trim(),
 			slug: body.slug.trim(),

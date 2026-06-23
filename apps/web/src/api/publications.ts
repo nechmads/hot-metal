@@ -4,7 +4,7 @@ import type { AppEnv } from '../server'
 import type { WriterAgent } from '../agent/writer-agent'
 import { verifyPublicationOwnership } from '../middleware/ownership'
 import { AUTO_PUBLISH_MODES, type AutoPublishMode, type ScoutSchedule } from '@hotmetal/content-core'
-import { validateSchedule, validateTimezone, computeNextRun, CmsApi, getTierLimits, getTierDisplayName, isUnlimited, logger } from '@hotmetal/shared'
+import { validateSchedule, validateTimezone, computeNextRun, getCmsClient, getTierLimits, getTierDisplayName, isUnlimited, logger } from '@hotmetal/shared'
 import { checkPublicationQuota, checkScoutScheduleQuota, quotaExceededResponse } from '../lib/quota'
 
 const publications = new Hono<AppEnv>()
@@ -89,7 +89,7 @@ publications.post('/publications', async (c) => {
 
   // Create matching publication in the CMS so published posts can reference it
   try {
-    const cmsApi = new CmsApi(c.env.CMS_URL, c.env.CMS_API_KEY)
+    const cmsApi = await getCmsClient(publication, c.env.DAL, c.env)
     const cmsPub = await cmsApi.createPublication({
       title: body.name.trim(),
       slug: body.slug.trim(),
@@ -248,7 +248,7 @@ publications.get('/publications/:id/posts', async (c) => {
     return c.json({ data: [] })
   }
 
-  const cmsApi = new CmsApi(c.env.CMS_URL, c.env.CMS_API_KEY)
+  const cmsApi = await getCmsClient(pub, c.env.DAL, c.env)
   const result = await cmsApi.listPosts({
     publicationId: pub.cmsPublicationId,
     status: 'published',
@@ -268,7 +268,7 @@ publications.post('/publications/:id/posts/:postId/edit', async (c) => {
   }
 
   const postId = c.req.param('postId')
-  const cmsApi = new CmsApi(c.env.CMS_URL, c.env.CMS_API_KEY)
+  const cmsApi = await getCmsClient(pub, c.env.DAL, c.env)
 
   let post
   try {

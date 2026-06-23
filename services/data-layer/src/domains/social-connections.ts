@@ -1,6 +1,5 @@
+import { decryptSecret, encryptSecret } from '../crypto'
 import type { SocialConnection, CreateSocialConnectionInput, TokenUpdate } from '../types'
-
-const IV_BYTES = 12
 
 interface SocialConnectionRow {
 	id: string
@@ -34,45 +33,6 @@ function mapRow(row: SocialConnectionRow): SocialConnection {
 	}
 }
 
-// ─── Encryption helpers ──────────────────────────────────────────────
-
-async function importKey(hexKey: string): Promise<CryptoKey> {
-	const bytes = hexToBytes(hexKey)
-	return crypto.subtle.importKey('raw', bytes.buffer as ArrayBuffer, { name: 'AES-GCM' }, false, ['encrypt', 'decrypt'])
-}
-
-async function encrypt(plaintext: string, encryptionKeyHex: string): Promise<string> {
-	const key = await importKey(encryptionKeyHex)
-	const iv = crypto.getRandomValues(new Uint8Array(IV_BYTES))
-	const encoded = new TextEncoder().encode(plaintext)
-	const ciphertext = await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, key, encoded)
-	return bytesToHex(iv) + ':' + bytesToHex(new Uint8Array(ciphertext))
-}
-
-async function decrypt(stored: string, encryptionKeyHex: string): Promise<string> {
-	const key = await importKey(encryptionKeyHex)
-	const [ivHex, ciphertextHex] = stored.split(':')
-	if (!ivHex || !ciphertextHex) throw new Error('Invalid encrypted token format')
-	const iv = hexToBytes(ivHex)
-	const ciphertext = hexToBytes(ciphertextHex)
-	const plaintext = await crypto.subtle.decrypt({ name: 'AES-GCM', iv: iv.buffer as ArrayBuffer }, key, ciphertext.buffer as ArrayBuffer)
-	return new TextDecoder().decode(plaintext)
-}
-
-function hexToBytes(hex: string): Uint8Array {
-	const bytes = new Uint8Array(hex.length / 2)
-	for (let i = 0; i < hex.length; i += 2) {
-		bytes[i / 2] = parseInt(hex.substring(i, i + 2), 16)
-	}
-	return bytes
-}
-
-function bytesToHex(bytes: Uint8Array): string {
-	return Array.from(bytes)
-		.map((b) => b.toString(16).padStart(2, '0'))
-		.join('')
-}
-
 // ─── CRUD ────────────────────────────────────────────────────────────
 
 export async function createSocialConnection(
@@ -85,8 +45,8 @@ export async function createSocialConnection(
 
 	let accessToken: string | null = data.accessToken ?? null
 	let refreshToken: string | null = data.refreshToken ?? null
-	if (accessToken) accessToken = await encrypt(accessToken, encryptionKeyHex)
-	if (refreshToken) refreshToken = await encrypt(refreshToken, encryptionKeyHex)
+	if (accessToken) accessToken = await encryptSecret(accessToken, encryptionKeyHex)
+	if (refreshToken) refreshToken = await encryptSecret(refreshToken, encryptionKeyHex)
 
 	await db
 		.prepare(
@@ -161,10 +121,10 @@ export async function getSocialConnectionWithDecryptedTokens(
 	if (!conn) return null
 
 	if (conn.accessToken) {
-		conn.accessToken = await decrypt(conn.accessToken, encryptionKeyHex)
+		conn.accessToken = await decryptSecret(conn.accessToken, encryptionKeyHex)
 	}
 	if (conn.refreshToken) {
-		conn.refreshToken = await decrypt(conn.refreshToken, encryptionKeyHex)
+		conn.refreshToken = await decryptSecret(conn.refreshToken, encryptionKeyHex)
 	}
 
 	return conn
@@ -182,14 +142,14 @@ export async function updateSocialConnectionTokens(
 	if (tokens.accessToken !== undefined) {
 		sets.push('access_token = ?')
 		const val = tokens.accessToken !== null
-			? await encrypt(tokens.accessToken, encryptionKeyHex)
+			? await encryptSecret(tokens.accessToken, encryptionKeyHex)
 			: null
 		bindings.push(val)
 	}
 	if (tokens.refreshToken !== undefined) {
 		sets.push('refresh_token = ?')
 		const val = tokens.refreshToken !== null
-			? await encrypt(tokens.refreshToken, encryptionKeyHex)
+			? await encryptSecret(tokens.refreshToken, encryptionKeyHex)
 			: null
 		bindings.push(val)
 	}

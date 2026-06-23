@@ -1,8 +1,19 @@
 export { getTierLimits, getTierDisplayName, isUnlimited, UPGRADE_EMAIL, TIER_DISPLAY_NAMES } from './tiers'
 export type { TierName, TierLimits } from './tiers'
 
-export { CmsApi, CmsApiError } from './cms-api'
-export type { CreatePostInput, CreateRenditionInput } from './cms-api'
+export { CmsApi, SonicCmsClient, CmsApiError, EmdashCmsClientUnavailableError } from './cms-api'
+export { EmdashCmsClient } from './emdash-cms-client'
+export { getCmsClient } from './cms-factory'
+export type { CmsPublicationRef, CmsCredentialResolver, SonicCmsEnv } from './cms-factory'
+export type {
+  CmsClient,
+  CreatePostInput,
+  CreateRenditionInput,
+  ListPostsParams,
+  ListRenditionsParams,
+  CreatePublicationData,
+  CreatePublicationResult,
+} from './cms-api'
 
 export { AlexanderApi, AlexanderApiError } from './alexander-api'
 

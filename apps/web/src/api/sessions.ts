@@ -1,7 +1,7 @@
 import { Hono } from 'hono'
 import type { AppEnv } from '../server'
 import type { SessionStatus } from '@hotmetal/data-layer'
-import { CmsApi } from '@hotmetal/shared'
+import { getCmsClient } from '@hotmetal/shared'
 import { verifyPublicationOwnership } from '../middleware/ownership'
 import { computeChatToken } from '../lib/chat-token'
 
@@ -108,7 +108,9 @@ sessions.get('/sessions/:id/post', async (c) => {
     return c.json({ error: 'No published post linked to this session' }, 404)
   }
 
-  const cmsApi = new CmsApi(c.env.CMS_URL, c.env.CMS_API_KEY)
+  // The post lives in whichever CMS the session's publication uses.
+  const pub = session.publicationId ? await c.env.DAL.getPublicationById(session.publicationId) : null
+  const cmsApi = await getCmsClient(pub, c.env.DAL, c.env)
   const post = await cmsApi.getPost(session.cmsPostId)
   return c.json({
     slug: post.slug,

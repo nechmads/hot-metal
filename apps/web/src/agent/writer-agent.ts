@@ -25,7 +25,7 @@ import {
 } from "../prompts/system-prompt";
 import { createToolSet, createAutoWriteToolSet } from "../tools";
 import { cleanupMessages } from "./message-utils";
-import { CmsApi, logger } from "@hotmetal/shared";
+import { getCmsClient, logger, type CmsClient } from "@hotmetal/shared";
 import { createWilsonMiddleware } from "@hotmetal/shared/server";
 import type { Citation } from "@hotmetal/content-core";
 import { marked } from "marked";
@@ -712,17 +712,19 @@ export class WriterAgent extends AIChatAgent<Env, WriterAgentState> {
    * Resolve a publication's CMS counterpart ID.
    * Lazily creates the CMS publication if it doesn't exist yet.
    */
-  private async resolveCmsPublicationId(pub: {
-    id: string;
-    name: string;
-    slug: string;
-    cmsPublicationId: string | null;
-  }): Promise<string | undefined> {
+  private async resolveCmsPublicationId(
+    pub: {
+      id: string;
+      name: string;
+      slug: string;
+      cmsPublicationId: string | null;
+    },
+    cmsApi: CmsClient,
+  ): Promise<string | undefined> {
     if (pub.cmsPublicationId) return pub.cmsPublicationId;
 
     // CMS publication wasn't created earlier — try now
     try {
-      const cmsApi = new CmsApi(this.env.CMS_URL, this.env.CMS_API_KEY);
       const cmsPub = await cmsApi.createPublication({
         title: pub.name,
         slug: pub.slug,
@@ -830,8 +832,8 @@ export class WriterAgent extends AIChatAgent<Env, WriterAgentState> {
 
       const hook = body.hook?.trim() || undefined;
       const htmlContent = await marked.parse(draft.content);
-      const cmsApi = new CmsApi(this.env.CMS_URL, this.env.CMS_API_KEY);
-      const cmsPublicationId = await this.resolveCmsPublicationId(pub);
+      const cmsApi = await getCmsClient(pub, this.env.DAL, this.env);
+      const cmsPublicationId = await this.resolveCmsPublicationId(pub, cmsApi);
 
       const isUpdate = !!this.state.cmsPostId;
       let post;

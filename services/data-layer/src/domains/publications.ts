@@ -1,7 +1,8 @@
 import type { AutoPublishMode, ScoutSchedule } from '@hotmetal/content-core'
 import { DEFAULT_SCHEDULE, DEFAULT_TIMEZONE } from '@hotmetal/content-core'
 import { computeNextRun, parseSchedule } from '@hotmetal/shared'
-import type { CommentModeration, DomainStatus, Publication, CreatePublicationInput, UpdatePublicationInput, SocialLinks } from '../types'
+import { decryptSecret, encryptSecret } from '../crypto'
+import type { CmsProvider, CmsProvisioningStatus, CommentModeration, DomainStatus, Publication, PublicationCmsCredentials, CreatePublicationInput, UpdatePublicationInput, SocialLinks } from '../types'
 
 interface PublicationRow {
 	id: string
@@ -34,6 +35,11 @@ interface PublicationRow {
 	cf_hostname_id: string | null
 	domain_verification_txt: string | null
 	meta_description: string | null
+	cms_provider: string
+	cms_base_url: string | null
+	cms_token: string | null
+	cms_provisioning_status: string | null
+	cms_instance_meta: string | null
 	created_at: number
 	updated_at: number
 }
@@ -79,6 +85,12 @@ function mapRow(row: PublicationRow): Publication {
 		cfHostnameId: row.cf_hostname_id,
 		domainVerificationTxt: row.domain_verification_txt,
 		metaDescription: row.meta_description,
+		cmsProvider: (row.cms_provider as CmsProvider) ?? 'sonicjs',
+		cmsBaseUrl: row.cms_base_url,
+		cmsProvisioningStatus: row.cms_provisioning_status as CmsProvisioningStatus | null,
+		cmsInstanceMeta: row.cms_instance_meta,
+		// cms_token is intentionally NOT mapped — the plaintext is exposed only via
+		// getPublicationWithCmsToken, mirroring the social_connections decrypt pattern.
 		createdAt: row.created_at,
 		updatedAt: row.updated_at,
 	}
@@ -86,7 +98,8 @@ function mapRow(row: PublicationRow): Publication {
 
 export async function createPublication(
 	db: D1Database,
-	data: CreatePublicationInput
+	data: CreatePublicationInput,
+	encryptionKeyHex: string
 ): Promise<Publication> {
 	const now = Math.floor(Date.now() / 1000)
 	const schedule = data.scoutSchedule ?? DEFAULT_SCHEDULE
@@ -95,14 +108,22 @@ export async function createPublication(
 	// A disabled publication has no next run; the cron skips it until re-enabled.
 	const nextScoutAt = scoutEnabled ? computeNextRun(schedule, tz) : null
 
+	const cmsProvider: CmsProvider = data.cmsProvider ?? 'sonicjs'
+	const cmsBaseUrl = data.cmsBaseUrl ?? null
+	const cmsProvisioningStatus = data.cmsProvisioningStatus ?? null
+	const cmsInstanceMeta = data.cmsInstanceMeta ?? null
+	const cmsTokenEncrypted = data.cmsToken ? await encryptSecret(data.cmsToken, encryptionKeyHex) : null
+
 	await db
 		.prepare(
 			`INSERT INTO publications (id, user_id, name, slug, description, writing_tone,
 			 default_author, auto_publish_mode, cadence_posts_per_week, scout_schedule,
 			 timezone, next_scout_at, scout_enabled, style_id, feed_full_enabled, feed_partial_enabled,
 			 template_id, tagline, logo_url, header_image_url, accent_color, social_links,
-			 comments_enabled, comments_moderation, meta_description, created_at, updated_at)
-			 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+			 comments_enabled, comments_moderation, meta_description,
+			 cms_provider, cms_base_url, cms_token, cms_provisioning_status, cms_instance_meta,
+			 created_at, updated_at)
+			 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
 		)
 		.bind(
 			data.id,
@@ -130,6 +151,11 @@ export async function createPublication(
 			(data.commentsEnabled ?? true) ? 1 : 0,
 			data.commentsModeration ?? 'auto-approve',
 			data.metaDescription ?? null,
+			cmsProvider,
+			cmsBaseUrl,
+			cmsTokenEncrypted,
+			cmsProvisioningStatus,
+			cmsInstanceMeta,
 			now,
 			now
 		)
@@ -166,6 +192,10 @@ export async function createPublication(
 		cfHostnameId: null,
 		domainVerificationTxt: null,
 		metaDescription: data.metaDescription ?? null,
+		cmsProvider,
+		cmsBaseUrl,
+		cmsProvisioningStatus,
+		cmsInstanceMeta,
 		createdAt: now,
 		updatedAt: now,
 	}
@@ -195,6 +225,43 @@ export async function getPublicationByCustomDomain(db: D1Database, domain: strin
 	return row ? mapRow(row) : null
 }
 
+/**
+ * Fetch a publication's CMS credentials with the ec_pat_ token DECRYPTED.
+ * Used by the write path to construct the per-publication CMS client. The
+ * plaintext token is returned only here — never by the ordinary read methods.
+ */
+export async function getPublicationWithCmsToken(
+	db: D1Database,
+	id: string,
+	encryptionKeyHex: string
+): Promise<PublicationCmsCredentials | null> {
+	const row = await db
+		.prepare('SELECT id, cms_provider, cms_base_url, cms_token FROM publications WHERE id = ?')
+		.bind(id)
+		.first<{ id: string; cms_provider: string; cms_base_url: string | null; cms_token: string | null }>()
+	if (!row) return null
+
+	let cmsToken: string | null = null
+	if (row.cms_token) {
+		try {
+			cmsToken = await decryptSecret(row.cms_token, encryptionKeyHex)
+		} catch (err) {
+			// A malformed/rotated-key token would otherwise surface as an opaque
+			// WebCrypto error — add the publication id so it's debuggable.
+			throw new Error(
+				`Failed to decrypt cms_token for publication ${id}: ${err instanceof Error ? err.message : String(err)}`
+			)
+		}
+	}
+
+	return {
+		id: row.id,
+		cmsProvider: (row.cms_provider as CmsProvider) ?? 'sonicjs',
+		cmsBaseUrl: row.cms_base_url,
+		cmsToken,
+	}
+}
+
 export async function listPublicationsByUser(db: D1Database, userId: string): Promise<Publication[]> {
 	const result = await db
 		.prepare('SELECT * FROM publications WHERE user_id = ? ORDER BY created_at DESC')
@@ -213,7 +280,8 @@ export async function listAllPublications(db: D1Database): Promise<Publication[]
 export async function updatePublication(
 	db: D1Database,
 	id: string,
-	data: UpdatePublicationInput
+	data: UpdatePublicationInput,
+	encryptionKeyHex: string
 ): Promise<Publication | null> {
 	const sets: string[] = []
 	const bindings: (string | number | null)[] = []
@@ -329,6 +397,26 @@ export async function updatePublication(
 	if (data.metaDescription !== undefined) {
 		sets.push('meta_description = ?')
 		bindings.push(data.metaDescription)
+	}
+	if (data.cmsProvider !== undefined) {
+		sets.push('cms_provider = ?')
+		bindings.push(data.cmsProvider)
+	}
+	if (data.cmsBaseUrl !== undefined) {
+		sets.push('cms_base_url = ?')
+		bindings.push(data.cmsBaseUrl)
+	}
+	if (data.cmsToken !== undefined) {
+		sets.push('cms_token = ?')
+		bindings.push(data.cmsToken !== null ? await encryptSecret(data.cmsToken, encryptionKeyHex) : null)
+	}
+	if (data.cmsProvisioningStatus !== undefined) {
+		sets.push('cms_provisioning_status = ?')
+		bindings.push(data.cmsProvisioningStatus)
+	}
+	if (data.cmsInstanceMeta !== undefined) {
+		sets.push('cms_instance_meta = ?')
+		bindings.push(data.cmsInstanceMeta)
 	}
 
 	if (sets.length === 0) return getPublicationById(db, id)

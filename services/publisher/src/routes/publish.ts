@@ -1,7 +1,7 @@
 import { Hono } from 'hono'
 import type { PublisherEnv } from '../env'
 import type { DataLayerApi } from '@hotmetal/data-layer'
-import { CmsApi, logger } from '@hotmetal/shared'
+import { getCmsClient, logger, type CmsClient } from '@hotmetal/shared'
 import { writeAuditLog } from '../lib/audit'
 import { BlogAdapter } from '../adapters/blog-adapter'
 import { LinkedInAdapter } from '../adapters/linkedin-adapter'
@@ -41,6 +41,16 @@ async function resolvePublicationBaseUrl(
   }
 }
 
+/**
+ * Build the CMS client for a publication. When a publicationId is supplied we
+ * select the publication's provider (SonicJS or its own EmDash instance);
+ * otherwise we default to the shared SonicJS instance (legacy behavior).
+ */
+async function cmsClientFor(env: PublisherEnv, publicationId: string | undefined): Promise<CmsClient> {
+  const pub = publicationId ? await env.DAL.getPublicationById(publicationId) : null
+  return getCmsClient(pub, env.DAL, env)
+}
+
 const publish = new Hono<{ Bindings: PublisherEnv }>()
 
 // All publish routes require API key authentication
@@ -48,13 +58,13 @@ publish.use('/publish/*', publisherApiKeyAuth)
 
 /** Publish an existing post to the blog. */
 publish.post('/publish/blog', async (c) => {
-  const body = await c.req.json<{ postId?: string }>()
+  const body = await c.req.json<{ postId?: string; publicationId?: string }>()
 
   if (!body.postId || typeof body.postId !== 'string') {
     return c.json({ error: 'postId is required' }, 400)
   }
 
-  const cmsApi = new CmsApi(c.env.CMS_URL, c.env.CMS_API_KEY)
+  const cmsApi = await cmsClientFor(c.env, body.publicationId)
   const adapter = new BlogAdapter(cmsApi, c.env.BLOG_BASE_URL)
 
   const post = await cmsApi.getPost(body.postId)
@@ -107,6 +117,7 @@ publish.post('/publish/blog/create', async (c) => {
     hook?: string
     excerpt?: string
     tags?: string
+    publicationId?: string
     [key: string]: unknown
   }>()
 
@@ -120,7 +131,7 @@ publish.post('/publish/blog/create', async (c) => {
     return c.json({ error: 'content is required' }, 400)
   }
 
-  const cmsApi = new CmsApi(c.env.CMS_URL, c.env.CMS_API_KEY)
+  const cmsApi = await cmsClientFor(c.env, typeof body.publicationId === 'string' ? body.publicationId : undefined)
   const adapter = new BlogAdapter(cmsApi, c.env.BLOG_BASE_URL)
 
   // Create the post in the CMS as a draft first
@@ -194,7 +205,7 @@ publish.post('/publish/linkedin', async (c) => {
     c.env.PUBLICATIONS_BASE_DOMAIN,
   )
 
-  const cmsApi = new CmsApi(c.env.CMS_URL, c.env.CMS_API_KEY)
+  const cmsApi = await cmsClientFor(c.env, body.publicationId)
   const adapter = new LinkedInAdapter(cmsApi, token.accessToken, token.personUrn, blogBaseUrl)
 
   const post = await cmsApi.getPost(body.postId)
@@ -279,7 +290,7 @@ publish.post('/publish/twitter', async (c) => {
     c.env.PUBLICATIONS_BASE_DOMAIN,
   )
 
-  const cmsApi = new CmsApi(c.env.CMS_URL, c.env.CMS_API_KEY)
+  const cmsApi = await cmsClientFor(c.env, body.publicationId)
   const adapter = new TwitterAdapter(cmsApi, token.accessToken, blogBaseUrl)
 
   const post = await cmsApi.getPost(body.postId)
