@@ -4,8 +4,10 @@ import type { AppEnv } from '../server'
 import type { WriterAgent } from '../agent/writer-agent'
 import { verifyPublicationOwnership } from '../middleware/ownership'
 import { AUTO_PUBLISH_MODES, type AutoPublishMode, type ScoutSchedule } from '@hotmetal/content-core'
-import { validateSchedule, validateTimezone, computeNextRun, CmsApi, getTierLimits, getTierDisplayName, isUnlimited, logger } from '@hotmetal/shared'
+import type { CmsProvider } from '@hotmetal/data-layer'
+import { validateSchedule, validateTimezone, computeNextRun, getCmsClient, getTierLimits, getTierDisplayName, isUnlimited, logger } from '@hotmetal/shared'
 import { checkPublicationQuota, checkScoutScheduleQuota, quotaExceededResponse } from '../lib/quota'
+import { triggerEmdashProvision, triggerEmdashDeprovision } from '../lib/provisioner'
 
 const publications = new Hono<AppEnv>()
 
@@ -27,6 +29,7 @@ publications.post('/publications', async (c) => {
     cadencePostsPerWeek?: number
     scoutSchedule?: ScoutSchedule
     timezone?: string
+    cmsProvider?: string
   }>()
 
   if (!body.name?.trim()) {
@@ -72,6 +75,14 @@ publications.post('/publications', async (c) => {
     }
   }
 
+  // Which CMS this publication lives on: explicit request value, else the
+  // server default (DEFAULT_CMS_PROVIDER, 'sonicjs' until the EmDash fleet is
+  // the default). EmDash publications get a dedicated auto-provisioned instance.
+  const cmsProvider = (body.cmsProvider ?? c.env.DEFAULT_CMS_PROVIDER ?? 'sonicjs') as CmsProvider
+  if (cmsProvider !== 'sonicjs' && cmsProvider !== 'emdash') {
+    return c.json({ error: "cmsProvider must be 'sonicjs' or 'emdash'" }, 400)
+  }
+
   const id = crypto.randomUUID()
   const publication = await c.env.DAL.createPublication({
     id,
@@ -85,22 +96,66 @@ publications.post('/publications', async (c) => {
     cadencePostsPerWeek: body.cadencePostsPerWeek,
     scoutSchedule: body.scoutSchedule,
     timezone: body.timezone,
+    cmsProvider,
+    // Mark EmDash instances as provisioning up front so the dashboard shows the
+    // spinner immediately, before the provisioner workflow flips it to ready.
+    ...(cmsProvider === 'emdash' ? { cmsProvisioningStatus: 'provisioning' as const } : {}),
   })
 
-  // Create matching publication in the CMS so published posts can reference it
-  try {
-    const cmsApi = new CmsApi(c.env.CMS_URL, c.env.CMS_API_KEY)
-    const cmsPub = await cmsApi.createPublication({
-      title: body.name.trim(),
-      slug: body.slug.trim(),
-    })
-    await c.env.DAL.updatePublication(id, { cmsPublicationId: cmsPub.id })
-    publication.cmsPublicationId = cmsPub.id
-  } catch (err) {
-    logger('web').error('Failed to create CMS publication (non-blocking)', { component: 'publications', error: err instanceof Error ? err.message : String(err) })
+  if (cmsProvider === 'emdash') {
+    // Auto-provision a dedicated EmDash instance (durable workflow, async).
+    // Non-blocking: on trigger failure mark 'failed' (not left stuck in
+    // 'provisioning' with no live workflow) so it's clearly retryable.
+    try {
+      await triggerEmdashProvision(c.env, id)
+    } catch (err) {
+      logger('web').error('Failed to trigger EmDash provisioning (non-blocking)', { component: 'provisioner', publicationId: id, error: err instanceof Error ? err.message : String(err) })
+      await c.env.DAL.updatePublication(id, { cmsProvisioningStatus: 'failed' }).catch(() => {})
+      publication.cmsProvisioningStatus = 'failed'
+    }
+  } else {
+    // SonicJS: create the matching CMS publication so posts can reference it.
+    try {
+      const cmsApi = await getCmsClient(publication, c.env.DAL, c.env)
+      const cmsPub = await cmsApi.createPublication({
+        title: body.name.trim(),
+        slug: body.slug.trim(),
+      })
+      await c.env.DAL.updatePublication(id, { cmsPublicationId: cmsPub.id })
+      publication.cmsPublicationId = cmsPub.id
+    } catch (err) {
+      logger('web').error('Failed to create CMS publication (non-blocking)', { component: 'publications', error: err instanceof Error ? err.message : String(err) })
+    }
   }
 
   return c.json(publication, 201)
+})
+
+/**
+ * Retry provisioning for an EmDash publication that failed or got stuck. Safe to
+ * call while a provision may still be running: the provisioner's steps are
+ * idempotent (create-or-reuse by name; bootstrap re-seeds), so a second workflow
+ * converges to the same end state rather than duplicating infra.
+ */
+publications.post('/publications/:id/provision', async (c) => {
+  const pub = await verifyPublicationOwnership(c, c.req.param('id'))
+  if (!pub) return c.json({ error: 'Publication not found' }, 404)
+  if (pub.cmsProvider !== 'emdash') {
+    return c.json({ error: 'Publication is not an EmDash instance' }, 400)
+  }
+  if (pub.cmsProvisioningStatus === 'ready') {
+    return c.json({ status: 'ready', alreadyProvisioned: true })
+  }
+
+  await c.env.DAL.updatePublication(pub.id, { cmsProvisioningStatus: 'provisioning' })
+  try {
+    await triggerEmdashProvision(c.env, pub.id, 'retry')
+  } catch (err) {
+    logger('web').error('Failed to retrigger EmDash provisioning', { component: 'provisioner', publicationId: pub.id, error: err instanceof Error ? err.message : String(err) })
+    await c.env.DAL.updatePublication(pub.id, { cmsProvisioningStatus: 'failed' }).catch(() => {})
+    return c.json({ error: 'Failed to reach provisioner' }, 502)
+  }
+  return c.json({ status: 'provisioning' })
 })
 
 /** List publications for the authenticated user. */
@@ -248,7 +303,7 @@ publications.get('/publications/:id/posts', async (c) => {
     return c.json({ data: [] })
   }
 
-  const cmsApi = new CmsApi(c.env.CMS_URL, c.env.CMS_API_KEY)
+  const cmsApi = await getCmsClient(pub, c.env.DAL, c.env)
   const result = await cmsApi.listPosts({
     publicationId: pub.cmsPublicationId,
     status: 'published',
@@ -268,7 +323,7 @@ publications.post('/publications/:id/posts/:postId/edit', async (c) => {
   }
 
   const postId = c.req.param('postId')
-  const cmsApi = new CmsApi(c.env.CMS_URL, c.env.CMS_API_KEY)
+  const cmsApi = await getCmsClient(pub, c.env.DAL, c.env)
 
   let post
   try {
@@ -323,6 +378,19 @@ publications.post('/publications/:id/posts/:postId/edit', async (c) => {
 publications.delete('/publications/:id', async (c) => {
   const pub = await verifyPublicationOwnership(c, c.req.param('id'))
   if (!pub) return c.json({ error: 'Publication not found' }, 404)
+
+  // EmDash publications own a dedicated instance (script + D1 + R2 + KV). Tear it
+  // down BEFORE deleting the record — once the publication (and its
+  // cms_instance_meta) is gone, the infra can no longer be found and would leak.
+  // On teardown failure, refuse the delete so it stays retryable.
+  if (pub.cmsProvider === 'emdash') {
+    try {
+      await triggerEmdashDeprovision(c.env, pub.id)
+    } catch (err) {
+      logger('web').error('Failed to deprovision EmDash instance; publication not deleted', { component: 'provisioner', publicationId: pub.id, error: err instanceof Error ? err.message : String(err) })
+      return c.json({ error: 'Failed to tear down the EmDash instance. Publication not deleted — please try again.' }, 502)
+    }
+  }
 
   await c.env.DAL.deletePublication(c.req.param('id'))
   return c.json({ deleted: true })

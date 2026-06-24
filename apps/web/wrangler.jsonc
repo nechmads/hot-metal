@@ -62,6 +62,12 @@
       "binding": "CONTENT_ANALYZER",
       "service": "hotmetal-content-analyzer",
     },
+    {
+      // EmDash fleet (Phase 3): trigger per-publication provisioning on create.
+      // NOTE: deploy hotmetal-provisioner BEFORE web, or this binding fails.
+      "binding": "PROVISIONER",
+      "service": "hotmetal-provisioner",
+    },
   ],
 
   // Workers AI binding (for image generation)
@@ -88,6 +94,10 @@
     "PADDLE_ENVIRONMENT": "production",
     "WILSON_API_URL": "https://api.getllmetrics.com",
     "AXIOM_DATASET": "hotmetal-prod",
+    // CMS provider for newly-created publications ('sonicjs' | 'emdash'). Stays
+    // 'sonicjs' until the EmDash fleet is validated end-to-end, then flip to
+    // 'emdash' to auto-provision a dedicated instance for every new publication.
+    "DEFAULT_CMS_PROVIDER": "emdash",
   },
 
   // SPA fallback — serve index.html for unmatched routes (client-side routing)
@@ -113,6 +123,7 @@
   // SCOUT_API_KEY        — authenticates requests to content-scout
   // ALEXANDER_API_KEY    — authenticates requests to Alexander research API
   // PUBLISHER_API_KEY    — authenticates requests to the publisher service
+  // PROVISIONER_API_KEY  — authenticates requests to the EmDash provisioner
   // INTERNAL_API_KEY     — service-to-service auth (content-scout auto-write)
   // CLERK_WEBHOOK_SECRET — Svix signing secret for Clerk webhooks
   // RESEND_API_KEY       — Resend email API key

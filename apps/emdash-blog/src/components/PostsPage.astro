@@ -1,0 +1,81 @@
+---
+/**
+ * Template switcher for the all-posts page (/posts).
+ * Reuses each template's list components to display all published posts.
+ */
+import type { Post } from '@hotmetal/content-core';
+import type { PublicationBranding } from '../dl/publication';
+
+// Starter template
+import StarterBaseLayout from '../templates/starter/layouts/BaseLayout.astro';
+import StarterHeader from '../templates/starter/components/Header.astro';
+import StarterPostList from '../templates/starter/components/PostList.astro';
+import StarterFooter from '../templates/starter/components/Footer.astro';
+
+// Editorial template
+import EditorialBaseLayout from '../templates/editorial/layouts/BaseLayout.astro';
+import EditorialHeader from '../templates/editorial/components/Header.astro';
+import EditorialFooter from '../templates/editorial/components/Footer.astro';
+import EditorialMoreStories from '../templates/editorial/components/MoreStories.astro';
+
+// Bold template
+import BoldBaseLayout from '../templates/bold/layouts/BaseLayout.astro';
+import BoldHeader from '../templates/bold/components/Header.astro';
+import BoldPostList from '../templates/bold/components/PostList.astro';
+import BoldFooter from '../templates/bold/components/Footer.astro';
+
+interface Props {
+  templateId: string;
+  branding: PublicationBranding;
+  posts: Post[];
+  baseUrl: string;
+}
+
+const { templateId, branding, posts, baseUrl } = Astro.props;
+
+const layoutProps = {
+  title: `All Posts — ${branding.name}`,
+  publicationName: branding.name,
+  description: branding.metaDescription ?? branding.description ?? branding.tagline ?? undefined,
+  ogImage: branding.headerImageUrl ?? undefined,
+  canonicalUrl: `${baseUrl}/posts`,
+  accentColor: branding.accentColor,
+  rssUrl: `${baseUrl}/rss`,
+};
+---
+
+{templateId === 'editorial' ? (
+  <EditorialBaseLayout {...layoutProps}>
+    <EditorialHeader publicationName={branding.name} logoUrl={branding.logoUrl} />
+    <div class="pt-10">
+      <EditorialMoreStories posts={posts} heading="All Posts" showViewAll={false} />
+    </div>
+    <EditorialFooter
+      publicationName={branding.name}
+      publicationSlug={branding.slug}
+      socialLinks={branding.socialLinks}
+    />
+  </EditorialBaseLayout>
+) : templateId === 'bold' ? (
+  <BoldBaseLayout {...layoutProps}>
+    <BoldHeader publicationName={branding.name} logoUrl={branding.logoUrl} />
+    <div class="pt-10">
+      <BoldPostList posts={posts} heading="All Posts" />
+    </div>
+    <BoldFooter
+      publicationName={branding.name}
+      publicationSlug={branding.slug}
+      socialLinks={branding.socialLinks}
+    />
+  </BoldBaseLayout>
+) : (
+  <StarterBaseLayout {...layoutProps}>
+    <StarterHeader publicationName={branding.name} logoUrl={branding.logoUrl} />
+    <StarterPostList posts={posts} heading="All Posts" showViewAll={false} />
+    <StarterFooter
+      publicationName={branding.name}
+      publicationSlug={branding.slug}
+      socialLinks={branding.socialLinks}
+    />
+  </StarterBaseLayout>
+)}

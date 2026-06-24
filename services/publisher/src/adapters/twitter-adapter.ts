@@ -1,5 +1,5 @@
 import type { Post } from '@hotmetal/content-core'
-import type { CmsApi } from '@hotmetal/shared'
+import type { CmsClient } from '@hotmetal/shared'
 import type { OutletAdapter, PreparedRendition, ValidationResult, PublishResult } from './types'
 import { formatForTwitter, calculateTweetLength } from '../twitter/formatter'
 import { TwitterApiClient } from '../twitter/api'
@@ -10,7 +10,7 @@ export class TwitterAdapter implements OutletAdapter {
   readonly outlet = 'twitter' as const
 
   constructor(
-    private cmsApi: CmsApi,
+    private cmsApi: CmsClient,
     private accessToken: string,
     private blogBaseUrl: string,
   ) {}

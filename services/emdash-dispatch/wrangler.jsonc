@@ -1,0 +1,22 @@
+{
+	"$schema": "node_modules/wrangler/config-schema.json",
+	"name": "hotmetal-emdash-dispatch",
+	"main": "src/index.ts",
+	"account_id": "2174498561748c927a0b968e44a56754",
+	"compatibility_date": "2026-02-24",
+	"observability": {
+		"enabled": true,
+	},
+	// Service-binding-only: no workers.dev subdomain and no route, so this worker is
+	// unreachable from the public internet — the provisioner reaches it solely via
+	// its TENANT_INVOKER service binding. (It dispatches to arbitrary tenant scripts
+	// by header, so it must never be publicly invokable.)
+	"workers_dev": false,
+	// The WfP dispatch namespace holding every tenant script.
+	"dispatch_namespaces": [
+		{
+			"binding": "DISPATCHER",
+			"namespace": "hotmetal-emdash",
+		},
+	],
+}

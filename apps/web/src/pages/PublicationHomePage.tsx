@@ -8,6 +8,7 @@ import { formatRelativeTime } from '@/lib/format'
 import { toast } from 'sonner'
 import { fetchPublication, fetchPublishedPosts, fetchIdeas, fetchIdeasCount, fetchComments, triggerScout, editPublishedPost } from '@/lib/api'
 import { startScoutPolling } from '@/stores/scout-store'
+import { ProvisioningBanner, isProvisioning } from '@/components/publications/ProvisioningStatus'
 import type { PublicationConfig, Idea, Topic, AdminComment } from '@/lib/types'
 
 export function PublicationHomePage() {
@@ -113,14 +114,21 @@ export function PublicationHomePage() {
           </button>
           <div>
             <h2 className="text-xl font-bold">{publication.name}</h2>
-            <a
-              href={`https://${publication.slug}.hotmetalapp.com`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-xs text-[var(--color-text-muted)] hover:text-[var(--color-accent)] transition-colors"
-            >
-              https://{publication.slug}.hotmetalapp.com
-            </a>
+            {isProvisioning(publication) ? (
+              <span className="text-xs text-[var(--color-text-muted)]">
+                https://{publication.slug}.hotmetalapp.com{' '}
+                <span className="italic">(provisioning…)</span>
+              </span>
+            ) : (
+              <a
+                href={`https://${publication.slug}.hotmetalapp.com`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-xs text-[var(--color-text-muted)] hover:text-[var(--color-accent)] transition-colors"
+              >
+                https://{publication.slug}.hotmetalapp.com
+              </a>
+            )}
           </div>
         </div>
         <div className="flex items-center gap-2">
@@ -140,6 +148,14 @@ export function PublicationHomePage() {
           </Link>
         </div>
       </div>
+
+      {/* EmDash provisioning state (banner + retry; polls until ready) */}
+      <ProvisioningBanner
+        publicationId={publication.id}
+        provider={publication.cmsProvider}
+        status={publication.cmsProvisioningStatus}
+        onReady={loadData}
+      />
 
       {/* Published Posts */}
       <section className="mt-8">

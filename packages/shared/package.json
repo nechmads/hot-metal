@@ -15,7 +15,8 @@
   },
   "dependencies": {
     "@axiomhq/js": "^1.6.1",
-    "@hotmetal/content-core": "workspace:*"
+    "@hotmetal/content-core": "workspace:*",
+    "emdash": "0.22.0"
   },
   "peerDependencies": {
     "@ai-sdk/provider": ">=3.0.0"

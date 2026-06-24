@@ -54,6 +54,7 @@ import type {
 	User,
 	Session,
 	Publication,
+	PublicationCmsCredentials,
 	Topic,
 	Idea,
 	ActivityEntry,
@@ -96,6 +97,7 @@ export interface DataLayerApi {
 	getPublicationById(id: string): Promise<Publication | null>
 	getPublicationBySlug(slug: string): Promise<Publication | null>
 	getPublicationByCustomDomain(domain: string): Promise<Publication | null>
+	getPublicationWithCmsToken(id: string): Promise<PublicationCmsCredentials | null>
 	listPublicationsByUser(userId: string): Promise<Publication[]>
 	listAllPublications(): Promise<Publication[]>
 	updatePublication(id: string, data: UpdatePublicationInput): Promise<Publication | null>
@@ -218,13 +220,14 @@ export class DataLayer extends WorkerEntrypoint<Env> {
 	countCompletedSessionsForWeek(pubId: string, weekStart: number) { return sessions.countCompletedForWeek(this.env.DB, pubId, weekStart) }
 
 	// ─── Publications ──────────────────────────────────────────────────
-	createPublication(data: CreatePublicationInput) { return publications.createPublication(this.env.DB, data) }
+	createPublication(data: CreatePublicationInput) { return publications.createPublication(this.env.DB, data, this.env.TOKEN_ENCRYPTION_KEY) }
 	getPublicationById(id: string) { return publications.getPublicationById(this.env.DB, id) }
 	getPublicationBySlug(slug: string) { return publications.getPublicationBySlug(this.env.DB, slug) }
 	getPublicationByCustomDomain(domain: string) { return publications.getPublicationByCustomDomain(this.env.DB, domain) }
+	getPublicationWithCmsToken(id: string) { return publications.getPublicationWithCmsToken(this.env.DB, id, this.env.TOKEN_ENCRYPTION_KEY) }
 	listPublicationsByUser(userId: string) { return publications.listPublicationsByUser(this.env.DB, userId) }
 	listAllPublications() { return publications.listAllPublications(this.env.DB) }
-	updatePublication(id: string, data: UpdatePublicationInput) { return publications.updatePublication(this.env.DB, id, data) }
+	updatePublication(id: string, data: UpdatePublicationInput) { return publications.updatePublication(this.env.DB, id, data, this.env.TOKEN_ENCRYPTION_KEY) }
 	deletePublication(id: string) { return publications.deletePublication(this.env.DB, id) }
 	getDuePublications(now: number) { return publications.getDuePublications(this.env.DB, now) }
 	getPublicationsWithNullSchedule() { return publications.getPublicationsWithNullSchedule(this.env.DB) }

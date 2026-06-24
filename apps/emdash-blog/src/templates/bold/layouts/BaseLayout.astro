@@ -1,0 +1,110 @@
+---
+import { ClientRouter } from 'astro:transitions';
+import HeadMeta from '../../../components/HeadMeta.astro';
+import '../styles/theme.css';
+
+interface Props {
+  title: string;
+  publicationName: string;
+  description?: string;
+  ogImage?: string;
+  canonicalUrl?: string;
+  accentColor?: string | null;
+  ogType?: string;
+  jsonLd?: Record<string, unknown>;
+  rssUrl?: string;
+  articlePublishedTime?: string;
+  articleModifiedTime?: string;
+  articleAuthor?: string;
+  articleTags?: string[];
+  articleSection?: string;
+  twitterSite?: string;
+  twitterCreator?: string;
+}
+
+const {
+  title,
+  publicationName,
+  description,
+  ogImage,
+  canonicalUrl,
+  accentColor,
+  ogType = 'website',
+  jsonLd,
+  rssUrl,
+  articlePublishedTime,
+  articleModifiedTime,
+  articleAuthor,
+  articleTags,
+  articleSection,
+  twitterSite,
+  twitterCreator,
+} = Astro.props;
+
+const HEX_COLOR_PATTERN = /^#[0-9a-fA-F]{3,8}$/;
+const validAccent = accentColor && HEX_COLOR_PATTERN.test(accentColor) ? accentColor : null;
+const accentStyle = validAccent
+  ? `--publication-accent: ${validAccent};`
+  : undefined;
+---
+
+<html lang="en" style={accentStyle}>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <!-- Bold fonts: Space Grotesk, Inter, JetBrains Mono -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap"
+      rel="stylesheet"
+    />
+
+    <HeadMeta
+      {title}
+      {publicationName}
+      {description}
+      {ogImage}
+      {canonicalUrl}
+      {ogType}
+      {jsonLd}
+      {rssUrl}
+      {articlePublishedTime}
+      {articleModifiedTime}
+      {articleAuthor}
+      {articleTags}
+      {articleSection}
+      {twitterSite}
+      {twitterCreator}
+    />
+
+    <ClientRouter />
+  </head>
+  <body class="min-h-screen flex flex-col">
+    <slot />
+
+    <script>
+      function initScrollAnimations() {
+        const observer = new IntersectionObserver(
+          (entries) => {
+            for (const entry of entries) {
+              if (entry.isIntersecting) {
+                entry.target.classList.add('is-visible');
+                observer.unobserve(entry.target);
+              }
+            }
+          },
+          { threshold: 0.1 },
+        );
+
+        document
+          .querySelectorAll('.animate-on-scroll')
+          .forEach((el) => observer.observe(el));
+      }
+
+      initScrollAnimations();
+      document.addEventListener('astro:after-swap', initScrollAnimations);
+    </script>
+  </body>
+</html>

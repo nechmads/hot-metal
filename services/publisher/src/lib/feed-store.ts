@@ -1,4 +1,4 @@
-import { CmsApi, logger } from '@hotmetal/shared'
+import { getCmsClient, logger } from '@hotmetal/shared'
 import type { PublisherEnv } from '../env'
 import {
   generateRssFeed,
@@ -33,13 +33,17 @@ export async function regenerateFeeds(env: PublisherEnv, slug: string): Promise<
     return
   }
 
-  // Need the CMS publication ID to query posts
+  // Need the CMS publication ID to query posts.
+  // NOTE: EmDash publications (fleet model) don't set cmsPublicationId — each
+  // instance hosts one publication, so listPosts ignores it. This gate keeps
+  // legacy SonicJS feeds working; wire up EmDash feed regeneration in the phase
+  // that turns EmDash rendering on (Phase 2).
   if (!publication.cmsPublicationId) {
     logger('publisher').error('Feed regeneration: no CMS publication ID', { component: 'feeds', slug })
     return
   }
 
-  const cmsApi = new CmsApi(env.CMS_URL, env.CMS_API_KEY)
+  const cmsApi = await getCmsClient(publication, env.DAL, env)
   const { data: posts } = await cmsApi.listPosts({
     status: 'published',
     publicationId: publication.cmsPublicationId,

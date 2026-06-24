@@ -1,7 +1,7 @@
 import { tool } from 'ai'
 import { z } from 'zod'
 import { marked } from 'marked'
-import { CmsApi, logger } from '@hotmetal/shared'
+import { getCmsClient, logger } from '@hotmetal/shared'
 import type { Citation } from '@hotmetal/content-core'
 import type { WriterAgent } from '../agent/writer-agent'
 
@@ -46,19 +46,24 @@ export function createPublishTools(agent: WriterAgent) {
           .trim() || undefined
 
         const env = agent.getEnv()
-        const cmsApi = new CmsApi(env.CMS_URL, env.CMS_API_KEY)
+
+        // Resolve the publication first — it selects which CMS the post lands in
+        // (legacy SonicJS vs the publication's own EmDash instance).
+        const pub = agent.state.publicationId
+          ? await env.DAL.getPublicationById(agent.state.publicationId)
+          : null
+        const cmsApi = await getCmsClient(pub, env.DAL, env)
 
         // Resolve CMS publication ID from the writer-agent publication
         let cmsPublicationId: string | undefined
-        if (agent.state.publicationId) {
-          const pub = await env.DAL.getPublicationById(agent.state.publicationId)
-          if (pub?.cmsPublicationId) {
+        if (pub) {
+          if (pub.cmsPublicationId) {
             cmsPublicationId = pub.cmsPublicationId
-          } else if (pub) {
+          } else {
             try {
               const cmsPub = await cmsApi.createPublication({ title: pub.name, slug: pub.slug })
               cmsPublicationId = cmsPub.id
-              await env.DAL.updatePublication(agent.state.publicationId, { cmsPublicationId: cmsPub.id })
+              await env.DAL.updatePublication(pub.id, { cmsPublicationId: cmsPub.id })
             } catch (err) {
               logger('web').error('Failed to create CMS publication during tool publish', { component: 'tools', error: err instanceof Error ? err.message : String(err) })
             }
@@ -69,6 +74,9 @@ export function createPublishTools(agent: WriterAgent) {
           title: draft.title || 'Untitled',
           slug,
           content: htmlContent,
+          // Keep the original markdown alongside the derived HTML: EmDash converts
+          // markdown→Portable Text on write, and edit sessions read it back lossless.
+          markdown: draft.content,
           status: 'published',
           author,
           tags,

@@ -104,6 +104,12 @@ export interface SocialLinks {
 
 export type DomainStatus = 'pending_dns' | 'pending_ssl' | 'active' | 'failed'
 
+/** Which CMS a publication's content lives on. */
+export type CmsProvider = 'sonicjs' | 'emdash'
+
+/** Lifecycle of a dedicated EmDash instance (NULL/'none' for sonicjs). */
+export type CmsProvisioningStatus = 'none' | 'provisioning' | 'ready' | 'failed'
+
 export interface Publication {
 	id: string
 	userId: string
@@ -135,8 +141,25 @@ export interface Publication {
 	cfHostnameId: string | null
 	domainVerificationTxt: string | null
 	metaDescription: string | null
+	cmsProvider: CmsProvider
+	cmsBaseUrl: string | null
+	cmsProvisioningStatus: CmsProvisioningStatus | null
+	cmsInstanceMeta: string | null
 	createdAt: number
 	updatedAt: number
+}
+
+/**
+ * A publication's CMS credentials with the `cms_token` DECRYPTED. Returned only
+ * by getPublicationWithCmsToken — never folded into the base Publication type,
+ * so the plaintext token is never returned by ordinary reads (mirrors the
+ * social_connections decrypt pattern).
+ */
+export interface PublicationCmsCredentials {
+	id: string
+	cmsProvider: CmsProvider
+	cmsBaseUrl: string | null
+	cmsToken: string | null
 }
 
 export interface CreatePublicationInput {
@@ -164,6 +187,12 @@ export interface CreatePublicationInput {
 	commentsEnabled?: boolean
 	commentsModeration?: CommentModeration
 	metaDescription?: string
+	cmsProvider?: CmsProvider
+	cmsBaseUrl?: string
+	/** Plaintext ec_pat_ token — encrypted at rest by the data layer. */
+	cmsToken?: string
+	cmsProvisioningStatus?: CmsProvisioningStatus
+	cmsInstanceMeta?: string
 }
 
 export interface UpdatePublicationInput {
@@ -195,6 +224,12 @@ export interface UpdatePublicationInput {
 	cfHostnameId?: string | null
 	domainVerificationTxt?: string | null
 	metaDescription?: string | null
+	cmsProvider?: CmsProvider
+	cmsBaseUrl?: string | null
+	/** Plaintext ec_pat_ token — encrypted at rest by the data layer. Pass null to clear. */
+	cmsToken?: string | null
+	cmsProvisioningStatus?: CmsProvisioningStatus | null
+	cmsInstanceMeta?: string | null
 }
 
 // ─── Topics ──────────────────────────────────────────────────────────

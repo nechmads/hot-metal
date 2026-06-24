@@ -1,0 +1,61 @@
+{
+	"$schema": "https://emdashcms.com/seed.schema.json",
+	"version": "1",
+	"meta": {
+		"name": "Hot Metal Publication",
+		"description": "Collections matching Hot Metal's Post and Rendition content model. Applied to each EmDash instance so the write path (EmdashCmsClient) can store every field we carry.",
+		"author": "Hot Metal"
+	},
+	"settings": {
+		"title": "Hot Metal Publication"
+	},
+	"collections": [
+		{
+			"slug": "posts",
+			"label": "Posts",
+			"labelSingular": "Post",
+			"supports": ["drafts", "revisions", "search", "seo"],
+			"fields": [
+				{ "slug": "title", "label": "Title", "type": "string", "required": true, "searchable": true },
+				{ "slug": "subtitle", "label": "Subtitle", "type": "string" },
+				{ "slug": "hook", "label": "Hook", "type": "text" },
+				{ "slug": "content", "label": "Content", "type": "portableText", "searchable": true },
+				{ "slug": "html", "label": "HTML (rendered)", "type": "text" },
+				{ "slug": "markdown", "label": "Markdown (source)", "type": "text" },
+				{ "slug": "excerpt", "label": "Excerpt", "type": "text" },
+				{ "slug": "featured_image_url", "label": "Featured Image URL", "type": "string" },
+				{ "slug": "tags", "label": "Tags", "type": "string" },
+				{ "slug": "topics", "label": "Topics", "type": "string" },
+				{ "slug": "citations", "label": "Citations (JSON)", "type": "text" },
+				{ "slug": "seo_title", "label": "SEO Title", "type": "string" },
+				{ "slug": "seo_description", "label": "SEO Description", "type": "text" },
+				{ "slug": "canonical_url", "label": "Canonical URL", "type": "string" },
+				{ "slug": "og_image", "label": "OG Image", "type": "string" },
+				{ "slug": "author", "label": "Author", "type": "string" },
+				{ "slug": "publication_id", "label": "Hot Metal Publication ID", "type": "string" },
+				{ "slug": "hm_status", "label": "Hot Metal Status", "type": "string" },
+				{ "slug": "hm_published_at", "label": "Published At", "type": "string" },
+				{ "slug": "hm_scheduled_at", "label": "Scheduled At", "type": "string" }
+			]
+		},
+		{
+			"slug": "renditions",
+			"label": "Renditions",
+			"labelSingular": "Rendition",
+			"supports": ["drafts"],
+			"fields": [
+				{ "slug": "post_id", "label": "Post ID", "type": "string", "required": true },
+				{ "slug": "outlet", "label": "Outlet", "type": "string" },
+				{ "slug": "content", "label": "Content", "type": "text" },
+				{ "slug": "rendition_status", "label": "Rendition Status", "type": "string" },
+				{ "slug": "format_rules_version", "label": "Format Rules Version", "type": "string" },
+				{ "slug": "external_id", "label": "External ID", "type": "string" },
+				{ "slug": "external_url", "label": "External URL", "type": "string" },
+				{ "slug": "outlet_published_at", "label": "Outlet Published At", "type": "string" },
+				{ "slug": "last_generated_at", "label": "Last Generated At", "type": "string" },
+				{ "slug": "last_edited_at", "label": "Last Edited At", "type": "string" },
+				{ "slug": "publish_errors", "label": "Publish Errors (JSON)", "type": "text" }
+			]
+		}
+	]
+}

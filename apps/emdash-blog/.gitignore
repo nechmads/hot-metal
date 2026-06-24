@@ -1,0 +1,17 @@
+node_modules
+dist
+.astro
+.wrangler
+uploads
+data.db
+
+# Wrangler-generated ambient types (regenerate with `wrangler types`; not in tsconfig).
+# emdash-env.d.ts IS committed — it's our source-of-truth schema types (see that file).
+worker-configuration.d.ts
+
+# Environment / Wrangler secrets
+.env
+.env.*
+!.env.example
+.dev.vars
+.dev.vars.*

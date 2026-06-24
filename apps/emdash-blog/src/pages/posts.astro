@@ -1,0 +1,19 @@
+---
+import { getBranding } from '../dl/publication';
+import { listPublishedPosts } from '../dl/posts';
+import PostsPage from '../components/PostsPage.astro';
+
+const baseUrl = Astro.url.origin;
+const branding = await getBranding();
+const { posts, cacheHint } = await listPublishedPosts();
+
+if (Astro.cache?.enabled) Astro.cache.set(cacheHint);
+Astro.response.headers.set('Cache-Control', 'public, s-maxage=3600, stale-while-revalidate=86400');
+---
+
+<PostsPage
+  templateId={branding.templateId}
+  {branding}
+  {posts}
+  {baseUrl}
+/>

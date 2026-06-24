@@ -1,0 +1,85 @@
+{
+	"$schema": "node_modules/wrangler/config-schema.json",
+	"name": "hotmetal-provisioner",
+	"main": "src/index.ts",
+	"account_id": "2174498561748c927a0b968e44a56754",
+	"compatibility_date": "2026-02-24",
+	"compatibility_flags": ["nodejs_compat"],
+	"observability": {
+		"enabled": true,
+	},
+
+	"dev": {
+		"port": 8793,
+	},
+
+	// Durable workflow that provisions one EmDash tenant end-to-end. Each step is
+	// retryable/crash-resilient; on terminal failure we mark the publication
+	// cms_provisioning_status='failed' and tear down partial infra.
+	"workflows": [
+		{
+			"name": "provision-workflow",
+			"binding": "PROVISION_WORKFLOW",
+			"class_name": "ProvisionWorkflow",
+		},
+	],
+
+	// Service bindings.
+	"services": [
+		// Data Access Layer — read/drive a publication's cms_provider / cms_base_url
+		// / cms_token (encrypted by DAL) / provisioning status / instance meta. The
+		// provisioner never touches D1 directly.
+		{
+			"binding": "DAL",
+			"service": "hotmetal-data-layer",
+			"entrypoint": "DataLayer",
+		},
+		// Tenant invoker — boots a freshly-uploaded tenant (trigger auto-migrate)
+		// before it's publicly routable. A dispatch-namespace binding can't be
+		// called from inside a Workflow step, but a service binding to this regular
+		// worker (which does the dispatch) can. Deploy hotmetal-emdash-dispatch first.
+		{
+			"binding": "TENANT_INVOKER",
+			"service": "hotmetal-emdash-dispatch",
+		},
+	],
+
+	// Pre-built EmDash tenant bundle ("releases"), stashed by `release-bundle`.
+	// The provisioner reads the current release's worker modules + static assets
+	// from here and uploads them to the dispatch namespace per tenant. Versioned
+	// keys enable Phase-4 fleet rollouts.
+	"r2_buckets": [
+		{
+			"binding": "BUNDLE",
+			"bucket_name": "hotmetal-emdash-bundles",
+		},
+	],
+
+	// Non-secret env vars.
+	"vars": {
+		"CF_ACCOUNT_ID": "2174498561748c927a0b968e44a56754",
+		"DISPATCH_NAMESPACE": "hotmetal-emdash",
+		// Tenants are served at <slug>.<base-domain> by default (carved out of the
+		// publications-web wildcard via Cloudflare for SaaS custom hostnames).
+		"PUBLICATIONS_BASE_DOMAIN": "hotmetalapp.com",
+		"ZONE_NAME": "hotmetalapp.com",
+		// The release version (R2 key prefix under BUNDLE) tenants are provisioned
+		// from. Bump on a fleet rollout (Phase 4).
+		"EMDASH_BUNDLE_VERSION": "current",
+		"AXIOM_DATASET": "hotmetal-prod",
+		// Public Turnstile site key injected into each tenant so the comment-form
+		// widget renders. Same key publications-web + emdash-blog use across
+		// *.hotmetalapp.com (the matching TURNSTILE_SECRET_KEY is a secret below).
+		"TURNSTILE_SITE_KEY": "0x4AAAAAACk8MjvpV7HFhXQ9",
+	},
+
+	// Secrets (set via `wrangler secret put`):
+	// CF_API_TOKEN        — scoped Cloudflare API token: Workers Scripts:Edit,
+	//                       Workers for Platforms (dispatch):Edit, D1:Edit, R2:Edit,
+	//                       SSL and Certificates:Edit (custom hostnames). Account-scoped
+	//                       to CF_ACCOUNT_ID + the ZONE_NAME zone.
+	// API_KEY             — authenticates incoming /api requests (web → provisioner).
+	// AXIOM_TOKEN         — Axiom ingest token for structured logging.
+	// TURNSTILE_SECRET_KEY — Turnstile secret injected into each tenant (secret_text)
+	//                       for server-side comment-submit verification.
+}

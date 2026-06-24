@@ -1,6 +1,6 @@
 ---
 import { env } from 'cloudflare:workers';
-import { resolveOrRedirect } from '../lib/resolve-or-redirect';
+import { resolvePublicationForPage } from '../lib/resolve-or-redirect';
 import { getPublicationBranding } from '../dl/publication';
 import { getPostBySlug } from '../dl/posts';
 import { sanitizeCmsContent } from '../lib/sanitize';
@@ -8,7 +8,7 @@ import { formatDate } from '../lib/format';
 import PostPage from '../components/PostPage.astro';
 
 const turnstileSiteKey = env.TURNSTILE_SITE_KEY ?? '';
-const resolved = await resolveOrRedirect(Astro.request, env.DAL, env.DEV_PUBLICATION_SLUG, env.DOMAIN_CACHE);
+const resolved = await resolvePublicationForPage(Astro.locals, Astro.request, env.DAL, env.DEV_PUBLICATION_SLUG, env.DOMAIN_CACHE);
 
 if (!resolved) {
   return new Response(null, { status: 404, statusText: 'Publication Not Found' });

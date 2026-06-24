@@ -1,6 +1,7 @@
 import { GearSixIcon } from '@phosphor-icons/react'
 import type { PublicationConfig } from '@/lib/types'
 import { MODE_LABELS } from './schedule-utils'
+import { ProvisioningBadge } from './ProvisioningStatus'
 
 interface PublicationCardProps {
   publication: PublicationConfig
@@ -20,10 +21,13 @@ export function PublicationCard({ publication, onClick }: PublicationCardProps) 
     >
       <div className="flex items-start justify-between gap-2">
         <h3 className="font-semibold">{publication.name}</h3>
-        <GearSixIcon
-          size={18}
-          className="shrink-0 text-[var(--color-text-muted)] opacity-0 transition-opacity group-hover:opacity-100"
-        />
+        <div className="flex shrink-0 items-center gap-2">
+          <ProvisioningBadge provider={publication.cmsProvider} status={publication.cmsProvisioningStatus} />
+          <GearSixIcon
+            size={18}
+            className="text-[var(--color-text-muted)] opacity-0 transition-opacity group-hover:opacity-100"
+          />
+        </div>
       </div>
       {publication.description && (
         <p className="mt-1.5 line-clamp-2 text-sm text-[var(--color-text-muted)]">

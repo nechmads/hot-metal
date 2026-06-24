@@ -1,5 +1,5 @@
 import type { Post } from '@hotmetal/content-core'
-import type { CmsApi } from '@hotmetal/shared'
+import type { CmsClient } from '@hotmetal/shared'
 import type { OutletAdapter, PreparedRendition, ValidationResult, PublishResult } from './types'
 import { formatForLinkedIn } from '../linkedin/formatter'
 import { LinkedInApiClient, type ShareMediaCategory } from '../linkedin/api'
@@ -10,7 +10,7 @@ export class LinkedInAdapter implements OutletAdapter {
   readonly outlet = 'linkedin' as const
 
   constructor(
-    private cmsApi: CmsApi,
+    private cmsApi: CmsClient,
     private accessToken: string,
     private personUrn: string,
     private blogBaseUrl: string,

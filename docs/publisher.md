@@ -45,10 +45,13 @@ Current adapters:
 **POST /publish/blog** - Publish an existing post
 
 ```json
-{ "postId": "<uuid>" }
+{ "postId": "<uuid>", "publicationId": "<uuid?>" }
 ```
 
-Returns `PublishResult` with `externalUrl` pointing to the blog.
+`publicationId` is optional and selects which CMS the post lives in: omit it
+(or pass a SonicJS publication) for the shared SonicJS CMS, or pass an EmDash
+publication's id to target its dedicated EmDash instance. Returns `PublishResult`
+with `externalUrl` pointing to the blog.
 
 **POST /publish/blog/create** - Create + publish a new post
 
@@ -59,11 +62,13 @@ Returns `PublishResult` with `externalUrl` pointing to the blog.
   "content": "<p>Hello world</p>",
   "author": "Shahar",
   "hook": "A great opening",
-  "tags": "tech,ai"
+  "tags": "tech,ai",
+  "publicationId": "<uuid?>"
 }
 ```
 
-Returns `{ post, result }` with created post and publish result.
+`publicationId` is optional and selects the target CMS (see above). Returns
+`{ post, result }` with created post and publish result.
 
 ### LinkedIn Publishing
 

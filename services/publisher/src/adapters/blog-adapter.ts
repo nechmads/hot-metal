@@ -1,5 +1,5 @@
 import type { Post } from '@hotmetal/content-core'
-import type { CmsApi } from '@hotmetal/shared'
+import type { CmsClient } from '@hotmetal/shared'
 import { logger } from '@hotmetal/shared'
 import type { OutletAdapter, PreparedRendition, ValidationResult, PublishResult } from './types'
 
@@ -7,7 +7,7 @@ export class BlogAdapter implements OutletAdapter {
   readonly outlet = 'blog' as const
 
   constructor(
-    private cmsApi: CmsApi,
+    private cmsApi: CmsClient,
     private blogBaseUrl: string,
   ) {}
 

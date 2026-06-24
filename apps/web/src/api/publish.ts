@@ -203,6 +203,17 @@ publish.post('/sessions/:sessionId/publish', async (c) => {
 
   const socialOnly = !publicationId
 
+  // Server-side provisioning gate: never attempt a blog publish to an EmDash
+  // instance that isn't `ready` (getCmsClient would otherwise throw an opaque
+  // EmdashCmsClientUnavailableError). The UI also hides publish while provisioning,
+  // but this closes the hole for stale tabs / API / automation.
+  if (publicationId) {
+    const pub = await c.env.DAL.getPublicationById(publicationId)
+    if (pub && pub.cmsProvider === 'emdash' && pub.cmsProvisioningStatus !== 'ready') {
+      return c.json({ error: 'Your EmDash blog is still being set up. Please try again once provisioning completes.' }, 409)
+    }
+  }
+
   // Social-only re-publish: skip blog publish, use existing cmsPostId
   if (socialOnly) {
     if (!publishToLinkedIn && !publishToTwitter) {
