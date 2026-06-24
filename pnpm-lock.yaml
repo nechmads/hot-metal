@@ -534,6 +534,15 @@ importers:
         specifier: ^4.100.0
         version: 4.100.0(@cloudflare/workers-types@4.20260613.1)
 
+  services/emdash-dispatch:
+    devDependencies:
+      typescript:
+        specifier: ^5.5.2
+        version: 5.9.3
+      wrangler:
+        specifier: ^4.100.0
+        version: 4.100.0(@cloudflare/workers-types@4.20260613.1)
+
   services/notifications:
     dependencies:
       '@hotmetal/data-layer':
