@@ -131,6 +131,33 @@ publications.post('/publications', async (c) => {
   return c.json(publication, 201)
 })
 
+/**
+ * Retry provisioning for an EmDash publication that failed or got stuck. Safe to
+ * call while a provision may still be running: the provisioner's steps are
+ * idempotent (create-or-reuse by name; bootstrap re-seeds), so a second workflow
+ * converges to the same end state rather than duplicating infra.
+ */
+publications.post('/publications/:id/provision', async (c) => {
+  const pub = await verifyPublicationOwnership(c, c.req.param('id'))
+  if (!pub) return c.json({ error: 'Publication not found' }, 404)
+  if (pub.cmsProvider !== 'emdash') {
+    return c.json({ error: 'Publication is not an EmDash instance' }, 400)
+  }
+  if (pub.cmsProvisioningStatus === 'ready') {
+    return c.json({ status: 'ready', alreadyProvisioned: true })
+  }
+
+  await c.env.DAL.updatePublication(pub.id, { cmsProvisioningStatus: 'provisioning' })
+  try {
+    await triggerEmdashProvision(c.env, pub.id, 'retry')
+  } catch (err) {
+    logger('web').error('Failed to retrigger EmDash provisioning', { component: 'provisioner', publicationId: pub.id, error: err instanceof Error ? err.message : String(err) })
+    await c.env.DAL.updatePublication(pub.id, { cmsProvisioningStatus: 'failed' }).catch(() => {})
+    return c.json({ error: 'Failed to reach provisioner' }, 502)
+  }
+  return c.json({ status: 'provisioning' })
+})
+
 /** List publications for the authenticated user. */
 publications.get('/publications', async (c) => {
   const userId = c.get('userId')

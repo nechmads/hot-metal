@@ -122,6 +122,10 @@ export interface PublicationConfig {
   commentsModeration: 'auto-approve' | 'pre-approve'
   customDomain: string | null
   domainStatus: 'pending_dns' | 'pending_ssl' | 'active' | 'failed' | null
+  /** Which CMS backs this publication. */
+  cmsProvider?: 'sonicjs' | 'emdash'
+  /** EmDash instance lifecycle (null for sonicjs). */
+  cmsProvisioningStatus?: 'none' | 'provisioning' | 'ready' | 'failed' | null
   createdAt: number
   updatedAt: number
   topics?: Topic[]

@@ -13,6 +13,7 @@ import { logger } from '@hotmetal/shared'
 export async function triggerEmdashProvision(
 	env: { PROVISIONER?: Fetcher; PROVISIONER_API_KEY?: string },
 	publicationId: string,
+	triggeredBy: 'create' | 'retry' = 'create',
 ): Promise<void> {
 	if (!env.PROVISIONER || !env.PROVISIONER_API_KEY) {
 		throw new Error('provisioner binding/secret not configured')
@@ -21,7 +22,7 @@ export async function triggerEmdashProvision(
 		new Request('https://provisioner/api/provision', {
 			method: 'POST',
 			headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${env.PROVISIONER_API_KEY}` },
-			body: JSON.stringify({ publicationId, triggeredBy: 'create' }),
+			body: JSON.stringify({ publicationId, triggeredBy }),
 		}),
 	)
 	if (!res.ok) {

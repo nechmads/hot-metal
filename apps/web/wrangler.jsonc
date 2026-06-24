@@ -97,7 +97,7 @@
     // CMS provider for newly-created publications ('sonicjs' | 'emdash'). Stays
     // 'sonicjs' until the EmDash fleet is validated end-to-end, then flip to
     // 'emdash' to auto-provision a dedicated instance for every new publication.
-    "DEFAULT_CMS_PROVIDER": "sonicjs",
+    "DEFAULT_CMS_PROVIDER": "emdash",
   },
 
   // SPA fallback — serve index.html for unmatched routes (client-side routing)

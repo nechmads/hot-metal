@@ -293,6 +293,11 @@ export async function createPublication(data: {
   })
 }
 
+/** Retry provisioning an EmDash instance that failed or got stuck. */
+export async function reprovisionPublication(id: string): Promise<{ status: string }> {
+  return request<{ status: string }>(`/api/publications/${id}/provision`, { method: 'POST' })
+}
+
 export async function updatePublication(
   id: string,
   data: Partial<{
