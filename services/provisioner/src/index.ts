@@ -39,14 +39,14 @@ app.post('/api/provision', async (c) => {
 	if (pub.cmsProvisioningStatus === 'ready') {
 		return c.json({ status: 'ready', publicationId, alreadyProvisioned: true })
 	}
-	if (pub.cmsProvisioningStatus === 'provisioning' && triggeredBy !== 'retry') {
-		return c.json({ status: 'provisioning', publicationId, inFlight: true })
-	}
 
-	// Dedup concurrent `create` triggers (e.g. a doubly-fired publication-created
-	// event) by using a deterministic workflow instance id — the Workflows runtime
-	// rejects a second instance with the same id. Manual/retry runs get a fresh
-	// auto-generated id so an operator can re-run a failed provision.
+	// NOTE: do NOT short-circuit on status==='provisioning' here — web sets that
+	// optimistically BEFORE calling us (for the instant dashboard spinner), so it
+	// is the normal state on a create trigger, not a signal that a workflow is
+	// already running. Concurrency dedup is handled below by the deterministic
+	// instance id: doubly-fired `create` events collide on `pub-<id>` and the
+	// Workflows runtime rejects the second. Manual/retry runs get a fresh
+	// auto-generated id so an operator can re-run a failed/stuck provision.
 	const idLower = publicationId.toLowerCase()
 	const instanceId = triggeredBy === 'create' ? `pub-${idLower}` : undefined
 	try {
