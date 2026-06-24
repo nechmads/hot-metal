@@ -58,10 +58,12 @@ export interface CmsInstanceMeta {
 	hostname: string
 	/** Cloudflare for SaaS custom-hostname id (for status/teardown). */
 	cfHostnameId?: string
-	/** The bundle release version this tenant was provisioned from. */
+	/** The bundle release version this tenant currently runs (bumped by fleet rollout). */
 	bundleVersion: string
 	/** ISO timestamp the instance reached `ready`. */
 	provisionedAt?: string
+	/** ISO timestamp of the last fleet bundle rollout to this tenant (if any). */
+	upgradedAt?: string
 }
 
 /**

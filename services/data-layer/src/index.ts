@@ -55,6 +55,8 @@ import type {
 	Session,
 	Publication,
 	PublicationCmsCredentials,
+	CmsProvider,
+	CmsProvisioningStatus,
 	Topic,
 	Idea,
 	ActivityEntry,
@@ -100,6 +102,7 @@ export interface DataLayerApi {
 	getPublicationWithCmsToken(id: string): Promise<PublicationCmsCredentials | null>
 	listPublicationsByUser(userId: string): Promise<Publication[]>
 	listAllPublications(): Promise<Publication[]>
+	listPublicationsByProviderStatus(provider: CmsProvider, status: CmsProvisioningStatus): Promise<Publication[]>
 	updatePublication(id: string, data: UpdatePublicationInput): Promise<Publication | null>
 	deletePublication(id: string): Promise<void>
 	getDuePublications(now: number): Promise<Array<{ id: string; scoutSchedule: ScoutSchedule; timezone: string }>>
@@ -227,6 +230,7 @@ export class DataLayer extends WorkerEntrypoint<Env> {
 	getPublicationWithCmsToken(id: string) { return publications.getPublicationWithCmsToken(this.env.DB, id, this.env.TOKEN_ENCRYPTION_KEY) }
 	listPublicationsByUser(userId: string) { return publications.listPublicationsByUser(this.env.DB, userId) }
 	listAllPublications() { return publications.listAllPublications(this.env.DB) }
+	listPublicationsByProviderStatus(provider: CmsProvider, status: CmsProvisioningStatus) { return publications.listPublicationsByProviderStatus(this.env.DB, provider, status) }
 	updatePublication(id: string, data: UpdatePublicationInput) { return publications.updatePublication(this.env.DB, id, data, this.env.TOKEN_ENCRYPTION_KEY) }
 	deletePublication(id: string) { return publications.deletePublication(this.env.DB, id) }
 	getDuePublications(now: number) { return publications.getDuePublications(this.env.DB, now) }
