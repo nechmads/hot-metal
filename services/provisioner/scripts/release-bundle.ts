@@ -6,15 +6,24 @@
  * a `manifest.json` the provisioner reads to upload tenant scripts. Run after
  * `pnpm --filter @hotmetal/emdash-blog build`.
  *
- * Usage:
- *   CLOUDFLARE_ACCOUNT_ID=... tsx scripts/release-bundle.ts \
+ * Uploads run as concurrent R2 HTTP-API PUTs in a single process (not one
+ * `wrangler` child per file — that paid ~3s of process startup per object and
+ * took 20+ min for ~400 chunks).
+ *
+ * Usage (needs both env vars; source services/provisioner/.dev.vars for the token):
+ *   CLOUDFLARE_ACCOUNT_ID=... CF_API_TOKEN=... tsx scripts/release-bundle.ts \
  *     --dist ../../apps/emdash-blog/dist --version current
  */
-import { execFileSync } from 'node:child_process'
 import { readFileSync, readdirSync, statSync, writeFileSync } from 'node:fs'
 import { join, relative } from 'node:path'
 
 const BUCKET = 'hotmetal-emdash-bundles'
+const ACCOUNT_ID = process.env.CLOUDFLARE_ACCOUNT_ID
+const API_TOKEN = process.env.CF_API_TOKEN
+if (!ACCOUNT_ID || !API_TOKEN) {
+	throw new Error('Set CLOUDFLARE_ACCOUNT_ID and CF_API_TOKEN (source services/provisioner/.dev.vars)')
+}
+const UPLOAD_CONCURRENCY = 12
 
 function arg(name: string, fallback: string): string {
 	const i = process.argv.indexOf(`--${name}`)
@@ -47,12 +56,35 @@ function contentType(path: string): string {
 	return 'application/octet-stream'
 }
 
-function put(key: string, file: string, type: string): void {
-	execFileSync(
-		'npx',
-		['wrangler', 'r2', 'object', 'put', `${BUCKET}/${key}`, '--file', file, '--content-type', type, '--remote'],
-		{ stdio: 'inherit' },
+async function put(key: string, file: string, type: string): Promise<void> {
+	const res = await fetch(
+		`https://api.cloudflare.com/client/v4/accounts/${ACCOUNT_ID}/r2/buckets/${BUCKET}/objects/${key}`,
+		{
+			method: 'PUT',
+			headers: { Authorization: `Bearer ${API_TOKEN}`, 'Content-Type': type },
+			body: readFileSync(file),
+		},
 	)
+	if (!res.ok) {
+		throw new Error(`PUT ${key} → ${res.status}: ${(await res.text().catch(() => '')).slice(0, 200)}`)
+	}
+}
+
+/** Run `fn` over items with a fixed concurrency pool. */
+async function pool<T>(items: T[], concurrency: number, fn: (item: T) => Promise<void>): Promise<void> {
+	let next = 0
+	let done = 0
+	const total = items.length
+	const workers = Array.from({ length: Math.min(concurrency, total) }, async () => {
+		while (next < total) {
+			const item = items[next++]
+			await fn(item)
+			done++
+			if (done % 25 === 0 || done === total) process.stdout.write(`\r  uploaded ${done}/${total}`)
+		}
+	})
+	await Promise.all(workers)
+	process.stdout.write('\n')
 }
 
 const serverDir = join(distDir, 'server')
@@ -83,9 +115,9 @@ const assets = walk(clientDir).map((p) => {
 	return { path: `/${rel}`, key: `releases/${version}/client/${safeKey(rel)}`, contentType: contentType(p), file: p }
 })
 
-console.log(`Uploading ${modules.length} modules + ${assets.length} assets as release "${version}"…`)
-for (const m of modules) put(m.key, m.file, m.contentType)
-for (const a of assets) put(a.key, a.file, a.contentType)
+const files = [...modules, ...assets]
+console.log(`Uploading ${modules.length} modules + ${assets.length} assets (concurrency ${UPLOAD_CONCURRENCY})…`)
+await pool(files, UPLOAD_CONCURRENCY, (f) => put(f.key, f.file, f.contentType))
 
 const manifest = {
 	version,
@@ -97,6 +129,7 @@ const manifest = {
 }
 const manifestPath = join(distDir, 'release-manifest.json')
 writeFileSync(manifestPath, JSON.stringify(manifest, null, 2))
-put(`releases/${version}/manifest.json`, manifestPath, 'application/json')
+// Manifest LAST: the provisioner keys off it, so it only points at fully-uploaded files.
+await put(`releases/${version}/manifest.json`, manifestPath, 'application/json')
 
 console.log(`✅ Release "${version}" published to r2://${BUCKET}/releases/${version}/`)
