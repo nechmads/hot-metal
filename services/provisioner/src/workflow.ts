@@ -118,19 +118,19 @@ export class ProvisionWorkflow extends WorkflowEntrypoint<ProvisionerEnv, Provis
 				})
 			})
 
-			// 6) Hostname. Default `<slug>.<base-domain>` is served by the dispatch
-			//    worker on the zone wildcard route — no per-tenant API call needed.
-			//    External custom domains reuse the Cloudflare-for-SaaS custom_domains
-			//    flow (migration 0020) and are wired separately, not here.
-			await step.do('wire-hostname', STEP_RETRY, async () => {
-				await env.DAL.updatePublication(publicationId, { customDomain: names.hostname, domainStatus: 'active' })
-			})
+			// 6) Hostname. The default `<slug>.<base-domain>` needs NO per-tenant
+			//    action: publications-web owns the `*.hotmetalapp.com` wildcard and
+			//    its middleware dispatches `emdash`+`ready` publications (resolved by
+			//    slug) to this tenant's script. We deliberately do NOT set
+			//    `custom_domain` here — that column is for EXTERNAL domains only
+			//    (setting it to the subdomain would self-redirect-loop + collide with
+			//    the unique custom_domain index). External domains reuse the
+			//    Cloudflare-for-SaaS `custom_domains` flow (migration 0020), separately.
 
+			// cms_instance_meta was already written in store-credentials; only flip
+			// the status here (single meta write avoids the two drifting).
 			await step.do('mark-ready', STEP_RETRY, async () => {
-				await env.DAL.updatePublication(publicationId, {
-					cmsProvisioningStatus: 'ready',
-					cmsInstanceMeta: JSON.stringify(buildMeta(names, d1.id, kv.id, version, new Date().toISOString())),
-				})
+				await env.DAL.updatePublication(publicationId, { cmsProvisioningStatus: 'ready' })
 			})
 
 			log.info('Provisioned EmDash tenant', { hostname: names.hostname, scriptName: names.scriptName })
@@ -148,13 +148,12 @@ export class ProvisionWorkflow extends WorkflowEntrypoint<ProvisionerEnv, Provis
 	}
 }
 
-/** Build the `cms_instance_meta` payload (single source of truth for both writes). */
+/** Build the `cms_instance_meta` payload (written once, in store-credentials). */
 function buildMeta(
 	names: ReturnType<typeof tenantNames>,
 	d1DatabaseId: string,
 	kvNamespaceId: string,
 	bundleVersion: string,
-	provisionedAt?: string,
 ): CmsInstanceMeta {
 	return {
 		scriptName: names.scriptName,
@@ -164,7 +163,7 @@ function buildMeta(
 		kvNamespaceId,
 		hostname: names.hostname,
 		bundleVersion,
-		...(provisionedAt ? { provisionedAt } : {}),
+		provisionedAt: new Date().toISOString(),
 	}
 }
 

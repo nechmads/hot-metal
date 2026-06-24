@@ -22,5 +22,7 @@ declare namespace Cloudflare {
     TURNSTILE_SITE_KEY: string
     IMAGE_BUCKET: R2Bucket
     DOMAIN_CACHE?: KVNamespace
+    /** WfP dispatch namespace — forwards EmDash publications to their tenant script. */
+    DISPATCHER?: import('./lib/emdash-dispatch').DispatchNamespace
   }
 }

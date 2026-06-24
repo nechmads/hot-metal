@@ -4,8 +4,10 @@ import type { AppEnv } from '../server'
 import type { WriterAgent } from '../agent/writer-agent'
 import { verifyPublicationOwnership } from '../middleware/ownership'
 import { AUTO_PUBLISH_MODES, type AutoPublishMode, type ScoutSchedule } from '@hotmetal/content-core'
+import type { CmsProvider } from '@hotmetal/data-layer'
 import { validateSchedule, validateTimezone, computeNextRun, getCmsClient, getTierLimits, getTierDisplayName, isUnlimited, logger } from '@hotmetal/shared'
 import { checkPublicationQuota, checkScoutScheduleQuota, quotaExceededResponse } from '../lib/quota'
+import { triggerEmdashProvision } from '../lib/provisioner'
 
 const publications = new Hono<AppEnv>()
 
@@ -27,6 +29,7 @@ publications.post('/publications', async (c) => {
     cadencePostsPerWeek?: number
     scoutSchedule?: ScoutSchedule
     timezone?: string
+    cmsProvider?: string
   }>()
 
   if (!body.name?.trim()) {
@@ -72,6 +75,14 @@ publications.post('/publications', async (c) => {
     }
   }
 
+  // Which CMS this publication lives on: explicit request value, else the
+  // server default (DEFAULT_CMS_PROVIDER, 'sonicjs' until the EmDash fleet is
+  // the default). EmDash publications get a dedicated auto-provisioned instance.
+  const cmsProvider = (body.cmsProvider ?? c.env.DEFAULT_CMS_PROVIDER ?? 'sonicjs') as CmsProvider
+  if (cmsProvider !== 'sonicjs' && cmsProvider !== 'emdash') {
+    return c.json({ error: "cmsProvider must be 'sonicjs' or 'emdash'" }, 400)
+  }
+
   const id = crypto.randomUUID()
   const publication = await c.env.DAL.createPublication({
     id,
@@ -85,19 +96,36 @@ publications.post('/publications', async (c) => {
     cadencePostsPerWeek: body.cadencePostsPerWeek,
     scoutSchedule: body.scoutSchedule,
     timezone: body.timezone,
+    cmsProvider,
+    // Mark EmDash instances as provisioning up front so the dashboard shows the
+    // spinner immediately, before the provisioner workflow flips it to ready.
+    ...(cmsProvider === 'emdash' ? { cmsProvisioningStatus: 'provisioning' as const } : {}),
   })
 
-  // Create matching publication in the CMS so published posts can reference it
-  try {
-    const cmsApi = await getCmsClient(publication, c.env.DAL, c.env)
-    const cmsPub = await cmsApi.createPublication({
-      title: body.name.trim(),
-      slug: body.slug.trim(),
-    })
-    await c.env.DAL.updatePublication(id, { cmsPublicationId: cmsPub.id })
-    publication.cmsPublicationId = cmsPub.id
-  } catch (err) {
-    logger('web').error('Failed to create CMS publication (non-blocking)', { component: 'publications', error: err instanceof Error ? err.message : String(err) })
+  if (cmsProvider === 'emdash') {
+    // Auto-provision a dedicated EmDash instance (durable workflow, async).
+    // Non-blocking: on trigger failure mark 'failed' (not left stuck in
+    // 'provisioning' with no live workflow) so it's clearly retryable.
+    try {
+      await triggerEmdashProvision(c.env, id)
+    } catch (err) {
+      logger('web').error('Failed to trigger EmDash provisioning (non-blocking)', { component: 'provisioner', publicationId: id, error: err instanceof Error ? err.message : String(err) })
+      await c.env.DAL.updatePublication(id, { cmsProvisioningStatus: 'failed' }).catch(() => {})
+      publication.cmsProvisioningStatus = 'failed'
+    }
+  } else {
+    // SonicJS: create the matching CMS publication so posts can reference it.
+    try {
+      const cmsApi = await getCmsClient(publication, c.env.DAL, c.env)
+      const cmsPub = await cmsApi.createPublication({
+        title: body.name.trim(),
+        slug: body.slug.trim(),
+      })
+      await c.env.DAL.updatePublication(id, { cmsPublicationId: cmsPub.id })
+      publication.cmsPublicationId = cmsPub.id
+    } catch (err) {
+      logger('web').error('Failed to create CMS publication (non-blocking)', { component: 'publications', error: err instanceof Error ? err.message : String(err) })
+    }
   }
 
   return c.json(publication, 201)

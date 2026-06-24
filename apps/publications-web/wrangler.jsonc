@@ -31,6 +31,14 @@
       "bucket_name": "hotmetal-cms-bucket",
     },
   ],
+  // EmDash fleet (Phase 3): forward `emdash`+`ready` publications to their
+  // dedicated tenant script in the WfP dispatch namespace (see src/middleware.ts).
+  "dispatch_namespaces": [
+    {
+      "binding": "DISPATCHER",
+      "namespace": "hotmetal-emdash",
+    },
+  ],
   "kv_namespaces": [
     {
       "binding": "HotMetal_DOMAIN_CACHE_PROD",
