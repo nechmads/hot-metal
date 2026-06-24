@@ -7,10 +7,11 @@
 	"observability": {
 		"enabled": true,
 	},
-	// Kept reachable on workers.dev during fleet bring-up so a tenant can be poked
-	// directly for debugging. Lock down (workers_dev:false; service-binding-only)
-	// before GA — the provisioner reaches it via the service binding regardless.
-	"workers_dev": true,
+	// Service-binding-only: no workers.dev subdomain and no route, so this worker is
+	// unreachable from the public internet — the provisioner reaches it solely via
+	// its TENANT_INVOKER service binding. (It dispatches to arbitrary tenant scripts
+	// by header, so it must never be publicly invokable.)
+	"workers_dev": false,
 	// The WfP dispatch namespace holding every tenant script.
 	"dispatch_namespaces": [
 		{

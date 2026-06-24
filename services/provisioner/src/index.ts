@@ -1,7 +1,7 @@
 import { Hono } from 'hono'
 import { createLogger, flushLogs } from '@hotmetal/shared'
-import type { CmsInstanceMeta, ProvisionerEnv } from './env'
-import { ProvisionWorkflow, teardownTenant } from './workflow'
+import { parseCmsInstanceMeta, type ProvisionerEnv } from './env'
+import { ProvisionWorkflow, resolveTenantResources, teardownTenant } from './workflow'
 import { CfApiClient } from './cf-api'
 
 const app = new Hono<{ Bindings: ProvisionerEnv }>()
@@ -49,6 +49,15 @@ app.post('/api/provision', async (c) => {
 	// auto-generated id so an operator can re-run a failed/stuck provision.
 	const idLower = publicationId.toLowerCase()
 	const instanceId = triggeredBy === 'create' ? `pub-${idLower}` : undefined
+
+	// Dedup for the deterministic `create` id: if an instance already exists, a
+	// provision is already running. `get()` is documented to resolve a handle when
+	// the instance exists and reject otherwise — so we key on existence, not on a
+	// brittle error-message match. (Manual/retry runs use an auto id and skip this.)
+	if (instanceId && (await c.env.PROVISION_WORKFLOW.get(instanceId).catch(() => null))) {
+		return c.json({ status: 'provisioning', publicationId, inFlight: true })
+	}
+
 	try {
 		const instance = await c.env.PROVISION_WORKFLOW.create({
 			...(instanceId ? { id: instanceId } : {}),
@@ -57,11 +66,10 @@ app.post('/api/provision', async (c) => {
 		createLogger({ service: 'provisioner' }).info('Started provisioning', { publicationId, instanceId: instance.id })
 		return c.json({ status: 'provisioning', publicationId, instanceId: instance.id })
 	} catch (err) {
-		// Instance-already-exists → a provision for this publication is already
-		// running. (Brittle message match — confirm the runtime's actual error
-		// shape/code during Spike #1 and key on it instead.)
-		const message = err instanceof Error ? err.message : String(err)
-		if (/already exists|instance.*exists/i.test(message)) {
+		// Lost a create race for the deterministic id (two `create` events between
+		// the get() check above and here): if the instance now exists, report
+		// in-flight; otherwise the create genuinely failed, so surface it.
+		if (instanceId && (await c.env.PROVISION_WORKFLOW.get(instanceId).catch(() => null))) {
 			return c.json({ status: 'provisioning', publicationId, inFlight: true })
 		}
 		throw err
@@ -78,37 +86,52 @@ app.get('/api/provision/:publicationId/status', async (c) => {
 		cmsProvider: pub.cmsProvider,
 		status: pub.cmsProvisioningStatus ?? 'none',
 		cmsBaseUrl: pub.cmsBaseUrl,
-		instanceMeta: pub.cmsInstanceMeta ? (JSON.parse(pub.cmsInstanceMeta) as CmsInstanceMeta) : null,
+		instanceMeta: parseCmsInstanceMeta(pub.cmsInstanceMeta),
 	})
 })
 
-/** Tear down a tenant's infra (admin / failed-provision cleanup). */
+/**
+ * Tear down a tenant's infra. Used both for admin / failed-provision cleanup and
+ * as the deprovision-on-publication-delete path (web calls this with force:true
+ * BEFORE deleting the publication, so the instance meta is still available).
+ */
 app.post('/api/teardown', async (c) => {
 	const { publicationId, force } = await c.req.json<{ publicationId?: string; force?: boolean }>()
 	if (!publicationId) return c.json({ error: 'publicationId is required' }, 400)
-	const pub = await c.env.DAL.getPublicationById(publicationId)
-	if (!pub?.cmsInstanceMeta) return c.json({ error: 'no provisioned instance' }, 404)
+	const log = createLogger({ service: 'provisioner' }).child({ component: 'teardown', publicationId })
 
-	// Destructive: deletes the tenant's D1 + media. Only allow it on a failed
-	// provision unless the caller explicitly forces tearing down a live instance.
-	if (pub.cmsProvisioningStatus === 'ready' && force !== true) {
-		return c.json({ error: 'refusing to tear down a ready instance without force:true' }, 409)
+	const pub = await c.env.DAL.getPublicationById(publicationId)
+	if (!pub) return c.json({ error: 'publication not found' }, 404)
+	if (pub.cmsProvider !== 'emdash') {
+		return c.json({ error: 'publication is not an EmDash instance' }, 400)
 	}
 
-	const meta = JSON.parse(pub.cmsInstanceMeta) as CmsInstanceMeta
+	// Destructive: deletes the tenant's D1 + media. Without an explicit force, only
+	// allow it on a terminal state (`failed`/`none`). A `ready` instance is live and
+	// a `provisioning` one has an in-flight workflow still creating/reusing infra —
+	// tearing either down unforced would lose data or race the workflow. (The
+	// publication-delete path always passes force:true.)
+	if ((pub.cmsProvisioningStatus === 'ready' || pub.cmsProvisioningStatus === 'provisioning') && force !== true) {
+		return c.json({ error: `refusing to tear down a ${pub.cmsProvisioningStatus} instance without force:true` }, 409)
+	}
+
 	const cf = new CfApiClient(c.env.CF_ACCOUNT_ID, c.env.CF_API_TOKEN)
-	await teardownTenant(cf, c.env.DISPATCH_NAMESPACE, {
-		scriptName: meta.scriptName,
-		d1DatabaseName: meta.d1DatabaseName,
-		d1DatabaseId: meta.d1DatabaseId,
-		r2BucketName: meta.r2BucketName,
-		kvNamespaceId: meta.kvNamespaceId,
-	})
+	const resources = await resolveTenantResources(cf, pub, c.env.PUBLICATIONS_BASE_DOMAIN)
+	const { failed } = await teardownTenant(cf, c.env.DISPATCH_NAMESPACE, resources)
+
+	if (failed.length > 0) {
+		// Leave the instance meta in place so the teardown stays retryable — clearing
+		// it would orphan the still-live resources. Surface the partial failure.
+		log.error('Partial teardown — some resources could not be deleted', { failed })
+		return c.json({ error: 'partial teardown', failed }, 500)
+	}
+
 	await c.env.DAL.updatePublication(publicationId, {
 		cmsProvisioningStatus: 'none',
 		cmsInstanceMeta: null,
 		cmsToken: null,
 	})
+	log.info('Tore down EmDash tenant', { scriptName: resources.scriptName })
 	return c.json({ status: 'torn-down', publicationId })
 })
 

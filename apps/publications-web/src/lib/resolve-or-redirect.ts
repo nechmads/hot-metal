@@ -2,6 +2,12 @@ import type { Publication } from '@hotmetal/data-layer'
 import type { DataLayerApi } from '@hotmetal/data-layer'
 import { resolvePublication, getCanonicalBase } from './resolve-publication'
 
+/** A successfully resolved publication + its canonical base URL. */
+export interface ResolvedPublication {
+  publication: Publication
+  canonicalBase: string
+}
+
 /**
  * Resolves the publication for a request.
  *
@@ -14,7 +20,7 @@ export async function resolveOrRedirect(
   dal: DataLayerApi,
   devSlug?: string,
   kv?: KVNamespace,
-): Promise<{ publication: Publication; canonicalBase: string } | Response | null> {
+): Promise<ResolvedPublication | Response | null> {
   const result = await resolvePublication(request, dal, devSlug, kv)
   if (!result) return null
 
@@ -26,4 +32,21 @@ export async function resolveOrRedirect(
 
   const canonicalBase = getCanonicalBase(result.publication)
   return { publication: result.publication, canonicalBase }
+}
+
+/**
+ * Page-facing resolution that reuses the middleware's already-resolved publication
+ * (stashed in `locals`) to avoid a second DAL/KV lookup on every legacy SonicJS
+ * page. Falls back to `resolveOrRedirect` if locals is empty (e.g. a page reached
+ * without the middleware), so behavior is identical either way.
+ */
+export async function resolvePublicationForPage(
+  locals: App.Locals,
+  request: Request,
+  dal: DataLayerApi,
+  devSlug?: string,
+  kv?: KVNamespace,
+): Promise<ResolvedPublication | Response | null> {
+  if (locals.resolvedPublication) return locals.resolvedPublication
+  return resolveOrRedirect(request, dal, devSlug, kv)
 }

@@ -16,6 +16,18 @@ export interface ProvisionerEnv extends Omit<Env, 'DAL' | 'PROVISION_WORKFLOW'> 
 	/** Authenticates incoming /api requests (web → provisioner). */
 	API_KEY: string
 	AXIOM_TOKEN?: string
+	/**
+	 * Turnstile secret for tenant comment-submit bot verification — injected into
+	 * each tenant script as a `secret_text` binding so EmDash comments work fleet-wide.
+	 */
+	TURNSTILE_SECRET_KEY?: string
+
+	/**
+	 * Public Turnstile site key (from `vars`) — injected into each tenant as a
+	 * plain var so the comment form widget renders. Same key used by
+	 * publications-web + the single-instance emdash-blog across *.hotmetalapp.com.
+	 */
+	TURNSTILE_SITE_KEY?: string
 }
 
 /** Input to a single tenant-provision run. */
@@ -50,4 +62,18 @@ export interface CmsInstanceMeta {
 	bundleVersion: string
 	/** ISO timestamp the instance reached `ready`. */
 	provisionedAt?: string
+}
+
+/**
+ * Parse `publications.cms_instance_meta` (a JSON string) into `CmsInstanceMeta`.
+ * Returns null for missing OR malformed JSON, so callers degrade gracefully (e.g.
+ * teardown falls back to deriving resource names) instead of throwing.
+ */
+export function parseCmsInstanceMeta(raw: string | null | undefined): CmsInstanceMeta | null {
+	if (!raw) return null
+	try {
+		return JSON.parse(raw) as CmsInstanceMeta
+	} catch {
+		return null
+	}
 }

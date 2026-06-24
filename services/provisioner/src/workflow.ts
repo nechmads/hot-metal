@@ -1,7 +1,7 @@
 import { WorkflowEntrypoint, type WorkflowEvent, type WorkflowStep } from 'cloudflare:workers'
 import { createLogger } from '@hotmetal/shared'
-import type { CmsInstanceMeta, ProvisionWorkflowParams, ProvisionerEnv } from './env'
-import { CfApiClient } from './cf-api'
+import { parseCmsInstanceMeta, type CmsInstanceMeta, type ProvisionWorkflowParams, type ProvisionerEnv } from './env'
+import { CfApiClient, CfApiError } from './cf-api'
 import { loadBundle } from './bundle'
 import { buildTenantBindings, tenantNames } from './tenant'
 import { buildBootstrapStatements } from './bootstrap'
@@ -64,6 +64,27 @@ export class ProvisionWorkflow extends WorkflowEntrypoint<ProvisionerEnv, Provis
 					notificationsService: 'hotmetal-notifications',
 					notificationsEntrypoint: 'NotificationsService',
 				})
+				const vars: Record<string, string> = {
+					PUBLICATION_SLUG: slug,
+					PUBLICATION_NAME: slug,
+					PUBLICATION_TEMPLATE: 'starter',
+				}
+				const secrets: Record<string, string> = {}
+				// Comments need BOTH the public site key (renders the widget) and the
+				// secret (server-side verify). Inject them together so a misconfigured
+				// fleet HIDES the form (`Boolean(turnstileSiteKey)` gate) rather than
+				// rendering one that always 503s. Non-fatal: a tenant without comments is
+				// still a usable blog, so we warn (greppable) instead of failing provisioning.
+				if (env.TURNSTILE_SITE_KEY && env.TURNSTILE_SECRET_KEY) {
+					vars.TURNSTILE_SITE_KEY = env.TURNSTILE_SITE_KEY
+					secrets.TURNSTILE_SECRET_KEY = env.TURNSTILE_SECRET_KEY
+				} else {
+					log.warn('Provisioning tenant without Turnstile keys — comments will be disabled', {
+						hasSiteKey: Boolean(env.TURNSTILE_SITE_KEY),
+						hasSecret: Boolean(env.TURNSTILE_SECRET_KEY),
+					})
+				}
+
 				await cf.uploadDispatchScript(env.DISPATCH_NAMESPACE, {
 					scriptName: names.scriptName,
 					mainModule: bundle.manifest.mainModule,
@@ -72,11 +93,8 @@ export class ProvisionWorkflow extends WorkflowEntrypoint<ProvisionerEnv, Provis
 					bindings,
 					compatibilityDate: bundle.manifest.compatibilityDate,
 					compatibilityFlags: bundle.manifest.compatibilityFlags,
-					vars: {
-						PUBLICATION_SLUG: slug,
-						PUBLICATION_NAME: slug,
-						PUBLICATION_TEMPLATE: 'starter',
-					},
+					vars,
+					secrets,
 				})
 			})
 
@@ -171,20 +189,115 @@ function buildMeta(
 	}
 }
 
+/** A resource that couldn't be torn down (already-gone resources are NOT failures). */
+export interface TeardownFailure {
+	/** Label of the resource, e.g. `r2:emdash-media-<id>`. */
+	resource: string
+	error: string
+}
+
+export interface TeardownResult {
+	failed: TeardownFailure[]
+}
+
+/** The infra a teardown can delete. d1/kv ids may be absent (never created). */
+export interface TenantResources {
+	scriptName: string
+	d1DatabaseName: string
+	r2BucketName: string
+	kvTitle: string
+	d1DatabaseId?: string
+	kvNamespaceId?: string
+}
+
+/** A delete that 404s means the resource is already gone — treat as success. */
+function isAlreadyGone(err: unknown): boolean {
+	return err instanceof CfApiError && err.status === 404
+}
+
 /**
  * Best-effort teardown of a tenant's infra. Each delete is independent so one
- * failure doesn't block the rest (e.g. a resource that was never created).
+ * failure doesn't block the rest, and failures are COLLECTED (not swallowed) so
+ * the caller can surface a partial teardown instead of leaking silently.
+ *
+ * Known limitation: R2 requires a bucket to be EMPTY before it can be deleted,
+ * and there is no account-REST endpoint to empty it (only the Workers binding /
+ * S3 API / dashboard). In the Hot Metal fleet the per-tenant MEDIA bucket is
+ * normally empty (generated images live in the shared `hotmetal-cms-bucket`), so
+ * the delete succeeds; a tenant that uploaded media via the EmDash admin will
+ * surface here as a reported failure to be emptied out-of-band (see runbook).
  */
 export async function teardownTenant(
 	cf: CfApiClient,
 	namespace: string,
-	names: { scriptName: string; d1DatabaseName: string; r2BucketName: string; kvNamespaceId?: string; d1DatabaseId?: string },
-): Promise<void> {
-	const tasks: Array<Promise<unknown>> = [
-		cf.deleteDispatchScript(namespace, names.scriptName).catch(() => {}),
-		cf.deleteR2Bucket(names.r2BucketName).catch(() => {}),
-	]
-	if (names.d1DatabaseId) tasks.push(cf.deleteD1Database(names.d1DatabaseId).catch(() => {}))
-	if (names.kvNamespaceId) tasks.push(cf.deleteKvNamespace(names.kvNamespaceId).catch(() => {}))
-	await Promise.all(tasks)
+	resources: TenantResources,
+): Promise<TeardownResult> {
+	const failed: TeardownFailure[] = []
+	const run = async (resource: string, fn: () => Promise<unknown>) => {
+		try {
+			await fn()
+		} catch (err) {
+			if (isAlreadyGone(err)) return
+			failed.push({ resource, error: err instanceof Error ? err.message : String(err) })
+		}
+	}
+
+	await run(`script:${resources.scriptName}`, () => cf.deleteDispatchScript(namespace, resources.scriptName))
+	await run(`r2:${resources.r2BucketName}`, () => cf.deleteR2Bucket(resources.r2BucketName))
+	if (resources.d1DatabaseId) {
+		const id = resources.d1DatabaseId
+		await run(`d1:${resources.d1DatabaseName}`, () => cf.deleteD1Database(id))
+	}
+	if (resources.kvNamespaceId) {
+		const id = resources.kvNamespaceId
+		await run(`kv:${resources.kvTitle}`, () => cf.deleteKvNamespace(id))
+	}
+	return { failed }
+}
+
+/**
+ * Resolve the infra to tear down for a publication. Prefers the stored
+ * `cms_instance_meta` (has the D1/KV ids); falls back to deriving names from the
+ * publication id/slug and looking up the ids — so a provision that failed BEFORE
+ * persisting meta (status `provisioning`/`failed`, meta null) can still be fully
+ * cleaned up rather than leaking its create-step infra. Returns null only when
+ * there is genuinely nothing to resolve.
+ *
+ * Every name is `pub-<id>` / `emdash-*-<id>` (scoped to this publication's id) —
+ * never a broad list-and-delete of the account's resources.
+ */
+export async function resolveTenantResources(
+	cf: CfApiClient,
+	pub: { id: string; slug: string; cmsInstanceMeta?: string | null },
+	baseDomain: string,
+): Promise<TenantResources> {
+	const meta = parseCmsInstanceMeta(pub.cmsInstanceMeta)
+	if (meta) {
+		return {
+			scriptName: meta.scriptName,
+			d1DatabaseName: meta.d1DatabaseName,
+			r2BucketName: meta.r2BucketName,
+			kvTitle: tenantNames(pub.id, pub.slug, baseDomain).kvTitle,
+			d1DatabaseId: meta.d1DatabaseId,
+			kvNamespaceId: meta.kvNamespaceId,
+		}
+	}
+
+	// No meta: derive names and resolve ids. A null result means the resource was
+	// never created (nothing to delete); a thrown lookup error propagates and
+	// fails the teardown (keeping it retryable) — we must NOT coerce a transient
+	// CF API failure into "absent", or we'd skip the delete and silently leak.
+	const names = tenantNames(pub.id, pub.slug, baseDomain)
+	const [d1, kv] = await Promise.all([
+		cf.getD1DatabaseByName(names.d1DatabaseName),
+		cf.getKvNamespaceByTitle(names.kvTitle),
+	])
+	return {
+		scriptName: names.scriptName,
+		d1DatabaseName: names.d1DatabaseName,
+		r2BucketName: names.r2BucketName,
+		kvTitle: names.kvTitle,
+		d1DatabaseId: d1?.uuid,
+		kvNamespaceId: kv?.id,
+	}
 }

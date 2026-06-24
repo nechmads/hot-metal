@@ -67,13 +67,19 @@
 		// from. Bump on a fleet rollout (Phase 4).
 		"EMDASH_BUNDLE_VERSION": "current",
 		"AXIOM_DATASET": "hotmetal-prod",
+		// Public Turnstile site key injected into each tenant so the comment-form
+		// widget renders. Same key publications-web + emdash-blog use across
+		// *.hotmetalapp.com (the matching TURNSTILE_SECRET_KEY is a secret below).
+		"TURNSTILE_SITE_KEY": "0x4AAAAAACk8MjvpV7HFhXQ9",
 	},
 
 	// Secrets (set via `wrangler secret put`):
-	// CF_API_TOKEN   — scoped Cloudflare API token: Workers Scripts:Edit,
-	//                  Workers for Platforms (dispatch):Edit, D1:Edit, R2:Edit,
-	//                  SSL and Certificates:Edit (custom hostnames). Account-scoped
-	//                  to CF_ACCOUNT_ID + the ZONE_NAME zone.
-	// API_KEY        — authenticates incoming /api requests (web → provisioner).
-	// AXIOM_TOKEN    — Axiom ingest token for structured logging.
+	// CF_API_TOKEN        — scoped Cloudflare API token: Workers Scripts:Edit,
+	//                       Workers for Platforms (dispatch):Edit, D1:Edit, R2:Edit,
+	//                       SSL and Certificates:Edit (custom hostnames). Account-scoped
+	//                       to CF_ACCOUNT_ID + the ZONE_NAME zone.
+	// API_KEY             — authenticates incoming /api requests (web → provisioner).
+	// AXIOM_TOKEN         — Axiom ingest token for structured logging.
+	// TURNSTILE_SECRET_KEY — Turnstile secret injected into each tenant (secret_text)
+	//                       for server-side comment-submit verification.
 }

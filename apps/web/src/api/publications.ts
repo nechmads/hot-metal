@@ -7,7 +7,7 @@ import { AUTO_PUBLISH_MODES, type AutoPublishMode, type ScoutSchedule } from '@h
 import type { CmsProvider } from '@hotmetal/data-layer'
 import { validateSchedule, validateTimezone, computeNextRun, getCmsClient, getTierLimits, getTierDisplayName, isUnlimited, logger } from '@hotmetal/shared'
 import { checkPublicationQuota, checkScoutScheduleQuota, quotaExceededResponse } from '../lib/quota'
-import { triggerEmdashProvision } from '../lib/provisioner'
+import { triggerEmdashProvision, triggerEmdashDeprovision } from '../lib/provisioner'
 
 const publications = new Hono<AppEnv>()
 
@@ -378,6 +378,19 @@ publications.post('/publications/:id/posts/:postId/edit', async (c) => {
 publications.delete('/publications/:id', async (c) => {
   const pub = await verifyPublicationOwnership(c, c.req.param('id'))
   if (!pub) return c.json({ error: 'Publication not found' }, 404)
+
+  // EmDash publications own a dedicated instance (script + D1 + R2 + KV). Tear it
+  // down BEFORE deleting the record — once the publication (and its
+  // cms_instance_meta) is gone, the infra can no longer be found and would leak.
+  // On teardown failure, refuse the delete so it stays retryable.
+  if (pub.cmsProvider === 'emdash') {
+    try {
+      await triggerEmdashDeprovision(c.env, pub.id)
+    } catch (err) {
+      logger('web').error('Failed to deprovision EmDash instance; publication not deleted', { component: 'provisioner', publicationId: pub.id, error: err instanceof Error ? err.message : String(err) })
+      return c.json({ error: 'Failed to tear down the EmDash instance. Publication not deleted — please try again.' }, 502)
+    }
+  }
 
   await c.env.DAL.deletePublication(c.req.param('id'))
   return c.json({ deleted: true })

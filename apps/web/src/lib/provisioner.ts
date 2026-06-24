@@ -31,3 +31,34 @@ export async function triggerEmdashProvision(
 	}
 	logger('web').info('EmDash provisioning triggered', { component: 'provisioner', publicationId })
 }
+
+/**
+ * Tear down a publication's dedicated EmDash instance (its script + D1 + R2 + KV).
+ * Called BEFORE deleting the publication record so the provisioner can still read
+ * the instance metadata it needs to find the infra — otherwise deleting a
+ * publication would permanently leak its resources.
+ *
+ * `force: true` because a delete must tear down even a `ready` instance. Throws
+ * on any non-2xx so the caller can refuse to delete the publication and keep the
+ * teardown retryable.
+ */
+export async function triggerEmdashDeprovision(
+	env: { PROVISIONER?: Fetcher; PROVISIONER_API_KEY?: string },
+	publicationId: string,
+): Promise<void> {
+	if (!env.PROVISIONER || !env.PROVISIONER_API_KEY) {
+		throw new Error('provisioner binding/secret not configured')
+	}
+	const res = await env.PROVISIONER.fetch(
+		new Request('https://provisioner/api/teardown', {
+			method: 'POST',
+			headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${env.PROVISIONER_API_KEY}` },
+			body: JSON.stringify({ publicationId, force: true }),
+		}),
+	)
+	if (!res.ok) {
+		const detail = await res.text().catch(() => '')
+		throw new Error(`provisioner /api/teardown returned ${res.status}: ${detail.slice(0, 200)}`)
+	}
+	logger('web').info('EmDash deprovision triggered', { component: 'provisioner', publicationId })
+}

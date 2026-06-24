@@ -52,6 +52,9 @@ export const onRequest = defineMiddleware(async (context, next) => {
 		}
 	}
 
-	// Legacy SonicJS publication (or unresolved host → page 404s as before).
+	// Legacy SonicJS publication: stash the already-resolved publication so the
+	// page reuses it (via resolvePublicationForPage) instead of a second DAL/KV
+	// lookup. Left unset for an unresolved host so the page resolves + 404s itself.
+	if (resolved) context.locals.resolvedPublication = resolved
 	return next()
 })

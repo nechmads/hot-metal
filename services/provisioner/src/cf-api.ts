@@ -66,8 +66,10 @@ export interface UploadDispatchScriptInput {
 	bindings: unknown[]
 	compatibilityDate: string
 	compatibilityFlags?: string[]
-	/** Non-secret vars become `plain_text` bindings; secrets become `secret_text`. */
+	/** Non-secret vars become `plain_text` bindings. */
 	vars?: Record<string, string>
+	/** Secret vars become `secret_text` bindings (redacted, not stored as plain_text). */
+	secrets?: Record<string, string>
 }
 
 export interface CustomHostname {
@@ -174,9 +176,23 @@ export class CfApiClient {
 	}
 
 	/**
+	 * Look up a KV namespace id by its title (titles are NOT unique, but ours are
+	 * derived per-tenant so a match is unambiguous). Returns null if none exists.
+	 * (Scans the first page; fleet sizes beyond 100 namespaces would need
+	 * pagination — revisit.)
+	 */
+	async getKvNamespaceByTitle(title: string): Promise<{ id: string } | null> {
+		const existing = await this.req<Array<{ id: string; title: string }>>(
+			'GET',
+			`/accounts/${this.accountId}/storage/kv/namespaces?per_page=100`,
+		)
+		const match = existing.find((n) => n.title === title)
+		return match ? { id: match.id } : null
+	}
+
+	/**
 	 * Create-or-reuse by title — KV titles are NOT unique, so a naive retry would
-	 * leak a namespace each time. Look up an existing one first. (Scans the first
-	 * page; fleet sizes beyond 100 namespaces would need pagination — revisit.)
+	 * leak a namespace each time. Look up an existing one first.
 	 *
 	 * Note: lookup-then-create has a TOCTOU window if two runs for the SAME
 	 * publication race (a `manual`/`retry` trigger concurrent with an in-flight
@@ -184,12 +200,8 @@ export class CfApiClient {
 	 * case is one leaked namespace; acceptable for now.
 	 */
 	async ensureKvNamespace(title: string): Promise<{ id: string }> {
-		const existing = await this.req<Array<{ id: string; title: string }>>(
-			'GET',
-			`/accounts/${this.accountId}/storage/kv/namespaces?per_page=100`,
-		)
-		const match = existing.find((n) => n.title === title)
-		if (match) return { id: match.id }
+		const existing = await this.getKvNamespaceByTitle(title)
+		if (existing) return existing
 		return this.createKvNamespace(title)
 	}
 
@@ -238,6 +250,7 @@ export class CfApiClient {
 			bindings: [
 				...input.bindings,
 				...Object.entries(input.vars ?? {}).map(([name, text]) => ({ type: 'plain_text', name, text })),
+				...Object.entries(input.secrets ?? {}).map(([name, text]) => ({ type: 'secret_text', name, text })),
 			],
 		}
 		if (assetsJwt) metadata.assets = { jwt: assetsJwt }

@@ -10,6 +10,7 @@ import type { AppEnv } from '../../server'
 import { NotFoundError, ValidationError, QuotaExceededError } from '../../actions/errors'
 import { AUTO_PUBLISH_MODES, type AutoPublishMode, type ScoutSchedule } from '@hotmetal/content-core'
 import { validateSchedule, validateTimezone, computeNextRun, getCmsClient, getTierLimits, isUnlimited, logger } from '@hotmetal/shared'
+import { triggerEmdashDeprovision } from '../../lib/provisioner'
 
 const publications = new Hono<AppEnv>()
 
@@ -284,6 +285,17 @@ publications.delete('/publications/:id', async (c) => {
 	const pub = await c.env.DAL.getPublicationById(pubId)
 	if (!pub || pub.userId !== c.get('userId')) {
 		throw new NotFoundError('Publication not found')
+	}
+
+	// EmDash publications own a dedicated instance — tear it down before deleting
+	// the record so its infra isn't leaked (see the web /api delete handler).
+	if (pub.cmsProvider === 'emdash') {
+		try {
+			await triggerEmdashDeprovision(c.env, pub.id)
+		} catch (err) {
+			logger('web').error('Failed to deprovision EmDash instance; publication not deleted', { component: 'provisioner', publicationId: pub.id, error: err instanceof Error ? err.message : String(err) })
+			return c.json({ error: { message: 'Failed to tear down the EmDash instance. Publication not deleted — please try again.', code: 'deprovision_failed' } }, 502)
+		}
 	}
 
 	await c.env.DAL.deletePublication(pubId)
