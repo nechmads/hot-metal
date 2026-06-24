@@ -65,16 +65,22 @@ const serverCfg = JSON.parse(readFileSync(join(serverDir, 'wrangler.json'), 'utf
 	compatibility_flags?: string[]
 }
 
+// R2 object keys travel in the api.cloudflare.com URL path. A `..` in a key
+// (Astro/rollup emits chunks like `_.._Be8kIc7Z.mjs`) trips Cloudflare's
+// directory-traversal WAF → 403. Sanitize the KEY only; `name`/`path` (the
+// module/asset identity the provisioner reuses from the manifest) stay exact.
+const safeKey = (s: string): string => s.replace(/\.\./g, '_dd_')
+
 const modules = walk(serverDir)
 	.filter((p) => p.endsWith('.mjs') || p.endsWith('.js') || p.endsWith('.wasm'))
 	.map((p) => {
 		const name = relative(serverDir, p)
-		return { name, key: `releases/${version}/server/${name}`, contentType: contentType(p), file: p }
+		return { name, key: `releases/${version}/server/${safeKey(name)}`, contentType: contentType(p), file: p }
 	})
 
 const assets = walk(clientDir).map((p) => {
 	const rel = relative(clientDir, p)
-	return { path: `/${rel}`, key: `releases/${version}/client/${rel}`, contentType: contentType(p), file: p }
+	return { path: `/${rel}`, key: `releases/${version}/client/${safeKey(rel)}`, contentType: contentType(p), file: p }
 })
 
 console.log(`Uploading ${modules.length} modules + ${assets.length} assets as release "${version}"…`)
