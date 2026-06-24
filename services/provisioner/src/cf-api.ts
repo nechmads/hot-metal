@@ -5,11 +5,11 @@
  * Confident, well-documented surfaces: D1 + R2 + KV create/delete, the D1 HTTP
  * query API, dispatch-script delete, Cloudflare-for-SaaS custom hostnames.
  *
- * ⚠️ `uploadDispatchScript` (script modules + static assets via the multipart
- * PUT + assets-upload-session flow) is implemented to the documented API but is
- * the one surface NOT yet proven from raw HTTP — see Spike #1 (task #6). The
- * known risk is the exact static-asset manifest hash spec; everything else is
- * structurally standard.
+ * `uploadDispatchScript` (script modules + static assets via the multipart PUT +
+ * assets-upload-session flow) was VALIDATED live in Spike #1 (2026-06-24): a
+ * 374-module + 53-asset emdash-blog build uploaded and served the 7.4 MB admin
+ * SPA + content API correctly — the asset-manifest hash spec and all binding type
+ * strings are confirmed.
  */
 
 const CF_API_BASE = 'https://api.cloudflare.com/client/v4'
@@ -208,12 +208,7 @@ export class CfApiClient {
 
 	/**
 	 * Upload a tenant worker (modules + static assets + per-tenant bindings) into
-	 * the dispatch namespace. First upload is synchronous.
-	 *
-	 * ⚠️ SPIKE #1: validate the static-asset manifest hash spec + the assets
-	 * upload-session/completion-token round-trip against real HTTP before relying
-	 * on this in the Workflow. The structure follows Cloudflare's documented
-	 * multipart `PUT .../scripts/{name}` + `assets-upload-session` flow.
+	 * the dispatch namespace. First upload is synchronous. Validated live (Spike #1).
 	 */
 	async uploadDispatchScript(namespace: string, input: UploadDispatchScriptInput): Promise<void> {
 		const base = `/accounts/${this.accountId}/workers/dispatch/namespaces/${namespace}/scripts/${input.scriptName}`
@@ -315,10 +310,9 @@ interface AssetManifest {
 }
 
 /**
- * Build the static-asset manifest. Cloudflare keys assets by a content hash.
- * ⚠️ SPIKE #1: confirm the exact hash spec (algorithm + truncation) Cloudflare
- * expects; this uses the leading 32 hex chars of SHA-256(contents), which is the
- * documented shape but must be verified against a live upload.
+ * Build the static-asset manifest. Cloudflare keys assets by the leading 32 hex
+ * chars of SHA-256(contents) — confirmed live in Spike #1 (the session returned
+ * the expected buckets and the uploaded assets served correctly).
  */
 async function buildAssetManifest(assets: StaticAsset[]): Promise<AssetManifest> {
 	const byPath: Record<string, { hash: string; size: number }> = {}

@@ -47,9 +47,8 @@ export interface TenantBindingInput {
  * Build the `bindings[]` for the dispatch-script upload metadata, matching the
  * bindings the `apps/emdash-blog` worker expects (DB, MEDIA, IMAGE_BUCKET,
  * SESSION, IMAGES, LOADER, DAL, NOTIFICATIONS).
- *
- * ⚠️ SPIKE #1: confirm the exact `type` strings the dispatch upload API expects
- * (esp. `worker_loader` and `images`) against a live raw-API upload.
+ * The `type` strings (incl. `worker_loader` and `images`) were confirmed live in
+ * Spike #1.
  */
 export function buildTenantBindings(input: TenantBindingInput): unknown[] {
 	return [

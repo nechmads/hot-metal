@@ -52,7 +52,9 @@ Uploads the build to `r2://hotmetal-emdash-bundles/releases/{version}/` + a
 
 - ✅ Spike #0 (GO): WfP dispatch static-asset delivery + headless bootstrap proven
   live (see memory `emdash-phase3-spike0`).
-- ⚠️ **Spike #1 pending**: the raw-API dispatch script+assets upload
-  (`cf-api.uploadDispatchScript` + the asset manifest hash spec, `tenant.buildTenantBindings`
-  type strings) is implemented to the documented API but not yet proven from raw
-  HTTP. Validate before relying on the upload step in production.
+- ✅ Spike #1 (GO): the raw-API dispatch script+assets upload
+  (`cf-api.uploadDispatchScript` + asset-manifest hash spec + `tenant.buildTenantBindings`
+  type strings) validated live — a 374-module + 53-asset emdash-blog build uploaded
+  and served the 7.4 MB admin SPA + content API with a reused PAT.
+- ⏳ Next: dispatch worker routing by Host → tenant script (reuse `custom_domains`),
+  trigger on publication-create, and the end-to-end UI flow.
