@@ -114,5 +114,12 @@ app.post('/api/teardown', async (c) => {
 
 app.get('/health', (c) => c.json({ status: 'ok', service: 'provisioner' }))
 
-export default app
+// Export the Workflow class as a sibling entrypoint, and the default as a plain
+// module-worker object (matching content-scout) so the Workflows runtime reliably
+// discovers ProvisionWorkflow alongside the fetch handler.
 export { ProvisionWorkflow }
+export default {
+	fetch(request: Request, env: ProvisionerEnv, ctx: ExecutionContext) {
+		return app.fetch(request, env, ctx)
+	},
+}
