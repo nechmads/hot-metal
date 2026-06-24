@@ -2,8 +2,8 @@
 // Here we narrow the service/workflow bindings to their typed interfaces.
 import type { DataLayerApi } from '@hotmetal/data-layer'
 
-// `Workflow`, `DispatchNamespace`, `Fetcher` are global runtime types (from
-// worker-configuration.d.ts) — not module imports.
+// `Workflow`, `Fetcher` are global runtime types (from worker-configuration.d.ts)
+// — not module imports. TENANT_INVOKER is a plain Fetcher service binding.
 
 export interface ProvisionerEnv extends Omit<Env, 'DAL' | 'PROVISION_WORKFLOW'> {
 	/** Data Access Layer (typed RPC over the service binding). */

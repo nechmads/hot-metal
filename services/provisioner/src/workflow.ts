@@ -80,14 +80,18 @@ export class ProvisionWorkflow extends WorkflowEntrypoint<ProvisionerEnv, Provis
 				})
 			})
 
-			// 3) First boot → EmDash auto-migrates against the empty remote D1. A 2xx
-			//    OR a 3xx (EmDash redirects to login when unauthenticated) both prove
-			//    the worker booted + migrated; a 5xx means migration failed, so fail
-			//    fast here rather than hitting a confusing missing-tables error in the
-			//    bootstrap step.
+			// 3) First boot → EmDash auto-migrates against the empty remote D1. We go
+			//    through the tenant-invoker service binding (a dispatch-namespace
+			//    binding can't be called from inside a Workflow step). A 2xx or 3xx
+			//    (EmDash redirects to login when unauthenticated) both prove the worker
+			//    booted + migrated; a 5xx means migration failed, so fail fast here
+			//    rather than hitting a confusing missing-tables error in bootstrap.
 			await step.do('trigger-migrate', STEP_RETRY, async () => {
-				const tenant = env.DISPATCHER.get(names.scriptName)
-				const res = await tenant.fetch(`https://${names.hostname}/_emdash/admin`)
+				const res = await env.TENANT_INVOKER.fetch(
+					new Request(`https://${names.hostname}/_emdash/admin`, {
+						headers: { 'x-tenant-script': names.scriptName },
+					}),
+				)
 				const body = await res.text().catch(() => '')
 				if (res.status >= 400) {
 					throw new Error(`tenant first-boot returned ${res.status}: ${body.slice(0, 300)}`)

@@ -24,25 +24,23 @@
 		},
 	],
 
-	// Workers-for-Platforms dispatch namespace that holds every tenant script.
-	// The provisioner uploads tenant scripts here (via the CF REST API, not this
-	// binding); the binding lets the provisioner invoke a freshly-uploaded script
-	// to trigger its first-boot auto-migration with no public hostname yet.
-	"dispatch_namespaces": [
-		{
-			"binding": "DISPATCHER",
-			"namespace": "hotmetal-emdash",
-		},
-	],
-
-	// Data Access Layer via service binding — read/drive a publication's
-	// cms_provider / cms_base_url / cms_token (encrypted by DAL) / provisioning
-	// status / instance meta. The provisioner never touches D1 directly.
+	// Service bindings.
 	"services": [
+		// Data Access Layer — read/drive a publication's cms_provider / cms_base_url
+		// / cms_token (encrypted by DAL) / provisioning status / instance meta. The
+		// provisioner never touches D1 directly.
 		{
 			"binding": "DAL",
 			"service": "hotmetal-data-layer",
 			"entrypoint": "DataLayer",
+		},
+		// Tenant invoker — boots a freshly-uploaded tenant (trigger auto-migrate)
+		// before it's publicly routable. A dispatch-namespace binding can't be
+		// called from inside a Workflow step, but a service binding to this regular
+		// worker (which does the dispatch) can. Deploy hotmetal-emdash-dispatch first.
+		{
+			"binding": "TENANT_INVOKER",
+			"service": "hotmetal-emdash-dispatch",
 		},
 	],
 

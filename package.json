@@ -27,6 +27,7 @@
     "deploy:docs": "pnpm --filter @hotmetal/docs run deploy",
     "deploy:emdash": "pnpm --filter @hotmetal/emdash-blog run deploy",
     "deploy:provisioner": "pnpm --filter @hotmetal/provisioner run deploy",
+    "deploy:dispatch": "pnpm --filter @hotmetal/emdash-dispatch run deploy",
     "deploy:all": "pnpm deploy:cms && pnpm deploy:dal && pnpm deploy:scout && pnpm deploy:publisher && pnpm deploy:notifications && pnpm deploy:web",
     "dev:cms": "pnpm --filter @hotmetal/cms-admin dev",
     "dev:dal": "pnpm --filter @hotmetal/data-layer dev",

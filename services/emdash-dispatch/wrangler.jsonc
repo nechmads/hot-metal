@@ -1,0 +1,21 @@
+{
+	"$schema": "node_modules/wrangler/config-schema.json",
+	"name": "hotmetal-emdash-dispatch",
+	"main": "src/index.ts",
+	"account_id": "2174498561748c927a0b968e44a56754",
+	"compatibility_date": "2026-02-24",
+	"observability": {
+		"enabled": true,
+	},
+	// Kept reachable on workers.dev during fleet bring-up so a tenant can be poked
+	// directly for debugging. Lock down (workers_dev:false; service-binding-only)
+	// before GA — the provisioner reaches it via the service binding regardless.
+	"workers_dev": true,
+	// The WfP dispatch namespace holding every tenant script.
+	"dispatch_namespaces": [
+		{
+			"binding": "DISPATCHER",
+			"namespace": "hotmetal-emdash",
+		},
+	],
+}
