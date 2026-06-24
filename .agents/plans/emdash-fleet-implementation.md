@@ -158,4 +158,11 @@ Phases 1 and 2 deliver real user value with **manual** provisioning (one or a fe
 3. **Managed vs. self-managed** customization policy (Track B).
 4. ~~Free tier~~ **DECIDED: free tier gets EmDash too.**
 5. **SonicJS long-term:** maintain indefinitely for legacy, or eventually migrate everyone (Track C)?
-6. **Provisioner home:** new `services/provisioner` worker vs. extend an existing service.
+6. ~~Provisioner home~~ **DECIDED (2026-06-24): new `services/provisioner` Worker** — owns the WfP/D1/R2 CF-API calls, the provisioning Workflow, the dispatch router, and headless bootstrap; its own deploy + CF API token secret. DAL stays data-only.
+
+## Spike #0 result (2026-06-24) — GO
+
+Both halves proven **live** on the prod account (`2174498561748c927a0b968e44a56754`, WfP now enabled). See memory `emdash-phase3-spike0` for IDs + commands.
+- **#0a:** tenant `emdash-blog` bundle deployed to dispatch namespace `hotmetal-emdash`; **1.87 MB gzip script** (≪10 MB cap); **7.4 MB admin SPA served `200`** from the dispatch ns; `nodejs_compat`+Worker-Loader bindings accepted. Dispatch worker (`env.DISPATCHER.get(name).fetch()`) routes to the tenant.
+- **#0b:** auto-migrate on remote-D1 first boot; headless seed (admin role 50 + `ec_pat_` minted with `@emdash-cms/auth`, Worker-safe) via remote-D1 INSERTs; `POST /posts`→`publish`→`GET` round-trips, zero clicks.
+- **Track B DECIDED (2026-06-24): managed = no core customization** — all managed tenants run the shared bundle so the fleet is blanket-updatable; per-tenant customization is the future ejected/self-managed tier (Phase 5).
