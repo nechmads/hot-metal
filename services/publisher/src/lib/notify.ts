@@ -6,5 +6,8 @@
 import { logger } from '@hotmetal/shared'
 
 export async function notifyAdmin(message: string, context?: Record<string, unknown>): Promise<void> {
-  logger('publisher').warn(message, { component: 'admin-notification', ...context })
+  logger('publisher').warn(message, {
+    component: 'admin-notification',
+    context: context ? JSON.stringify(context) : undefined,
+  })
 }

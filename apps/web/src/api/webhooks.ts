@@ -55,7 +55,7 @@ webhooks.post("/clerk", async (c) => {
     const email = (payload.data.email_address ?? payload.data.emailAddress) as
       | string
       | undefined;
-    logger("web").info("New waitlist entry", { component: "webhooks", email: email ?? "unknown", data: payload.data });
+    logger("web").info("New waitlist entry", { component: "webhooks", email: email ?? "unknown", data: JSON.stringify(payload.data) });
 
     try {
       await sendWaitlistNotification(c.env, email);

@@ -123,7 +123,7 @@ app.post('/api/teardown', async (c) => {
 	if (failed.length > 0) {
 		// Leave the instance meta in place so the teardown stays retryable — clearing
 		// it would orphan the still-live resources. Surface the partial failure.
-		log.error('Partial teardown — some resources could not be deleted', { failed })
+		log.error('Partial teardown — some resources could not be deleted', { failed: JSON.stringify(failed) })
 		return c.json({ error: 'partial teardown', failed }, 500)
 	}
 

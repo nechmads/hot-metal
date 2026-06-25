@@ -104,7 +104,7 @@ export function createCloudflareHostnamesClient(options: CloudflareHostnamesClie
 
 		if (!res.ok || !json.success) {
 			const msg = json.errors?.map((e) => e.message).join('; ') || res.statusText
-			log.error('Cloudflare API error', { method, path, status: res.status, errors: json.errors })
+			log.error('Cloudflare API error', { method, path, status: res.status, errors: JSON.stringify(json.errors) })
 			throw new CloudflareHostnamesError(msg, res.status, json.errors)
 		}
 
