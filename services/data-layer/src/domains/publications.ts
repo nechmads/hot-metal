@@ -277,6 +277,23 @@ export async function listAllPublications(db: D1Database): Promise<Publication[]
 	return (result.results ?? []).map(mapRow)
 }
 
+/**
+ * List publications filtered by CMS provider and provisioning status. Used by the
+ * fleet rollout to enumerate the live tenants to re-deploy the shared bundle to
+ * (e.g. provider `'emdash'` + status `'ready'`) without pulling every publication.
+ */
+export async function listPublicationsByProviderStatus(
+	db: D1Database,
+	provider: CmsProvider,
+	status: CmsProvisioningStatus
+): Promise<Publication[]> {
+	const result = await db
+		.prepare('SELECT * FROM publications WHERE cms_provider = ? AND cms_provisioning_status = ? ORDER BY created_at DESC')
+		.bind(provider, status)
+		.all<PublicationRow>()
+	return (result.results ?? []).map(mapRow)
+}
+
 export async function updatePublication(
 	db: D1Database,
 	id: string,

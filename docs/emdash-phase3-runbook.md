@@ -81,6 +81,55 @@ pnpm --filter @hotmetal/emdash-blog build
 cd services/provisioner && pnpm release-bundle      # needs CF_API_TOKEN in env/.dev.vars
 ```
 
+## Fleet bundle rollout (Phase 4)
+
+Re-deploy the current shared bundle across **existing** tenants — e.g. after a blog
+template change or a binding fix. This is a pure **script re-upload**: it reconstructs
+each tenant's bindings from `cms_instance_meta`, re-uploads the bundle, and bumps
+`cms_instance_meta.bundleVersion`. It deliberately does **not** run bootstrap (no PAT
+rotation) and never touches the tenant's D1/data — only the worker code is swapped.
+
+`POST /api/fleet/upgrade` on the provisioner (same `API_KEY` bearer as the other
+`/api/*` routes):
+
+| Field | Type | Description |
+| --- | --- | --- |
+| `publicationIds` | `string[]` | Explicit tenants to upgrade (**canary**). Mutually exclusive with `all`. |
+| `all` | `boolean` | Upgrade every `emdash`+`ready` tenant. Mutually exclusive with `publicationIds`. |
+| `version` | `string` | Bundle release to deploy. Defaults to the provisioner's `EMDASH_BUNDLE_VERSION`. |
+
+Response: `{ version, targeted, upgraded[], failed[], skipped[] }`. Per-tenant failures
+are **reported, never abort the batch**. Status codes: `200` all-good / nothing-to-do,
+`207` partial (some tenants failed — inspect `failed[]`), `502` every targeted tenant
+failed, `400` bad target selection / unknown `version`.
+
+- **Skipped** = a requested id that is not found, not `emdash`, or not `ready`.
+- **Failed** = a `ready` tenant whose `cms_instance_meta` is missing/malformed, or whose
+  script upload threw.
+
+**Always release first, then canary, then all:**
+
+```bash
+# 1) Build + release the new bundle (see "Publish a tenant bundle release" above).
+pnpm --filter @hotmetal/emdash-blog build
+cd services/provisioner && pnpm release-bundle
+
+# 2) Canary one tenant (its publication id), confirm it renders, then roll to all.
+curl -X POST "$PROVISIONER_URL/api/fleet/upgrade" \
+  -H "Authorization: Bearer $PROVISIONER_API_KEY" -H 'Content-Type: application/json' \
+  -d '{ "publicationIds": ["<publication-id>"] }'
+
+curl -X POST "$PROVISIONER_URL/api/fleet/upgrade" \
+  -H "Authorization: Bearer $PROVISIONER_API_KEY" -H 'Content-Type: application/json' \
+  -d '{ "all": true }'
+```
+
+> **Scale note.** The batch is sequential and synchronous (matches `/api/teardown`).
+> That is fine up to a few dozen tenants; the per-request CPU/subrequest budget — each
+> tenant is one multi-part dispatch-script upload — becomes the limit past ~100. Until
+> then, the canary-subset discipline above is the safeguard; beyond it, split `all` into
+> several `publicationIds` batches (or move the rollout to a Workflow).
+
 ## Lifecycle
 
 - **Create** → `apps/web` creates the publication as `provisioning` and calls the provisioner, which runs `ProvisionWorkflow`: create D1/R2/KV → upload script (with per-tenant bindings + Turnstile keys) → trigger first-boot migrate (via `TENANT_INVOKER`) → bootstrap (seed admin + mint `ec_pat_`) → store credentials → mark `ready`. Idempotent by name, so a `retry` re-runs cleanly.

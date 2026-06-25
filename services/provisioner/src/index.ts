@@ -3,6 +3,7 @@ import { createLogger, flushLogs } from '@hotmetal/shared'
 import { parseCmsInstanceMeta, type ProvisionerEnv } from './env'
 import { ProvisionWorkflow, resolveTenantResources, teardownTenant } from './workflow'
 import { CfApiClient } from './cf-api'
+import { upgradeFleet, FleetUpgradeRequestError, type FleetUpgradeRequest } from './fleet'
 
 const app = new Hono<{ Bindings: ProvisionerEnv }>()
 
@@ -133,6 +134,32 @@ app.post('/api/teardown', async (c) => {
 	})
 	log.info('Tore down EmDash tenant', { scriptName: resources.scriptName })
 	return c.json({ status: 'torn-down', publicationId })
+})
+
+/**
+ * Fleet bundle rollout — re-deploy the current shared EmDash bundle to a LIST of
+ * tenants (canary) or ALL ready tenants. A pure script re-upload (no bootstrap, no
+ * D1 touch). Per-tenant failures are reported in the response, never abort the
+ * batch. Release the new bundle first (`pnpm release-bundle`).
+ *
+ * Body: `{ publicationIds?: string[], all?: boolean, version?: string }` (exactly
+ * one of `publicationIds` / `all`; `version` defaults to EMDASH_BUNDLE_VERSION).
+ * Status: 200 all-good / nothing-to-do, 207 partial (some tenants failed), 502 if
+ * every targeted tenant failed, 400 on a bad target selection.
+ */
+app.post('/api/fleet/upgrade', async (c) => {
+	const body = await c.req.json<FleetUpgradeRequest>().catch(() => null)
+	if (!body || typeof body !== 'object') return c.json({ error: 'invalid JSON body' }, 400)
+	const log = createLogger({ service: 'provisioner' }).child({ component: 'fleet-upgrade' })
+
+	try {
+		const result = await upgradeFleet(c.env, body, log)
+		const status = result.failed.length === 0 ? 200 : result.upgraded.length === 0 ? 502 : 207
+		return c.json(result, status)
+	} catch (err) {
+		if (err instanceof FleetUpgradeRequestError) return c.json({ error: err.message }, 400)
+		throw err
+	}
 })
 
 app.get('/health', (c) => c.json({ status: 'ok', service: 'provisioner' }))

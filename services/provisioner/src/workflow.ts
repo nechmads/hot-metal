@@ -3,7 +3,8 @@ import { createLogger } from '@hotmetal/shared'
 import { parseCmsInstanceMeta, type CmsInstanceMeta, type ProvisionWorkflowParams, type ProvisionerEnv } from './env'
 import { CfApiClient, CfApiError } from './cf-api'
 import { loadBundle } from './bundle'
-import { buildTenantBindings, tenantNames } from './tenant'
+import { tenantNames } from './tenant'
+import { uploadTenantScript } from './tenant-script'
 import { buildBootstrapStatements } from './bootstrap'
 
 const STEP_RETRY = {
@@ -52,50 +53,18 @@ export class ProvisionWorkflow extends WorkflowEntrypoint<ProvisionerEnv, Provis
 			})
 
 			// 2) Upload the shared bundle as this tenant's script with its bindings.
+			//    Same `uploadTenantScript` op the fleet rollout uses, so a re-deploy
+			//    is byte-identical to the original provision's script upload.
 			await step.do('upload-script', STEP_RETRY, async () => {
 				const bundle = await loadBundle(env.BUNDLE, version)
-				const bindings = buildTenantBindings({
+				await uploadTenantScript(cf, env, {
+					scriptName: names.scriptName,
+					slug,
 					d1DatabaseId: d1.id,
 					r2BucketName: names.r2BucketName,
 					kvNamespaceId: kv.id,
-					imageBucketName: 'hotmetal-cms-bucket',
-					dalService: 'hotmetal-data-layer',
-					dalEntrypoint: 'DataLayer',
-					notificationsService: 'hotmetal-notifications',
-					notificationsEntrypoint: 'NotificationsService',
-				})
-				const vars: Record<string, string> = {
-					PUBLICATION_SLUG: slug,
-					PUBLICATION_NAME: slug,
-					PUBLICATION_TEMPLATE: 'starter',
-				}
-				const secrets: Record<string, string> = {}
-				// Comments need BOTH the public site key (renders the widget) and the
-				// secret (server-side verify). Inject them together so a misconfigured
-				// fleet HIDES the form (`Boolean(turnstileSiteKey)` gate) rather than
-				// rendering one that always 503s. Non-fatal: a tenant without comments is
-				// still a usable blog, so we warn (greppable) instead of failing provisioning.
-				if (env.TURNSTILE_SITE_KEY && env.TURNSTILE_SECRET_KEY) {
-					vars.TURNSTILE_SITE_KEY = env.TURNSTILE_SITE_KEY
-					secrets.TURNSTILE_SECRET_KEY = env.TURNSTILE_SECRET_KEY
-				} else {
-					log.warn('Provisioning tenant without Turnstile keys — comments will be disabled', {
-						hasSiteKey: Boolean(env.TURNSTILE_SITE_KEY),
-						hasSecret: Boolean(env.TURNSTILE_SECRET_KEY),
-					})
-				}
-
-				await cf.uploadDispatchScript(env.DISPATCH_NAMESPACE, {
-					scriptName: names.scriptName,
-					mainModule: bundle.manifest.mainModule,
-					modules: bundle.modules,
-					assets: bundle.assets,
-					bindings,
-					compatibilityDate: bundle.manifest.compatibilityDate,
-					compatibilityFlags: bundle.manifest.compatibilityFlags,
-					vars,
-					secrets,
-				})
+					bundle,
+				}, log)
 			})
 
 			// 3) First boot → EmDash auto-migrates against the empty remote D1. We go

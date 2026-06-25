@@ -23,11 +23,18 @@ export interface LoadedBundle {
 	assets: StaticAsset[]
 }
 
+/**
+ * No release exists at the requested version. A typed error (vs a generic Error
+ * matched by message) lets callers distinguish "unknown/unreleased version" — a
+ * caller input problem — from a corrupt release, without coupling to a string.
+ */
+export class BundleNotFoundError extends Error {}
+
 export async function loadBundle(bucket: R2Bucket, version: string): Promise<LoadedBundle> {
 	const prefix = `releases/${version}/`
 	const manifestObj = await bucket.get(`${prefix}manifest.json`)
 	if (!manifestObj) {
-		throw new Error(`No EmDash bundle release found at ${prefix}manifest.json — run release-bundle first`)
+		throw new BundleNotFoundError(`No EmDash bundle release found at ${prefix}manifest.json — run release-bundle first`)
 	}
 	const manifest = (await manifestObj.json()) as BundleManifest
 

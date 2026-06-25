@@ -1,0 +1,220 @@
+{
+	"info": {
+		"name": "Hot Metal — Provisioner",
+		"description": "# Hot Metal Provisioner Service\n\nThe Provisioner (`hotmetal-provisioner`) owns the per-publication EmDash fleet on Cloudflare Workers for Platforms: it holds the scoped `CF_API_TOKEN`, runs the `ProvisionWorkflow` (create D1/R2/KV → upload tenant script → first-boot migrate → headless bootstrap → store credentials → mark ready), and tears tenants down. One publication == one dedicated EmDash tenant (`pub-<id>` script + `emdash-tenant/media/session-<id>` infra) served at `<slug>.hotmetalapp.com`.\n\n## Authentication\n\nAll `/api/*` endpoints require `Authorization: Bearer <token>` matching the `API_KEY` secret on the provisioner worker (the same value web carries as `PROVISIONER_API_KEY`). `/health` is unauthenticated.\n\nThe provisioner is normally reached service-binding-only (web → provisioner); set `PROVISIONER_BASE_URL` to whatever URL you expose it on for direct admin calls.\n\n## Endpoints Overview\n\n| Method | Path | Auth | Description |\n|--------|------|------|-------------|\n| GET | `/health` | None | Service health check |\n| POST | `/api/provision` | Bearer | Start (or report in-flight) provisioning for a publication |\n| GET | `/api/provision/:publicationId/status` | Bearer | Provisioning state for the dashboard |\n| POST | `/api/teardown` | Bearer | Tear down a tenant's infra (deprovision) |\n| POST | `/api/fleet/upgrade` | Bearer | Roll the shared bundle out to a list / all ready tenants |\n\n## Environment Variables\n\n- `PROVISIONER_BASE_URL` — Base URL of the provisioner worker.\n- `PROVISIONER_API_KEY` — Bearer token (must match the provisioner `API_KEY` secret).\n- `publicationId` — collection variable for chaining requests.",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"auth": {
+		"type": "bearer",
+		"bearer": [
+			{ "key": "token", "value": "{{PROVISIONER_API_KEY}}", "type": "string" }
+		]
+	},
+	"variable": [
+		{
+			"key": "publicationId",
+			"value": "",
+			"type": "string",
+			"description": "Publication ID for chaining requests — set manually or from your D1 publications table"
+		}
+	],
+	"item": [
+		{
+			"name": "Health",
+			"description": "Service health check. No authentication required.",
+			"item": [
+				{
+					"name": "Health Check",
+					"description": "Returns the service status. Use this to verify the provisioner worker is running.\n\nNo authentication required.",
+					"request": {
+						"auth": { "type": "noauth" },
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{PROVISIONER_BASE_URL}}/health",
+							"host": ["{{PROVISIONER_BASE_URL}}"],
+							"path": ["health"]
+						}
+					},
+					"response": [
+						{
+							"name": "200 — Healthy",
+							"status": "OK",
+							"code": 200,
+							"header": [{ "key": "Content-Type", "value": "application/json" }],
+							"body": "{\n  \"status\": \"ok\",\n  \"service\": \"provisioner\"\n}"
+						}
+					]
+				}
+			]
+		},
+		{
+			"name": "Provisioning",
+			"description": "Create, inspect, and tear down a publication's dedicated EmDash tenant. All endpoints inherit Bearer authentication from the collection.",
+			"item": [
+				{
+					"name": "Provision — Start / Retry",
+					"description": "Kick off provisioning for a publication. Idempotent-ish:\n- If the publication is already `ready`, no-ops (`alreadyProvisioned:true`).\n- A `create` trigger uses a deterministic workflow id (`pub-<id>`) so duplicate create events dedupe; if one is already running it reports `inFlight:true`.\n- `manual`/`retry` get a fresh workflow id so an operator can re-run a failed/stuck provision. A retry also re-uploads the tenant script (handy after a binding/bundle change).\n\n### Request Body\n\n| Field | Type | Required | Description |\n|-------|------|----------|-------------|\n| `publicationId` | string | **Yes** | Publication to provision. Must exist. |\n| `triggeredBy` | string | No | `create` \\| `manual` \\| `retry` (default `manual`). |\n\n### Errors\n- `400` — missing `publicationId`\n- `401` — bad bearer token\n- `404` — publication not found",
+					"request": {
+						"method": "POST",
+						"header": [{ "key": "Content-Type", "value": "application/json" }],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"publicationId\": \"{{publicationId}}\",\n  \"triggeredBy\": \"retry\"\n}"
+						},
+						"url": {
+							"raw": "{{PROVISIONER_BASE_URL}}/api/provision",
+							"host": ["{{PROVISIONER_BASE_URL}}"],
+							"path": ["api", "provision"]
+						}
+					},
+					"response": [
+						{
+							"name": "200 — Provisioning started",
+							"status": "OK",
+							"code": 200,
+							"header": [{ "key": "Content-Type", "value": "application/json" }],
+							"body": "{\n  \"status\": \"provisioning\",\n  \"publicationId\": \"01JABCDEF\",\n  \"instanceId\": \"pub-01jabcdef\"\n}"
+						},
+						{
+							"name": "200 — Already provisioned",
+							"status": "OK",
+							"code": 200,
+							"header": [{ "key": "Content-Type", "value": "application/json" }],
+							"body": "{\n  \"status\": \"ready\",\n  \"publicationId\": \"01JABCDEF\",\n  \"alreadyProvisioned\": true\n}"
+						},
+						{
+							"name": "404 — Publication not found",
+							"status": "Not Found",
+							"code": 404,
+							"header": [{ "key": "Content-Type", "value": "application/json" }],
+							"body": "{\n  \"error\": \"publication not found\"\n}"
+						}
+					]
+				},
+				{
+					"name": "Provision — Status",
+					"description": "Provisioning state for the dashboard.\n\n### Path Parameters\n| Parameter | Type | Required | Description |\n|-----------|------|----------|-------------|\n| `publicationId` | string | **Yes** | Publication id |\n\n### Errors\n- `401` — bad bearer token\n- `404` — publication not found",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{PROVISIONER_BASE_URL}}/api/provision/{{publicationId}}/status",
+							"host": ["{{PROVISIONER_BASE_URL}}"],
+							"path": ["api", "provision", "{{publicationId}}", "status"]
+						}
+					},
+					"response": [
+						{
+							"name": "200 — Status",
+							"status": "OK",
+							"code": 200,
+							"header": [{ "key": "Content-Type", "value": "application/json" }],
+							"body": "{\n  \"publicationId\": \"01JABCDEF\",\n  \"cmsProvider\": \"emdash\",\n  \"status\": \"ready\",\n  \"cmsBaseUrl\": \"https://my-blog.hotmetalapp.com\",\n  \"instanceMeta\": {\n    \"scriptName\": \"pub-01jabcdef\",\n    \"d1DatabaseId\": \"...\",\n    \"d1DatabaseName\": \"emdash-tenant-01jabcdef\",\n    \"r2BucketName\": \"emdash-media-01jabcdef\",\n    \"kvNamespaceId\": \"...\",\n    \"hostname\": \"my-blog.hotmetalapp.com\",\n    \"bundleVersion\": \"current\",\n    \"provisionedAt\": \"2026-06-24T12:00:00.000Z\"\n  }\n}"
+						}
+					]
+				},
+				{
+					"name": "Teardown — Deprovision",
+					"description": "Tear down a tenant's infra (dispatch script + R2 + D1 + KV). Used for admin / failed-provision cleanup and as the deprovision-on-delete path (web calls this with `force:true` BEFORE deleting the publication, while the instance meta is still available).\n\n`force:true` is required to tear down a `ready` or `provisioning` instance. Already-gone (404) resources count as success; real failures are reported in `failed[]` and the instance meta is kept so the teardown stays retryable.\n\n### Request Body\n| Field | Type | Required | Description |\n|-------|------|----------|-------------|\n| `publicationId` | string | **Yes** | EmDash publication to tear down |\n| `force` | boolean | No | Required (`true`) for a `ready`/`provisioning` instance |\n\n### Errors\n- `400` — missing `publicationId`, or publication is not an EmDash instance\n- `401` — bad bearer token\n- `404` — publication not found\n- `409` — refusing to tear down a `ready`/`provisioning` instance without `force:true`\n- `500` — partial teardown (see `failed[]`)",
+					"request": {
+						"method": "POST",
+						"header": [{ "key": "Content-Type", "value": "application/json" }],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"publicationId\": \"{{publicationId}}\",\n  \"force\": true\n}"
+						},
+						"url": {
+							"raw": "{{PROVISIONER_BASE_URL}}/api/teardown",
+							"host": ["{{PROVISIONER_BASE_URL}}"],
+							"path": ["api", "teardown"]
+						}
+					},
+					"response": [
+						{
+							"name": "200 — Torn down",
+							"status": "OK",
+							"code": 200,
+							"header": [{ "key": "Content-Type", "value": "application/json" }],
+							"body": "{\n  \"status\": \"torn-down\",\n  \"publicationId\": \"01JABCDEF\"\n}"
+						},
+						{
+							"name": "409 — Force required",
+							"status": "Conflict",
+							"code": 409,
+							"header": [{ "key": "Content-Type", "value": "application/json" }],
+							"body": "{\n  \"error\": \"refusing to tear down a ready instance without force:true\"\n}"
+						},
+						{
+							"name": "500 — Partial teardown",
+							"status": "Internal Server Error",
+							"code": 500,
+							"header": [{ "key": "Content-Type", "value": "application/json" }],
+							"body": "{\n  \"error\": \"partial teardown\",\n  \"failed\": [\n    { \"resource\": \"r2:emdash-media-01jabcdef\", \"error\": \"bucket not empty\" }\n  ]\n}"
+						}
+					]
+				}
+			]
+		},
+		{
+			"name": "Fleet",
+			"description": "Fleet-wide bundle rollout. Inherits Bearer authentication from the collection.",
+			"item": [
+				{
+					"name": "Fleet Upgrade — Rollout bundle",
+					"description": "Re-deploy the current shared EmDash bundle to a LIST of tenants (canary) or ALL ready tenants. A pure script re-upload — it reconstructs each tenant's bindings from `cms_instance_meta`, re-uploads the bundle, and bumps `cms_instance_meta.bundleVersion`. It does **not** run bootstrap (no PAT rotation) and never touches tenant D1/data.\n\nPer-tenant failures are reported, never abort the batch. **Release the new bundle first** (`pnpm release-bundle`), then canary a subset, then roll to all.\n\n### Request Body\n| Field | Type | Required | Description |\n|-------|------|----------|-------------|\n| `publicationIds` | string[] | One of | Explicit tenants to upgrade (canary). Mutually exclusive with `all`. |\n| `all` | boolean | One of | Upgrade every `emdash`+`ready` tenant. Mutually exclusive with `publicationIds`. |\n| `version` | string | No | Bundle release to deploy. Defaults to `EMDASH_BUNDLE_VERSION`. Allowed chars: letters, digits, `.`, `_`, `-`. |\n\nExactly one of `publicationIds` (non-empty) / `all:true` must be provided.\n\n### Response\n`{ version, targeted, upgraded[], failed[], skipped[] }` where `targeted == upgraded.length + failed.length`.\n- **skipped** — requested id not found / not `emdash` / not `ready`.\n- **failed** — `ready` tenant with missing/malformed `cms_instance_meta`, or whose upload threw.\n\n### Status codes\n- `200` — all targeted tenants upgraded, or nothing to do\n- `207` — partial: some tenants failed (inspect `failed[]`)\n- `502` — every targeted tenant failed\n- `400` — bad target selection (both/neither of `all`/`publicationIds`), invalid JSON, unknown/invalid `version`\n- `401` — bad bearer token",
+					"request": {
+						"method": "POST",
+						"header": [{ "key": "Content-Type", "value": "application/json" }],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"publicationIds\": [\"{{publicationId}}\"]\n}"
+						},
+						"url": {
+							"raw": "{{PROVISIONER_BASE_URL}}/api/fleet/upgrade",
+							"host": ["{{PROVISIONER_BASE_URL}}"],
+							"path": ["api", "fleet", "upgrade"]
+						}
+					},
+					"response": [
+						{
+							"name": "200 — All upgraded",
+							"status": "OK",
+							"code": 200,
+							"header": [{ "key": "Content-Type", "value": "application/json" }],
+							"body": "{\n  \"version\": \"current\",\n  \"targeted\": 1,\n  \"upgraded\": [\n    { \"publicationId\": \"01JABCDEF\", \"scriptName\": \"pub-01jabcdef\" }\n  ],\n  \"failed\": [],\n  \"skipped\": []\n}"
+						},
+						{
+							"name": "200 — Nothing to do",
+							"status": "OK",
+							"code": 200,
+							"header": [{ "key": "Content-Type", "value": "application/json" }],
+							"body": "{\n  \"version\": \"current\",\n  \"targeted\": 0,\n  \"upgraded\": [],\n  \"failed\": [],\n  \"skipped\": [\n    { \"publicationId\": \"01JNOTREADY\", \"reason\": \"not ready (status=provisioning)\" }\n  ]\n}"
+						},
+						{
+							"name": "207 — Partial",
+							"status": "Multi-Status",
+							"code": 207,
+							"header": [{ "key": "Content-Type", "value": "application/json" }],
+							"body": "{\n  \"version\": \"current\",\n  \"targeted\": 2,\n  \"upgraded\": [\n    { \"publicationId\": \"01JABCDEF\", \"scriptName\": \"pub-01jabcdef\" }\n  ],\n  \"failed\": [\n    { \"publicationId\": \"01JBROKEN\", \"error\": \"cms_instance_meta missing or malformed — cannot reconstruct bindings\" }\n  ],\n  \"skipped\": []\n}"
+						},
+						{
+							"name": "400 — Bad selection",
+							"status": "Bad Request",
+							"code": 400,
+							"header": [{ "key": "Content-Type", "value": "application/json" }],
+							"body": "{\n  \"error\": \"provide either all:true or a non-empty publicationIds[]\"\n}"
+						},
+						{
+							"name": "502 — All failed",
+							"status": "Bad Gateway",
+							"code": 502,
+							"header": [{ "key": "Content-Type", "value": "application/json" }],
+							"body": "{\n  \"version\": \"current\",\n  \"targeted\": 1,\n  \"upgraded\": [],\n  \"failed\": [\n    { \"publicationId\": \"01JABCDEF\", \"error\": \"cf api 500: ...\" }\n  ],\n  \"skipped\": []\n}"
+						}
+					]
+				}
+			]
+		}
+	]
+}
