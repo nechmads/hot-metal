@@ -8,7 +8,7 @@ export type { ProofreadFinding, ProofreadResult } from '../../prompts/anti-ai-ru
 
 /**
  * Proofread a blog post draft for AI writing patterns.
- * Uses a dedicated Sonnet call with the full anti-AI rules prompt.
+ * Uses a dedicated Sonnet 5 call with the full anti-AI rules prompt.
  * Returns structured findings with specific issues and suggested fixes.
  * Returns a safe default on failure (non-blocking).
  */

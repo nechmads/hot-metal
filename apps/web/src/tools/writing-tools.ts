@@ -16,7 +16,7 @@ export function createWritingTools(agent: WriterAgent) {
           return { success: false, error: 'No draft exists yet. Write a draft first.' }
         }
 
-        const model = await agent.trackedModel('claude-sonnet-4-6', 'publish_title')
+        const model = await agent.trackedModel('claude-sonnet-5', 'publish_title')
         const title = await createPostTitle(model, { title: draft.title, content: draft.content })
         if (!title) {
           return { success: false, error: 'Failed to generate title.' }
@@ -42,7 +42,7 @@ export function createWritingTools(agent: WriterAgent) {
         }
 
         logger('web').info('proofread_draft running', { component: 'tools', draftVersion: draft.version, wordCount: draft.word_count })
-        const proofModel = await agent.trackedModel('claude-sonnet-4-6', 'proofread')
+        const proofModel = await agent.trackedModel('claude-sonnet-5', 'proofread')
         const result = await proofreadDraft(proofModel, { title: draft.title, content: draft.content })
         logger('web').info('proofread_draft completed', { component: 'tools', score: result.overallScore, findingsCount: result.findings.length, summary: result.summary })
 

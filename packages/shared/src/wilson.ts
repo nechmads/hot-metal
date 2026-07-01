@@ -9,7 +9,7 @@ import { logger } from './logger'
 export interface LlmUsageEvent {
   /** LLM provider, e.g. "anthropic", "cloudflare" */
   provider?: string
-  /** Model identifier, e.g. "claude-sonnet-4-6" */
+  /** Model identifier, e.g. "claude-sonnet-5" */
   model?: string
   /** Number of input (prompt) tokens */
   inputTokens?: number

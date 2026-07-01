@@ -176,7 +176,7 @@ CMS endpoints: `GET/POST /posts`, `GET/PUT /posts/:id`, `GET/POST /publications`
 ### ScoutWorkflow (content-scout)
 1. `load-context` - Load publication topics + recent ideas from DAL
 2. `search-content` - Query Alexander API (cached in KV, 24h TTL)
-3. `dedupe-stories` - LLM dedup against existing ideas (Claude Sonnet)
+3. `dedupe-stories` - LLM dedup against existing ideas (Claude Sonnet 5)
 4. `generate-ideas` - LLM idea generation from filtered stories
 5. `store-ideas` - Insert into DAL (deterministic IDs for idempotency)
 6. `auto-write` - Draft top idea if mode != "ideas-only" (calls WriterAgent via internal API)
@@ -191,7 +191,7 @@ Notifications sent: new-ideas, draft-ready, post-published.
 5. `send-email` - Email report link via Resend (non-critical)
 
 ### WriterAgent (Durable Object in apps/web)
-AIChatAgent with per-session SQLite state. WebSocket streaming via partyserver. Tools: research, web search, citation fetching, content analysis, image search, publish/save to CMS. Model: claude-sonnet-4-6 with Wilson middleware.
+AIChatAgent with per-session SQLite state. WebSocket streaming via partyserver. Tools: research, web search, citation fetching, content analysis, image search, publish/save to CMS. Model: claude-sonnet-5 with Wilson middleware.
 
 ---
 
@@ -201,7 +201,7 @@ AIChatAgent with per-session SQLite state. WebSocket streaming via partyserver. 
 |---------|---------|---------|
 | **Clerk** | web | User auth (JWT, webhooks) |
 | **Paddle** | web | Subscription billing + webhooks |
-| **Anthropic Claude** | web, scout, analyzer | AI writing, ideation, scoring (claude-sonnet-4-6) |
+| **Anthropic Claude** | web, scout, analyzer | AI writing, ideation, scoring (claude-sonnet-5) |
 | **Alexander API** | web, scout | Research, search, crawl, news, tone analysis |
 | **Resend** | notifications | Transactional email |
 | **LinkedIn API** | publisher | OAuth2 + UGC post publishing |

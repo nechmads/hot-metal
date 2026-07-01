@@ -51,7 +51,7 @@ Given the blog post below, do the following:
 - Must NOT repeat or paraphrase the title.`;
 
 /**
- * Generate a compelling hook for a blog post using Claude Sonnet 4.5.
+ * Generate a compelling hook for a blog post using Claude Sonnet 5.
  * Uses a multi-step scoring and polishing process for high-quality output.
  * Returns empty string on failure (non-blocking).
  */

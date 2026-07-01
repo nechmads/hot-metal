@@ -77,7 +77,7 @@ export class ScoutWorkflow extends WorkflowEntrypoint<ScoutEnv, ScoutWorkflowPar
         { retries: { limit: 2, delay: '5 seconds', backoff: 'exponential' }, timeout: '1 minute' },
         async () => {
           const dedupeModel = wrapLanguageModel({
-            model: anthropic('claude-sonnet-4-6'),
+            model: anthropic('claude-sonnet-5'),
             middleware: createWilsonMiddleware({ ...scoutCtx, featureName: 'scout_dedupe' }),
           })
           return await dedupeStories(
@@ -99,7 +99,7 @@ export class ScoutWorkflow extends WorkflowEntrypoint<ScoutEnv, ScoutWorkflowPar
         { retries: { limit: 2, delay: '5 seconds', backoff: 'exponential' }, timeout: '2 minutes' },
         async () => {
           const ideasModel = wrapLanguageModel({
-            model: anthropic('claude-sonnet-4-6'),
+            model: anthropic('claude-sonnet-5'),
             middleware: createWilsonMiddleware({ ...scoutCtx, featureName: 'scout_ideas' }),
           })
           return await generateIdeas(
