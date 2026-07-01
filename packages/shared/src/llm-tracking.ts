@@ -35,7 +35,7 @@ export interface LlmTrackingContext {
  * import { createWilsonMiddleware } from '@hotmetal/shared'
  *
  * const model = wrapLanguageModel({
- *   model: anthropic('claude-sonnet-4-6'),
+ *   model: anthropic('claude-sonnet-5'),
  *   middleware: createWilsonMiddleware({ userId, userTier, featureName, trigger }),
  * })
  * ```

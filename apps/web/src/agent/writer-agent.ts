@@ -233,7 +233,7 @@ export class WriterAgent extends AIChatAgent<Env, WriterAgentState> {
     }
 
     const cleaned = cleanupMessages(this.messages);
-    const model = await this.trackedModel("claude-sonnet-4-6", "chat");
+    const model = await this.trackedModel("claude-sonnet-5", "chat");
 
     const stream = createUIMessageStream({
       execute: async ({ writer }) => {
@@ -415,7 +415,7 @@ export class WriterAgent extends AIChatAgent<Env, WriterAgentState> {
     await this.persistMessages(currentMessages);
 
     try {
-      const chatModel = await this.trackedModel("claude-sonnet-4-6", "chat");
+      const chatModel = await this.trackedModel("claude-sonnet-5", "chat");
       const modelMessages = await convertToModelMessages(currentMessages);
       const result = await generateText({
         model: chatModel,
@@ -494,7 +494,7 @@ export class WriterAgent extends AIChatAgent<Env, WriterAgentState> {
     );
 
     try {
-      const autoWriteModel = await this.trackedModel("claude-sonnet-4-6", "auto_write", "scout");
+      const autoWriteModel = await this.trackedModel("claude-sonnet-5", "auto_write", "scout");
       const result = await generateText({
         model: autoWriteModel,
         system: systemPrompt,
@@ -609,7 +609,7 @@ export class WriterAgent extends AIChatAgent<Env, WriterAgentState> {
 
       // Run hook (Sonnet) and SEO meta (Haiku) generation in parallel
       const [hookModel, seoModel] = await Promise.all([
-        this.trackedModel("claude-sonnet-4-6", "publish_hook"),
+        this.trackedModel("claude-sonnet-5", "publish_hook"),
         this.trackedModel("claude-haiku-4-5-20251001", "publish_seo"),
       ]);
       const [hookResult, seoResult] = await Promise.allSettled([

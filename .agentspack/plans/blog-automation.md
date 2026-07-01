@@ -366,7 +366,7 @@ When creating a publication:
 
 **Key technology decisions:**
 
-- **LLM model:** `claude-sonnet-4-6` — prioritize quality over cost; we can optimize later
+- **LLM model:** `claude-sonnet-5` — prioritize quality over cost; we can optimize later
 - **AI SDK:** Vercel AI SDK V6 (`ai` package) — same version used in writer-agent
 - **Research:** Alexander API (`@hotmetal/shared` AlexanderApi client) — `searchNews`, `search` endpoints for discovery
 - **Publication context:** The scout uses the publication's `description` to understand what to look for, and `writing_tone` when auto-writing content

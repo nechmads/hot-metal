@@ -2,7 +2,7 @@
 
 ## Overview
 
-The Content Scout is a Cloudflare Worker (`services/content-scout`) that runs on a daily cron schedule. It discovers relevant news and stories using the **Alexander API**, generates blog post ideas using **Claude Sonnet 4.5** via **Vercel AI SDK V6**, and optionally triggers the writer-agent to auto-write and publish posts.
+The Content Scout is a Cloudflare Worker (`services/content-scout`) that runs on a daily cron schedule. It discovers relevant news and stories using the **Alexander API**, generates blog post ideas using **Claude Sonnet 5** via **Vercel AI SDK V6**, and optionally triggers the writer-agent to auto-write and publish posts.
 
 This document covers the full implementation details. For the broader automation architecture, see [blog-automation.md](blog-automation.md).
 
@@ -1078,7 +1078,7 @@ Each workflow step has its own retry config. Failures are isolated — a failed 
 
 ## Open Considerations
 
-1. **Token usage:** Each scout run per publication makes 2 LLM calls (dedup + ideas). Estimate ~$0.06-0.12 per publication per day with claude-sonnet-4-6. Can optimize the dedup step to use Haiku later.
+1. **Token usage:** Each scout run per publication makes 2 LLM calls (dedup + ideas). Estimate ~$0.06-0.12 per publication per day with claude-sonnet-5. Can optimize the dedup step to use Haiku later.
 
 2. **Auto-write token usage:** Each auto-written post costs ~$0.50-1.00 (full writer-agent conversation with research).
 

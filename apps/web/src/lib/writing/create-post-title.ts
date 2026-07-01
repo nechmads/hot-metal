@@ -48,7 +48,7 @@ CONSTRAINTS
 - Avoid ALL CAPS and excessive punctuation.`;
 
 /**
- * Generate an optimized blog post title using Claude Sonnet 4.5.
+ * Generate an optimized blog post title using Claude Sonnet 5.
  * Uses a multi-step candidate generation, scoring, and refinement process.
  * Returns empty string on failure (non-blocking).
  */
