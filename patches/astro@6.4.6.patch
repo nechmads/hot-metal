@@ -1,0 +1,18 @@
+diff --git a/dist/runtime/server/render/util.js b/dist/runtime/server/render/util.js
+index 7d869e8e47cfd3988dc369eb65073c4579b0c027..fd8b819a0ee6dbcafd0240a41a554b8c18b91172 100644
+--- a/dist/runtime/server/render/util.js
++++ b/dist/runtime/server/render/util.js
+@@ -153,7 +153,12 @@ class BufferedRenderer {
+ function createBufferedRenderer(destination, renderFunction) {
+   return new BufferedRenderer(destination, renderFunction);
+ }
+-const isNode = typeof process !== "undefined" && Object.prototype.toString.call(process) === "[object process]";
++// HOTMETAL PATCH: workerd's `nodejs_compat` `process` reports as "[object process]",
++// so Astro mistakes Cloudflare Workers for Node and picks the Node-only
++// `renderToAsyncIterable` body in renderPage(). Workers' Response can't take an
++// async iterable body, so every SSR page rendered as the string "[object Object]".
++// Exclude workerd explicitly. Remove once upstream Astro guards this.
++const isNode = typeof process !== "undefined" && Object.prototype.toString.call(process) === "[object process]" && !(typeof navigator !== "undefined" && navigator.userAgent === "Cloudflare-Workers");
+ const isDeno = typeof Deno !== "undefined";
+ function promiseWithResolvers() {
+   let resolve, reject;

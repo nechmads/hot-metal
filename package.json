@@ -60,6 +60,9 @@
     "overrides": {
       "react": "19.2.7",
       "react-dom": "19.2.7"
+    },
+    "patchedDependencies": {
+      "astro@6.4.6": "patches/astro@6.4.6.patch"
     }
   },
   "devDependencies": {
