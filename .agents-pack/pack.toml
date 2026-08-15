@@ -1,0 +1,43 @@
+schema_version = 1
+scope = "repository"
+targets = ["claude", "codex", "cursor"]
+components = [
+  "ap-core-instructions",
+  "ap-manage-agents-pack",
+  "ap-create-new-skill",
+  "ap-recall-memory",
+  "ap-save-memory",
+  "ap-maintain-memory",
+  "ap-frontend-design",
+  "ap-frontend-review",
+  "ap-test-web-app",
+  "ap-landing-page",
+  "ap-audit-seo",
+  "ap-audit-geo",
+  "ap-run-market-research",
+  "ap-create-prd",
+  "ap-design-data-models",
+  "ap-develop-apis",
+  "ap-develop-with-vercel-ai-sdk",
+  "ap-handle-errors-reliably",
+  "ap-debug",
+  "ap-compress-todos",
+  "ap-refresh-repo-docs",
+  "ap-start-dev-session",
+  "ap-clear-dev-context",
+  "ap-continue-dev-session",
+  "ap-review-plan",
+  "ap-validate-trust-boundaries",
+  "ap-security-audit",
+  "ap-write-database-queries",
+  "ap-code-reviewer",
+  "ap-backend-python-developer",
+  "ap-backend-typescript-developer",
+  "ap-ux-enhancer",
+  "ap-trend-researcher",
+  "ap-ux-researcher",
+]
+
+[pack]
+id = "agents-pack-core"
+source = "official"

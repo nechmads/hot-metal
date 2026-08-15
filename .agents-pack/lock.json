@@ -1,0 +1,1160 @@
+{
+  "schemaVersion": 1,
+  "rendererVersion": 1,
+  "pack": {
+    "id": "agents-pack-core",
+    "version": "0.27.0",
+    "sha256": "sha256:b430d632204c2d10a2dd84a1849e068aaba47131d27013d41863cc0320636a96",
+    "source": {
+      "kind": "official"
+    }
+  },
+  "components": [
+    {
+      "id": "ap-core-instructions",
+      "kind": "instruction",
+      "sha256": "sha256:981a5867917314731435ec261314fd25c4a30652893cf2c970c8e505fff1d66b"
+    },
+    {
+      "id": "ap-manage-agents-pack",
+      "kind": "skill",
+      "sha256": "sha256:76f9197c43c86f805182947b10ecccb927ca82428a457e681ea0f5fb5458057b"
+    },
+    {
+      "id": "ap-create-new-skill",
+      "kind": "skill",
+      "sha256": "sha256:6a4ef5980d00af10d1ce5f9033424d1ed3e2d20a6ceebd0862cfc5bfaa52f103"
+    },
+    {
+      "id": "ap-recall-memory",
+      "kind": "skill",
+      "sha256": "sha256:b927e100717badcd3b2c9c30f3e83f5b8497e647061733988d67e45cdbcc3522"
+    },
+    {
+      "id": "ap-save-memory",
+      "kind": "skill",
+      "sha256": "sha256:693080ff6a53947f5b9a56dc170c5dbc30f40c0d2fc268dc78d0a1aa2b0ca4d8"
+    },
+    {
+      "id": "ap-maintain-memory",
+      "kind": "skill",
+      "sha256": "sha256:92ebe8fc8875f216e4586cd060938b011ed9a17749c56e1202c3db99f8d30912"
+    },
+    {
+      "id": "ap-frontend-design",
+      "kind": "skill",
+      "sha256": "sha256:4de2fa44d9101755bb4ae811946c950739dda2c66fbd5fd32d6068435874629f"
+    },
+    {
+      "id": "ap-frontend-review",
+      "kind": "skill",
+      "sha256": "sha256:40e092c914d3f4a4a8eb62e3749fd73ca22d9e2ad32182facda1393669674cbb"
+    },
+    {
+      "id": "ap-test-web-app",
+      "kind": "skill",
+      "sha256": "sha256:c8482f90a9e0f97c18b6568c5df4f60b9448932535ac450f69f3c0fce4b94731"
+    },
+    {
+      "id": "ap-landing-page",
+      "kind": "skill",
+      "sha256": "sha256:244efaab220178a1d17591b7f851988e1ea541935294305dbf35366560b280c4"
+    },
+    {
+      "id": "ap-audit-seo",
+      "kind": "skill",
+      "sha256": "sha256:95d4234e397a252e2fc87e19e9df71f91c85236b5d5a407b6dcb0dc21562aeb6"
+    },
+    {
+      "id": "ap-audit-geo",
+      "kind": "skill",
+      "sha256": "sha256:eea9fd4747444e90da2b9db3b663fe176fc36dd7208688a2450b6906e550aea6"
+    },
+    {
+      "id": "ap-run-market-research",
+      "kind": "skill",
+      "sha256": "sha256:b8973bb8df60ab3f892d7eb375398b6778f4e2ef71579566fed877839160fb3b"
+    },
+    {
+      "id": "ap-create-prd",
+      "kind": "skill",
+      "sha256": "sha256:2369e02262c629811e2f4c0faacfa48a1077384d28d2726f905bfc978ad09f6c"
+    },
+    {
+      "id": "ap-design-data-models",
+      "kind": "skill",
+      "sha256": "sha256:abca1332b970dd7f30caf7d7a0aa36bc76b78aae1f575401fb9c5c9daffdcee1"
+    },
+    {
+      "id": "ap-develop-apis",
+      "kind": "skill",
+      "sha256": "sha256:4216248cd356ccfd05c7a026bd45bfd582d05adff742f110c383ca3f0416322b"
+    },
+    {
+      "id": "ap-develop-with-vercel-ai-sdk",
+      "kind": "skill",
+      "sha256": "sha256:21907f796b6f10855a3895afdee2986690f001ef170f0688b991654c49792948"
+    },
+    {
+      "id": "ap-handle-errors-reliably",
+      "kind": "skill",
+      "sha256": "sha256:740aa1d035718cf024fe104c07cf114535308e27d9bbe0a2d62d4567d3356ede"
+    },
+    {
+      "id": "ap-debug",
+      "kind": "skill",
+      "sha256": "sha256:3ed4b2b46573b7a72c711e3ab58b6c1b3988213c44e7ea6ff262467b3146117a"
+    },
+    {
+      "id": "ap-compress-todos",
+      "kind": "skill",
+      "sha256": "sha256:4062416165be081b0985e7807702012e48047c2533ab33a23148fc94f7d630bb"
+    },
+    {
+      "id": "ap-refresh-repo-docs",
+      "kind": "skill",
+      "sha256": "sha256:2cde8714612f3e6467854e1eb0c8c483bb1ae6ffacd6c4e61d4f11e333fa91d1"
+    },
+    {
+      "id": "ap-start-dev-session",
+      "kind": "skill",
+      "sha256": "sha256:def93653743826482e67cd43b0bcd367b8b25e520aceb81ea05e6cd4c8e09f2a"
+    },
+    {
+      "id": "ap-clear-dev-context",
+      "kind": "skill",
+      "sha256": "sha256:c5f7985e8e80958aa0d8a27d9d1144da22810daf9837fbaaac815a4cf88a5467"
+    },
+    {
+      "id": "ap-continue-dev-session",
+      "kind": "skill",
+      "sha256": "sha256:504654c855260fbe10f48f28c4775b9c357bf34fd6ca21be5c9e30532a0fa562"
+    },
+    {
+      "id": "ap-review-plan",
+      "kind": "skill",
+      "sha256": "sha256:f2c5f88f412e9cc18d71d6f93a45b2396e506ce31937a7e8b9784900b784c51e"
+    },
+    {
+      "id": "ap-validate-trust-boundaries",
+      "kind": "skill",
+      "sha256": "sha256:852fcd38c77c63780ab0f1ba8064edeca15f9557b1c1d11758dd05dd76e142b5"
+    },
+    {
+      "id": "ap-security-audit",
+      "kind": "skill",
+      "sha256": "sha256:bb3f6a85d7b23929ad75a32f04ab23a0d7dfb7770c46e80c78a55936fe2cb334"
+    },
+    {
+      "id": "ap-write-database-queries",
+      "kind": "skill",
+      "sha256": "sha256:a2625b47d1b3db012b13aa6d27e0d491f76f50af9916964886e4582194a6d2e0"
+    },
+    {
+      "id": "ap-code-reviewer",
+      "kind": "subagent",
+      "sha256": "sha256:6d9f80a57c976c85b308a4dd3aaa66e111d91e5faa36d0dd6bb7f83f0651da90"
+    },
+    {
+      "id": "ap-backend-python-developer",
+      "kind": "subagent",
+      "sha256": "sha256:1ff8d3a4ccac6b52d1a479ba05f1402fa455a3e35e9175077d9bd81b9edbfc23"
+    },
+    {
+      "id": "ap-backend-typescript-developer",
+      "kind": "subagent",
+      "sha256": "sha256:09d0b184e83c8bc52c61a7f790d30831149014184052c733c9368f7102c725d4"
+    },
+    {
+      "id": "ap-ux-enhancer",
+      "kind": "subagent",
+      "sha256": "sha256:7bef209bb5a3ccd0fdc5eba3004211e791ef149bd0150a0f9c85d78ca5b303e7"
+    },
+    {
+      "id": "ap-trend-researcher",
+      "kind": "subagent",
+      "sha256": "sha256:0eef9061e23745725d5e70d85c861547a499dea94e46c1789666c2bfa92f7477"
+    },
+    {
+      "id": "ap-ux-researcher",
+      "kind": "subagent",
+      "sha256": "sha256:0a2aacef526528082e7ae3dedf74559e82d503f84a68f9501221e020282d589c"
+    }
+  ],
+  "outputs": [
+    {
+      "kind": "file",
+      "componentId": "ap-audit-geo",
+      "adapter": "codex",
+      "path": ".agents/skills/ap-audit-geo/SKILL.md",
+      "sha256": "sha256:19c3d4bd244e79b7a8a0345c7ae90c698b9277ea6ddd8ca65672841e34bb2473"
+    },
+    {
+      "kind": "file",
+      "componentId": "ap-audit-geo",
+      "adapter": "codex",
+      "path": ".agents/skills/ap-audit-geo/references/geo-audit-checklist.md",
+      "sha256": "sha256:4fe445159f14ed6ecaf9e2c059bdf8ba3648064008bff6cd5453710d5908caeb"
+    },
+    {
+      "kind": "file",
+      "componentId": "ap-audit-seo",
+      "adapter": "codex",
+      "path": ".agents/skills/ap-audit-seo/SKILL.md",
+      "sha256": "sha256:add951720406f25351ae2372e89ebbc1129bc3dee1c55737392d168fd0882c96"
+    },
+    {
+      "kind": "file",
+      "componentId": "ap-audit-seo",
+      "adapter": "codex",
+      "path": ".agents/skills/ap-audit-seo/references/seo-audit-checklist.md",
+      "sha256": "sha256:237e11a4576b20c5bed2426be05c490e34618ad8059f3679bd99beece591ab68"
+    },
+    {
+      "kind": "file",
+      "componentId": "ap-clear-dev-context",
+      "adapter": "codex",
+      "path": ".agents/skills/ap-clear-dev-context/SKILL.md",
+      "sha256": "sha256:b8ad2ce0f9e6459ce7cbbab75a0c4e9f7c01f778a6196f75ab2b8bd3ddba4536"
+    },
+    {
+      "kind": "file",
+      "componentId": "ap-compress-todos",
+      "adapter": "codex",
+      "path": ".agents/skills/ap-compress-todos/SKILL.md",
+      "sha256": "sha256:0f35c6fa84dcbfbed0fa5049900ef769948b2f8ad2f2c48b75182015c513a75c"
+    },
+    {
+      "kind": "file",
+      "componentId": "ap-continue-dev-session",
+      "adapter": "codex",
+      "path": ".agents/skills/ap-continue-dev-session/SKILL.md",
+      "sha256": "sha256:4ceadda41cbe771a7b093f924cb2d54b46500a70514a515e46df1817f6ae3ae0"
+    },
+    {
+      "kind": "file",
+      "componentId": "ap-create-new-skill",
+      "adapter": "codex",
+      "path": ".agents/skills/ap-create-new-skill/SKILL.md",
+      "sha256": "sha256:69903b5ed4a2ce42f62510cc1b518ef531b75c41f1e08303b955dae14f5a31bb"
+    },
+    {
+      "kind": "file",
+      "componentId": "ap-create-new-skill",
+      "adapter": "codex",
+      "path": ".agents/skills/ap-create-new-skill/agents/openai.yaml",
+      "sha256": "sha256:812759957edec59f3f5ed30fe3e501acdb393c821bef7be6dd26fc00e08f3c35"
+    },
+    {
+      "kind": "file",
+      "componentId": "ap-create-prd",
+      "adapter": "codex",
+      "path": ".agents/skills/ap-create-prd/SKILL.md",
+      "sha256": "sha256:8973a995602a6960e1cd5cf011d20d4698602126c1a866febd0000934e0c85bb"
+    },
+    {
+      "kind": "file",
+      "componentId": "ap-create-prd",
+      "adapter": "codex",
+      "path": ".agents/skills/ap-create-prd/references/prd-structure.md",
+      "sha256": "sha256:1df23ab408715dc5b9a54aa1761a1077c64adc90704f509347d099c3cbf9d8ba"
+    },
+    {
+      "kind": "file",
+      "componentId": "ap-debug",
+      "adapter": "codex",
+      "path": ".agents/skills/ap-debug/SKILL.md",
+      "sha256": "sha256:840cabaf72a9adf6ccf312df3042dc733ea865eba9efd513cc953f1c33796b16"
+    },
+    {
+      "kind": "file",
+      "componentId": "ap-design-data-models",
+      "adapter": "codex",
+      "path": ".agents/skills/ap-design-data-models/SKILL.md",
+      "sha256": "sha256:154c47ca81f6f57677f258f725b5358ea98539e9feb58f7dffe9727cd970d5b1"
+    },
+    {
+      "kind": "file",
+      "componentId": "ap-design-data-models",
+      "adapter": "codex",
+      "path": ".agents/skills/ap-design-data-models/references/document-and-distributed-modeling.md",
+      "sha256": "sha256:30f6017318227583be0042125521d75efb26ff464806c92b4243bdd4860bffd5"
+    },
+    {
+      "kind": "file",
+      "componentId": "ap-design-data-models",
+      "adapter": "codex",
+      "path": ".agents/skills/ap-design-data-models/references/relational-modeling.md",
+      "sha256": "sha256:dbb53b63cffae123626b4f649b8a4733294685c04101fda55da4b6f554dc7b27"
+    },
+    {
+      "kind": "file",
+      "componentId": "ap-design-data-models",
+      "adapter": "codex",
+      "path": ".agents/skills/ap-design-data-models/references/schema-evolution-and-governance.md",
+      "sha256": "sha256:4f4eb4c3b7c726dc4e9049608a9599569484925549b20189fb564a712544e988"
+    },
+    {
+      "kind": "file",
+      "componentId": "ap-develop-apis",
+      "adapter": "codex",
+      "path": ".agents/skills/ap-develop-apis/SKILL.md",
+      "sha256": "sha256:4340a072d4da8e8c0d1c4b2fb00d03cc9cb35d6e6edf45de8a01c1e9f546ddc1"
+    },
+    {
+      "kind": "file",
+      "componentId": "ap-develop-apis",
+      "adapter": "codex",
+      "path": ".agents/skills/ap-develop-apis/references/api-consumer-artifacts.md",
+      "sha256": "sha256:b9c5a33fae46467067bb12ea04440895a12ddcf9a58f19b89fb4352f7d041bdb"
+    },
+    {
+      "kind": "file",
+      "componentId": "ap-develop-apis",
+      "adapter": "codex",
+      "path": ".agents/skills/ap-develop-apis/references/http-contract-checklist.md",
+      "sha256": "sha256:68014ecd882b36168cb76dd4e454d8e95c6ad07e87af23bc27129dcf70fc516e"
+    },
+    {
+      "kind": "file",
+      "componentId": "ap-develop-apis",
+      "adapter": "codex",
+      "path": ".agents/skills/ap-develop-apis/references/security-reliability-and-testing.md",
+      "sha256": "sha256:f0b7079b88ff3a4ae9026f0b29be70ed8f84dec45295bcc597c703675a5923f7"
+    },
+    {
+      "kind": "file",
+      "componentId": "ap-develop-apis",
+      "adapter": "codex",
+      "path": ".agents/skills/ap-develop-apis/references/thin-api-architecture.md",
+      "sha256": "sha256:3732d62ef249767c143dc19147786b182157ea661e98090da11302a3b0f7b66f"
+    },
+    {
+      "kind": "file",
+      "componentId": "ap-develop-with-vercel-ai-sdk",
+      "adapter": "codex",
+      "path": ".agents/skills/ap-develop-with-vercel-ai-sdk/SKILL.md",
+      "sha256": "sha256:07274a86b65c5c19b79dabece7db3086a6b95ad83dbb884842c6d335c25ad7d9"
+    },
+    {
+      "kind": "file",
+      "componentId": "ap-develop-with-vercel-ai-sdk",
+      "adapter": "codex",
+      "path": ".agents/skills/ap-develop-with-vercel-ai-sdk/references/core-architecture-and-generation.md",
+      "sha256": "sha256:17f27485876c0fca01770144159c5c5b137c18d0c85d6a2463472129aae8fc66"
+    },
+    {
+      "kind": "file",
+      "componentId": "ap-develop-with-vercel-ai-sdk",
+      "adapter": "codex",
+      "path": ".agents/skills/ap-develop-with-vercel-ai-sdk/references/migrate-observe-and-test.md",
+      "sha256": "sha256:9d3c00f2d3b774357c13b17bdf0c8d9cbb82aa07d11392ecf4fa5367b8bdd9f4"
+    },
+    {
+      "kind": "file",
+      "componentId": "ap-develop-with-vercel-ai-sdk",
+      "adapter": "codex",
+      "path": ".agents/skills/ap-develop-with-vercel-ai-sdk/references/tools-context-and-safety.md",
+      "sha256": "sha256:c5a3b0e3d16e949936370eaf90952e2e0766f9b0f373b4e752f5d442973d73c8"
+    },
+    {
+      "kind": "file",
+      "componentId": "ap-develop-with-vercel-ai-sdk",
+      "adapter": "codex",
+      "path": ".agents/skills/ap-develop-with-vercel-ai-sdk/references/ui-streaming-and-persistence.md",
+      "sha256": "sha256:4e65cd49deda6c35186dd4ae1851f0fe1fc878699eb06252d39f3b5d506b62d3"
+    },
+    {
+      "kind": "file",
+      "componentId": "ap-frontend-design",
+      "adapter": "codex",
+      "path": ".agents/skills/ap-frontend-design/SKILL.md",
+      "sha256": "sha256:b06d110fb3de212243d1aaeac7a699204cac1311bd500b9dbc266bf05de12657"
+    },
+    {
+      "kind": "file",
+      "componentId": "ap-frontend-design",
+      "adapter": "codex",
+      "path": ".agents/skills/ap-frontend-design/references/design-md.md",
+      "sha256": "sha256:5eed354049d31b89b8921310f789c81abf2c1d972f4a66cd978c1a426dd2b246"
+    },
+    {
+      "kind": "file",
+      "componentId": "ap-frontend-review",
+      "adapter": "codex",
+      "path": ".agents/skills/ap-frontend-review/SKILL.md",
+      "sha256": "sha256:20f4ef6e9f5da0c4e937655de5d0ed0f50b0b1b2b73485b38437f354b57cc31e"
+    },
+    {
+      "kind": "file",
+      "componentId": "ap-frontend-review",
+      "adapter": "codex",
+      "path": ".agents/skills/ap-frontend-review/references/review-checklist.md",
+      "sha256": "sha256:8ad11312fd0f8f846e1fbcb3323be11343a3bb7a2f5598ed86c1fafb750ee98f"
+    },
+    {
+      "kind": "file",
+      "componentId": "ap-handle-errors-reliably",
+      "adapter": "codex",
+      "path": ".agents/skills/ap-handle-errors-reliably/SKILL.md",
+      "sha256": "sha256:654406bb6f0c04ec07f973798241258f6990575a350eedbed10b5a0d0f5a86b0"
+    },
+    {
+      "kind": "file",
+      "componentId": "ap-handle-errors-reliably",
+      "adapter": "codex",
+      "path": ".agents/skills/ap-handle-errors-reliably/references/retries-timeouts-and-cleanup.md",
+      "sha256": "sha256:bc1317c0446d50e0aa462a8efb7f213db7009b81ec90bf09d4649e677b09c0ec"
+    },
+    {
+      "kind": "file",
+      "componentId": "ap-landing-page",
+      "adapter": "codex",
+      "path": ".agents/skills/ap-landing-page/SKILL.md",
+      "sha256": "sha256:a76a0c62c032ba15ab8671c012f940e4684c634f141b6d8d449fee47384a985e"
+    },
+    {
+      "kind": "file",
+      "componentId": "ap-landing-page",
+      "adapter": "codex",
+      "path": ".agents/skills/ap-landing-page/references/pre-publish-checklist.md",
+      "sha256": "sha256:68535aa57da1072b3409e0c8f2460bf19cf40f3698b1489d3dd15cf2001dd5a8"
+    },
+    {
+      "kind": "file",
+      "componentId": "ap-landing-page",
+      "adapter": "codex",
+      "path": ".agents/skills/ap-landing-page/references/search-and-citation.md",
+      "sha256": "sha256:2bc7449ebf73c3636483d6fdc0986366cf4ae814503339d8d4e4a6b1796bed66"
+    },
+    {
+      "kind": "file",
+      "componentId": "ap-maintain-memory",
+      "adapter": "codex",
+      "path": ".agents/skills/ap-maintain-memory/SKILL.md",
+      "sha256": "sha256:6363ecc94f6b46c2940425259d0b1d0e543cde5c09ac6242b5f1181b337c6496"
+    },
+    {
+      "kind": "file",
+      "componentId": "ap-maintain-memory",
+      "adapter": "codex",
+      "path": ".agents/skills/ap-maintain-memory/agents/openai.yaml",
+      "sha256": "sha256:361f2833ae3518164c13fe013cad812e4bcc0d01e853169b73ee0d1a005fec32"
+    },
+    {
+      "kind": "file",
+      "componentId": "ap-manage-agents-pack",
+      "adapter": "codex",
+      "path": ".agents/skills/ap-manage-agents-pack/SKILL.md",
+      "sha256": "sha256:84d272e04090c8fb487fc8d7e533ca0bd4466412f9e26b12b2a89f445fd6e9aa"
+    },
+    {
+      "kind": "file",
+      "componentId": "ap-manage-agents-pack",
+      "adapter": "codex",
+      "path": ".agents/skills/ap-manage-agents-pack/agents/openai.yaml",
+      "sha256": "sha256:f2b4eb976bdbfbdd3bb67a4c840a015a8293fb57e463717b964ca3e1acff5398"
+    },
+    {
+      "kind": "file",
+      "componentId": "ap-recall-memory",
+      "adapter": "codex",
+      "path": ".agents/skills/ap-recall-memory/SKILL.md",
+      "sha256": "sha256:9c21ae2955e6b8bebc6c173757baf7e9c91dd6e6937673da2397d088619b6075"
+    },
+    {
+      "kind": "file",
+      "componentId": "ap-recall-memory",
+      "adapter": "codex",
+      "path": ".agents/skills/ap-recall-memory/agents/openai.yaml",
+      "sha256": "sha256:78082405cf2cad48959f2122ff021f39f36566865d179cea094b69e7dfe73fa1"
+    },
+    {
+      "kind": "file",
+      "componentId": "ap-refresh-repo-docs",
+      "adapter": "codex",
+      "path": ".agents/skills/ap-refresh-repo-docs/SKILL.md",
+      "sha256": "sha256:429fc47925b81da6c9f0b36429bb9fd0a8438dc7479d3902e1f277c1a0490ce9"
+    },
+    {
+      "kind": "file",
+      "componentId": "ap-refresh-repo-docs",
+      "adapter": "codex",
+      "path": ".agents/skills/ap-refresh-repo-docs/references/feature-and-subsystem-documentation.md",
+      "sha256": "sha256:9bdaae0b49e3a3e1d122a1673b169c98bbcb5c0fbc9bcf698b6ab874e2a5ec30"
+    },
+    {
+      "kind": "file",
+      "componentId": "ap-review-plan",
+      "adapter": "codex",
+      "path": ".agents/skills/ap-review-plan/SKILL.md",
+      "sha256": "sha256:95397a574eccbe31e5ba528ef2eca49748875e4b8f4912ab383328f06f69f0a0"
+    },
+    {
+      "kind": "file",
+      "componentId": "ap-run-market-research",
+      "adapter": "codex",
+      "path": ".agents/skills/ap-run-market-research/SKILL.md",
+      "sha256": "sha256:0d121932ed66da20db35bcd2d49f0b560fef02ce9d72b2b34d8f7074b5c082a0"
+    },
+    {
+      "kind": "file",
+      "componentId": "ap-run-market-research",
+      "adapter": "codex",
+      "path": ".agents/skills/ap-run-market-research/references/report-structure.md",
+      "sha256": "sha256:bfb25324f4b1cc4289b2482eda5dd3c0a214b36f5f928493851be03d2d4b6d13"
+    },
+    {
+      "kind": "file",
+      "componentId": "ap-save-memory",
+      "adapter": "codex",
+      "path": ".agents/skills/ap-save-memory/SKILL.md",
+      "sha256": "sha256:998d53bcd9f017c724ddddf22de5c21352abc3934a4067b2d4275dba6b4279f1"
+    },
+    {
+      "kind": "file",
+      "componentId": "ap-save-memory",
+      "adapter": "codex",
+      "path": ".agents/skills/ap-save-memory/agents/openai.yaml",
+      "sha256": "sha256:ed7d100b625a61edcf6fcd6512cf92aa683b50b600ccfe8de7a73b414cfe0132"
+    },
+    {
+      "kind": "file",
+      "componentId": "ap-security-audit",
+      "adapter": "codex",
+      "path": ".agents/skills/ap-security-audit/SKILL.md",
+      "sha256": "sha256:e4df29b573d96115dc798c3e1954af2ca384d10332901132470f8ba63bf77d3c"
+    },
+    {
+      "kind": "file",
+      "componentId": "ap-security-audit",
+      "adapter": "codex",
+      "path": ".agents/skills/ap-security-audit/references/audit-surfaces.md",
+      "sha256": "sha256:cc17dfb1c7830d03bb15dc895b1c8ac0d74e58c9d05b72dbad98ea568ac183fd"
+    },
+    {
+      "kind": "file",
+      "componentId": "ap-security-audit",
+      "adapter": "codex",
+      "path": ".agents/skills/ap-security-audit/references/finding-validation-and-reporting.md",
+      "sha256": "sha256:a3d05c7c8cb5f8bf82ce98303e54ba81a69a4baa997a6e099d70e6b849c668dd"
+    },
+    {
+      "kind": "file",
+      "componentId": "ap-start-dev-session",
+      "adapter": "codex",
+      "path": ".agents/skills/ap-start-dev-session/SKILL.md",
+      "sha256": "sha256:062829df5d20d3b24d139404939b29aae8dd05aa278085f177977458a063e7b2"
+    },
+    {
+      "kind": "file",
+      "componentId": "ap-test-web-app",
+      "adapter": "codex",
+      "path": ".agents/skills/ap-test-web-app/SKILL.md",
+      "sha256": "sha256:dce85dc77fbdd3bafe83b1455d22acc5d44d8336a6e64253bb500a25174a40e9"
+    },
+    {
+      "kind": "file",
+      "componentId": "ap-validate-trust-boundaries",
+      "adapter": "codex",
+      "path": ".agents/skills/ap-validate-trust-boundaries/SKILL.md",
+      "sha256": "sha256:0a6fd547a3656742a5dbf3f7f701371eb6c304c94e310a6546a1837059fc75c0"
+    },
+    {
+      "kind": "file",
+      "componentId": "ap-validate-trust-boundaries",
+      "adapter": "codex",
+      "path": ".agents/skills/ap-validate-trust-boundaries/references/files-text-and-structured-input.md",
+      "sha256": "sha256:e334dc1ccbd350eeb433b6bd4e5adf147ba7cdcee4adede771bd96c80970bd6a"
+    },
+    {
+      "kind": "file",
+      "componentId": "ap-write-database-queries",
+      "adapter": "codex",
+      "path": ".agents/skills/ap-write-database-queries/SKILL.md",
+      "sha256": "sha256:c1ce9fe3656003523df9776fdf66322aeef7ee48b4127d9025cb09f98f83aa93"
+    },
+    {
+      "kind": "file",
+      "componentId": "ap-write-database-queries",
+      "adapter": "codex",
+      "path": ".agents/skills/ap-write-database-queries/references/performance-indexing-and-operations.md",
+      "sha256": "sha256:d7c2eadabbaefce7c5389c56487e34bf274b8be963a12f78ed4cfdc81915b181"
+    },
+    {
+      "kind": "file",
+      "componentId": "ap-write-database-queries",
+      "adapter": "codex",
+      "path": ".agents/skills/ap-write-database-queries/references/query-correctness-and-security.md",
+      "sha256": "sha256:c27519553a49063338e511e9c85af79e5e8b252d07517326a1ba1d0b7a9957eb"
+    },
+    {
+      "kind": "file",
+      "componentId": "ap-write-database-queries",
+      "adapter": "codex",
+      "path": ".agents/skills/ap-write-database-queries/references/transactions-concurrency-and-testing.md",
+      "sha256": "sha256:3bebea36075d9898aef47cf4d3d7009ba08aa9b76f7eeee09b2dedcebd1a4f23"
+    },
+    {
+      "kind": "file",
+      "componentId": "ap-backend-python-developer",
+      "adapter": "claude",
+      "path": ".claude/agents/ap-backend-python-developer.md",
+      "sha256": "sha256:b10a01872d79a0a02a22d8e231d97de44a4cd5b33077d274e14461dfea829720"
+    },
+    {
+      "kind": "file",
+      "componentId": "ap-backend-typescript-developer",
+      "adapter": "claude",
+      "path": ".claude/agents/ap-backend-typescript-developer.md",
+      "sha256": "sha256:18115baf5ce8545e3ccb9279b4a779d617f7aa24427859066f814711ef5688e7"
+    },
+    {
+      "kind": "file",
+      "componentId": "ap-code-reviewer",
+      "adapter": "claude",
+      "path": ".claude/agents/ap-code-reviewer.md",
+      "sha256": "sha256:45530db4a8c4dfa0471ce56942d07babaee0967938d1197ca2bf60f4debbd8d4"
+    },
+    {
+      "kind": "file",
+      "componentId": "ap-trend-researcher",
+      "adapter": "claude",
+      "path": ".claude/agents/ap-trend-researcher.md",
+      "sha256": "sha256:63cf6b55cbe1cd5ff95cddf4b742fc8d2e0a4c2ed6d8c7759b3661a256bbea7a"
+    },
+    {
+      "kind": "file",
+      "componentId": "ap-ux-enhancer",
+      "adapter": "claude",
+      "path": ".claude/agents/ap-ux-enhancer.md",
+      "sha256": "sha256:151bc013f69a82a241479c792f5164d29df2ab5e362804d7b703dd6b67bb76cd"
+    },
+    {
+      "kind": "file",
+      "componentId": "ap-ux-researcher",
+      "adapter": "claude",
+      "path": ".claude/agents/ap-ux-researcher.md",
+      "sha256": "sha256:bdedc942f99a6980352c8e9bdc2cb89bbeec6299656fd7d25e23a72f155a5065"
+    },
+    {
+      "kind": "file",
+      "componentId": "ap-core-instructions",
+      "adapter": "claude",
+      "path": ".claude/rules/agents-pack/ap-core-instructions.md",
+      "sha256": "sha256:956fd70847a985efa0880d5bab719c5e6197a40ab55232398a6607cb4f8a0e8b"
+    },
+    {
+      "kind": "file",
+      "componentId": "ap-audit-geo",
+      "adapter": "claude",
+      "path": ".claude/skills/ap-audit-geo/SKILL.md",
+      "sha256": "sha256:19c3d4bd244e79b7a8a0345c7ae90c698b9277ea6ddd8ca65672841e34bb2473"
+    },
+    {
+      "kind": "file",
+      "componentId": "ap-audit-geo",
+      "adapter": "claude",
+      "path": ".claude/skills/ap-audit-geo/references/geo-audit-checklist.md",
+      "sha256": "sha256:4fe445159f14ed6ecaf9e2c059bdf8ba3648064008bff6cd5453710d5908caeb"
+    },
+    {
+      "kind": "file",
+      "componentId": "ap-audit-seo",
+      "adapter": "claude",
+      "path": ".claude/skills/ap-audit-seo/SKILL.md",
+      "sha256": "sha256:add951720406f25351ae2372e89ebbc1129bc3dee1c55737392d168fd0882c96"
+    },
+    {
+      "kind": "file",
+      "componentId": "ap-audit-seo",
+      "adapter": "claude",
+      "path": ".claude/skills/ap-audit-seo/references/seo-audit-checklist.md",
+      "sha256": "sha256:237e11a4576b20c5bed2426be05c490e34618ad8059f3679bd99beece591ab68"
+    },
+    {
+      "kind": "file",
+      "componentId": "ap-clear-dev-context",
+      "adapter": "claude",
+      "path": ".claude/skills/ap-clear-dev-context/SKILL.md",
+      "sha256": "sha256:b8ad2ce0f9e6459ce7cbbab75a0c4e9f7c01f778a6196f75ab2b8bd3ddba4536"
+    },
+    {
+      "kind": "file",
+      "componentId": "ap-compress-todos",
+      "adapter": "claude",
+      "path": ".claude/skills/ap-compress-todos/SKILL.md",
+      "sha256": "sha256:0f35c6fa84dcbfbed0fa5049900ef769948b2f8ad2f2c48b75182015c513a75c"
+    },
+    {
+      "kind": "file",
+      "componentId": "ap-continue-dev-session",
+      "adapter": "claude",
+      "path": ".claude/skills/ap-continue-dev-session/SKILL.md",
+      "sha256": "sha256:4ceadda41cbe771a7b093f924cb2d54b46500a70514a515e46df1817f6ae3ae0"
+    },
+    {
+      "kind": "file",
+      "componentId": "ap-create-new-skill",
+      "adapter": "claude",
+      "path": ".claude/skills/ap-create-new-skill/SKILL.md",
+      "sha256": "sha256:69903b5ed4a2ce42f62510cc1b518ef531b75c41f1e08303b955dae14f5a31bb"
+    },
+    {
+      "kind": "file",
+      "componentId": "ap-create-new-skill",
+      "adapter": "claude",
+      "path": ".claude/skills/ap-create-new-skill/agents/openai.yaml",
+      "sha256": "sha256:812759957edec59f3f5ed30fe3e501acdb393c821bef7be6dd26fc00e08f3c35"
+    },
+    {
+      "kind": "file",
+      "componentId": "ap-create-prd",
+      "adapter": "claude",
+      "path": ".claude/skills/ap-create-prd/SKILL.md",
+      "sha256": "sha256:8973a995602a6960e1cd5cf011d20d4698602126c1a866febd0000934e0c85bb"
+    },
+    {
+      "kind": "file",
+      "componentId": "ap-create-prd",
+      "adapter": "claude",
+      "path": ".claude/skills/ap-create-prd/references/prd-structure.md",
+      "sha256": "sha256:1df23ab408715dc5b9a54aa1761a1077c64adc90704f509347d099c3cbf9d8ba"
+    },
+    {
+      "kind": "file",
+      "componentId": "ap-debug",
+      "adapter": "claude",
+      "path": ".claude/skills/ap-debug/SKILL.md",
+      "sha256": "sha256:840cabaf72a9adf6ccf312df3042dc733ea865eba9efd513cc953f1c33796b16"
+    },
+    {
+      "kind": "file",
+      "componentId": "ap-design-data-models",
+      "adapter": "claude",
+      "path": ".claude/skills/ap-design-data-models/SKILL.md",
+      "sha256": "sha256:154c47ca81f6f57677f258f725b5358ea98539e9feb58f7dffe9727cd970d5b1"
+    },
+    {
+      "kind": "file",
+      "componentId": "ap-design-data-models",
+      "adapter": "claude",
+      "path": ".claude/skills/ap-design-data-models/references/document-and-distributed-modeling.md",
+      "sha256": "sha256:30f6017318227583be0042125521d75efb26ff464806c92b4243bdd4860bffd5"
+    },
+    {
+      "kind": "file",
+      "componentId": "ap-design-data-models",
+      "adapter": "claude",
+      "path": ".claude/skills/ap-design-data-models/references/relational-modeling.md",
+      "sha256": "sha256:dbb53b63cffae123626b4f649b8a4733294685c04101fda55da4b6f554dc7b27"
+    },
+    {
+      "kind": "file",
+      "componentId": "ap-design-data-models",
+      "adapter": "claude",
+      "path": ".claude/skills/ap-design-data-models/references/schema-evolution-and-governance.md",
+      "sha256": "sha256:4f4eb4c3b7c726dc4e9049608a9599569484925549b20189fb564a712544e988"
+    },
+    {
+      "kind": "file",
+      "componentId": "ap-develop-apis",
+      "adapter": "claude",
+      "path": ".claude/skills/ap-develop-apis/SKILL.md",
+      "sha256": "sha256:4340a072d4da8e8c0d1c4b2fb00d03cc9cb35d6e6edf45de8a01c1e9f546ddc1"
+    },
+    {
+      "kind": "file",
+      "componentId": "ap-develop-apis",
+      "adapter": "claude",
+      "path": ".claude/skills/ap-develop-apis/references/api-consumer-artifacts.md",
+      "sha256": "sha256:b9c5a33fae46467067bb12ea04440895a12ddcf9a58f19b89fb4352f7d041bdb"
+    },
+    {
+      "kind": "file",
+      "componentId": "ap-develop-apis",
+      "adapter": "claude",
+      "path": ".claude/skills/ap-develop-apis/references/http-contract-checklist.md",
+      "sha256": "sha256:68014ecd882b36168cb76dd4e454d8e95c6ad07e87af23bc27129dcf70fc516e"
+    },
+    {
+      "kind": "file",
+      "componentId": "ap-develop-apis",
+      "adapter": "claude",
+      "path": ".claude/skills/ap-develop-apis/references/security-reliability-and-testing.md",
+      "sha256": "sha256:f0b7079b88ff3a4ae9026f0b29be70ed8f84dec45295bcc597c703675a5923f7"
+    },
+    {
+      "kind": "file",
+      "componentId": "ap-develop-apis",
+      "adapter": "claude",
+      "path": ".claude/skills/ap-develop-apis/references/thin-api-architecture.md",
+      "sha256": "sha256:3732d62ef249767c143dc19147786b182157ea661e98090da11302a3b0f7b66f"
+    },
+    {
+      "kind": "file",
+      "componentId": "ap-develop-with-vercel-ai-sdk",
+      "adapter": "claude",
+      "path": ".claude/skills/ap-develop-with-vercel-ai-sdk/SKILL.md",
+      "sha256": "sha256:07274a86b65c5c19b79dabece7db3086a6b95ad83dbb884842c6d335c25ad7d9"
+    },
+    {
+      "kind": "file",
+      "componentId": "ap-develop-with-vercel-ai-sdk",
+      "adapter": "claude",
+      "path": ".claude/skills/ap-develop-with-vercel-ai-sdk/references/core-architecture-and-generation.md",
+      "sha256": "sha256:17f27485876c0fca01770144159c5c5b137c18d0c85d6a2463472129aae8fc66"
+    },
+    {
+      "kind": "file",
+      "componentId": "ap-develop-with-vercel-ai-sdk",
+      "adapter": "claude",
+      "path": ".claude/skills/ap-develop-with-vercel-ai-sdk/references/migrate-observe-and-test.md",
+      "sha256": "sha256:9d3c00f2d3b774357c13b17bdf0c8d9cbb82aa07d11392ecf4fa5367b8bdd9f4"
+    },
+    {
+      "kind": "file",
+      "componentId": "ap-develop-with-vercel-ai-sdk",
+      "adapter": "claude",
+      "path": ".claude/skills/ap-develop-with-vercel-ai-sdk/references/tools-context-and-safety.md",
+      "sha256": "sha256:c5a3b0e3d16e949936370eaf90952e2e0766f9b0f373b4e752f5d442973d73c8"
+    },
+    {
+      "kind": "file",
+      "componentId": "ap-develop-with-vercel-ai-sdk",
+      "adapter": "claude",
+      "path": ".claude/skills/ap-develop-with-vercel-ai-sdk/references/ui-streaming-and-persistence.md",
+      "sha256": "sha256:4e65cd49deda6c35186dd4ae1851f0fe1fc878699eb06252d39f3b5d506b62d3"
+    },
+    {
+      "kind": "file",
+      "componentId": "ap-frontend-design",
+      "adapter": "claude",
+      "path": ".claude/skills/ap-frontend-design/SKILL.md",
+      "sha256": "sha256:b06d110fb3de212243d1aaeac7a699204cac1311bd500b9dbc266bf05de12657"
+    },
+    {
+      "kind": "file",
+      "componentId": "ap-frontend-design",
+      "adapter": "claude",
+      "path": ".claude/skills/ap-frontend-design/references/design-md.md",
+      "sha256": "sha256:5eed354049d31b89b8921310f789c81abf2c1d972f4a66cd978c1a426dd2b246"
+    },
+    {
+      "kind": "file",
+      "componentId": "ap-frontend-review",
+      "adapter": "claude",
+      "path": ".claude/skills/ap-frontend-review/SKILL.md",
+      "sha256": "sha256:20f4ef6e9f5da0c4e937655de5d0ed0f50b0b1b2b73485b38437f354b57cc31e"
+    },
+    {
+      "kind": "file",
+      "componentId": "ap-frontend-review",
+      "adapter": "claude",
+      "path": ".claude/skills/ap-frontend-review/references/review-checklist.md",
+      "sha256": "sha256:8ad11312fd0f8f846e1fbcb3323be11343a3bb7a2f5598ed86c1fafb750ee98f"
+    },
+    {
+      "kind": "file",
+      "componentId": "ap-handle-errors-reliably",
+      "adapter": "claude",
+      "path": ".claude/skills/ap-handle-errors-reliably/SKILL.md",
+      "sha256": "sha256:654406bb6f0c04ec07f973798241258f6990575a350eedbed10b5a0d0f5a86b0"
+    },
+    {
+      "kind": "file",
+      "componentId": "ap-handle-errors-reliably",
+      "adapter": "claude",
+      "path": ".claude/skills/ap-handle-errors-reliably/references/retries-timeouts-and-cleanup.md",
+      "sha256": "sha256:bc1317c0446d50e0aa462a8efb7f213db7009b81ec90bf09d4649e677b09c0ec"
+    },
+    {
+      "kind": "file",
+      "componentId": "ap-landing-page",
+      "adapter": "claude",
+      "path": ".claude/skills/ap-landing-page/SKILL.md",
+      "sha256": "sha256:a76a0c62c032ba15ab8671c012f940e4684c634f141b6d8d449fee47384a985e"
+    },
+    {
+      "kind": "file",
+      "componentId": "ap-landing-page",
+      "adapter": "claude",
+      "path": ".claude/skills/ap-landing-page/references/pre-publish-checklist.md",
+      "sha256": "sha256:68535aa57da1072b3409e0c8f2460bf19cf40f3698b1489d3dd15cf2001dd5a8"
+    },
+    {
+      "kind": "file",
+      "componentId": "ap-landing-page",
+      "adapter": "claude",
+      "path": ".claude/skills/ap-landing-page/references/search-and-citation.md",
+      "sha256": "sha256:2bc7449ebf73c3636483d6fdc0986366cf4ae814503339d8d4e4a6b1796bed66"
+    },
+    {
+      "kind": "file",
+      "componentId": "ap-maintain-memory",
+      "adapter": "claude",
+      "path": ".claude/skills/ap-maintain-memory/SKILL.md",
+      "sha256": "sha256:6363ecc94f6b46c2940425259d0b1d0e543cde5c09ac6242b5f1181b337c6496"
+    },
+    {
+      "kind": "file",
+      "componentId": "ap-maintain-memory",
+      "adapter": "claude",
+      "path": ".claude/skills/ap-maintain-memory/agents/openai.yaml",
+      "sha256": "sha256:361f2833ae3518164c13fe013cad812e4bcc0d01e853169b73ee0d1a005fec32"
+    },
+    {
+      "kind": "file",
+      "componentId": "ap-manage-agents-pack",
+      "adapter": "claude",
+      "path": ".claude/skills/ap-manage-agents-pack/SKILL.md",
+      "sha256": "sha256:84d272e04090c8fb487fc8d7e533ca0bd4466412f9e26b12b2a89f445fd6e9aa"
+    },
+    {
+      "kind": "file",
+      "componentId": "ap-manage-agents-pack",
+      "adapter": "claude",
+      "path": ".claude/skills/ap-manage-agents-pack/agents/openai.yaml",
+      "sha256": "sha256:f2b4eb976bdbfbdd3bb67a4c840a015a8293fb57e463717b964ca3e1acff5398"
+    },
+    {
+      "kind": "file",
+      "componentId": "ap-recall-memory",
+      "adapter": "claude",
+      "path": ".claude/skills/ap-recall-memory/SKILL.md",
+      "sha256": "sha256:9c21ae2955e6b8bebc6c173757baf7e9c91dd6e6937673da2397d088619b6075"
+    },
+    {
+      "kind": "file",
+      "componentId": "ap-recall-memory",
+      "adapter": "claude",
+      "path": ".claude/skills/ap-recall-memory/agents/openai.yaml",
+      "sha256": "sha256:78082405cf2cad48959f2122ff021f39f36566865d179cea094b69e7dfe73fa1"
+    },
+    {
+      "kind": "file",
+      "componentId": "ap-refresh-repo-docs",
+      "adapter": "claude",
+      "path": ".claude/skills/ap-refresh-repo-docs/SKILL.md",
+      "sha256": "sha256:429fc47925b81da6c9f0b36429bb9fd0a8438dc7479d3902e1f277c1a0490ce9"
+    },
+    {
+      "kind": "file",
+      "componentId": "ap-refresh-repo-docs",
+      "adapter": "claude",
+      "path": ".claude/skills/ap-refresh-repo-docs/references/feature-and-subsystem-documentation.md",
+      "sha256": "sha256:9bdaae0b49e3a3e1d122a1673b169c98bbcb5c0fbc9bcf698b6ab874e2a5ec30"
+    },
+    {
+      "kind": "file",
+      "componentId": "ap-review-plan",
+      "adapter": "claude",
+      "path": ".claude/skills/ap-review-plan/SKILL.md",
+      "sha256": "sha256:95397a574eccbe31e5ba528ef2eca49748875e4b8f4912ab383328f06f69f0a0"
+    },
+    {
+      "kind": "file",
+      "componentId": "ap-run-market-research",
+      "adapter": "claude",
+      "path": ".claude/skills/ap-run-market-research/SKILL.md",
+      "sha256": "sha256:0d121932ed66da20db35bcd2d49f0b560fef02ce9d72b2b34d8f7074b5c082a0"
+    },
+    {
+      "kind": "file",
+      "componentId": "ap-run-market-research",
+      "adapter": "claude",
+      "path": ".claude/skills/ap-run-market-research/references/report-structure.md",
+      "sha256": "sha256:bfb25324f4b1cc4289b2482eda5dd3c0a214b36f5f928493851be03d2d4b6d13"
+    },
+    {
+      "kind": "file",
+      "componentId": "ap-save-memory",
+      "adapter": "claude",
+      "path": ".claude/skills/ap-save-memory/SKILL.md",
+      "sha256": "sha256:998d53bcd9f017c724ddddf22de5c21352abc3934a4067b2d4275dba6b4279f1"
+    },
+    {
+      "kind": "file",
+      "componentId": "ap-save-memory",
+      "adapter": "claude",
+      "path": ".claude/skills/ap-save-memory/agents/openai.yaml",
+      "sha256": "sha256:ed7d100b625a61edcf6fcd6512cf92aa683b50b600ccfe8de7a73b414cfe0132"
+    },
+    {
+      "kind": "file",
+      "componentId": "ap-security-audit",
+      "adapter": "claude",
+      "path": ".claude/skills/ap-security-audit/SKILL.md",
+      "sha256": "sha256:e4df29b573d96115dc798c3e1954af2ca384d10332901132470f8ba63bf77d3c"
+    },
+    {
+      "kind": "file",
+      "componentId": "ap-security-audit",
+      "adapter": "claude",
+      "path": ".claude/skills/ap-security-audit/references/audit-surfaces.md",
+      "sha256": "sha256:cc17dfb1c7830d03bb15dc895b1c8ac0d74e58c9d05b72dbad98ea568ac183fd"
+    },
+    {
+      "kind": "file",
+      "componentId": "ap-security-audit",
+      "adapter": "claude",
+      "path": ".claude/skills/ap-security-audit/references/finding-validation-and-reporting.md",
+      "sha256": "sha256:a3d05c7c8cb5f8bf82ce98303e54ba81a69a4baa997a6e099d70e6b849c668dd"
+    },
+    {
+      "kind": "file",
+      "componentId": "ap-start-dev-session",
+      "adapter": "claude",
+      "path": ".claude/skills/ap-start-dev-session/SKILL.md",
+      "sha256": "sha256:062829df5d20d3b24d139404939b29aae8dd05aa278085f177977458a063e7b2"
+    },
+    {
+      "kind": "file",
+      "componentId": "ap-test-web-app",
+      "adapter": "claude",
+      "path": ".claude/skills/ap-test-web-app/SKILL.md",
+      "sha256": "sha256:dce85dc77fbdd3bafe83b1455d22acc5d44d8336a6e64253bb500a25174a40e9"
+    },
+    {
+      "kind": "file",
+      "componentId": "ap-validate-trust-boundaries",
+      "adapter": "claude",
+      "path": ".claude/skills/ap-validate-trust-boundaries/SKILL.md",
+      "sha256": "sha256:0a6fd547a3656742a5dbf3f7f701371eb6c304c94e310a6546a1837059fc75c0"
+    },
+    {
+      "kind": "file",
+      "componentId": "ap-validate-trust-boundaries",
+      "adapter": "claude",
+      "path": ".claude/skills/ap-validate-trust-boundaries/references/files-text-and-structured-input.md",
+      "sha256": "sha256:e334dc1ccbd350eeb433b6bd4e5adf147ba7cdcee4adede771bd96c80970bd6a"
+    },
+    {
+      "kind": "file",
+      "componentId": "ap-write-database-queries",
+      "adapter": "claude",
+      "path": ".claude/skills/ap-write-database-queries/SKILL.md",
+      "sha256": "sha256:c1ce9fe3656003523df9776fdf66322aeef7ee48b4127d9025cb09f98f83aa93"
+    },
+    {
+      "kind": "file",
+      "componentId": "ap-write-database-queries",
+      "adapter": "claude",
+      "path": ".claude/skills/ap-write-database-queries/references/performance-indexing-and-operations.md",
+      "sha256": "sha256:d7c2eadabbaefce7c5389c56487e34bf274b8be963a12f78ed4cfdc81915b181"
+    },
+    {
+      "kind": "file",
+      "componentId": "ap-write-database-queries",
+      "adapter": "claude",
+      "path": ".claude/skills/ap-write-database-queries/references/query-correctness-and-security.md",
+      "sha256": "sha256:c27519553a49063338e511e9c85af79e5e8b252d07517326a1ba1d0b7a9957eb"
+    },
+    {
+      "kind": "file",
+      "componentId": "ap-write-database-queries",
+      "adapter": "claude",
+      "path": ".claude/skills/ap-write-database-queries/references/transactions-concurrency-and-testing.md",
+      "sha256": "sha256:3bebea36075d9898aef47cf4d3d7009ba08aa9b76f7eeee09b2dedcebd1a4f23"
+    },
+    {
+      "kind": "file",
+      "componentId": "ap-backend-python-developer",
+      "adapter": "codex",
+      "path": ".codex/agents/ap-backend-python-developer.toml",
+      "sha256": "sha256:8a9e3bbd6079612b8e71b273f461587d7aa74254e8107efe0fd26dac62b91cf8"
+    },
+    {
+      "kind": "file",
+      "componentId": "ap-backend-typescript-developer",
+      "adapter": "codex",
+      "path": ".codex/agents/ap-backend-typescript-developer.toml",
+      "sha256": "sha256:967aac81cee75134d6c567c5ea9cd8aff5d9feb49b2abff02376fe5f7c669374"
+    },
+    {
+      "kind": "file",
+      "componentId": "ap-code-reviewer",
+      "adapter": "codex",
+      "path": ".codex/agents/ap-code-reviewer.toml",
+      "sha256": "sha256:0fed87def322992a94ff9bbc6fdf637f6412cb430d9e29d01ee9166083c00dc6"
+    },
+    {
+      "kind": "file",
+      "componentId": "ap-trend-researcher",
+      "adapter": "codex",
+      "path": ".codex/agents/ap-trend-researcher.toml",
+      "sha256": "sha256:4937435d12a4ae4fcf335121d2a99df84c5dbef96d22d617f35a57728e15c5f1"
+    },
+    {
+      "kind": "file",
+      "componentId": "ap-ux-enhancer",
+      "adapter": "codex",
+      "path": ".codex/agents/ap-ux-enhancer.toml",
+      "sha256": "sha256:4c5cd4ffa07141770473c09e065a4e901fa94d1e01aaac65af8fe3a02977cda9"
+    },
+    {
+      "kind": "file",
+      "componentId": "ap-ux-researcher",
+      "adapter": "codex",
+      "path": ".codex/agents/ap-ux-researcher.toml",
+      "sha256": "sha256:e821424a543da836de3d21075a6c0226d2c3483d181901eef5570d21d75dafc5"
+    },
+    {
+      "kind": "file",
+      "componentId": "ap-backend-python-developer",
+      "adapter": "cursor",
+      "path": ".cursor/agents/ap-backend-python-developer.md",
+      "sha256": "sha256:8c3d8ccf4d7248c12a2b6ed140bf03e61932b833f0a4918fbd7297e3f21560da"
+    },
+    {
+      "kind": "file",
+      "componentId": "ap-backend-typescript-developer",
+      "adapter": "cursor",
+      "path": ".cursor/agents/ap-backend-typescript-developer.md",
+      "sha256": "sha256:edd22cf0a03b2a980d8d78ef71e5bb352d7075bf3d62243bf7e31ec37eb696b1"
+    },
+    {
+      "kind": "file",
+      "componentId": "ap-code-reviewer",
+      "adapter": "cursor",
+      "path": ".cursor/agents/ap-code-reviewer.md",
+      "sha256": "sha256:770a7cb14f095847c4207575a815d4dc8cb76089b486419dba8d28f12bcef6aa"
+    },
+    {
+      "kind": "file",
+      "componentId": "ap-trend-researcher",
+      "adapter": "cursor",
+      "path": ".cursor/agents/ap-trend-researcher.md",
+      "sha256": "sha256:ac8152fbf12707735c02c3b2bc23768405a4b7a1d3c4523e2a583e4c0a212598"
+    },
+    {
+      "kind": "file",
+      "componentId": "ap-ux-enhancer",
+      "adapter": "cursor",
+      "path": ".cursor/agents/ap-ux-enhancer.md",
+      "sha256": "sha256:9957574e77cb8006f74aca7997f4d456e44b68e03f8feca00c82e0fcacf4aa2d"
+    },
+    {
+      "kind": "file",
+      "componentId": "ap-ux-researcher",
+      "adapter": "cursor",
+      "path": ".cursor/agents/ap-ux-researcher.md",
+      "sha256": "sha256:f6fcda12b271bec5c9f7630f4bd7bb8703cb2d24b7cdf55a330b8204cb6fa50a"
+    },
+    {
+      "kind": "file",
+      "componentId": "ap-core-instructions",
+      "adapter": "cursor",
+      "path": ".cursor/rules/agents-pack/ap-core-instructions.mdc",
+      "sha256": "sha256:0d5e88d74c327a054808be69623deefd70a1fa5f5716ce0711fd8eba1f4fe784"
+    },
+    {
+      "kind": "managed-block",
+      "componentId": "ap-core-instructions",
+      "adapter": "codex",
+      "path": "AGENTS.md",
+      "blockId": "ap-core-instructions",
+      "sha256": "sha256:7a7b78cc89a1ff7c0edd014ae0fa7cb6d747f8bce47ef26c3a942bd74bfdb3dc"
+    }
+  ]
+}
