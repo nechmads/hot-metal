@@ -130,7 +130,7 @@ These guidelines apply to all work in this project.
 
 
 
-<!-- agents-pack:start id=ap-core-instructions version=0.27.0 -->
+<!-- agents-pack:start id=ap-core-instructions version=0.31.0 -->
 ## Project orientation
 
 Before planning, changing code, or brainstorming with the user, check the
