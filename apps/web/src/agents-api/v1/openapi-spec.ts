@@ -240,9 +240,25 @@ export const openapiSpec = {
 				operationId: 'listPosts',
 				summary: 'List published posts',
 				description:
-					'Returns up to 50 published posts for the publication from the CMS. Returns an empty array if no CMS link exists.',
+					'Returns published posts for the publication from the CMS, newest first. Page with `limit` and `offset` to walk a whole archive. Returns an empty array if no CMS link exists.',
 				tags: ['Publications'],
-				parameters: [{ $ref: '#/components/parameters/PublicationId' }],
+				parameters: [
+					{ $ref: '#/components/parameters/PublicationId' },
+					{
+						name: 'limit',
+						in: 'query',
+						required: false,
+						schema: { type: 'integer', minimum: 1, maximum: 100, default: 50 },
+						description: 'Posts per page (max 100 — both CMS backends cap there).',
+					},
+					{
+						name: 'offset',
+						in: 'query',
+						required: false,
+						schema: { type: 'integer', minimum: 0, default: 0 },
+						description: 'Posts to skip.',
+					},
+				],
 				responses: {
 					200: {
 						description: 'Array of posts',
@@ -257,7 +273,66 @@ export const openapiSpec = {
 							},
 						},
 					},
+					400: errorResponse('Invalid limit or offset'),
 					404: errorResponse('Publication not found'),
+				},
+			},
+			post: {
+				operationId: 'createPost',
+				summary: 'Create a post you wrote yourself',
+				description:
+					'Stores a post from content you already have, exactly as given — the counterpart to `generateDraft`, which asks the writer agent to research and write something new. Markdown is rendered to HTML on write, so the two never drift. Set `publishedAt` to backdate a post, which is how existing content is imported without the whole archive landing on today\'s date. Does not count against the weekly post quota, which meters writer-agent sessions.',
+				tags: ['Publications'],
+				parameters: [{ $ref: '#/components/parameters/PublicationId' }],
+				requestBody: jsonBody({ $ref: '#/components/schemas/CreatePostRequest' }),
+				responses: {
+					201: {
+						description: 'The created post',
+						content: {
+							'application/json': {
+								schema: {
+									type: 'object',
+									properties: { data: { $ref: '#/components/schemas/Post' } },
+								},
+							},
+						},
+					},
+					400: errorResponse('Validation error'),
+					404: errorResponse('Publication not found'),
+					409: errorResponse('Slug already taken, or the blog is still provisioning'),
+					502: errorResponse('The CMS rejected the request or is unavailable, or the publication has no CMS record yet'),
+				},
+			},
+		},
+
+		'/publications/{id}/posts/{postId}': {
+			patch: {
+				operationId: 'updatePost',
+				summary: 'Update a post',
+				description:
+					'Updates an existing post. Every field is optional; only what you send changes. Sending `markdown` re-renders the stored HTML from it. Promoting a draft to `published` stamps the current time unless you supply `publishedAt` or the post already carries one.',
+				tags: ['Publications'],
+				parameters: [
+					{ $ref: '#/components/parameters/PublicationId' },
+					{ $ref: '#/components/parameters/PostId' },
+				],
+				requestBody: jsonBody({ $ref: '#/components/schemas/UpdatePostRequest' }),
+				responses: {
+					200: {
+						description: 'The updated post',
+						content: {
+							'application/json': {
+								schema: {
+									type: 'object',
+									properties: { data: { $ref: '#/components/schemas/Post' } },
+								},
+							},
+						},
+					},
+					400: errorResponse('Validation error, or no updatable fields supplied'),
+					404: errorResponse('Publication or post not found'),
+					409: errorResponse('Slug already taken, or the blog is still provisioning'),
+					502: errorResponse('The CMS rejected the request or is unavailable, or the publication has no CMS record yet'),
 				},
 			},
 		},
@@ -754,6 +829,13 @@ export const openapiSpec = {
 				schema: { type: 'string', format: 'uuid' },
 				description: 'Topic ID',
 			},
+			PostId: {
+				name: 'postId',
+				in: 'path',
+				required: true,
+				schema: { type: 'string' },
+				description: 'CMS post ID (the `id` returned by listPosts / createPost)',
+			},
 			SessionId: {
 				name: 'id',
 				in: 'path',
@@ -947,6 +1029,80 @@ export const openapiSpec = {
 					status: { type: 'string' },
 					createdAt: { type: 'integer' },
 					updatedAt: { type: 'integer' },
+				},
+			},
+
+			Citation: {
+				type: 'object',
+				required: ['url', 'title'],
+				properties: {
+					url: { type: 'string', format: 'uri' },
+					title: { type: 'string' },
+					publisher: { type: 'string' },
+					accessedAt: { type: 'string' },
+					excerpt: { type: 'string', maxLength: 5000 },
+				},
+			},
+
+			CreatePostRequest: {
+				type: 'object',
+				required: ['title', 'markdown'],
+				properties: {
+					title: { type: 'string', maxLength: 500, description: 'Post title.' },
+					markdown: { type: 'string', maxLength: 500000, description: 'Post body in Markdown. Rendered to HTML on write.' },
+					slug: {
+						type: 'string',
+						description:
+							'URL slug. Defaults to a slugified title. Lowercase alphanumeric words separated by single dashes.',
+					},
+					status: {
+						type: 'string',
+						enum: ['draft', 'published'],
+						default: 'published',
+						description: 'Richer internal statuses belong to the drafting and scout flows.',
+					},
+					publishedAt: {
+						type: 'string',
+						format: 'date-time',
+						description:
+							'ISO 8601 publish date. Defaults to now for a published post; ignored for a draft. Set it to preserve the original date when importing existing content.',
+					},
+					author: { type: 'string', description: "Defaults to the publication's default author." },
+					subtitle: { type: 'string', maxLength: 5000 },
+					hook: { type: 'string', maxLength: 5000 },
+					excerpt: { type: 'string', maxLength: 5000 },
+					tags: { type: 'string', maxLength: 5000, description: 'Comma-separated tags.' },
+					topics: { type: 'string', maxLength: 5000, description: 'Comma-separated topics.' },
+					featuredImage: { type: 'string', format: 'uri', maxLength: 5000 },
+					seoTitle: { type: 'string', maxLength: 5000 },
+					seoDescription: { type: 'string', maxLength: 5000 },
+					canonicalUrl: { type: 'string', format: 'uri', maxLength: 5000 },
+					ogImage: { type: 'string', format: 'uri', maxLength: 5000 },
+					citations: { type: 'array', maxItems: 200, items: { $ref: '#/components/schemas/Citation' } },
+				},
+			},
+
+			UpdatePostRequest: {
+				type: 'object',
+				description: 'All fields optional — only what you send changes. At least one is required.',
+				properties: {
+					title: { type: 'string', maxLength: 500 },
+					markdown: { type: 'string', maxLength: 500000, description: 'Replaces the body and re-renders the stored HTML.' },
+					slug: { type: 'string' },
+					status: { type: 'string', enum: ['draft', 'published'] },
+					publishedAt: { type: 'string', format: 'date-time' },
+					author: { type: 'string' },
+					subtitle: { type: 'string', maxLength: 5000 },
+					hook: { type: 'string', maxLength: 5000 },
+					excerpt: { type: 'string', maxLength: 5000 },
+					tags: { type: 'string', maxLength: 5000 },
+					topics: { type: 'string', maxLength: 5000 },
+					featuredImage: { type: 'string', format: 'uri', maxLength: 5000 },
+					seoTitle: { type: 'string', maxLength: 5000 },
+					seoDescription: { type: 'string', maxLength: 5000 },
+					canonicalUrl: { type: 'string', format: 'uri', maxLength: 5000 },
+					ogImage: { type: 'string', format: 'uri', maxLength: 5000 },
+					citations: { type: 'array', maxItems: 200, items: { $ref: '#/components/schemas/Citation' } },
 				},
 			},
 

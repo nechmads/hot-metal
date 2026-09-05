@@ -25,6 +25,7 @@ import {
 } from '@hotmetal/shared'
 import type { WebhookPayload } from '@hotmetal/shared'
 import type { WriterAgent, DraftRow, DraftSummary } from '../../agent/writer-agent'
+import { slugify } from '../../lib/slug'
 // Note: we don't use checkPostsPerWeekQuota from lib/quota because it returns
 // a Hono Response. In the agents API we throw QuotaExceededError instead.
 
@@ -40,14 +41,6 @@ function getWeekStartTimestamp(): number {
 	weekStart.setUTCDate(now.getUTCDate() - diff)
 	weekStart.setUTCHours(0, 0, 0, 0)
 	return Math.floor(weekStart.getTime() / 1000)
-}
-
-function slugify(text: string): string {
-	return text
-		.toLowerCase()
-		.replace(/[^a-z0-9]+/g, '-')
-		.replace(/^-|-$/g, '')
-		.slice(0, 80)
 }
 
 function buildInstruction(title: string, instructions: string): string {

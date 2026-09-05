@@ -25,7 +25,8 @@ import {
 } from "../prompts/system-prompt";
 import { createToolSet, createAutoWriteToolSet } from "../tools";
 import { cleanupMessages } from "./message-utils";
-import { getCmsClient, logger, type CmsClient } from "@hotmetal/shared";
+import { getCmsClient, logger } from "@hotmetal/shared";
+import { resolveCmsPublicationId } from "../lib/cms-publication";
 import { createWilsonMiddleware } from "@hotmetal/shared/server";
 import type { Citation } from "@hotmetal/content-core";
 import { marked } from "marked";
@@ -708,37 +709,6 @@ export class WriterAgent extends AIChatAgent<Env, WriterAgentState> {
     }
   }
 
-  /**
-   * Resolve a publication's CMS counterpart ID.
-   * Lazily creates the CMS publication if it doesn't exist yet.
-   */
-  private async resolveCmsPublicationId(
-    pub: {
-      id: string;
-      name: string;
-      slug: string;
-      cmsPublicationId: string | null;
-    },
-    cmsApi: CmsClient,
-  ): Promise<string | undefined> {
-    if (pub.cmsPublicationId) return pub.cmsPublicationId;
-
-    // CMS publication wasn't created earlier — try now
-    try {
-      const cmsPub = await cmsApi.createPublication({
-        title: pub.name,
-        slug: pub.slug,
-      });
-      await this.env.DAL.updatePublication(pub.id, {
-        cmsPublicationId: cmsPub.id,
-      });
-      return cmsPub.id;
-    } catch (err) {
-      logger("web").error("Failed to create CMS publication", { component: "writer-agent", publicationId: pub.id, error: err instanceof Error ? err.message : String(err) });
-      return undefined;
-    }
-  }
-
   async handlePublishToCms(request: Request): Promise<Response> {
     if (this.state.writingPhase === "publishing") {
       return Response.json(
@@ -833,7 +803,7 @@ export class WriterAgent extends AIChatAgent<Env, WriterAgentState> {
       const hook = body.hook?.trim() || undefined;
       const htmlContent = await marked.parse(draft.content);
       const cmsApi = await getCmsClient(pub, this.env.DAL, this.env);
-      const cmsPublicationId = await this.resolveCmsPublicationId(pub, cmsApi);
+      const cmsPublicationId = await resolveCmsPublicationId(pub, cmsApi, this.env.DAL);
 
       const isUpdate = !!this.state.cmsPostId;
       let post;

@@ -8,7 +8,7 @@
 import { Hono } from 'hono'
 import type { AppEnv } from '../../server'
 import { ActionError, QuotaExceededError } from '../../actions/errors'
-import { UPGRADE_EMAIL, logger } from '@hotmetal/shared'
+import { UPGRADE_EMAIL, logger, CmsApiError } from '@hotmetal/shared'
 
 import me from './me'
 import publications from './publications'
@@ -47,8 +47,28 @@ agentsApiV1.onError((err, c) => {
 	if (err instanceof ActionError) {
 		return c.json(
 			{ error: err.message, code: err.code },
-			err.status as 400 | 401 | 403 | 404 | 409 | 500,
+			err.status as 400 | 401 | 403 | 404 | 409 | 500 | 502,
 		)
+	}
+
+	// A CMS failure is an upstream failure, not an internal one. The 409 case is
+	// real and reachable: the slug pre-check is best-effort (and racy by nature),
+	// so the CMS itself can be the one to reject a duplicate slug.
+	if (err instanceof CmsApiError) {
+		if (err.status === 409) {
+			return c.json(
+				{ error: 'The CMS rejected the write as conflicting — most often a slug that is already taken', code: 'CONFLICT' },
+				409,
+			)
+		}
+		logger('web').error('Agents API CMS error', { component: 'agents-api', status: err.status, error: err.message })
+		// A 4xx from the CMS means we sent it something it did not accept — our
+		// bug, not the tenant being down. Reporting that as 502 would point
+		// debugging at the wrong system.
+		if (err.status >= 400 && err.status < 500) {
+			return c.json({ error: 'The request could not be applied to the CMS', code: 'CMS_REQUEST_REJECTED' }, 500)
+		}
+		return c.json({ error: 'The CMS is unavailable', code: 'CMS_ERROR' }, 502)
 	}
 
 	if (err instanceof SyntaxError) {

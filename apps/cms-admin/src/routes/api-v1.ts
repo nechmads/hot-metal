@@ -236,6 +236,10 @@ apiV1.get('/posts', async (c) => {
   const db = (c.env as Record<string, unknown>).DB as D1Database
   const status = c.req.query('status')
   const publicationId = c.req.query('publicationId')
+  // Exact slug lookup. Callers use it to test whether a slug is taken before
+  // creating a post; without it they would have to page the whole publication,
+  // and `limit` is capped at 100 below.
+  const slug = c.req.query('slug')
   const limit = Math.max(1, Math.min(parseInt(c.req.query('limit') || '50', 10) || 50, 100))
   const offset = Math.max(0, parseInt(c.req.query('offset') || '0', 10) || 0)
 
@@ -254,6 +258,11 @@ apiV1.get('/posts', async (c) => {
   if (publicationId) {
     query += "AND json_extract(data, '$.publication') = ? "
     params.push(publicationId)
+  }
+  if (slug) {
+    // The slug lives in its own column (rowToPost reads row.slug), not in data.
+    query += 'AND slug = ? '
+    params.push(slug)
   }
 
   query += 'ORDER BY created_at DESC LIMIT ? OFFSET ?'

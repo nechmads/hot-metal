@@ -1,0 +1,1509 @@
+{
+  "info": {
+    "name": "Hot Metal \u2014 Agents API v1",
+    "description": "# Hot Metal Agents API v1\n\nThe public REST API for agents, scripts, and integrations: manage publications and topics, have the writer agent draft a post, publish it, or store a post you wrote yourself.\n\n## Auth\n\nEvery request needs `Authorization: Bearer hm_...`. Create a key in the Hot Metal dashboard and set the `apiKey` collection variable.\n\n## Envelopes\n\nSuccess is `{ \"data\": ... }`; failure is `{ \"error\": \"...\", \"code\": \"...\" }`.\n\n## Two ways to create a post\n\n`POST /publications/{id}/drafts/generate` asks the writer agent to research and write something new (metered by the weekly post quota). `POST /publications/{id}/posts` stores a post you already wrote, exactly as given, and accepts `publishedAt` so existing content keeps its original date (not metered).\n\nGenerated from `apps/web/src/agents-api/v1/openapi-spec.ts`; see `docs/API_GUIDE.md`.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{apiKey}}",
+        "type": "string"
+      }
+    ]
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "https://hotmetalapp.com/agents-api/v1",
+      "type": "string",
+      "description": "API base URL. Local: http://localhost:5174/agents-api/v1"
+    },
+    {
+      "key": "apiKey",
+      "value": "",
+      "type": "string",
+      "description": "Your hm_ API key from the Hot Metal dashboard"
+    },
+    {
+      "key": "publicationId",
+      "value": "",
+      "type": "string",
+      "description": "Publication ID used by publication-scoped requests"
+    },
+    {
+      "key": "postId",
+      "value": "",
+      "type": "string",
+      "description": "CMS post ID, from listPosts or createPost"
+    },
+    {
+      "key": "topicId",
+      "value": "",
+      "type": "string",
+      "description": "Topic ID"
+    },
+    {
+      "key": "ideaId",
+      "value": "",
+      "type": "string",
+      "description": "Idea ID"
+    },
+    {
+      "key": "sessionId",
+      "value": "",
+      "type": "string",
+      "description": "Writing session ID, from generateDraft"
+    }
+  ],
+  "item": [
+    {
+      "name": "User",
+      "item": [
+        {
+          "name": "Get current user",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/me",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "me"
+              ]
+            },
+            "description": "Returns the authenticated user profile derived from the API key."
+          },
+          "response": [
+            {
+              "name": "200 \u2014 Current user info",
+              "status": "200",
+              "code": 200,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"data\": {\n    \"id\": \"<id>\",\n    \"email\": \"<email>\",\n    \"name\": \"Looking Ahead\",\n    \"tier\": \"<tier>\"\n  }\n}",
+              "_postman_previewlanguage": "json"
+            },
+            {
+              "name": "401 \u2014 Invalid or missing API key",
+              "status": "401",
+              "code": 401,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"error\": \"Invalid or missing API key\",\n  \"code\": \"ERROR_CODE\"\n}",
+              "_postman_previewlanguage": "json"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Publications",
+      "item": [
+        {
+          "name": "List publications",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/publications",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "publications"
+              ]
+            },
+            "description": "Returns all publications owned by the authenticated user."
+          },
+          "response": [
+            {
+              "name": "200 \u2014 Array of publications",
+              "status": "200",
+              "code": 200,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"data\": [\n    {\n      \"id\": \"{{publicationId}}\",\n      \"userId\": \"<userId>\",\n      \"name\": \"Looking Ahead\",\n      \"slug\": \"shipping-a-cms-migration\",\n      \"description\": \"Weekly notes on where software is heading.\",\n      \"writingTone\": \"<writingTone>\",\n      \"defaultAuthor\": \"<defaultAuthor>\",\n      \"autoPublishMode\": \"ideas-only\",\n      \"cadencePostsPerWeek\": 1,\n      \"scoutSchedule\": \"<scoutSchedule>\",\n      \"timezone\": \"<timezone>\",\n      \"nextScoutAt\": \"<nextScoutAt>\",\n      \"scoutEnabled\": false,\n      \"cmsPublicationId\": \"{{publicationId}}\",\n      \"styleId\": \"{{publicationId}}\",\n      \"templateId\": \"<templateId>\",\n      \"tagline\": \"<tagline>\",\n      \"logoUrl\": \"<logoUrl>\",\n      \"headerImageUrl\": \"<headerImageUrl>\",\n      \"accentColor\": \"<accentColor>\",\n      \"socialLinks\": \"<socialLinks>\",\n      \"feedFullEnabled\": false,\n      \"feedPartialEnabled\": false,\n      \"commentsEnabled\": false,\n      \"commentsModeration\": \"auto-approve\",\n      \"customDomain\": \"<customDomain>\",\n      \"metaDescription\": \"<metaDescription>\",\n      \"createdAt\": 1,\n      \"updatedAt\": 1\n    }\n  ]\n}",
+              "_postman_previewlanguage": "json"
+            }
+          ]
+        },
+        {
+          "name": "Create a publication",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/publications",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "publications"
+              ]
+            },
+            "description": "Creates a new publication and syncs it with the CMS. Subject to tier limits on publication count.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Looking Ahead\",\n  \"slug\": \"shipping-a-cms-migration\",\n  \"description\": \"Weekly notes on where software is heading.\",\n  \"writingTone\": \"<writingTone>\",\n  \"defaultAuthor\": \"<defaultAuthor>\",\n  \"autoPublishMode\": \"ideas-only\",\n  \"cadencePostsPerWeek\": 1,\n  \"scoutSchedule\": \"<scoutSchedule>\",\n  \"timezone\": \"<timezone>\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [
+            {
+              "name": "201 \u2014 Publication created",
+              "status": "201",
+              "code": 201,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"data\": {\n    \"id\": \"{{publicationId}}\",\n    \"userId\": \"<userId>\",\n    \"name\": \"Looking Ahead\",\n    \"slug\": \"shipping-a-cms-migration\",\n    \"description\": \"Weekly notes on where software is heading.\",\n    \"writingTone\": \"<writingTone>\",\n    \"defaultAuthor\": \"<defaultAuthor>\",\n    \"autoPublishMode\": \"ideas-only\",\n    \"cadencePostsPerWeek\": 1,\n    \"scoutSchedule\": \"<scoutSchedule>\",\n    \"timezone\": \"<timezone>\",\n    \"nextScoutAt\": \"<nextScoutAt>\",\n    \"scoutEnabled\": false,\n    \"cmsPublicationId\": \"{{publicationId}}\",\n    \"styleId\": \"{{publicationId}}\",\n    \"templateId\": \"<templateId>\",\n    \"tagline\": \"<tagline>\",\n    \"logoUrl\": \"<logoUrl>\",\n    \"headerImageUrl\": \"<headerImageUrl>\",\n    \"accentColor\": \"<accentColor>\",\n    \"socialLinks\": \"<socialLinks>\",\n    \"feedFullEnabled\": false,\n    \"feedPartialEnabled\": false,\n    \"commentsEnabled\": false,\n    \"commentsModeration\": \"auto-approve\",\n    \"customDomain\": \"<customDomain>\",\n    \"metaDescription\": \"<metaDescription>\",\n    \"createdAt\": 1,\n    \"updatedAt\": 1\n  }\n}",
+              "_postman_previewlanguage": "json"
+            },
+            {
+              "name": "400 \u2014 Validation error (bad slug, timezone, etc.)",
+              "status": "400",
+              "code": 400,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"error\": \"Validation error (bad slug, timezone, etc.)\",\n  \"code\": \"ERROR_CODE\"\n}",
+              "_postman_previewlanguage": "json"
+            },
+            {
+              "name": "403 \u2014 Quota exceeded \u2014 upgrade plan for higher limits",
+              "status": "403",
+              "code": 403,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"error\": \"Quota exceeded \u2014 upgrade plan for higher limits\",\n  \"code\": \"ERROR_CODE\"\n}",
+              "_postman_previewlanguage": "json"
+            }
+          ]
+        },
+        {
+          "name": "Get a publication",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/publications/{{publicationId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "publications",
+                "{{publicationId}}"
+              ]
+            },
+            "description": "Returns a single publication with its topics array."
+          },
+          "response": [
+            {
+              "name": "200 \u2014 Publication with topics",
+              "status": "200",
+              "code": 200,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"data\": \"<data>\"\n}",
+              "_postman_previewlanguage": "json"
+            },
+            {
+              "name": "404 \u2014 Publication not found",
+              "status": "404",
+              "code": 404,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"error\": \"Publication not found\",\n  \"code\": \"ERROR_CODE\"\n}",
+              "_postman_previewlanguage": "json"
+            }
+          ]
+        },
+        {
+          "name": "Update a publication",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/publications/{{publicationId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "publications",
+                "{{publicationId}}"
+              ]
+            },
+            "description": "Updates publication settings. All fields are optional.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Looking Ahead\",\n  \"slug\": \"shipping-a-cms-migration\",\n  \"description\": \"Weekly notes on where software is heading.\",\n  \"writingTone\": \"<writingTone>\",\n  \"defaultAuthor\": \"<defaultAuthor>\",\n  \"autoPublishMode\": \"ideas-only\",\n  \"cadencePostsPerWeek\": 1,\n  \"scoutSchedule\": \"<scoutSchedule>\",\n  \"timezone\": \"<timezone>\",\n  \"scoutEnabled\": false,\n  \"styleId\": \"<styleId>\",\n  \"templateId\": \"starter\",\n  \"feedFullEnabled\": false,\n  \"feedPartialEnabled\": false,\n  \"commentsEnabled\": false,\n  \"commentsModeration\": \"auto-approve\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [
+            {
+              "name": "200 \u2014 Updated publication",
+              "status": "200",
+              "code": 200,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"data\": {\n    \"id\": \"{{publicationId}}\",\n    \"userId\": \"<userId>\",\n    \"name\": \"Looking Ahead\",\n    \"slug\": \"shipping-a-cms-migration\",\n    \"description\": \"Weekly notes on where software is heading.\",\n    \"writingTone\": \"<writingTone>\",\n    \"defaultAuthor\": \"<defaultAuthor>\",\n    \"autoPublishMode\": \"ideas-only\",\n    \"cadencePostsPerWeek\": 1,\n    \"scoutSchedule\": \"<scoutSchedule>\",\n    \"timezone\": \"<timezone>\",\n    \"nextScoutAt\": \"<nextScoutAt>\",\n    \"scoutEnabled\": false,\n    \"cmsPublicationId\": \"{{publicationId}}\",\n    \"styleId\": \"{{publicationId}}\",\n    \"templateId\": \"<templateId>\",\n    \"tagline\": \"<tagline>\",\n    \"logoUrl\": \"<logoUrl>\",\n    \"headerImageUrl\": \"<headerImageUrl>\",\n    \"accentColor\": \"<accentColor>\",\n    \"socialLinks\": \"<socialLinks>\",\n    \"feedFullEnabled\": false,\n    \"feedPartialEnabled\": false,\n    \"commentsEnabled\": false,\n    \"commentsModeration\": \"auto-approve\",\n    \"customDomain\": \"<customDomain>\",\n    \"metaDescription\": \"<metaDescription>\",\n    \"createdAt\": 1,\n    \"updatedAt\": 1\n  }\n}",
+              "_postman_previewlanguage": "json"
+            },
+            {
+              "name": "400 \u2014 Validation error",
+              "status": "400",
+              "code": 400,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"error\": \"Validation error\",\n  \"code\": \"ERROR_CODE\"\n}",
+              "_postman_previewlanguage": "json"
+            },
+            {
+              "name": "403 \u2014 Quota exceeded \u2014 upgrade plan for higher limits",
+              "status": "403",
+              "code": 403,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"error\": \"Quota exceeded \u2014 upgrade plan for higher limits\",\n  \"code\": \"ERROR_CODE\"\n}",
+              "_postman_previewlanguage": "json"
+            },
+            {
+              "name": "404 \u2014 Publication not found",
+              "status": "404",
+              "code": 404,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"error\": \"Publication not found\",\n  \"code\": \"ERROR_CODE\"\n}",
+              "_postman_previewlanguage": "json"
+            }
+          ]
+        },
+        {
+          "name": "Delete a publication",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/publications/{{publicationId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "publications",
+                "{{publicationId}}"
+              ]
+            },
+            "description": "Delete a publication"
+          },
+          "response": [
+            {
+              "name": "200 \u2014 Deleted",
+              "status": "200",
+              "code": 200,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"data\": {\n    \"deleted\": false\n  }\n}",
+              "_postman_previewlanguage": "json"
+            },
+            {
+              "name": "404 \u2014 Publication not found",
+              "status": "404",
+              "code": 404,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"error\": \"Publication not found\",\n  \"code\": \"ERROR_CODE\"\n}",
+              "_postman_previewlanguage": "json"
+            }
+          ]
+        },
+        {
+          "name": "List published posts",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/publications/{{publicationId}}/posts",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "publications",
+                "{{publicationId}}",
+                "posts"
+              ]
+            },
+            "description": "Returns published posts for the publication from the CMS, newest first. Page with `limit` and `offset` to walk a whole archive. Returns an empty array if no CMS link exists."
+          },
+          "response": [
+            {
+              "name": "200 \u2014 Array of posts",
+              "status": "200",
+              "code": 200,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"data\": [\n    {\n      \"id\": \"<id>\",\n      \"title\": \"What I learned shipping a CMS migration\",\n      \"slug\": \"shipping-a-cms-migration\",\n      \"status\": \"published\",\n      \"createdAt\": 1,\n      \"updatedAt\": 1\n    }\n  ]\n}",
+              "_postman_previewlanguage": "json"
+            },
+            {
+              "name": "400 \u2014 Invalid limit or offset",
+              "status": "400",
+              "code": 400,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"error\": \"Invalid limit or offset\",\n  \"code\": \"ERROR_CODE\"\n}",
+              "_postman_previewlanguage": "json"
+            },
+            {
+              "name": "404 \u2014 Publication not found",
+              "status": "404",
+              "code": 404,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"error\": \"Publication not found\",\n  \"code\": \"ERROR_CODE\"\n}",
+              "_postman_previewlanguage": "json"
+            }
+          ]
+        },
+        {
+          "name": "Create a post you wrote yourself",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/publications/{{publicationId}}/posts",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "publications",
+                "{{publicationId}}",
+                "posts"
+              ]
+            },
+            "description": "Stores a post from content you already have, exactly as given \u2014 the counterpart to `generateDraft`, which asks the writer agent to research and write something new. Markdown is rendered to HTML on write, so the two never drift. Set `publishedAt` to backdate a post, which is how existing content is imported without the whole archive landing on today's date. Does not count against the weekly post quota, which meters writer-agent sessions.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"What I learned shipping a CMS migration\",\n  \"markdown\": \"## The setup\\n\\nWe had two CMSs and one weekend.\\n\\nThe lesson was about publish dates.\",\n  \"slug\": \"shipping-a-cms-migration\",\n  \"status\": \"published\",\n  \"publishedAt\": \"2026-02-14T09:00:00Z\",\n  \"author\": \"Shahar Nechmad\",\n  \"subtitle\": \"Two CMSs, one weekend\",\n  \"hook\": \"Migrations are never about the data.\",\n  \"excerpt\": \"Two CMSs, one weekend, and a lesson about publish dates.\",\n  \"tags\": \"engineering,migrations\",\n  \"topics\": \"ai,publishing\",\n  \"featuredImage\": \"https://images.hotmetalapp.com/covers/cms-migration.jpg\",\n  \"seoTitle\": \"Shipping a CMS migration without losing your publish dates\",\n  \"seoDescription\": \"What breaks when you move a blog between content systems, and how to avoid it.\",\n  \"canonicalUrl\": \"https://looking-ahead.hotmetalapp.com/shipping-a-cms-migration\",\n  \"ogImage\": \"https://images.hotmetalapp.com/og/cms-migration.jpg\",\n  \"citations\": [\n    {\n      \"url\": \"https://example.com/source-article\",\n      \"title\": \"Content migrations and the publish-date problem\",\n      \"publisher\": \"Example Times\",\n      \"accessedAt\": \"2026-02-13T18:22:00Z\",\n      \"excerpt\": \"Systems that stamp import time rather than original publication date.\"\n    }\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [
+            {
+              "name": "201 \u2014 The created post",
+              "status": "201",
+              "code": 201,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"data\": {\n    \"id\": \"<id>\",\n    \"title\": \"What I learned shipping a CMS migration\",\n    \"slug\": \"shipping-a-cms-migration\",\n    \"status\": \"published\",\n    \"createdAt\": 1,\n    \"updatedAt\": 1\n  }\n}",
+              "_postman_previewlanguage": "json"
+            },
+            {
+              "name": "400 \u2014 Validation error",
+              "status": "400",
+              "code": 400,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"error\": \"Validation error\",\n  \"code\": \"ERROR_CODE\"\n}",
+              "_postman_previewlanguage": "json"
+            },
+            {
+              "name": "404 \u2014 Publication not found",
+              "status": "404",
+              "code": 404,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"error\": \"Publication not found\",\n  \"code\": \"ERROR_CODE\"\n}",
+              "_postman_previewlanguage": "json"
+            },
+            {
+              "name": "409 \u2014 Slug already taken, or the blog is still provisioning",
+              "status": "409",
+              "code": 409,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"error\": \"Slug already taken, or the blog is still provisioning\",\n  \"code\": \"ERROR_CODE\"\n}",
+              "_postman_previewlanguage": "json"
+            },
+            {
+              "name": "502 \u2014 The CMS rejected the request or is unavailable, or the publication has no CMS record yet",
+              "status": "502",
+              "code": 502,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"error\": \"The CMS rejected the request or is unavailable, or the publication has no CMS record yet\",\n  \"code\": \"ERROR_CODE\"\n}",
+              "_postman_previewlanguage": "json"
+            }
+          ]
+        },
+        {
+          "name": "Update a post",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/publications/{{publicationId}}/posts/{{postId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "publications",
+                "{{publicationId}}",
+                "posts",
+                "{{postId}}"
+              ]
+            },
+            "description": "Updates an existing post. Every field is optional; only what you send changes. Sending `markdown` re-renders the stored HTML from it. Promoting a draft to `published` stamps the current time unless you supply `publishedAt` or the post already carries one.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"What I learned shipping a CMS migration\",\n  \"markdown\": \"## The setup\\n\\nWe had two CMSs and one weekend.\\n\\nThe lesson was about publish dates.\",\n  \"slug\": \"shipping-a-cms-migration\",\n  \"status\": \"published\",\n  \"publishedAt\": \"2026-02-14T09:00:00Z\",\n  \"author\": \"Shahar Nechmad\",\n  \"subtitle\": \"Two CMSs, one weekend\",\n  \"hook\": \"Migrations are never about the data.\",\n  \"excerpt\": \"Two CMSs, one weekend, and a lesson about publish dates.\",\n  \"tags\": \"engineering,migrations\",\n  \"topics\": \"ai,publishing\",\n  \"featuredImage\": \"https://images.hotmetalapp.com/covers/cms-migration.jpg\",\n  \"seoTitle\": \"Shipping a CMS migration without losing your publish dates\",\n  \"seoDescription\": \"What breaks when you move a blog between content systems, and how to avoid it.\",\n  \"canonicalUrl\": \"https://looking-ahead.hotmetalapp.com/shipping-a-cms-migration\",\n  \"ogImage\": \"https://images.hotmetalapp.com/og/cms-migration.jpg\",\n  \"citations\": [\n    {\n      \"url\": \"https://example.com/source-article\",\n      \"title\": \"Content migrations and the publish-date problem\",\n      \"publisher\": \"Example Times\",\n      \"accessedAt\": \"2026-02-13T18:22:00Z\",\n      \"excerpt\": \"Systems that stamp import time rather than original publication date.\"\n    }\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [
+            {
+              "name": "200 \u2014 The updated post",
+              "status": "200",
+              "code": 200,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"data\": {\n    \"id\": \"<id>\",\n    \"title\": \"What I learned shipping a CMS migration\",\n    \"slug\": \"shipping-a-cms-migration\",\n    \"status\": \"published\",\n    \"createdAt\": 1,\n    \"updatedAt\": 1\n  }\n}",
+              "_postman_previewlanguage": "json"
+            },
+            {
+              "name": "400 \u2014 Validation error, or no updatable fields supplied",
+              "status": "400",
+              "code": 400,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"error\": \"Validation error, or no updatable fields supplied\",\n  \"code\": \"ERROR_CODE\"\n}",
+              "_postman_previewlanguage": "json"
+            },
+            {
+              "name": "404 \u2014 Publication or post not found",
+              "status": "404",
+              "code": 404,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"error\": \"Publication or post not found\",\n  \"code\": \"ERROR_CODE\"\n}",
+              "_postman_previewlanguage": "json"
+            },
+            {
+              "name": "409 \u2014 Slug already taken, or the blog is still provisioning",
+              "status": "409",
+              "code": 409,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"error\": \"Slug already taken, or the blog is still provisioning\",\n  \"code\": \"ERROR_CODE\"\n}",
+              "_postman_previewlanguage": "json"
+            },
+            {
+              "name": "502 \u2014 The CMS rejected the request or is unavailable, or the publication has no CMS record yet",
+              "status": "502",
+              "code": 502,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"error\": \"The CMS rejected the request or is unavailable, or the publication has no CMS record yet\",\n  \"code\": \"ERROR_CODE\"\n}",
+              "_postman_previewlanguage": "json"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Topics",
+      "item": [
+        {
+          "name": "List topics",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/publications/{{publicationId}}/topics",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "publications",
+                "{{publicationId}}",
+                "topics"
+              ]
+            },
+            "description": "Returns all topics for a publication."
+          },
+          "response": [
+            {
+              "name": "200 \u2014 Array of topics",
+              "status": "200",
+              "code": 200,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"data\": [\n    {\n      \"id\": \"{{publicationId}}\",\n      \"publicationId\": \"{{publicationId}}\",\n      \"name\": \"Looking Ahead\",\n      \"description\": \"Weekly notes on where software is heading.\",\n      \"priority\": 1,\n      \"isActive\": false,\n      \"createdAt\": 1,\n      \"updatedAt\": 1\n    }\n  ]\n}",
+              "_postman_previewlanguage": "json"
+            },
+            {
+              "name": "404 \u2014 Publication not found",
+              "status": "404",
+              "code": 404,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"error\": \"Publication not found\",\n  \"code\": \"ERROR_CODE\"\n}",
+              "_postman_previewlanguage": "json"
+            }
+          ]
+        },
+        {
+          "name": "Create a topic",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/publications/{{publicationId}}/topics",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "publications",
+                "{{publicationId}}",
+                "topics"
+              ]
+            },
+            "description": "Creates a topic under a publication. Subject to tier limits on topic count.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Looking Ahead\",\n  \"description\": \"Weekly notes on where software is heading.\",\n  \"priority\": 1\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [
+            {
+              "name": "201 \u2014 Topic created",
+              "status": "201",
+              "code": 201,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"data\": {\n    \"id\": \"{{publicationId}}\",\n    \"publicationId\": \"{{publicationId}}\",\n    \"name\": \"Looking Ahead\",\n    \"description\": \"Weekly notes on where software is heading.\",\n    \"priority\": 1,\n    \"isActive\": false,\n    \"createdAt\": 1,\n    \"updatedAt\": 1\n  }\n}",
+              "_postman_previewlanguage": "json"
+            },
+            {
+              "name": "400 \u2014 Validation error (missing name, bad priority)",
+              "status": "400",
+              "code": 400,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"error\": \"Validation error (missing name, bad priority)\",\n  \"code\": \"ERROR_CODE\"\n}",
+              "_postman_previewlanguage": "json"
+            },
+            {
+              "name": "403 \u2014 Quota exceeded \u2014 upgrade plan for higher limits",
+              "status": "403",
+              "code": 403,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"error\": \"Quota exceeded \u2014 upgrade plan for higher limits\",\n  \"code\": \"ERROR_CODE\"\n}",
+              "_postman_previewlanguage": "json"
+            },
+            {
+              "name": "404 \u2014 Publication not found",
+              "status": "404",
+              "code": 404,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"error\": \"Publication not found\",\n  \"code\": \"ERROR_CODE\"\n}",
+              "_postman_previewlanguage": "json"
+            }
+          ]
+        },
+        {
+          "name": "Update a topic",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/topics/{{topicId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "topics",
+                "{{topicId}}"
+              ]
+            },
+            "description": "Update a topic",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Looking Ahead\",\n  \"description\": \"Weekly notes on where software is heading.\",\n  \"priority\": 1,\n  \"isActive\": false\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [
+            {
+              "name": "200 \u2014 Updated topic",
+              "status": "200",
+              "code": 200,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"data\": {\n    \"id\": \"{{publicationId}}\",\n    \"publicationId\": \"{{publicationId}}\",\n    \"name\": \"Looking Ahead\",\n    \"description\": \"Weekly notes on where software is heading.\",\n    \"priority\": 1,\n    \"isActive\": false,\n    \"createdAt\": 1,\n    \"updatedAt\": 1\n  }\n}",
+              "_postman_previewlanguage": "json"
+            },
+            {
+              "name": "400 \u2014 Validation error",
+              "status": "400",
+              "code": 400,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"error\": \"Validation error\",\n  \"code\": \"ERROR_CODE\"\n}",
+              "_postman_previewlanguage": "json"
+            },
+            {
+              "name": "404 \u2014 Topic not found",
+              "status": "404",
+              "code": 404,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"error\": \"Topic not found\",\n  \"code\": \"ERROR_CODE\"\n}",
+              "_postman_previewlanguage": "json"
+            }
+          ]
+        },
+        {
+          "name": "Delete a topic",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/topics/{{topicId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "topics",
+                "{{topicId}}"
+              ]
+            },
+            "description": "Delete a topic"
+          },
+          "response": [
+            {
+              "name": "200 \u2014 Deleted",
+              "status": "200",
+              "code": 200,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"data\": {\n    \"deleted\": false\n  }\n}",
+              "_postman_previewlanguage": "json"
+            },
+            {
+              "name": "404 \u2014 Topic not found",
+              "status": "404",
+              "code": 404,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"error\": \"Topic not found\",\n  \"code\": \"ERROR_CODE\"\n}",
+              "_postman_previewlanguage": "json"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Ideas",
+      "item": [
+        {
+          "name": "List ideas",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/publications/{{publicationId}}/ideas",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "publications",
+                "{{publicationId}}",
+                "ideas"
+              ]
+            },
+            "description": "Returns ideas for a publication, optionally filtered by status."
+          },
+          "response": [
+            {
+              "name": "200 \u2014 Array of ideas",
+              "status": "200",
+              "code": 200,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"data\": [\n    {\n      \"id\": \"{{publicationId}}\",\n      \"publicationId\": \"{{publicationId}}\",\n      \"topicId\": \"{{publicationId}}\",\n      \"title\": \"What I learned shipping a CMS migration\",\n      \"angle\": \"<angle>\",\n      \"summary\": \"<summary>\",\n      \"sources\": \"<sources>\",\n      \"status\": \"published\",\n      \"sessionId\": \"{{publicationId}}\",\n      \"relevanceScore\": \"<relevanceScore>\",\n      \"createdAt\": 1,\n      \"updatedAt\": 1\n    }\n  ]\n}",
+              "_postman_previewlanguage": "json"
+            },
+            {
+              "name": "400 \u2014 Invalid status filter",
+              "status": "400",
+              "code": 400,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"error\": \"Invalid status filter\",\n  \"code\": \"ERROR_CODE\"\n}",
+              "_postman_previewlanguage": "json"
+            },
+            {
+              "name": "404 \u2014 Publication not found",
+              "status": "404",
+              "code": 404,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"error\": \"Publication not found\",\n  \"code\": \"ERROR_CODE\"\n}",
+              "_postman_previewlanguage": "json"
+            }
+          ]
+        },
+        {
+          "name": "Get an idea",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/ideas/{{ideaId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "ideas",
+                "{{ideaId}}"
+              ]
+            },
+            "description": "Get an idea"
+          },
+          "response": [
+            {
+              "name": "200 \u2014 Idea details",
+              "status": "200",
+              "code": 200,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"data\": {\n    \"id\": \"{{publicationId}}\",\n    \"publicationId\": \"{{publicationId}}\",\n    \"topicId\": \"{{publicationId}}\",\n    \"title\": \"What I learned shipping a CMS migration\",\n    \"angle\": \"<angle>\",\n    \"summary\": \"<summary>\",\n    \"sources\": \"<sources>\",\n    \"status\": \"published\",\n    \"sessionId\": \"{{publicationId}}\",\n    \"relevanceScore\": \"<relevanceScore>\",\n    \"createdAt\": 1,\n    \"updatedAt\": 1\n  }\n}",
+              "_postman_previewlanguage": "json"
+            },
+            {
+              "name": "404 \u2014 Idea not found",
+              "status": "404",
+              "code": 404,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"error\": \"Idea not found\",\n  \"code\": \"ERROR_CODE\"\n}",
+              "_postman_previewlanguage": "json"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Styles",
+      "item": [
+        {
+          "name": "List writing styles",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/styles",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "styles"
+              ]
+            },
+            "description": "Returns all writing styles available to the user: custom styles they've created plus prebuilt system styles."
+          },
+          "response": [
+            {
+              "name": "200 \u2014 Array of writing styles",
+              "status": "200",
+              "code": 200,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"data\": [\n    {\n      \"id\": \"{{publicationId}}\",\n      \"userId\": \"<userId>\",\n      \"name\": \"Looking Ahead\",\n      \"description\": \"Weekly notes on where software is heading.\",\n      \"systemPrompt\": \"<systemPrompt>\",\n      \"isPrebuilt\": false,\n      \"createdAt\": 1,\n      \"updatedAt\": 1\n    }\n  ]\n}",
+              "_postman_previewlanguage": "json"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Drafts",
+      "item": [
+        {
+          "name": "Generate a draft",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/publications/{{publicationId}}/drafts/generate",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "publications",
+                "{{publicationId}}",
+                "drafts",
+                "generate"
+              ]
+            },
+            "description": "Instructs the AI writer agent to generate a draft for the publication. Without `webhookUrl` the call blocks until the draft is ready (synchronous). With `webhookUrl` the call returns 202 immediately and delivers the result via webhook (asynchronous).",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"What I learned shipping a CMS migration\",\n  \"instructions\": \"Cover the trade-offs and cite primary sources.\",\n  \"styleId\": \"{{publicationId}}\",\n  \"autoPublish\": false,\n  \"webhookUrl\": \"https://example.com\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [
+            {
+              "name": "200 \u2014 Draft generated (synchronous mode)",
+              "status": "200",
+              "code": 200,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"data\": {\n    \"sessionId\": \"{{publicationId}}\",\n    \"draft\": {\n      \"version\": 1,\n      \"title\": \"What I learned shipping a CMS migration\",\n      \"content\": \"<content>\",\n      \"wordCount\": 1\n    },\n    \"status\": \"published\"\n  }\n}",
+              "_postman_previewlanguage": "json"
+            },
+            {
+              "name": "202 \u2014 Generation started (asynchronous mode with webhookUrl)",
+              "status": "202",
+              "code": 202,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"data\": {\n    \"sessionId\": \"{{publicationId}}\",\n    \"status\": \"published\"\n  }\n}",
+              "_postman_previewlanguage": "json"
+            },
+            {
+              "name": "400 \u2014 Validation error (missing fields, bad webhook URL)",
+              "status": "400",
+              "code": 400,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"error\": \"Validation error (missing fields, bad webhook URL)\",\n  \"code\": \"ERROR_CODE\"\n}",
+              "_postman_previewlanguage": "json"
+            },
+            {
+              "name": "403 \u2014 Quota exceeded \u2014 upgrade plan for higher limits",
+              "status": "403",
+              "code": 403,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"error\": \"Quota exceeded \u2014 upgrade plan for higher limits\",\n  \"code\": \"ERROR_CODE\"\n}",
+              "_postman_previewlanguage": "json"
+            },
+            {
+              "name": "404 \u2014 Publication not found",
+              "status": "404",
+              "code": 404,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"error\": \"Publication not found\",\n  \"code\": \"ERROR_CODE\"\n}",
+              "_postman_previewlanguage": "json"
+            },
+            {
+              "name": "500 \u2014 Draft generation failed",
+              "status": "500",
+              "code": 500,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"error\": \"Draft generation failed\",\n  \"code\": \"ERROR_CODE\"\n}",
+              "_postman_previewlanguage": "json"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Sessions",
+      "item": [
+        {
+          "name": "Get session status",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/sessions/{{sessionId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "sessions",
+                "{{sessionId}}"
+              ]
+            },
+            "description": "Returns session status and a summary of the current draft."
+          },
+          "response": [
+            {
+              "name": "200 \u2014 Session with draft summary",
+              "status": "200",
+              "code": 200,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"data\": {\n    \"id\": \"{{publicationId}}\",\n    \"title\": \"What I learned shipping a CMS migration\",\n    \"status\": \"published\",\n    \"publicationId\": \"{{publicationId}}\",\n    \"cmsPostId\": \"<cmsPostId>\",\n    \"currentDraftVersion\": 1,\n    \"currentDraft\": \"<currentDraft>\",\n    \"createdAt\": 1,\n    \"updatedAt\": 1\n  }\n}",
+              "_postman_previewlanguage": "json"
+            },
+            {
+              "name": "404 \u2014 Session not found",
+              "status": "404",
+              "code": 404,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"error\": \"Session not found\",\n  \"code\": \"ERROR_CODE\"\n}",
+              "_postman_previewlanguage": "json"
+            }
+          ]
+        },
+        {
+          "name": "Get a draft version",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/sessions/{{sessionId}}/drafts/1",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "sessions",
+                "{{sessionId}}",
+                "drafts",
+                "1"
+              ]
+            },
+            "description": "Returns the full content of a specific draft version."
+          },
+          "response": [
+            {
+              "name": "200 \u2014 Draft content",
+              "status": "200",
+              "code": 200,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"data\": {\n    \"version\": 1,\n    \"title\": \"What I learned shipping a CMS migration\",\n    \"content\": \"<content>\",\n    \"wordCount\": 1,\n    \"isFinal\": false,\n    \"createdAt\": 1\n  }\n}",
+              "_postman_previewlanguage": "json"
+            },
+            {
+              "name": "400 \u2014 Invalid version number",
+              "status": "400",
+              "code": 400,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"error\": \"Invalid version number\",\n  \"code\": \"ERROR_CODE\"\n}",
+              "_postman_previewlanguage": "json"
+            },
+            {
+              "name": "404 \u2014 Session or draft version not found",
+              "status": "404",
+              "code": 404,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"error\": \"Session or draft version not found\",\n  \"code\": \"ERROR_CODE\"\n}",
+              "_postman_previewlanguage": "json"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Publishing",
+      "item": [
+        {
+          "name": "Publish a draft",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/sessions/{{sessionId}}/publish",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "sessions",
+                "{{sessionId}}",
+                "publish"
+              ]
+            },
+            "description": "Publishes the session draft to the CMS and optionally shares to LinkedIn and/or Twitter.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"slug\": \"shipping-a-cms-migration\",\n  \"author\": \"Shahar Nechmad\",\n  \"tags\": \"engineering,migrations\",\n  \"excerpt\": \"Two CMSs, one weekend, and a lesson about publish dates.\",\n  \"draftVersion\": 1,\n  \"publishToLinkedIn\": false,\n  \"publishToTwitter\": false,\n  \"tweetText\": \"<tweetText>\",\n  \"linkedInText\": \"<linkedInText>\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [
+            {
+              "name": "200 \u2014 Published successfully",
+              "status": "200",
+              "code": 200,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"data\": {\n    \"postId\": \"<postId>\",\n    \"slug\": \"shipping-a-cms-migration\",\n    \"url\": \"https://example.com/source-article\",\n    \"social\": {\n      \"linkedin\": {\n        \"success\": false,\n        \"error\": \"<error>\"\n      },\n      \"twitter\": {\n        \"success\": false,\n        \"error\": \"<error>\"\n      }\n    }\n  }\n}",
+              "_postman_previewlanguage": "json"
+            },
+            {
+              "name": "400 \u2014 Validation error (tweet text too long)",
+              "status": "400",
+              "code": 400,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"error\": \"Validation error (tweet text too long)\",\n  \"code\": \"ERROR_CODE\"\n}",
+              "_postman_previewlanguage": "json"
+            },
+            {
+              "name": "403 \u2014 Quota exceeded \u2014 upgrade plan for higher limits",
+              "status": "403",
+              "code": 403,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"error\": \"Quota exceeded \u2014 upgrade plan for higher limits\",\n  \"code\": \"ERROR_CODE\"\n}",
+              "_postman_previewlanguage": "json"
+            },
+            {
+              "name": "404 \u2014 Session not found",
+              "status": "404",
+              "code": 404,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"error\": \"Session not found\",\n  \"code\": \"ERROR_CODE\"\n}",
+              "_postman_previewlanguage": "json"
+            },
+            {
+              "name": "500 \u2014 Publish failed",
+              "status": "500",
+              "code": 500,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"error\": \"Publish failed\",\n  \"code\": \"ERROR_CODE\"\n}",
+              "_postman_previewlanguage": "json"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Scout",
+      "item": [
+        {
+          "name": "Trigger content scout",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/publications/{{publicationId}}/scout/run",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "publications",
+                "{{publicationId}}",
+                "scout",
+                "run"
+              ]
+            },
+            "description": "Triggers the content scout to find new content ideas for the publication. Runs asynchronously. Optionally sends results to a webhook URL.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"webhookUrl\": \"https://example.com\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [
+            {
+              "name": "200 \u2014 Scout run queued",
+              "status": "200",
+              "code": 200,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"data\": {\n    \"queued\": false\n  }\n}",
+              "_postman_previewlanguage": "json"
+            },
+            {
+              "name": "400 \u2014 Invalid webhook URL",
+              "status": "400",
+              "code": 400,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"error\": \"Invalid webhook URL\",\n  \"code\": \"ERROR_CODE\"\n}",
+              "_postman_previewlanguage": "json"
+            },
+            {
+              "name": "404 \u2014 Publication not found",
+              "status": "404",
+              "code": 404,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"error\": \"Publication not found\",\n  \"code\": \"ERROR_CODE\"\n}",
+              "_postman_previewlanguage": "json"
+            },
+            {
+              "name": "502 \u2014 Scout service returned error",
+              "status": "502",
+              "code": 502,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"error\": \"Scout service returned error\",\n  \"code\": \"ERROR_CODE\"\n}",
+              "_postman_previewlanguage": "json"
+            },
+            {
+              "name": "503 \u2014 Scout service unavailable",
+              "status": "503",
+              "code": 503,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"error\": \"Scout service unavailable\",\n  \"code\": \"ERROR_CODE\"\n}",
+              "_postman_previewlanguage": "json"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

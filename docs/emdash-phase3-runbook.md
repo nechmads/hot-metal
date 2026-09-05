@@ -137,6 +137,20 @@ curl -X POST "$PROVISIONER_URL/api/fleet/upgrade" \
 - **Delete** → `apps/web` (and the agents API) call the provisioner `/api/teardown` with `force:true` **before** `deletePublication`, so the instance meta is still available. On teardown failure the delete is refused (502) and stays retryable — the publication record is never orphaned from its infra.
 - **Teardown** (`/api/teardown`): deletes script + R2 + D1 + KV. Resolves resources from `cms_instance_meta`, or derives them from the publication id/slug when meta is absent (a provision that failed before persisting meta still gets cleaned). Already-gone (404) resources count as success; any real failure is **reported** in the `failed[]` array (provisioner `component: 'teardown'` logs carry the full structured payload) and keeps the instance meta for retry. Requires `force:true` to tear down a `ready` or `provisioning` instance.
 
+### The tenant token must stay role ADMIN (or at least EDITOR)
+
+`buildBootstrapStatements` seeds the tenant's `ec_pat_` at role 50 (ADMIN) with
+`content:read/write` + `media:read/write` (`services/provisioner/src/bootstrap.ts`).
+That role, not the scopes, is what lets the write path set a publish date:
+EmDash's publish route rejects a `{ publishedAt }` body without
+`content:publish_any`, which is EDITOR (40) and above.
+
+`EmdashCmsClient.publishEntry` now sends `publishedAt` whenever the caller
+supplies one, and the writer-agent publish path always does — so a fleet token
+minted below EDITOR would 403 the **entire publish**, not merely lose the
+backdate. If the token's privileges are ever narrowed, either keep role >= 40 or
+make the publish call retry without the field on a 403.
+
 ### Known limitation — non-empty R2 buckets
 
 R2 requires a bucket to be **empty** before deletion, and there is no account-REST

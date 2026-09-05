@@ -37,6 +37,13 @@ export class ValidationError extends ActionError {
 	}
 }
 
+export class ConflictError extends ActionError {
+	constructor(message: string) {
+		super(message, 'CONFLICT', 409)
+		this.name = 'ConflictError'
+	}
+}
+
 export class QuotaExceededError extends ActionError {
 	constructor(
 		message: string,

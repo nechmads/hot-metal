@@ -94,62 +94,131 @@ export class EmdashCmsClient implements CmsClient {
     if (!id) throw new CmsApiError('EmDash create returned no id', 500, created)
 
     if (this.toEmdashStatus(data.status) === 'published') {
-      await this.publishEntry(this.postsCollection, id)
+      await this.publishEntry(this.postsCollection, id, data.publishedAt)
     }
 
     return this.getPost(id)
   }
 
+  /**
+   * Update an entry, and move it between draft and published when asked.
+   *
+   * **PUT first, publish last.** On a collection that supports revisions — which
+   * the fleet's `posts` collection does (`seed.json` `supports: [... "revisions" ...]`)
+   * — a PUT does *not* write the entry's data columns at all. EmDash's update
+   * route merges the payload into a **draft revision**, points `draft_revision_id`
+   * at it, and explicitly passes `data: undefined, slug: undefined` down to the
+   * column write. `publish` is then what promotes that revision into the columns.
+   *
+   * So publishing is not something to avoid after an edit — it is the only thing
+   * that makes the edit visible. Two consequences the code has to respect:
+   *
+   * - An edit to a post that is *already published* must republish, or the new
+   *   text sits in a draft revision the blog never reads. That includes an edit
+   *   with no `status` at all, which is why the current state is always fetched.
+   * - A single-entry GET hydrates the draft revision over the returned data, so
+   *   a read-back looks correct even when the columns are stale. Verify this path
+   *   against the list endpoint or the rendered blog, never against `getPost`.
+   *
+   * Taking a post off the blog goes through `unpublish`, which clears
+   * `live_revision_id` and nulls the date. EmDash's update schema accepts only
+   * `draft` as a top-level status, so archiving and unscheduling route there too;
+   * our own richer status is preserved in `hm_status` regardless.
+   */
   async updatePost(id: string, data: Partial<Post>): Promise<Post> {
     const entryData = this.postToEntryData(data)
     const body: Record<string, unknown> = { data: entryData }
     if (data.slug !== undefined) body.slug = data.slug
 
-    // Set top-level status for non-published transitions; publishing goes through
-    // the dedicated publish route (EmDash does not publish via PUT).
     const targetStatus = data.status !== undefined ? this.toEmdashStatus(data.status) : undefined
-    if (targetStatus !== undefined && targetStatus !== 'published') {
-      body.status = targetStatus
-    }
+    const wasPublished = (await this.getEntry(id)).status === 'published'
+    const shouldBePublished = targetStatus !== undefined ? targetStatus === 'published' : wasPublished
 
     await this.request('PUT', `/content/${this.postsCollection}/${encodeURIComponent(id)}`, body)
 
-    if (targetStatus === 'published') {
-      await this.publishEntry(this.postsCollection, id)
+    if (shouldBePublished) {
+      await this.publishEntry(this.postsCollection, id, data.publishedAt)
+    } else if (wasPublished) {
+      await this.request('POST', `/content/${this.postsCollection}/${encodeURIComponent(id)}/unpublish`)
     }
 
     return this.getPost(id)
   }
 
   async getPost(id: string): Promise<Post> {
+    return this.entryToPost(await this.getEntry(id))
+  }
+
+  /** Resolve a post by slug, or `undefined` when the instance has no such post. */
+  private async getPostBySlug(slug: string): Promise<Post | undefined> {
+    try {
+      return this.entryToPost(await this.getEntry(slug))
+    } catch (err) {
+      if (err instanceof CmsApiError && err.status === 404) return undefined
+      throw err
+    }
+  }
+
+  /**
+   * Fetch the raw entry, whose `status` is EmDash's own — unlike `getPost`,
+   * which restores our richer status from the `hm_status` side field. Update
+   * decisions have to be made against EmDash's view of the world.
+   */
+  private async getEntry(id: string): Promise<EmdashEntry> {
     const res = await this.request<EmdashEnvelope<EmdashEntry>>('GET', `/content/${this.postsCollection}/${encodeURIComponent(id)}`)
     const entry = this.extractEntry(res)
     if (!entry) throw new CmsApiError('EmDash get returned no entry', 404, res)
-    return this.entryToPost(entry)
+    return entry
   }
 
+  /**
+   * List posts, translating our offset/limit contract onto EmDash's cursor
+   * pagination.
+   *
+   * EmDash caps a page at 100 and **rejects** a larger `limit` outright, so
+   * offset cannot be emulated by over-fetching — `limit=100&offset=100` would be
+   * a 400. Instead we walk cursor pages until we hold enough rows to satisfy
+   * `offset + limit`, then slice.
+   *
+   * Exact status matching still happens client-side, because several of our
+   * statuses collapse onto EmDash's `draft`. That makes a sparse status filter
+   * (`idea`, `review`) walk pages until it finds enough rows or runs out —
+   * bounded by `EMDASH_MAX_PAGES`. Slug lookups do not come through here at all;
+   * see the fast path above.
+   */
   async listPosts(params?: ListPostsParams): Promise<{ data: Post[] }> {
-    const search = new URLSearchParams()
-    // Multiple of our statuses collapse onto EmDash 'draft', so we filter our
-    // exact status client-side below; the server query is a coarse pre-filter.
-    //
-    // LIMITATION: when querying a collapsed status (idea/review → 'draft') on an
-    // instance with more drafts than the fetch cap, exact-status rows beyond the
-    // cap are dropped before client filtering. All Phase-1 callers query
-    // 'published' (1:1 mapping), so this is currently moot; add cursor pagination
-    // before exposing the richer statuses (Phase 2).
-    if (params?.status) search.set('status', this.toEmdashStatus(params.status as PostStatus))
-    // Fetch generously so client-side status/slug/offset filtering is accurate.
-    search.set('limit', String(params?.limit ? params.limit + (params.offset ?? 0) : 100))
-    const qs = search.toString()
-    const res = await this.request<EmdashEnvelope<EmdashListResult>>('GET', `/content/${this.postsCollection}${qs ? `?${qs}` : ''}`)
+    // A slug lookup is a single exact request: EmDash's single-entry route
+    // resolves an id *or* a slug (`findByIdOrSlug`). Paging the collection to
+    // find one row would be both slow and only correct up to the page cap.
+    if (params?.slug) {
+      const post = await this.getPostBySlug(params.slug)
+      if (!post) return { data: [] }
+      return { data: params.status && post.status !== params.status ? [] : [post] }
+    }
 
-    let posts = this.extractList(res).map((e) => this.entryToPost(e))
-    if (params?.status) posts = posts.filter((p) => p.status === params.status)
-    if (params?.slug) posts = posts.filter((p) => p.slug === params.slug)
-    if (params?.offset) posts = posts.slice(params.offset)
-    if (params?.limit) posts = posts.slice(0, params.limit)
-    return { data: posts }
+    const offset = params?.offset ?? 0
+    const wanted = params?.limit !== undefined ? offset + params.limit : EMDASH_PAGE_SIZE
+    const collected: Post[] = []
+    let cursor: string | undefined
+
+    for (let page = 0; page < EMDASH_MAX_PAGES; page++) {
+      const search = new URLSearchParams()
+      if (params?.status) search.set('status', this.toEmdashStatus(params.status as PostStatus))
+      search.set('limit', String(EMDASH_PAGE_SIZE))
+      if (cursor) search.set('cursor', cursor)
+
+      const res = await this.request<EmdashEnvelope<EmdashListResult>>('GET', `/content/${this.postsCollection}?${search.toString()}`)
+
+      let posts = this.extractList(res).map((e) => this.entryToPost(e))
+      if (params?.status) posts = posts.filter((p) => p.status === params.status)
+      collected.push(...posts)
+
+      cursor = this.extractNextCursor(res)
+      if (!cursor || collected.length >= wanted) break
+    }
+
+    const sliced = collected.slice(offset)
+    return { data: params?.limit !== undefined ? sliced.slice(0, params.limit) : sliced }
   }
 
   // ─── Renditions ───────────────────────────────────────────────────────
@@ -307,8 +376,26 @@ export class EmdashCmsClient implements CmsClient {
 
   // ─── Helpers ──────────────────────────────────────────────────────────
 
-  private async publishEntry(collection: string, id: string): Promise<void> {
-    await this.request('POST', `/content/${collection}/${encodeURIComponent(id)}/publish`)
+  /**
+   * Publish an entry, optionally stamping an explicit publication date.
+   *
+   * EmDash's publish route accepts `{ publishedAt }` to backdate a publish —
+   * needed when importing existing content, because the blog reads and sorts on
+   * EmDash's system `published_at` column, not our `hm_published_at` side field.
+   * Omitting it keeps EmDash's default (`COALESCE(published_at, now)`), so a
+   * re-publish still preserves the original date.
+   *
+   * Requires `content:publish_any` (role >= EDITOR); the provisioner-seeded
+   * token is ADMIN, so the fleet's write path always qualifies.
+   *
+   * EmDash validates the value as ISO 8601, so an unparseable date is dropped
+   * rather than sent: a malformed `publishedAt` must not turn a working publish
+   * into a 400. The post keeps its date in `hm_published_at` either way.
+   */
+  private async publishEntry(collection: string, id: string, publishedAt?: string): Promise<void> {
+    const path = `/content/${collection}/${encodeURIComponent(id)}/publish`
+    const iso = toIsoOrUndefined(publishedAt)
+    await this.request('POST', path, iso !== undefined ? { publishedAt: iso } : undefined)
   }
 
   /**
@@ -382,6 +469,11 @@ export class EmdashCmsClient implements CmsClient {
     return this.extractEntry(res)?.id
   }
 
+  private extractNextCursor(res: EmdashEnvelope<EmdashListResult>): string | undefined {
+    const data = res?.data as { nextCursor?: unknown } | undefined
+    return typeof data?.nextCursor === 'string' && data.nextCursor !== '' ? data.nextCursor : undefined
+  }
+
   private extractList(res: EmdashEnvelope<EmdashListResult>): EmdashEntry[] {
     const data = res?.data as unknown
     if (Array.isArray(data)) return data as EmdashEntry[]
@@ -417,7 +509,17 @@ interface EmdashEntry {
 
 interface EmdashListResult {
   items?: EmdashEntry[]
+  nextCursor?: string
 }
+
+/** EmDash's hard per-page ceiling (`contentListQuery.limit` is `.max(100)`). */
+const EMDASH_PAGE_SIZE = 100
+
+/**
+ * Ceiling on cursor pages walked for one list call — 10k posts. A bound is
+ * needed because the walk is driven by a server-supplied cursor.
+ */
+const EMDASH_MAX_PAGES = 100
 
 // ─── Module-local utilities ──────────────────────────────────────────────
 
@@ -447,4 +549,11 @@ function parseJson<T>(v: unknown): T | undefined {
 
 function nowIso(): string {
   return new Date().toISOString()
+}
+
+/** Normalize a date to ISO 8601, or `undefined` if it is absent/unparseable. */
+function toIsoOrUndefined(value: string | undefined): string | undefined {
+  if (!value) return undefined
+  const date = new Date(value)
+  return Number.isNaN(date.getTime()) ? undefined : date.toISOString()
 }
