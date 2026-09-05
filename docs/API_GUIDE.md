@@ -188,4 +188,18 @@ npx tsx scripts/test-agents-api.ts   # creates a temp API key, exercises every e
 ```
 
 The test script points at `http://localhost:5174/agents-api/v1` by default;
-override with `API_URL`.
+override with `API_URL`. Set `CLOUDFLARE_ACCOUNT_ID` before `dev:stack` if your
+Wrangler login can see more than one account, or it exits on startup.
+
+**Run the posts endpoints against a real EmDash instance**, not just SonicJS —
+the two CMSs behave differently enough that only one of them exercises the
+revision model:
+
+1. Start an EmDash instance and mint a PAT (see `docs/emdash-integration-guide.md`).
+2. Seed a publication in the local D1 and point it at that instance:
+   `PUB_SLUG=<slug> PAT=ec_pat_... BASE_URL=http://localhost:4321 pnpm tsx scripts/flag-emdash-publication.ts`
+3. Run the suite above. The posts tests use the caller's first publication.
+
+`scripts/emdash-update-path-test.ts` checks the same ground one layer lower,
+straight against an instance with no dev stack — worth running after any change
+to `EmdashCmsClient`.
