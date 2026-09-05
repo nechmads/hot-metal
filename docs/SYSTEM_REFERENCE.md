@@ -160,6 +160,27 @@ CMS endpoints: `GET/POST /posts`, `GET/PUT /posts/:id`, `GET/POST /publications`
 | `GET /public-api/reports/:id` | Analysis report (no auth) |
 | `* /internal/*` | Service-to-service (API key auth) |
 
+### apps/web — Agents API (Hono, auth via `Bearer hm_*` API key)
+
+Public REST surface at `/agents-api/v1`, mounted separately from the Clerk-authed
+`/api` routes and documented by `GET /agents-api/v1/openapi.json`. Full guide:
+`docs/API_GUIDE.md`; Postman: `postman/Hot_Metal_Agents_API.postman_collection.json`.
+
+| Route | Purpose |
+|-------|---------|
+| `GET /me` | Authenticated user + tier |
+| `GET/POST /publications`, `GET/PATCH/DELETE /publications/:id` | Publication management |
+| `GET /publications/:id/posts` | List published posts |
+| `POST /publications/:id/posts` | Store a post the caller wrote (accepts `publishedAt`; unmetered) |
+| `PATCH /publications/:id/posts/:postId` | Update a post |
+| `GET/POST /publications/:pubId/topics`, `PATCH/DELETE /topics/:id` | Topic CRUD |
+| `GET /publications/:pubId/ideas`, `GET /ideas/:id` | Scout ideas |
+| `GET /styles` | Writing styles |
+| `POST /publications/:id/drafts/generate` | Writer-agent draft (metered) |
+| `GET /sessions/:id`, `GET /sessions/:id/drafts/:version` | Session + draft reads |
+| `POST /sessions/:id/publish` | Publish a generated draft |
+| `POST /publications/:id/scout/run` | Trigger the content scout |
+
 ### apps/publications-web (Astro)
 `/`, `/posts`, `/[slug]`, `/atom`, `/rss`, `/atom/full`, `/rss/full`, `/robots.txt`, `/sitemap.xml`, `/api/comments/*`, `/api/images/[...path]`, `/internal/cache-purge`
 
