@@ -2,10 +2,11 @@
 import { getBranding } from '../dl/publication';
 import { listPublishedPosts } from '../dl/posts';
 import HomePage from '../components/HomePage.astro';
+import { HOME_POST_LIMIT } from '../lib/post-utils';
 
 const baseUrl = Astro.url.origin;
 const branding = await getBranding();
-const { posts, cacheHint } = await listPublishedPosts({ limit: 12 });
+const { posts, cacheHint } = await listPublishedPosts({ limit: HOME_POST_LIMIT + 1 });
 
 if (Astro.cache?.enabled) Astro.cache.set(cacheHint);
 Astro.response.headers.set('Cache-Control', 'public, s-maxage=3600, stale-while-revalidate=86400');

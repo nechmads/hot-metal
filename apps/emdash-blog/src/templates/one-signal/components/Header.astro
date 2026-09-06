@@ -1,0 +1,57 @@
+---
+interface Props {
+  publicationName: string;
+  logoUrl: string | null;
+  showDate?: boolean;
+}
+
+const { publicationName, logoUrl, showDate = false } = Astro.props;
+
+const currentPath = Astro.url.pathname;
+
+const navLinks = [
+  { href: '/', label: 'Index' },
+  { href: '/posts', label: 'Archive' },
+  { href: '/rss', label: 'RSS' },
+] as const;
+
+const today = new Date().toLocaleDateString('en-US', {
+  year: 'numeric',
+  month: 'short',
+  day: '2-digit',
+});
+
+---
+
+<header class="sig-top">
+  <div class="sig-wrap">
+    <div class="sig-mast">
+      <a class="sig-brand" href="/">
+        {logoUrl ? (
+          <img src={logoUrl} alt={publicationName} class="h-9 w-auto" loading="eager" />
+        ) : showDate ? (
+          /* The masthead brand is the page heading only on the home page. */
+          <h1 class="sig-name">{publicationName}</h1>
+        ) : (
+          <p class="sig-name">{publicationName}</p>
+        )}
+      </a>
+
+      <nav class="sig-nav" aria-label="Primary">
+        {navLinks.map(({ href, label }) => (
+          <a href={href} aria-current={currentPath === href ? 'page' : undefined}>
+            {label}
+          </a>
+        ))}
+      </nav>
+    </div>
+
+    {showDate && (
+      <div class="sig-strip-bar">
+        <span><span class="sig-dot" aria-hidden="true"></span>Dispatch log</span>
+        <span class="sig-on">{today}</span>
+        <span><a href="/rss" class="hover:text-ink-2 transition-colors">Subscribe &middot; RSS</a></span>
+      </div>
+    )}
+  </div>
+</header>

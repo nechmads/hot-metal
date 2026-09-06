@@ -180,6 +180,36 @@ EmDash instance — see `docs/emdash-integration-guide.md` for that split.
 
 Full request/response schemas for all of these live in the OpenAPI document.
 
+## Templates
+
+`PATCH /publications/{id}` accepts a `templateId` that selects the public blog
+design. An unrecognised value is rejected with `400`.
+
+| `templateId` | Design |
+| --- | --- |
+| `starter` | Clean, minimal, content-focused. The default. |
+| `editorial` | Magazine-style: serif typography, drop caps, generous spacing. |
+| `bold` | Tech-forward: geometric layout, thick borders, high contrast. |
+| `press-machine` | A newspaper front page — ruled columns, a commanding lead headline, and a typographic date plate where a post has no image. |
+| `one-signal` | A dark dispatch log — a numbered index instead of cards, with a long-form reading column. |
+
+```bash
+curl -X PATCH "$BASE/publications/$PUB_ID" \
+  -H "Authorization: Bearer $HOTMETAL_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{"templateId": "press-machine"}'
+```
+
+Two behaviours worth knowing before you switch:
+
+- **The home page caps at 10 posts.** `press-machine` and `one-signal` show at
+  most ten on the home page — a lead plus nine for Press Machine, an index of
+  ten for One Signal — and then link to `/posts` for the full archive. The link
+  only appears once a publication has more than ten published posts.
+- **`press-machine` and `one-signal` render on EmDash-backed publications.** A
+  publication still served by the legacy frontend accepts the value but falls
+  back to `starter` until it is migrated.
+
 ## Local development
 
 ```bash

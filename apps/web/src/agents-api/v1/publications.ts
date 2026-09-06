@@ -9,7 +9,15 @@ import { Hono, type Context } from 'hono'
 import { marked } from 'marked'
 import type { AppEnv } from '../../server'
 import { ActionError, NotFoundError, ValidationError, ConflictError, QuotaExceededError } from '../../actions/errors'
-import { AUTO_PUBLISH_MODES, type AutoPublishMode, type ScoutSchedule, type Citation, type Post } from '@hotmetal/content-core'
+import {
+	AUTO_PUBLISH_MODES,
+	PUBLICATION_TEMPLATE_IDS,
+	isValidTemplateId,
+	type AutoPublishMode,
+	type ScoutSchedule,
+	type Citation,
+	type Post,
+} from '@hotmetal/content-core'
 import { validateSchedule, validateTimezone, computeNextRun, getCmsClient, getTierLimits, isUnlimited, logger, CmsApiError, type CmsClient } from '@hotmetal/shared'
 import { triggerEmdashDeprovision } from '../../lib/provisioner'
 import { resolveCmsPublicationId } from '../../lib/cms-publication'
@@ -628,9 +636,8 @@ publications.patch('/publications/:id', async (c) => {
 	}
 
 	// Template ID validation
-	const VALID_TEMPLATE_IDS = ['starter', 'editorial', 'bold']
-	if (body.templateId && !VALID_TEMPLATE_IDS.includes(body.templateId)) {
-		throw new ValidationError(`Invalid templateId. Must be one of: ${VALID_TEMPLATE_IDS.join(', ')}`)
+	if (body.templateId && !isValidTemplateId(body.templateId)) {
+		throw new ValidationError(`Invalid templateId. Must be one of: ${PUBLICATION_TEMPLATE_IDS.join(', ')}`)
 	}
 
 	// autoPublishMode validation

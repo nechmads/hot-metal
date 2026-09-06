@@ -5,6 +5,8 @@
  * /agents-api/v1/openapi.json endpoint.
  */
 
+import { PUBLICATION_TEMPLATE_IDS } from '@hotmetal/content-core'
+
 const BASE_URL = 'https://hotmetalapp.com'
 
 const errorResponse = (description: string) => ({
@@ -186,7 +188,7 @@ export const openapiSpec = {
 							timezone: { type: 'string' },
 							scoutEnabled: { type: 'boolean', description: 'When false, automation is paused: the scout will not run on its schedule. The saved schedule is preserved and resumes when set back to true.' },
 							styleId: { type: ['string', 'null'] },
-							templateId: { type: 'string', enum: ['starter', 'editorial', 'bold'] },
+							templateId: { type: 'string', enum: [...PUBLICATION_TEMPLATE_IDS] },
 							feedFullEnabled: { type: 'boolean' },
 							feedPartialEnabled: { type: 'boolean' },
 							commentsEnabled: { type: 'boolean' },

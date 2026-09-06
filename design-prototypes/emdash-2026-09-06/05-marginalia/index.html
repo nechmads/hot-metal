@@ -1,0 +1,971 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Looking Ahead — AI, and what it means for the rest of us</title>
+<meta name="description" content="Notes from a five-time AI founder on what’s actually being built, what it means, and what to do about it.">
+<style>
+@font-face {
+  font-family: 'Crimson Pro';
+  font-style: italic;
+  font-weight: 300;
+  font-display: swap;
+  src: url(fonts/crimson-pro-0.woff2) format('woff2');
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+@font-face {
+  font-family: 'Crimson Pro';
+  font-style: italic;
+  font-weight: 300;
+  font-display: swap;
+  src: url(fonts/crimson-pro-1.woff2) format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+@font-face {
+  font-family: 'Crimson Pro';
+  font-style: italic;
+  font-weight: 400;
+  font-display: swap;
+  src: url(fonts/crimson-pro-2.woff2) format('woff2');
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+@font-face {
+  font-family: 'Crimson Pro';
+  font-style: italic;
+  font-weight: 400;
+  font-display: swap;
+  src: url(fonts/crimson-pro-3.woff2) format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+@font-face {
+  font-family: 'Crimson Pro';
+  font-style: normal;
+  font-weight: 300;
+  font-display: swap;
+  src: url(fonts/crimson-pro-4.woff2) format('woff2');
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+@font-face {
+  font-family: 'Crimson Pro';
+  font-style: normal;
+  font-weight: 300;
+  font-display: swap;
+  src: url(fonts/crimson-pro-5.woff2) format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+@font-face {
+  font-family: 'Crimson Pro';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url(fonts/crimson-pro-6.woff2) format('woff2');
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+@font-face {
+  font-family: 'Crimson Pro';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url(fonts/crimson-pro-7.woff2) format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+@font-face {
+  font-family: 'Crimson Pro';
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url(fonts/crimson-pro-8.woff2) format('woff2');
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+@font-face {
+  font-family: 'Crimson Pro';
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url(fonts/crimson-pro-9.woff2) format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+@font-face {
+  font-family: 'Crimson Pro';
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url(fonts/crimson-pro-10.woff2) format('woff2');
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+@font-face {
+  font-family: 'Crimson Pro';
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url(fonts/crimson-pro-11.woff2) format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+@font-face {
+  font-family: 'IBM Plex Mono';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url(fonts/ibm-plex-mono-0.woff2) format('woff2');
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+@font-face {
+  font-family: 'IBM Plex Mono';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url(fonts/ibm-plex-mono-1.woff2) format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+@font-face {
+  font-family: 'IBM Plex Mono';
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url(fonts/ibm-plex-mono-2.woff2) format('woff2');
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+@font-face {
+  font-family: 'IBM Plex Mono';
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url(fonts/ibm-plex-mono-3.woff2) format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+@font-face {
+  font-family: 'IBM Plex Mono';
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url(fonts/ibm-plex-mono-4.woff2) format('woff2');
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+@font-face {
+  font-family: 'IBM Plex Mono';
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url(fonts/ibm-plex-mono-5.woff2) format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+:root{
+  --accent:#b4361f;
+  /* Long accent rules — the lead's 3px band, the pullquote edge, the rule under
+     the wordmark — survive any hex because they are mass. Short marks do not:
+     the superscript numerals, the margin numerals, the ~1rem section tick and
+     h2 em-dash, the hairline under the active nav item and the focus ring all
+     take --accent-ink instead. --accent-ink is the same
+     hue with a contrast floor against the paper: a build-time darkened value
+     first, then a live lightness clamp for whatever hex is injected at runtime. */
+  --accent-ink:#b4361f;
+  --accent-ink:oklch(from var(--accent) min(l,0.45) c h);
+  --paper:#f4efe4;
+  --paper-2:#ece5d6;
+  --ink:#1e1a15;
+  --ink-2:#544c40;
+  --ink-3:#6f6656;
+  --rule:#ded5c4;
+  --rule-2:#cbc0aa;
+  --measure:34rem;
+  --gutter:3.5rem;
+  --margin:19.5rem;
+  --sheet:calc(var(--measure) + var(--gutter) + var(--margin));
+  --tint:rgba(180,54,31,.10);
+  --tint:color-mix(in srgb, var(--accent) 14%, transparent);
+}
+
+/* Template degradation. A publication that publishes uncited essays gives this
+   page a margin with nothing to hang: no notes beside the prose, no source
+   counts. Rather than leave a 19.5rem void running the height of the article,
+   the margin narrows to what its remaining contents — nav, contents, comment
+   dates — actually need, and the sheet closes up around the text. The spine
+   still runs the whole page and still means the same thing; there is simply
+   less on the far side of it. Applied by the builder, from the data. */
+body.tight{
+  --margin:12.5rem;--gutter:3rem;
+  --sheet:calc(var(--measure) + var(--gutter) + var(--margin));
+}
+
+*,*::before,*::after{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{
+  margin:0;
+  background:var(--paper);
+  color:var(--ink);
+  font-family:'Crimson Pro',Georgia,'Times New Roman',serif;
+  font-size:19px;
+  line-height:1.72;
+  font-weight:400;
+  overflow-x:hidden;
+  -webkit-font-smoothing:antialiased;
+  text-rendering:optimizeLegibility;
+}
+img{max-width:100%;display:block}
+h1,h2,h3{font-weight:600;line-height:1.14;margin:0;letter-spacing:-.012em}
+p{margin:0 0 1.15em}
+a{color:inherit}
+:focus-visible{outline:2px solid var(--accent-ink);outline-offset:3px;border-radius:1px}
+
+.skip{position:absolute;left:-9999px;top:0}
+.skip:focus{left:1rem;top:1rem;z-index:60;background:var(--ink);color:var(--paper);
+  padding:.5rem .8rem;font-size:.75rem;letter-spacing:.08em;text-transform:uppercase}
+
+/* ---- sheet + margin spine ---- */
+.sheet{position:relative;width:min(var(--sheet),100% - 2.5rem);margin-inline:auto}
+.grid{display:grid;grid-template-columns:minmax(0,1fr);}
+.grid > .col-text{min-width:0}
+.grid > .col-margin{min-width:0}
+
+/* ---- margin typography ----
+   Mono is the label face here: it sets keys, dates, counts and domains. It does
+   not set reading text — a margin note's title is prose and takes the serif. */
+.col-margin,.label,.meta{
+  font-family:'IBM Plex Mono',ui-monospace,SFMono-Regular,Menlo,monospace;
+  font-variant-numeric:tabular-nums;
+}
+.label{
+  font-size:.6875rem;letter-spacing:.14em;text-transform:uppercase;
+  color:var(--ink-3);font-weight:500;
+}
+.meta{font-size:.6875rem;letter-spacing:.06em;color:var(--ink-3);line-height:1.85}
+.meta .sep{color:var(--rule-2);padding:0 .4em}
+.meta-k{color:var(--ink-2);text-transform:uppercase;letter-spacing:.12em;font-size:.625rem}
+
+/* ---- masthead ---- */
+.masthead{padding:2.6rem 0 2rem;align-items:end}
+.brand{display:inline-block;text-decoration:none}
+.brand-name{font-size:2.5rem;font-weight:600;letter-spacing:-.02em;line-height:1}
+.brand-rule{width:2.5rem;height:2px;background:var(--accent);margin:.85rem 0 .7rem}
+.brand-tag{font-size:1.0625rem;font-style:italic;color:var(--ink-2);line-height:1.45;
+  max-width:32rem;font-weight:300}
+.mast-side{display:flex;flex-direction:column;gap:1.15rem}
+.issue{margin:0;font-size:.625rem;letter-spacing:.14em;color:var(--ink-3);
+  text-transform:uppercase;line-height:1.5}
+.issue b{display:block;color:var(--ink);font-weight:500;letter-spacing:.05em;
+  text-transform:none;font-size:.75rem;margin-top:.25rem}
+nav.nav ul{list-style:none;margin:0;padding:0;display:flex;flex-wrap:wrap;gap:.35rem 1.1rem}
+nav.nav a{display:inline-block}
+nav.nav a{
+  font-size:.75rem;letter-spacing:.09em;text-decoration:none;color:var(--ink-2);
+  padding-bottom:2px;border-bottom:1px solid transparent;
+}
+nav.nav a:hover{color:var(--ink);border-bottom-color:var(--accent-ink)}
+nav.nav a[aria-current]{color:var(--ink);border-bottom-color:var(--accent-ink);
+  border-bottom-width:2px;padding-bottom:1px}
+
+/* ---- generic block ---- */
+.block{padding:2.5rem 0 2.9rem;border-bottom:1px solid var(--rule)}
+.block:last-of-type{border-bottom:0}
+/* minor bands are separated by space and the block hairline alone — no tick,
+   no spanning rule, no count. Only Archive and Sources get the full head. */
+.block.minor{padding-top:3.4rem}
+h2.sec-min{margin:0 0 1.5rem;color:var(--ink-3)}
+
+/* section head: accent tick, label, hairline across the spine, count */
+.sec{display:flex;align-items:center;gap:.7rem;margin:0 0 1.7rem}
+.sec-l{
+  font-family:'IBM Plex Mono',ui-monospace,monospace;font-size:.6875rem;font-weight:500;
+  letter-spacing:.14em;text-transform:uppercase;color:var(--ink-2);margin:0;
+  white-space:nowrap;line-height:1;
+}
+.sec-tick{flex:0 0 auto;width:.9rem;height:2px;background:var(--accent-ink)}
+.sec-rule{flex:1 1 auto;height:1px;background:var(--rule);min-width:1rem}
+.sec-n{
+  font-family:'IBM Plex Mono',ui-monospace,monospace;font-size:.625rem;letter-spacing:.12em;
+  text-transform:uppercase;color:var(--ink-3);white-space:nowrap;line-height:1;
+}
+.measure{max-width:var(--measure)}
+
+/* ---- lead ---- */
+/* The lead is the only band that gets: a heavy accent rule across the whole
+   sheet, a title set to the full sheet width, and a drop cap. No archive row
+   can borrow any of the three, and no image is allowed to outrank it. */
+.lead{padding:2.2rem 0 3.5rem;border-bottom:1px solid var(--rule)}
+.lead-rule{height:3px;background:var(--accent);margin-bottom:1rem}
+.lead-kicker{display:flex;align-items:baseline;gap:.9rem;margin-bottom:1.4rem;
+  flex-wrap:wrap}
+.lead-when{font-family:'IBM Plex Mono',ui-monospace,monospace;font-size:.6875rem;
+  letter-spacing:.06em;color:var(--ink-3);font-variant-numeric:tabular-nums}
+.lead-title{
+  font-size:clamp(2.5rem,6.2vw,4.05rem);font-weight:600;letter-spacing:-.03em;
+  line-height:1.02;margin-bottom:1.6rem;text-wrap:balance;
+}
+.lead-title a{text-decoration:none;
+  background-image:linear-gradient(var(--accent-ink),var(--accent-ink));
+  background-size:0% 2px;background-repeat:no-repeat;background-position:0 96%}
+.lead-title a:hover{background-size:100% 2px}
+.lead-dek{font-size:1.4375rem;line-height:1.46;font-style:italic;font-weight:300;
+  color:var(--ink-2);margin-bottom:1.25rem}
+.lead-hook{font-size:1.1875rem;line-height:1.72;color:var(--ink);margin-bottom:1.7rem}
+/* Drop cap, measured rather than eyeballed. Crimson Pro lays out on an ascent of
+   .8965em and a descent of .215em, with a cap height of .6616em at 400 and
+   .6758em at 600. A two-line cap has to span from line one's cap top to line
+   two's baseline, so its own cap height must equal lineHeight + bodyCap: here
+   45.25px, which at .6758 is 3.524em of the hook's 19px. Its line-height then
+   sets the float's height and the margin drops the box until the cap top lands
+   on line one's ascenders — leaving the box bottom just inside two line
+   heights, so line three runs full measure. Everything is in em, so the 560px
+   step down carries it. Same construction at the body's 1.78 below. */
+.lead-hook::first-letter{
+  float:left;font-weight:600;font-size:3.524em;line-height:.936;
+  margin:.020em .09em 0 0;
+}
+.readon{
+  display:inline-flex;align-items:center;gap:.5rem;text-decoration:none;
+  font-family:'IBM Plex Mono',ui-monospace,monospace;font-size:.75rem;letter-spacing:.1em;
+  text-transform:uppercase;color:var(--ink);border-bottom:1px solid var(--rule-2);
+  padding-bottom:.28rem;
+}
+.readon:hover{border-bottom-color:var(--accent-ink);color:var(--accent-ink)}
+.lead-side dl{margin:0}
+.lead-side dt{font-size:.625rem;letter-spacing:.13em;text-transform:uppercase;
+  color:var(--ink-3);margin-top:1rem}
+.lead-side dt:first-child{margin-top:0}
+.lead-side dd{margin:.15rem 0 0;font-size:.8125rem;color:var(--ink);letter-spacing:.02em}
+.taglist{list-style:none;margin:.2rem 0 0;padding:0;display:flex;flex-wrap:wrap;gap:.45rem 1.1rem}
+.taglist a{
+  font-size:.6875rem;letter-spacing:.04em;text-decoration:none;color:var(--ink-2);
+  border-bottom:1px solid var(--rule-2);padding-bottom:2px;white-space:nowrap;
+}
+.taglist a:hover{border-bottom-color:var(--accent-ink);color:var(--accent-ink)}
+
+/* ---- archive ---- */
+.entries{list-style:none;margin:0;padding:0}
+.entry{border-top:1px solid var(--rule);padding:1.4rem 0}
+.entry:first-child{border-top:0;padding-top:.15rem}
+/* Seven rows have to read as seven choices, so the title leads the summary by
+   a clear step in both size and ink rather than sitting a hair above it. */
+.entry-t{font-size:1.5rem;font-weight:600;letter-spacing:-.018em;line-height:1.19;
+  margin:0 0 .45rem}
+.entry-t a{text-decoration:none;
+  background-image:linear-gradient(var(--accent-ink),var(--accent-ink));
+  background-size:0% 1.5px;background-repeat:no-repeat;background-position:0 100%}
+.entry-t a:hover{background-size:100% 1.5px}
+.entry-d{margin:0;font-size:.9375rem;line-height:1.5;color:var(--ink-2);
+  max-width:var(--measure)}
+.entry-side{display:flex;gap:.85rem;align-items:flex-start}
+.entry-side .meta{flex:1 1 auto;min-width:0}
+.thumb{
+  flex:0 0 auto;width:56px;height:56px;padding:0;border:1px solid var(--rule-2);
+  background:var(--paper-2);cursor:pointer;overflow:hidden;border-radius:1px;
+  filter:saturate(.72) contrast(.95);
+}
+.thumb img{width:100%;height:100%;object-fit:cover}
+.thumb:hover{border-color:var(--accent-ink);filter:none}
+
+/* ---- margin index ----
+   The margin beside the subscribe block used to hold one short line in half a
+   page of paper. It now carries the thing a notebook margin is actually for: a
+   running index of the publication's sections, set at margin scale. Built from
+   the posts, so it shortens or disappears with the data. */
+.mgroup + .mgroup{margin-top:1.7rem}
+/* two columns so the index reads as an index and still ends level with the
+   form beside it, however many sections a publication files under */
+.mindex{list-style:none;margin:.6rem 0 0;padding:0;
+  display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:.1rem .9rem}
+.mindex li{line-height:1.05}
+.mindex a{display:inline-block;padding:.2rem 0;font-size:.6875rem;letter-spacing:.05em;
+  color:var(--ink-2);text-decoration:none;border-bottom:1px solid transparent}
+.mindex a:hover{color:var(--accent-ink);border-bottom-color:var(--accent-ink)}
+
+/* ---- subscribe ---- */
+.sub-copy{font-size:1.0625rem;color:var(--ink-2);max-width:var(--measure);
+  margin-bottom:1.3rem}
+form.f{margin:0}
+.field{display:block;margin-bottom:.9rem}
+.field span{display:block;font-family:'IBM Plex Mono',ui-monospace,monospace;font-size:.625rem;
+  letter-spacing:.13em;text-transform:uppercase;color:var(--ink-3);margin-bottom:.35rem}
+input,textarea{
+  width:100%;font:inherit;font-size:1rem;color:var(--ink);background:transparent;
+  border:0;border-bottom:1px solid var(--rule-2);padding:.42rem 0;border-radius:0;
+}
+textarea{border:1px solid var(--rule-2);padding:.6rem .7rem;min-height:6.5rem;resize:vertical;
+  font-size:1rem;line-height:1.55}
+input:focus,textarea:focus{outline:none;border-color:var(--accent-ink)}
+input[aria-invalid="true"],textarea[aria-invalid="true"]{border-color:var(--accent-ink)}
+.err{
+  display:none;font-family:'IBM Plex Mono',ui-monospace,monospace;font-size:.6875rem;
+  letter-spacing:.03em;color:var(--accent-ink);margin-top:.3rem;
+}
+.err.show{display:block}
+.btn{
+  font-family:'IBM Plex Mono',ui-monospace,monospace;font-size:.75rem;letter-spacing:.11em;
+  text-transform:uppercase;background:var(--ink);color:var(--paper);border:1px solid var(--ink);
+  padding:.62rem 1.35rem;cursor:pointer;border-radius:1px;
+}
+.btn:hover{background:var(--accent-ink);border-color:var(--accent-ink)}
+.subrow{display:flex;gap:.9rem;align-items:flex-end;flex-wrap:wrap}
+.subrow .field{flex:1 1 15rem;margin-bottom:0}
+.done{
+  display:none;font-family:'IBM Plex Mono',ui-monospace,monospace;font-size:.75rem;
+  line-height:1.7;letter-spacing:.02em;color:var(--ink-2);border-left:2px solid var(--accent-ink);
+  padding:.55rem 0 .55rem .85rem;margin-top:1.1rem;
+}
+.done.show{display:block}
+.done b{color:var(--ink);font-weight:500}
+.hint{font-family:'IBM Plex Mono',ui-monospace,monospace;font-size:.625rem;letter-spacing:.06em;
+  color:var(--ink-3);margin-top:.85rem}
+
+/* ---- article ---- */
+.art-head{padding:2.2rem 0 1.9rem}
+.art-title{font-size:clamp(2.4rem,5.8vw,3.8rem);letter-spacing:-.028em;line-height:1.03;
+  margin:0 0 1.15rem;text-wrap:balance}
+.art-sub{font-size:1.3125rem;font-style:italic;font-weight:300;line-height:1.5;
+  color:var(--ink-2);margin:0 0 1.5rem;max-width:var(--measure)}
+.byline{font-family:'IBM Plex Mono',ui-monospace,monospace;font-size:.75rem;letter-spacing:.06em;
+  color:var(--ink-2);border-top:1px solid var(--rule);padding-top:.9rem}
+.byline b{font-weight:500;color:var(--ink)}
+.byline .sep{color:var(--rule-2)}
+.toc{list-style:none;margin:.2rem 0 0;padding:0;counter-reset:t}
+.toc li{counter-increment:t;margin-bottom:.5rem;display:flex;gap:.55rem;line-height:1.4}
+.toc li::before{content:counter(t,decimal-leading-zero);color:var(--ink-3);font-size:.625rem;
+  padding-top:.18rem}
+.toc a{font-size:.75rem;letter-spacing:.01em;color:var(--ink-2);text-decoration:none;
+  border-bottom:1px solid transparent}
+.toc a:hover{color:var(--accent-ink);border-bottom-color:var(--accent-ink)}
+
+.prose{position:relative;width:100%;padding-bottom:1.6rem;border-bottom:1px solid var(--rule)}
+.prose > p,.prose > h2,.prose > ul,.prose > figure{max-width:var(--measure)}
+/* Four sections across 1,740 words have to register at a glance, so the step
+   from body to h2 is a real one — roughly 1.7x, with the air to match. The
+   em-dash is the whole mark: a hairline above it as well made two rules for one
+   break and left the dash reading as an orphan tick under the stronger one. */
+.prose > h2{
+  font-size:2.0625rem;font-weight:600;letter-spacing:-.022em;line-height:1.16;
+  margin:3.6rem 0 1.25rem;
+}
+.prose > h2::before{
+  content:"";display:block;width:1.1rem;height:2px;background:var(--accent-ink);
+  margin-bottom:1rem;
+}
+.prose p{font-size:1.1875rem;line-height:1.78}
+/* Same construction at the body's 1.78 line-height: 3.613em of 19px, cap top on
+   line one's ascenders, baseline on line two's, box bottom clearing line three. */
+.prose > p:first-child::first-letter{
+  float:left;font-weight:600;font-size:3.613em;line-height:.938;
+  margin:.024em .09em 0 0;
+}
+.prose code{font-family:'IBM Plex Mono',ui-monospace,monospace;font-size:.82em;
+  background:var(--paper-2);padding:.1em .32em;border-radius:2px}
+.prose strong{font-weight:600}
+.prose em{font-style:italic}
+
+a.ref{
+  color:inherit;text-decoration:underline;text-decoration-thickness:.055em;
+  text-underline-offset:.17em;text-decoration-color:var(--rule-2);
+  padding:.02em 0;border-radius:2px;
+}
+a.ref:hover,a.ref.on{text-decoration-color:var(--accent-ink);background:var(--tint)}
+sup.refmark{font-size:.64em;line-height:0;vertical-align:baseline;position:relative;top:-.47em}
+sup.refmark a{
+  font-family:'IBM Plex Mono',ui-monospace,monospace;font-weight:600;color:var(--accent-ink);
+  text-decoration:none;padding:.14em .16em;margin-left:-.14em;border-radius:2px;
+  background:transparent;font-variant-numeric:tabular-nums;
+}
+sup.refmark a:hover,sup.refmark a.on{background:var(--accent-ink);color:var(--paper)}
+
+/* A note is the other half of the in-text mark, so it wears the same numeral:
+   same mono face, same weight, same accent ink, same inverted chip on hover.
+   No outline — a box would make it a second, unrelated mark. The note title is
+   reading matter and sets in the serif near body ink; mono is left holding the
+   domain line, which is a label. */
+.note{
+  display:grid;grid-template-columns:1.05rem 1fr;gap:.55rem;
+  font-family:'Crimson Pro',Georgia,'Times New Roman',serif;
+}
+.note-n{
+  justify-self:end;align-self:start;
+  font-family:'IBM Plex Mono',ui-monospace,monospace;
+  font-size:.75rem;font-weight:600;line-height:1;color:var(--accent-ink);
+  font-variant-numeric:tabular-nums;text-decoration:none;
+  padding:.14em .16em;margin:.16rem -.16em 0 0;border-radius:2px;
+}
+.note-t{display:block;font-size:.9375rem;line-height:1.42;color:var(--ink);
+  letter-spacing:-.004em}
+.note-u{display:block;margin-top:.3rem;
+  font-family:'IBM Plex Mono',ui-monospace,monospace;
+  font-size:.6875rem;letter-spacing:.03em;
+  color:var(--ink-3);text-decoration:underline;text-decoration-color:var(--rule-2);
+  text-underline-offset:.16em;word-break:break-word}
+.note-u:hover{color:var(--accent-ink);text-decoration-color:var(--accent-ink)}
+.note.on .note-n,.note:hover .note-n,.note:target .note-n{
+  background:var(--accent-ink);color:var(--paper)}
+.note.on .note-u,.note:hover .note-u,.note:target .note-u{
+  color:var(--accent-ink);text-decoration-color:var(--accent-ink)}
+a.ref:target{background:var(--tint)}
+.note,a.ref,.prose > h2,.block{scroll-margin-top:2rem}
+
+.pullquote{
+  margin:2.9rem 0;padding:1.55rem 0;border-top:2px solid var(--accent);
+  border-bottom:1px solid var(--rule);
+}
+.pullquote blockquote{margin:0;font-size:clamp(1.35rem,2.4vw,1.6rem);line-height:1.42;
+  font-style:italic;font-weight:300;letter-spacing:-.012em;color:var(--ink)}
+.pullquote figcaption{font-family:'IBM Plex Mono',ui-monospace,monospace;font-size:.625rem;
+  letter-spacing:.14em;text-transform:uppercase;color:var(--ink-3);margin-top:.95rem}
+
+/* ---- sources ----
+   A bibliography, not a second run of the margin: the boxed numeral belongs to
+   the margin note, so here the number hangs plain and each entry sets on one
+   line where it can. Uncited further reading drops another step in weight. */
+ol.sources{list-style:none;margin:0;padding:0;counter-reset:s}
+ol.sources li{counter-increment:s;display:grid;grid-template-columns:1.35rem 1fr;
+  gap:.5rem;padding:.18rem 0;font-size:.9375rem;line-height:1.5rem}
+ol.sources li::before{
+  content:counter(s)".";font-family:'IBM Plex Mono',ui-monospace,monospace;
+  font-size:.6875rem;line-height:inherit;color:var(--ink-3);text-align:right;
+  font-variant-numeric:tabular-nums;
+}
+ol.sources li > div{min-width:0}
+.src-t{font-size:.9375rem;color:var(--ink)}
+.src-u{font-family:'IBM Plex Mono',ui-monospace,monospace;font-size:.6875rem;
+  letter-spacing:.03em;color:var(--ink-3);text-decoration:underline;
+  text-decoration-color:var(--rule-2);text-underline-offset:.16em;word-break:break-word}
+.src-u:hover{color:var(--accent-ink);text-decoration-color:var(--accent-ink)}
+.src-sep{color:var(--rule-2);padding:0 .35em}
+ol.sources.extra{counter-reset:none;margin-top:.15rem}
+ol.sources.extra li::before{content:"";}
+ol.sources.extra li{grid-template-columns:1.35rem 1fr;padding:.1rem 0}
+ol.sources.extra .src-t{font-size:.875rem;color:var(--ink-2)}
+.sub-label{font-family:'IBM Plex Mono',ui-monospace,monospace;font-size:.625rem;
+  letter-spacing:.14em;text-transform:uppercase;color:var(--ink-3);
+  margin:1.7rem 0 .55rem;padding-top:.7rem;border-top:1px solid var(--rule);
+  max-width:var(--measure)}
+
+/* ---- comments ---- */
+.cmts{max-width:var(--measure)}
+.cmt{border-top:1px solid var(--rule);padding:1.35rem 0;position:relative}
+.cmt:first-child{border-top:0;padding-top:0}
+.cmt-side{position:static;margin:.5rem 0 0}
+.cmt-who{font-family:'IBM Plex Mono',ui-monospace,monospace;font-size:.75rem;font-weight:500;
+  letter-spacing:.04em;color:var(--ink);margin-bottom:.3rem}
+.cmt p{margin:0;font-size:1.0625rem;line-height:1.62;color:var(--ink-2)}
+/* the date is a margin item and sets at the margin's size — beats `.cmt p`,
+   which would otherwise make the quietest content carry the loudest type */
+.cmt p.cmt-side{font-family:'IBM Plex Mono',ui-monospace,monospace;font-size:.6875rem;
+  line-height:1.85;letter-spacing:.06em;color:var(--ink-3);font-variant-numeric:tabular-nums}
+.formwrap{border-top:1px solid var(--rule);padding-top:1.5rem;margin-top:1.5rem}
+
+/* ---- footer ---- */
+footer.foot{padding:2.8rem 0 3.2rem;border-top:1px solid var(--ink);margin-top:1rem}
+.foot-about{font-size:1rem;line-height:1.62;color:var(--ink-2);max-width:var(--measure);
+  margin:0 0 1.3rem}
+.foot-links{list-style:none;margin:0;padding:0;display:flex;gap:1.4rem;flex-wrap:wrap}
+.foot-links a{font-family:'IBM Plex Mono',ui-monospace,monospace;font-size:.75rem;
+  letter-spacing:.09em;text-decoration:none;color:var(--ink-2);border-bottom:1px solid var(--rule-2);
+  padding-bottom:2px}
+.foot-links a:hover{color:var(--accent-ink);border-bottom-color:var(--accent-ink)}
+.colophon{
+  display:flex;justify-content:space-between;gap:1rem;flex-wrap:wrap;margin-top:2.4rem;
+  padding-top:1rem;border-top:1px solid var(--rule);
+  font-family:'IBM Plex Mono',ui-monospace,monospace;font-size:.6875rem;letter-spacing:.06em;
+  color:var(--ink-3);
+}
+.colophon a{color:var(--ink-3);text-decoration:underline;text-decoration-color:var(--rule-2);
+  text-underline-offset:.18em}
+.colophon a:hover{color:var(--accent-ink)}
+
+/* ---- plate (image lightbox) ---- */
+.plate{
+  position:fixed;inset:0;z-index:50;background:rgba(30,26,21,.9);display:none;
+  align-items:center;justify-content:center;padding:2rem;
+}
+.plate.open{display:flex}
+.plate-in{background:var(--paper);padding:1rem;max-width:min(560px,90vw)}
+.plate-in img{width:100%;height:auto}
+.plate-cap{font-family:'IBM Plex Mono',ui-monospace,monospace;font-size:.6875rem;
+  letter-spacing:.05em;color:var(--ink-2);margin-top:.8rem;display:flex;
+  justify-content:space-between;gap:1rem;align-items:baseline}
+.plate-x{background:none;border:0;font:inherit;color:var(--ink-3);cursor:pointer;padding:.1rem .3rem}
+.plate-x:hover{color:var(--accent-ink)}
+
+/* ================= desktop: the margin appears ================= */
+@media screen and (min-width:1100px){
+  .grid{grid-template-columns:var(--measure) var(--gutter) var(--margin)}
+  .hang{position:relative}
+  .block > .hang > .col-text{max-width:var(--measure)}
+  .hang > .col-margin{position:absolute;right:0;top:0;width:var(--margin);margin-top:0}
+  .hang > .col-text,.hang > .col-full{max-width:var(--measure)}
+  nav.nav ul{flex-direction:column;gap:.42rem}
+  nav.nav li{line-height:1}
+  .grid > .col-text{grid-column:1;grid-row:1}
+  .grid > .col-margin{grid-column:3;grid-row:1}
+  .grid > .col-full{grid-column:1 / -1}
+  /* lead + article head: the title band spans the sheet, and the reading
+     column and its docket sit in the row beneath it */
+  .lead > .col-full,.art-head > .col-full{grid-row:1}
+  .lead > .col-text,.lead > .col-margin,
+  .art-head > .col-text,.art-head > .col-margin{grid-row:2}
+  .sheet::before{
+    content:"";position:absolute;top:0;bottom:0;
+    left:calc(var(--measure) + (var(--gutter) / 2));
+    width:1px;background:var(--rule);pointer-events:none;
+  }
+  .prose > p,.prose > h2{max-width:var(--measure)}
+  .note{
+    position:absolute;right:0;width:var(--margin);margin:0;
+  }
+  .prose > .pullquote{max-width:none}
+  .cmt-side{position:absolute;top:1.35rem;left:calc(100% + var(--gutter));
+    width:var(--margin);margin:0}
+  .cmt:first-child .cmt-side{top:0}
+}
+@media screen and (min-width:1440px){
+  :root{--measure:35rem;--gutter:4rem;--margin:21rem}
+  body.tight{--margin:13.5rem;--gutter:3.25rem;
+    --sheet:calc(var(--measure) + var(--gutter) + var(--margin))}
+}
+
+/* ========= below 1100, and on paper: the margin folds inline ========= */
+@media (max-width:1099px),print{
+  /* one column: the sheet collapses to the reading measure, not the full spread */
+  :root,body.tight{--sheet:var(--measure)}
+  .col-margin{margin-top:1.1rem}
+  .lead .col-margin,.art-head .col-margin{border-top:1px solid var(--rule);padding-top:1rem}
+  .block .col-margin{margin-top:0;margin-bottom:1rem}
+  .block .col-margin + .col-text{margin-top:0}
+  .masthead .col-margin{margin-top:1.4rem}
+  .mast-side{flex-direction:row;justify-content:space-between;align-items:flex-end;gap:1.2rem}
+  .entry{display:block}
+  .entry-side{margin-top:.85rem}
+  .lead-side dl{display:grid;grid-template-columns:6.5rem minmax(0,1fr);
+    align-items:baseline;row-gap:.4rem}
+  .lead-side dt{margin-top:0}
+  .lead-side dd{margin:0}
+  .lead-side dd:last-child{grid-column:1 / -1;margin-top:.2rem}
+  .note{
+    position:static;width:auto;max-width:var(--measure);
+    margin:1rem 0 1.5rem;padding:.15rem 0 .15rem .9rem;
+    border-left:2px solid var(--rule-2);
+  }
+  .note.on,.note:target{border-left-color:var(--accent-ink)}
+  .prose > p + .note{margin-top:-.15rem}
+}
+@media (max-width:560px){
+  body{font-size:18px}
+  .prose p{font-size:1.0625rem}
+  /* both drop caps are sized in em, so they follow the paragraph down on their own */
+  .prose > h2{font-size:1.75rem;margin-top:2.9rem}
+  .entry-t{font-size:1.3125rem}
+  .lead-title{font-size:2.3rem}
+  .lead-dek{font-size:1.25rem}
+  .lead-hook{font-size:1.0625rem}
+  .brand-name{font-size:2rem}
+  .mast-side{flex-direction:column;align-items:flex-start;gap:.9rem}
+  .subrow{display:block}
+  .subrow .field{margin-bottom:.9rem}
+  .colophon{flex-direction:column;gap:.5rem}
+}
+
+@media print{
+  /* Notes are already folded under their paragraph by the rule above; here they
+     are only kept whole across a page break. What cannot be used on paper —
+     the two forms, the plate, the skip link — is dropped, and nothing that
+     carries information is. */
+  body{background:#fff}
+  .prose{padding-bottom:0!important}
+  .note{top:auto!important;border-left-color:#999}
+  .skip,.plate,.formwrap,form.f,.done,.hint{display:none}
+  .note,.pullquote,.entry,.cmt,ol.sources li,figure{break-inside:avoid}
+  .prose > h2,.sec,h2.sec-min{break-after:avoid}
+  .thumb{border-color:#999}
+}
+
+@media (prefers-reduced-motion:no-preference){
+  .lead-title a,.entry-t a{transition:background-size .28s ease}
+  a.ref,sup.refmark a,.note-n,.note-t,.thumb{transition:background-color .15s ease,
+    color .15s ease,border-color .15s ease,filter .2s ease}
+}
+
+</style>
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+<div class="sheet">
+
+<header class="masthead grid">
+  <div class="col-text">
+    <h1 class="brand-name"><a class="brand" href="index.html">Looking Ahead</a></h1>
+    <div class="brand-rule" aria-hidden="true"></div>
+    <p class="brand-tag">AI, and what it means for the rest of us</p>
+  </div>
+  <div class="col-margin">
+    <div class="mast-side">
+      <p class="issue">No. 41<b>Sunday, September 6, 2026</b></p>
+      <nav class="nav" aria-label="Primary"><ul><li><a href="index.html" aria-current="page">Home</a></li><li><a href="index.html#archive">Archive</a></li><li><a href="#">RSS</a></li><li><a href="index.html#subscribe">Subscribe</a></li></ul></nav>
+    </div>
+  </div>
+</header>
+
+<main id="main">
+
+  <section class="lead grid" aria-labelledby="lead-h">
+    <div class="col-full">
+      <div class="lead-rule" aria-hidden="true"></div>
+      <div class="lead-kicker">
+        <span class="label">Latest</span>
+        <span class="lead-when"><time datetime="2026-09-02">September 2, 2026</time></span>
+      </div>
+      <h2 class="lead-title" id="lead-h"><a href="post.html">Agent First Development is The Future</a></h2>
+    </div>
+    <div class="col-text">
+      <p class="lead-dek">Cloudflare’s CEO predicted bots would outnumber humans online by 2027. It happened a year early — and your product probably isn’t ready.</p>
+      <p class="lead-hook">In June 2026, bot and agent traffic passed human traffic on the internet for the first time. The winning products will be the ones an agent can actually use.</p>
+      <a class="readon" href="post.html">Read the piece <span aria-hidden="true">&rarr;</span></a>
+    </div>
+    <div class="col-margin lead-side">
+      <dl><dt>Section</dt><dd>Product strategy</dd><dt>Length</dt><dd>9 min &middot; 1,740 words</dd><dt>Sources</dt><dd>13 in all</dd><dt>Tags</dt><dd><ul class="taglist"><li><a href="#archive">agent-first development</a></li><li><a href="#archive">api design</a></li><li><a href="#archive">product strategy</a></li></ul></dd></dl>
+    </div>
+  </section>
+
+  <section class="block" id="archive" aria-labelledby="arch-h">
+    <div class="sec"><span class="sec-tick" aria-hidden="true"></span><h2 class="sec-l" id="arch-h">Archive</h2><span class="sec-rule" aria-hidden="true"></span><span class="sec-n">7 pieces</span></div>
+    <ol class="entries">
+<li class="entry grid">
+  <div class="col-text">
+    <h3 class="entry-t"><a href="post.html">The Iran War Is Not Really About Iran</a></h3>
+    <p class="entry-d">The US strike on Iran is a message aimed at Beijing. China buys 90–95% of Iran’s oil, and a destabilized regime puts that lifeline at risk.</p>
+  </div>
+  <div class="col-margin">
+    <div class="entry-side">
+      <div class="meta">
+        <time datetime="2026-03-04">March 4, 2026</time><br>
+        <span class="meta-k">Geopolitics</span><br>
+        7 min read
+      </div>
+      <button type="button" class="thumb" data-src="img/iran.jpg" data-alt="Illustration for The Iran War Is Not Really About Iran" data-cap="Geopolitics &middot; March 4, 2026" aria-label="Open illustration for The Iran War Is Not Really About Iran"><img src="img/iran.jpg" alt=""></button>
+    </div>
+  </div>
+</li>
+<li class="entry grid">
+  <div class="col-text">
+    <h3 class="entry-t"><a href="post.html">OpenAI’s Pentagon Deal and the Red Lines Problem</a></h3>
+    <p class="entry-d">OpenAI signed a Pentagon deal while the US military was already running Claude — the model it had officially blacklisted — on live operations.</p>
+  </div>
+  <div class="col-margin">
+    <div class="entry-side">
+      <div class="meta">
+        <time datetime="2026-03-01">March 1, 2026</time><br>
+        <span class="meta-k">AI &amp; policy</span><br>
+        11 min read
+      </div>
+      <button type="button" class="thumb" data-src="img/pentagon.jpg" data-alt="Illustration for OpenAI’s Pentagon Deal and the Red Lines Problem" data-cap="AI &amp; policy &middot; March 1, 2026" aria-label="Open illustration for OpenAI’s Pentagon Deal and the Red Lines Problem"><img src="img/pentagon.jpg" alt=""></button>
+    </div>
+  </div>
+</li>
+<li class="entry grid">
+  <div class="col-text">
+    <h3 class="entry-t"><a href="post.html">Should AI Agents be Friends?</a></h3>
+    <p class="entry-d">Large-scale research shows agents simulate social behavior rather than genuinely socialize. The real question isn’t whether they can — it’s whether they should.</p>
+  </div>
+  <div class="col-margin">
+    <div class="entry-side">
+      <div class="meta">
+        <time datetime="2026-02-24">February 24, 2026</time><br>
+        <span class="meta-k">Research</span><br>
+        8 min read
+      </div>
+      <button type="button" class="thumb" data-src="img/agents-friends.jpg" data-alt="Illustration for Should AI Agents be Friends?" data-cap="Research &middot; February 24, 2026" aria-label="Open illustration for Should AI Agents be Friends?"><img src="img/agents-friends.jpg" alt=""></button>
+    </div>
+  </div>
+</li>
+<li class="entry grid">
+  <div class="col-text">
+    <h3 class="entry-t"><a href="post.html">From Copilot to Colleague: The Five Pillars of an Agentic AI Strategy</a></h3>
+    <p class="entry-d">Most “AI strategies” are a list of tools. Here is the structure that survives contact with an actual org chart.</p>
+  </div>
+  <div class="col-margin">
+    <div class="entry-side">
+      <div class="meta">
+        <time datetime="2026-02-20">February 20, 2026</time><br>
+        <span class="meta-k">Strategy</span><br>
+        12 min read
+      </div>
+      <button type="button" class="thumb" data-src="img/copilot.jpg" data-alt="Illustration for From Copilot to Colleague: The Five Pillars of an Agentic AI Strategy" data-cap="Strategy &middot; February 20, 2026" aria-label="Open illustration for From Copilot to Colleague: The Five Pillars of an Agentic AI Strategy"><img src="img/copilot.jpg" alt=""></button>
+    </div>
+  </div>
+</li>
+<li class="entry grid">
+  <div class="col-text">
+    <h3 class="entry-t"><a href="post.html">The Hyper Learner</a></h3>
+    <p class="entry-d">The most valuable skill of the next decade isn’t prompting. It’s the ability to absorb an entire field in a weekend.</p>
+  </div>
+  <div class="col-margin">
+    <div class="entry-side">
+      <div class="meta">
+        <time datetime="2026-02-18">February 18, 2026</time><br>
+        <span class="meta-k">Essay</span><br>
+        6 min read
+      </div>
+      <button type="button" class="thumb" data-src="img/hyperlearner.jpg" data-alt="Illustration for The Hyper Learner" data-cap="Essay &middot; February 18, 2026" aria-label="Open illustration for The Hyper Learner"><img src="img/hyperlearner.jpg" alt=""></button>
+    </div>
+  </div>
+</li>
+<li class="entry grid">
+  <div class="col-text">
+    <h3 class="entry-t"><a href="post.html">GitHub’s Agentic Workflows and the Coming ‘Continuous AI’ Era</a></h3>
+    <p class="entry-d">What continuous integration did for tests, continuous AI is about to do for everything else a solo founder can’t staff.</p>
+  </div>
+  <div class="col-margin">
+    <div class="entry-side">
+      <div class="meta">
+        <time datetime="2026-02-17">February 17, 2026</time><br>
+        <span class="meta-k">Tools</span><br>
+        9 min read
+      </div>
+      <button type="button" class="thumb" data-src="img/github.jpg" data-alt="Illustration for GitHub’s Agentic Workflows and the Coming ‘Continuous AI’ Era" data-cap="Tools &middot; February 17, 2026" aria-label="Open illustration for GitHub’s Agentic Workflows and the Coming ‘Continuous AI’ Era"><img src="img/github.jpg" alt=""></button>
+    </div>
+  </div>
+</li>
+<li class="entry grid">
+  <div class="col-text">
+    <h3 class="entry-t"><a href="post.html">How I 10x’d My AI Coding Productivity (And You Can Too)</a></h3>
+    <p class="entry-d">Nine months of working almost entirely through coding agents, and the handful of habits that made the difference.</p>
+  </div>
+  <div class="col-margin">
+    <div class="entry-side">
+      <div class="meta">
+        <time datetime="2026-02-16">February 16, 2026</time><br>
+        <span class="meta-k">Practice</span><br>
+        10 min read
+      </div>
+      <button type="button" class="thumb" data-src="img/productivity.jpg" data-alt="Illustration for How I 10x’d My AI Coding Productivity (And You Can Too)" data-cap="Practice &middot; February 16, 2026" aria-label="Open illustration for How I 10x’d My AI Coding Productivity (And You Can Too)"><img src="img/productivity.jpg" alt=""></button>
+    </div>
+  </div>
+</li></ol>
+  </section>
+
+  <section class="block minor" id="subscribe" aria-labelledby="sub-h">
+    <h2 class="sec-l sec-min" id="sub-h">Subscribe</h2>
+    <!-- a real grid row, not a hung margin: the block takes the height of
+         whichever column is taller, so a long index can never run into the
+         footer beneath it -->
+    <div class="grid">
+    <div class="col-text">
+      <p class="sub-copy">Notes from a five-time AI founder on what’s actually being built, what it means, and what to do about it.</p>
+      <form method="dialog" class="f" id="sub-form" novalidate>
+        <div class="subrow">
+          <div class="field">
+            <label for="sub-email"><span>Email address</span></label>
+            <input type="email" id="sub-email" name="email" autocomplete="email"
+                   placeholder="you@example.com" aria-describedby="sub-email-err">
+            <p class="err" id="sub-email-err" data-err="email">Enter a valid email address.</p>
+          </div>
+          <button class="btn" type="submit">Subscribe</button>
+        </div>
+      </form>
+      <p class="done" tabindex="-1"><b>Demo only &mdash; nothing was sent.</b><br>
+      This is a static design prototype; the form has no back end.</p>
+      <p class="hint">Or follow along by <a href="#">RSS</a>.</p>
+    </div>
+    <div class="col-margin">
+      <div class="mgroup">
+        <span class="label">Cadence</span>
+        <p class="meta" style="margin:.55rem 0 0">One piece a week, give or take,
+        plus the occasional short note. No tracking, no sharing.</p>
+      </div>
+      <div class="mgroup"><span class="label">Sections</span><ul class="mindex"><li><a href="#archive">Product strategy</a></li><li><a href="#archive">Geopolitics</a></li><li><a href="#archive">AI &amp; policy</a></li><li><a href="#archive">Research</a></li><li><a href="#archive">Strategy</a></li><li><a href="#archive">Essay</a></li><li><a href="#archive">Tools</a></li><li><a href="#archive">Practice</a></li></ul></div>
+    </div>
+    </div>
+  </section>
+
+</main>
+
+
+<footer class="foot grid">
+  <div class="col-text">
+    <p class="foot-about">My name is Shahar Nechmad. I’m a five-time startup founder specializing in AI, and I’ve built a range of AI-driven products. Here I share what I’m learning along the way—AI news and breakthroughs, what they might mean for our lives and the world, plus practical recommendations, new releases, and tools worth trying.</p>
+    <ul class="foot-links"><li><a href="#">X</a></li><li><a href="#">LinkedIn</a></li><li><a href="#">RSS</a></li></ul>
+  </div>
+  <div class="col-margin">
+    <span class="label">Colophon</span>
+    <p class="meta" style="margin:.7rem 0 0">Set in Crimson&nbsp;Pro and IBM&nbsp;Plex&nbsp;Mono.</p>
+  </div>
+  <div class="col-full">
+    <div class="colophon">
+      <span>Looking Ahead &middot; Powered by Hot Metal</span>
+      <a href="../index.html">&larr; All concepts</a>
+    </div>
+  </div>
+</footer>
+</div>
+
+<div class="plate" id="plate" role="dialog" aria-modal="true" aria-label="Image plate" hidden>
+  <div class="plate-in">
+    <!-- no src until the script sets one: an empty src is a request in some browsers -->
+    <img id="plate-img" alt="">
+    <div class="plate-cap">
+      <span id="plate-cap" class="plate-capt"></span>
+      <button type="button" class="plate-x" id="plate-x">Close &times;</button>
+    </div>
+  </div>
+</div>
+<script>
+
+(function(){
+  var plate=document.getElementById('plate');
+  if(!plate) return;
+  var img=document.getElementById('plate-img'), cap=document.getElementById('plate-cap');
+  var last=null;
+  function open(btn){
+    img.src=btn.getAttribute('data-src');
+    img.alt=btn.getAttribute('data-alt')||'';
+    cap.textContent=btn.getAttribute('data-cap')||'';
+    plate.hidden=false; plate.classList.add('open'); last=btn;
+    document.getElementById('plate-x').focus();
+  }
+  function close(){
+    plate.classList.remove('open'); plate.hidden=true;
+    if(last){last.focus(); last=null;}
+  }
+  document.addEventListener('click',function(e){
+    var b=e.target.closest('.thumb');
+    if(b){ e.preventDefault(); open(b); return; }
+    if(e.target===plate||e.target.id==='plate-x'){ close(); }
+  });
+  /* The plate is the page's only modal, so while it is open Tab has to stay
+     inside it — otherwise focus walks off into an article the reader can no
+     longer see. It holds one control, so the cycle is short. */
+  document.addEventListener('keydown',function(e){
+    if(!plate.classList.contains('open')) return;
+    if(e.key==='Escape'){ close(); return; }
+    if(e.key!=='Tab') return;
+    var f=plate.querySelectorAll('a[href],button,input,textarea,select,[tabindex]:not([tabindex="-1"])');
+    if(!f.length){ e.preventDefault(); return; }
+    var first=f[0], lastEl=f[f.length-1];
+    if(e.shiftKey && document.activeElement===first){ e.preventDefault(); lastEl.focus(); }
+    else if(!e.shiftKey && document.activeElement===lastEl){ e.preventDefault(); first.focus(); }
+    else if(!plate.contains(document.activeElement)){ e.preventDefault(); first.focus(); }
+  });
+})();
+
+
+function wireForm(formId, rules){
+  var f=document.getElementById(formId);
+  if(!f) return;
+  var done=f.parentNode.querySelector('.done');
+  f.addEventListener('submit',function(e){
+    e.preventDefault();
+    var ok=true, firstBad=null;
+    rules.forEach(function(r){
+      var el=f.elements[r.name], msg=f.querySelector('[data-err="'+r.name+'"]');
+      var bad=!r.test((el.value||'').trim());
+      el.setAttribute('aria-invalid', bad?'true':'false');
+      if(msg) msg.classList.toggle('show', bad);
+      if(bad){ ok=false; if(!firstBad) firstBad=el; }
+    });
+    if(!ok){ if(done) done.classList.remove('show'); firstBad.focus(); return; }
+    f.reset();
+    rules.forEach(function(r){ f.elements[r.name].setAttribute('aria-invalid','false'); });
+    if(done){ done.classList.add('show'); done.focus(); }
+  });
+}
+var EMAIL=/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
+
+wireForm('sub-form',[{name:'email',test:function(v){return EMAIL.test(v);}}]);
+</script>
+</body>
+</html>

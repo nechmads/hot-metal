@@ -282,7 +282,7 @@
                 "{{publicationId}}"
               ]
             },
-            "description": "Updates publication settings. All fields are optional.",
+            "description": "Updates publication settings. All fields are optional.\n\n**`templateId`** selects the public blog design. Allowed values:\n\n- `starter` \u2014 Clean, minimal, content-focused design.\n- `editorial` \u2014 Magazine-style with serif typography and drop caps.\n- `bold` \u2014 Tech-forward with geometric layout and thick borders.\n- `press-machine` \u2014 A newspaper front page: ruled columns, a commanding lead headline, and a typographic date plate where a post has no image.\n- `one-signal` \u2014 A dark dispatch log: a numbered index instead of cards, with a long-form reading column.\n\nAn unknown value is rejected with 400. `press-machine` and `one-signal` render on EmDash-backed publications; a publication still served by the legacy frontend falls back to `starter`.",
             "body": {
               "mode": "raw",
               "raw": "{\n  \"name\": \"Looking Ahead\",\n  \"slug\": \"shipping-a-cms-migration\",\n  \"description\": \"Weekly notes on where software is heading.\",\n  \"writingTone\": \"<writingTone>\",\n  \"defaultAuthor\": \"<defaultAuthor>\",\n  \"autoPublishMode\": \"ideas-only\",\n  \"cadencePostsPerWeek\": 1,\n  \"scoutSchedule\": \"<scoutSchedule>\",\n  \"timezone\": \"<timezone>\",\n  \"scoutEnabled\": false,\n  \"styleId\": \"<styleId>\",\n  \"templateId\": \"starter\",\n  \"feedFullEnabled\": false,\n  \"feedPartialEnabled\": false,\n  \"commentsEnabled\": false,\n  \"commentsModeration\": \"auto-approve\"\n}",

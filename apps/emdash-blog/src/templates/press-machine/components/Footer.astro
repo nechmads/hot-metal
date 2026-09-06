@@ -1,0 +1,55 @@
+---
+import type { SocialLinks } from '@hotmetal/data-layer';
+
+interface Props {
+  publicationName: string;
+  publicationSlug: string;
+  socialLinks: SocialLinks | null;
+}
+
+const { publicationName, socialLinks } = Astro.props;
+
+const year = new Date().getFullYear();
+
+const links = [
+  socialLinks?.twitter ? { href: socialLinks.twitter, label: 'X', external: true } : null,
+  socialLinks?.linkedin ? { href: socialLinks.linkedin, label: 'LinkedIn', external: true } : null,
+  socialLinks?.github ? { href: socialLinks.github, label: 'GitHub', external: true } : null,
+  socialLinks?.website ? { href: socialLinks.website, label: 'Website', external: true } : null,
+  { href: '/posts', label: 'Archive', external: false },
+  { href: '/rss', label: 'RSS', external: false },
+].filter((link): link is { href: string; label: string; external: boolean } => link !== null);
+---
+
+<footer class="pm-foot mt-auto">
+  <div class="pm-shell">
+    <div class="pm-foot-in">
+      <p class="pm-meta max-w-[34ch]">
+        &copy; {year} {publicationName}
+      </p>
+
+      <div class="pm-foot-links">
+        {links.map(({ href, label, external }) => (
+          <a
+            class="pm-caps"
+            href={href}
+            target={external ? '_blank' : undefined}
+            rel={external ? 'noopener noreferrer' : undefined}
+          >
+            {label}
+          </a>
+        ))}
+      </div>
+    </div>
+
+    <div class="pm-foot-bottom">
+      <span class="pm-caps">
+        Powered by{' '}
+        <a href="https://hotmetalapp.com" target="_blank" rel="noopener noreferrer">
+          Hot&nbsp;Metal
+        </a>
+      </span>
+      <span class="pm-caps">Set in Instrument Serif &amp; Source Serif</span>
+    </div>
+  </div>
+</footer>

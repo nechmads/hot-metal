@@ -1,0 +1,133 @@
+---
+import type { Post } from '@hotmetal/content-core';
+import { formatDate } from '../../../lib/format';
+import { getPreviewText, getFirstTopic } from '../../../lib/post-utils';
+
+interface Props {
+  posts: Post[];
+  heading?: string;
+  showViewAll?: boolean;
+  startNumber?: number;
+}
+
+/**
+ * `startNumber` continues the issue's item numbering: the lead story is 01, so
+ * the front-page archive starts at 02. On /posts the list stands alone and
+ * numbers from 01.
+ */
+const {
+  posts,
+  heading = 'The archive',
+  showViewAll = true,
+  startNumber = 1,
+} = Astro.props;
+
+/** Month/day/year for the date plate that stands in for a missing press cut. */
+const MONTHS = [
+  'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+  'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
+];
+
+function datePlate(iso: string | undefined) {
+  if (!iso) return null;
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return null;
+  return {
+    month: MONTHS[d.getMonth()],
+    day: String(d.getDate()).padStart(2, '0'),
+    year: String(d.getFullYear()),
+  };
+}
+
+/**
+ * On the home page this list is the continuation after the lead story, so its
+ * own length is one short of what the reader can see. Say "more" there rather
+ * than printing a count that disagrees with the page.
+ */
+const countLabel =
+  startNumber > 1
+    ? `${posts.length} more`
+    : `${posts.length} ${posts.length === 1 ? 'dispatch' : 'dispatches'}`;
+
+const rows = posts.map((post, i) => ({
+  post,
+  number: String(startNumber + i).padStart(2, '0'),
+  date: post.publishedAt ? formatDate(post.publishedAt) : null,
+  plate: datePlate(post.publishedAt),
+  topic: getFirstTopic(post),
+  dek: getPreviewText(post, 180),
+}));
+---
+
+<section class="pm-shell" id="pm-archive" aria-labelledby="pm-archive-h">
+  <div class="pm-section-head">
+    <h2 id="pm-archive-h">{heading}</h2>
+    <div class="pm-section-aside">
+      <p class="pm-caps pm-num">{countLabel}</p>
+      {showViewAll && (
+        <a class="pm-viewall" href="/posts">View all &rarr;</a>
+      )}
+    </div>
+  </div>
+
+  {rows.length > 0 ? (
+    <div class="pm-archive-grid">
+      {rows.map(({ post, number, date, plate, topic, dek }) => (
+        <article class="pm-brief animate-on-scroll">
+          <a class="pm-brief-link" href={`/${post.slug}`}>
+            <p class="pm-kicker">
+              <span class="pm-item-no pm-num">{number}</span>{topic ?? 'Dispatch'}
+            </p>
+            <h3 class="pm-brief-title">{post.title}</h3>
+          </a>
+
+          {post.featuredImage ? (
+            <figure class="pm-plate">
+              <div class="pm-plate-box">
+                <img
+                  src={post.featuredImage}
+                  alt=""
+                  loading="lazy"
+                  width="1024"
+                  height="1024"
+                />
+              </div>
+            </figure>
+          ) : plate ? (
+            /* No cut for this story: a typographic date plate holds the slot so
+               every row keeps the same measure whether art exists or not. */
+            <figure class="pm-plate pm-plate--date" aria-hidden="true">
+              <div class="pm-plate-box">
+                <span class="pm-pd-m">{plate.month}</span>
+                <span class="pm-pd-d pm-num">{plate.day}</span>
+                <span class="pm-pd-y pm-num">{plate.year}</span>
+              </div>
+            </figure>
+          ) : (
+            <figure class="pm-plate pm-plate--date" aria-hidden="true">
+              <div class="pm-plate-box">
+                <span class="pm-pd-d pm-num">{number}</span>
+              </div>
+            </figure>
+          )}
+
+          {dek && <p class="pm-brief-dek">{dek}</p>}
+
+          {date && post.publishedAt && (
+            <p class="pm-brief-meta pm-meta pm-num">
+              <b><time datetime={post.publishedAt}>{date}</time></b>
+              {post.author && (
+                <>
+                  <span class="pm-sep" aria-hidden="true">&middot;</span>
+                  {post.author}
+                </>
+              )}
+            </p>
+          )}
+        </article>
+      ))}
+    </div>
+  ) : (
+    <p class="pm-empty">The presses are warm. Nothing filed yet.</p>
+  )}
+</section>

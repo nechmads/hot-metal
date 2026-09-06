@@ -1,0 +1,371 @@
+---
+import type { Post } from '@hotmetal/content-core';
+import { getFirstTopic } from '../../../lib/post-utils';
+
+interface Props {
+  post: Post;
+  sanitizedContent: string;
+  date: string | null;
+  allLabels: string[];
+  postUrl: string;
+  twitterShareUrl: string;
+  linkedinShareUrl: string;
+}
+
+const {
+  post,
+  sanitizedContent,
+  date,
+  allLabels,
+  postUrl,
+  twitterShareUrl,
+  linkedinShareUrl,
+} = Astro.props;
+
+const firstTopic = getFirstTopic(post);
+const citations = post.citations ?? [];
+const hasComments = Astro.slots.has('comments');
+
+/* ---------------------------------------------------------- reading time -- */
+
+const plainText = (post.content ?? '').replace(/<[^>]*>/g, ' ');
+const wordCount = plainText.split(/\s+/).filter(Boolean).length;
+/** Only claimed when there is enough body text for the estimate to mean anything. */
+const readingMinutes = wordCount >= 120 ? Math.max(1, Math.round(wordCount / 220)) : null;
+/** Never leave an empty ruled strip where the byline would be. */
+const hasByline = Boolean(post.author || (date && post.publishedAt) || readingMinutes);
+
+/* ------------------------------------------------------------- contents --- */
+
+const ENTITIES: Record<string, string> = {
+  amp: '&',
+  lt: '<',
+  gt: '>',
+  quot: '"',
+  apos: "'",
+  nbsp: ' ',
+};
+
+function decodeEntities(value: string): string {
+  return value.replace(/&(#x?[0-9a-f]+|[a-z]+);/gi, (match, entity: string) => {
+    if (entity.startsWith('#x') || entity.startsWith('#X')) {
+      const code = Number.parseInt(entity.slice(2), 16);
+      return Number.isNaN(code) ? match : String.fromCodePoint(code);
+    }
+    if (entity.startsWith('#')) {
+      const code = Number.parseInt(entity.slice(1), 10);
+      return Number.isNaN(code) ? match : String.fromCodePoint(code);
+    }
+    return ENTITIES[entity.toLowerCase()] ?? match;
+  });
+}
+
+function slugify(value: string): string {
+  return value
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+    .slice(0, 60);
+}
+
+/** An id we are willing to reuse verbatim as an anchor target. */
+const SAFE_ID = /^[A-Za-z][A-Za-z0-9._:-]*$/;
+
+interface Heading {
+  id: string;
+  text: string;
+}
+
+const headings: Heading[] = [];
+const usedIds = new Set<string>();
+
+/**
+ * The contents rail is built from the article's own H2s, giving each one a
+ * stable anchor. The content is already sanitized, and every id written here
+ * is either an existing conservative id or a freshly slugified one, so no
+ * untrusted text reaches the attribute.
+ */
+const contentWithAnchors = sanitizedContent.replace(
+  /<h2\b([^>]*)>([\s\S]*?)<\/h2>/gi,
+  (match: string, attrs: string, inner: string) => {
+    const text = decodeEntities(inner.replace(/<[^>]*>/g, ' ')).replace(/\s+/g, ' ').trim();
+    if (!text) return match;
+
+    const existing = /\sid\s*=\s*["']([^"']*)["']/i.exec(attrs);
+    const candidate =
+      existing && SAFE_ID.test(existing[1])
+        ? existing[1]
+        : slugify(text) || `section-${headings.length + 1}`;
+
+    let id = candidate;
+    let suffix = 2;
+    while (usedIds.has(id)) {
+      id = `${candidate}-${suffix}`;
+      suffix += 1;
+    }
+    usedIds.add(id);
+    headings.push({ id, text });
+
+    const rest = existing ? attrs.replace(existing[0], '') : attrs;
+    return `<h2 id="${id}"${rest}>${inner}</h2>`;
+  },
+);
+
+/** One heading is not a table of contents — the rail only earns its margin at two. */
+const showContents = headings.length >= 2;
+---
+
+<div class="pm-shell">
+  <div class="pm-article-wrap">
+    {showContents && (
+      <aside class="pm-folio" aria-label="Sections in this article">
+        <div class="pm-folio-in">
+          <p class="pm-folio-h">In this article</p>
+          <ol data-pm-toc>
+            {headings.map((heading) => (
+              <li>
+                <a class="pm-folio-link" href={`#${heading.id}`}>{heading.text}</a>
+              </li>
+            ))}
+          </ol>
+        </div>
+      </aside>
+    )}
+
+    <article class="pm-article">
+      <div class="pm-article-head">
+        <div class="pm-article-head-row">
+          <div>
+            {firstTopic && <p class="pm-kicker">{firstTopic}</p>}
+
+            <h1 class="pm-article-title">{post.title}</h1>
+
+            {post.subtitle && <p class="pm-article-sub">{post.subtitle}</p>}
+          </div>
+
+          {/* A press cut, not a hero: the generated square is printed small so a
+              missing or weak image never costs the page its opening. */}
+          {post.featuredImage && (
+            <figure class="pm-plate">
+              <div class="pm-plate-box">
+                <img
+                  src={post.featuredImage}
+                  alt=""
+                  width="1024"
+                  height="1024"
+                  loading="eager"
+                />
+              </div>
+            </figure>
+          )}
+        </div>
+
+        {/* Outside the row on purpose: the byline rule has to run the full
+            measure, the same one the prose, tags and sources resolve against. */}
+        {hasByline && (
+        <p class="pm-byline pm-meta pm-num">
+          {post.author && <span>By <b>{post.author}</b></span>}
+          {post.author && date && <span class="pm-sep" aria-hidden="true">&middot;</span>}
+          {date && post.publishedAt && <time datetime={post.publishedAt}>{date}</time>}
+          {readingMinutes && (date || post.author) && (
+            <span class="pm-sep" aria-hidden="true">&middot;</span>
+          )}
+          {readingMinutes && <span>{readingMinutes} min read</span>}
+        </p>
+        )}
+      </div>
+
+      {showContents && (
+        <details class="pm-toc-m">
+          <summary>In this article</summary>
+          <ol data-pm-toc>
+            {headings.map((heading) => (
+              <li>
+                <a class="pm-folio-link" href={`#${heading.id}`}>{heading.text}</a>
+              </li>
+            ))}
+          </ol>
+        </details>
+      )}
+
+      <div class="pm-prose pm-prose--open" set:html={contentWithAnchors} />
+
+      {allLabels.length > 0 && (
+        <section class="pm-tags" aria-labelledby="pm-tags-h">
+          <p class="pm-caps" id="pm-tags-h">Filed under</p>
+          <ul class="pm-tag-list">
+            {allLabels.map((label) => (
+              <li>{label}</li>
+            ))}
+          </ul>
+        </section>
+      )}
+
+      <div class="pm-share">
+        <span class="pm-caps text-ink-3 font-medium">Share this piece</span>
+        <div class="pm-share-links">
+          <a
+            href={twitterShareUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label="Share on X (Twitter)"
+          >
+            X
+          </a>
+          <a
+            href={linkedinShareUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label="Share on LinkedIn"
+          >
+            LinkedIn
+          </a>
+          <button
+            id="pm-copy-link"
+            type="button"
+            aria-label="Copy link to clipboard"
+            data-url={postUrl}
+          >
+            Copy link
+          </button>
+        </div>
+      </div>
+    </article>
+
+    {(citations.length > 0 || hasComments) && (
+      <div class="pm-after">
+        {citations.length > 0 && (
+          <section aria-labelledby="pm-sources-h">
+            <div class="pm-section-head">
+              <h2 id="pm-sources-h">Sources</h2>
+              <p class="pm-caps pm-num">
+                {citations.length} {citations.length === 1 ? 'reference' : 'references'}
+              </p>
+            </div>
+            <ol class="pm-sources-list">
+              {citations.map((citation) => (
+                <li>
+                  <a href={citation.url} target="_blank" rel="noopener noreferrer">
+                    <span>
+                      <span class="pm-src-t">{citation.title}</span>
+                      {citation.publisher && <span class="pm-src-d">{citation.publisher}</span>}
+                    </span>
+                  </a>
+                </li>
+              ))}
+            </ol>
+          </section>
+        )}
+
+        {hasComments && (
+          <section class="pm-comments" aria-labelledby="pm-comments-h">
+            <div class="pm-section-head">
+              <h2 id="pm-comments-h">Correspondence</h2>
+            </div>
+            <div class="pm-comments-body">
+              <slot name="comments" />
+            </div>
+          </section>
+        )}
+      </div>
+    )}
+  </div>
+</div>
+
+<script>
+  function initCopyLink() {
+    const btn = document.getElementById('pm-copy-link');
+    if (!btn) return;
+
+    btn.addEventListener('click', async () => {
+      const url = btn.getAttribute('data-url');
+      if (!url) return;
+
+      try {
+        await navigator.clipboard.writeText(url);
+        const original = btn.textContent;
+        btn.textContent = 'Copied';
+        setTimeout(() => {
+          btn.textContent = original;
+        }, 2000);
+      } catch {
+        // Clipboard API unavailable — leave the label alone.
+      }
+    });
+  }
+
+  let teardownContents: (() => void) | null = null;
+
+  /**
+   * The active section is the last heading whose top has passed a reading line
+   * about a third down the viewport. Driven by scroll position rather than an
+   * IntersectionObserver with a negative rootMargin, which sticks on the first
+   * entry for any section taller than the observation band.
+   */
+  function initContents() {
+    teardownContents?.();
+    teardownContents = null;
+
+    const lists = Array.from(document.querySelectorAll<HTMLElement>('[data-pm-toc]'));
+    if (lists.length === 0) return;
+
+    const groups = lists.map((list) => {
+      const links = Array.from(list.querySelectorAll<HTMLAnchorElement>('.pm-folio-link'));
+      return {
+        links,
+        heads: links.map((link) =>
+          document.getElementById(decodeURIComponent(link.getAttribute('href')?.slice(1) ?? '')),
+        ),
+      };
+    });
+
+    const sheet = document.querySelector<HTMLDetailsElement>('.pm-toc-m');
+    const onSheetClick = (event: Event) => {
+      if ((event.target as Element | null)?.closest('.pm-folio-link') && sheet) {
+        sheet.open = false;
+      }
+    };
+    sheet?.addEventListener('click', onSheetClick);
+
+    let ticking = false;
+
+    function mark() {
+      ticking = false;
+      const line = window.scrollY + window.innerHeight * 0.28;
+      for (const group of groups) {
+        let active = -1;
+        group.heads.forEach((head, i) => {
+          if (head && head.getBoundingClientRect().top + window.scrollY <= line) active = i;
+        });
+        group.links.forEach((link, i) => {
+          if (i === active) link.setAttribute('aria-current', 'true');
+          else link.removeAttribute('aria-current');
+        });
+      }
+    }
+
+    function onScroll() {
+      if (ticking) return;
+      ticking = true;
+      window.requestAnimationFrame(mark);
+    }
+
+    window.addEventListener('scroll', onScroll, { passive: true });
+    window.addEventListener('resize', onScroll);
+    mark();
+
+    teardownContents = () => {
+      window.removeEventListener('scroll', onScroll);
+      window.removeEventListener('resize', onScroll);
+      sheet?.removeEventListener('click', onSheetClick);
+    };
+  }
+
+  function initPostContent() {
+    initCopyLink();
+    initContents();
+  }
+
+  initPostContent();
+  document.addEventListener('astro:after-swap', initPostContent);
+</script>

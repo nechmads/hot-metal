@@ -17,6 +17,13 @@ export type {
   Idea,
 } from './automation'
 export { AUTO_PUBLISH_MODES, IDEA_STATUSES } from './automation'
+export {
+  PUBLICATION_TEMPLATES,
+  PUBLICATION_TEMPLATE_IDS,
+  DEFAULT_PUBLICATION_TEMPLATE_ID,
+  isValidTemplateId,
+} from './publication-templates'
+export type { PublicationTemplate, PublicationTemplateId } from './publication-templates'
 
 export type {
   ScoutSchedule,

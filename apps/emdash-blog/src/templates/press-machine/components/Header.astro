@@ -1,0 +1,105 @@
+---
+interface Props {
+  publicationName: string;
+  logoUrl: string | null;
+  showDate?: boolean;
+}
+
+/**
+ * `showDate` marks the front page: it raises the nameplate to full broadsheet
+ * scale. The dateline rule under it carries the date on every page, the way a
+ * paper prints its issue date on every sheet.
+ */
+const { publicationName, logoUrl, showDate = false } = Astro.props;
+
+const currentPath = Astro.url.pathname;
+
+const navLinks = [
+  { href: '/', label: 'Front page' },
+  { href: '/posts', label: 'Archive' },
+  { href: '/rss', label: 'RSS' },
+] as const;
+
+const today = new Date().toLocaleDateString('en-US', {
+  weekday: 'long',
+  year: 'numeric',
+  month: 'long',
+  day: 'numeric',
+});
+
+/**
+ * The nameplate is sized from the name's own length rather than by a client
+ * side text fitter: a long publication name lands at a smaller, safe size with
+ * no layout shift and no script. The two values feed the clamp() in theme.css.
+ */
+const nameLength = publicationName.trim().length;
+const wordmarkStyle =
+  nameLength <= 12
+    ? '--pm-wm-vw: 12vw; --pm-wm-cap: 6.5rem;'
+    : nameLength <= 20
+      ? '--pm-wm-vw: 9.5vw; --pm-wm-cap: 5rem;'
+      : nameLength <= 32
+        ? '--pm-wm-vw: 7vw; --pm-wm-cap: 3.6rem;'
+        : '--pm-wm-vw: 5.5vw; --pm-wm-cap: 2.75rem;';
+---
+
+<header class="pm-top-rule">
+  {showDate ? (
+    <div class="pm-shell">
+      <div class="pm-masthead">
+        <h1 class="pm-wordmark" style={wordmarkStyle}>
+          <a href="/">
+            {logoUrl ? (
+              <img
+                src={logoUrl}
+                alt={publicationName}
+                class="mx-auto h-14 w-auto md:h-20"
+                loading="eager"
+              />
+            ) : (
+              <span>{publicationName}</span>
+            )}
+          </a>
+        </h1>
+      </div>
+    </div>
+  ) : (
+    <div class="pm-shell">
+      <div class="pm-masthead pm-masthead--slim">
+        <div class="pm-slim-row">
+          <p class="pm-wordmark" style={wordmarkStyle}>
+            <a href="/">
+              {logoUrl ? (
+                <img src={logoUrl} alt={publicationName} class="h-9 w-auto" loading="eager" />
+              ) : (
+                <span>{publicationName}</span>
+              )}
+            </a>
+          </p>
+        </div>
+      </div>
+    </div>
+  )}
+
+  <div class="pm-dateline">
+    <div class="pm-shell">
+      <div class="pm-dateline-in">
+        <p class="pm-caps pm-num">
+          <span class="pm-mid">{today}</span>
+        </p>
+
+        <nav class="pm-nav" aria-label="Primary">
+          <ul>
+            {navLinks.map(({ href, label }) => (
+              <li>
+                <a href={href} aria-current={currentPath === href ? 'page' : undefined}>
+                  {label}
+                </a>
+              </li>
+            ))}
+          </ul>
+        </nav>
+      </div>
+    </div>
+  </div>
+</header>
