@@ -1,0 +1,1059 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Agent First Development is The Future — Looking Ahead</title>
+<meta name="description" content="Mobile-first was a rethink of where you start. This is the same move, one layer deeper.">
+<meta name="color-scheme" content="dark">
+<style>
+@font-face {
+  font-family: 'JetBrains Mono';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url(fonts/jetbrains-mono-0.woff2) format('woff2');
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+@font-face {
+  font-family: 'JetBrains Mono';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url(fonts/jetbrains-mono-1.woff2) format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+@font-face {
+  font-family: 'JetBrains Mono';
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url(fonts/jetbrains-mono-2.woff2) format('woff2');
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+@font-face {
+  font-family: 'JetBrains Mono';
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url(fonts/jetbrains-mono-3.woff2) format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+@font-face {
+  font-family: 'JetBrains Mono';
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url(fonts/jetbrains-mono-4.woff2) format('woff2');
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+@font-face {
+  font-family: 'JetBrains Mono';
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url(fonts/jetbrains-mono-5.woff2) format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+@font-face {
+  font-family: 'Inter';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url(fonts/inter-0.woff2) format('woff2');
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+@font-face {
+  font-family: 'Inter';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url(fonts/inter-1.woff2) format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+@font-face {
+  font-family: 'Inter';
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url(fonts/inter-2.woff2) format('woff2');
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+@font-face {
+  font-family: 'Inter';
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url(fonts/inter-3.woff2) format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+@font-face {
+  font-family: 'Inter';
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url(fonts/inter-4.woff2) format('woff2');
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+@font-face {
+  font-family: 'Inter';
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url(fonts/inter-5.woff2) format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+@font-face {
+  font-family: 'IBM Plex Sans';
+  font-style: normal;
+  font-weight: 400;
+  font-stretch: 100%;
+  font-display: swap;
+  src: url(fonts/ibm-plex-sans-0.woff2) format('woff2');
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+@font-face {
+  font-family: 'IBM Plex Sans';
+  font-style: normal;
+  font-weight: 400;
+  font-stretch: 100%;
+  font-display: swap;
+  src: url(fonts/ibm-plex-sans-1.woff2) format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+@font-face {
+  font-family: 'IBM Plex Sans';
+  font-style: normal;
+  font-weight: 600;
+  font-stretch: 100%;
+  font-display: swap;
+  src: url(fonts/ibm-plex-sans-4.woff2) format('woff2');
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+@font-face {
+  font-family: 'IBM Plex Sans';
+  font-style: normal;
+  font-weight: 600;
+  font-stretch: 100%;
+  font-display: swap;
+  src: url(fonts/ibm-plex-sans-5.woff2) format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+*,*::before,*::after{box-sizing:border-box}
+:root{
+  /* The publication's own hex is the ONE colour token this template takes.
+     --accent-lit is derived from it so the signal stays legible on the dark
+     ground whatever hue a publication picks. */
+  --accent:#b4361f;
+  --accent-mark:#b4361f;
+  --accent-lit:#b4361f;
+  --ground:#0c0d10;
+  --ground-2:#101217;
+  --ground-3:#14161c;
+  --ink:#e7e5e0;
+  --ink-hi:#f9f7f3;
+  --ink-2:#a3a5ab;
+  --ink-3:#7a7d86;
+  --rule:#20222a;
+  --rule-2:#2c2f38;
+  --mono:'JetBrains Mono',ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+  /* Three voices, three jobs: mono for structure, Inter for display and
+     interface, a humanist text face for the 2,000-word read. */
+  --sans:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;
+  --read:'IBM Plex Sans','Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;
+  --pad:clamp(1.15rem,4vw,3.25rem);
+  --maxw:84rem;
+  /* The dispatch page's own frame: rail + gutter + measure and nothing else,
+     so the article has one left axis and no leftover right third. */
+  --rail:12rem;
+  --railgap:3rem;
+  /* Reading measure, tuned by measurement rather than by eye: on a dark ground
+     the comfortable band is ~62-66 characters, not the ~70+ that 58ch gave.
+     Held in rem, not ch, so the end-matter blocks (set at 16px) land on exactly
+     the same right edge as the 19px article body. */
+  --measure:38rem;
+}
+@supports (color: color-mix(in oklab, red 50%, blue)) {
+  :root{ --accent-lit:color-mix(in oklab, var(--accent) 58%, #ffe4d8); }
+}
+/* Both derived values keep the publication's hue and chroma and only put a
+   floor under its lightness, so a very dark hex still reads as a mark and as
+   text. A hex that is already light enough passes through untouched. */
+@supports (color: oklch(from red max(l, .5) c h)) {
+  :root{
+    --accent-mark:oklch(from var(--accent) max(l, .52) c h);
+    --accent-lit:oklch(from color-mix(in oklab, var(--accent) 58%, #ffe4d8) max(l, .68) c h);
+  }
+}
+html{-webkit-text-size-adjust:100%}
+body{
+  margin:0;background:var(--ground);color:var(--ink);
+  font-family:var(--sans);font-size:16px;line-height:1.5;
+  -webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;
+  overflow-x:hidden;
+}
+img{max-width:100%;display:block}
+a{color:inherit}
+::selection{background:var(--accent-lit);color:var(--ground)}
+
+.wrap{max-width:var(--maxw);margin:0 auto;padding-inline:var(--pad)}
+.mono{font-family:var(--mono)}
+.lbl{
+  font-family:var(--mono);font-size:.6875rem;font-weight:500;
+  letter-spacing:.14em;text-transform:uppercase;color:var(--ink-3);
+}
+.rule{border:0;border-top:1px solid var(--rule);margin:0}
+
+a:focus-visible,button:focus-visible,input:focus-visible,textarea:focus-visible,
+summary:focus-visible,[tabindex]:focus-visible{
+  outline:2px solid var(--accent-lit);outline-offset:3px;border-radius:1px;
+}
+
+/* ---------------------------------------------------------------- masthead */
+.top{border-bottom:1px solid var(--rule)}
+.mast{
+  display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;
+  gap:1.25rem 2rem;padding:clamp(1.6rem,3.6vw,2.9rem) 0 clamp(1.1rem,2.4vw,1.6rem);
+}
+.brand{text-decoration:none;display:block;min-width:0}
+.brand .name{
+  font-size:clamp(1.6rem,3.5vw,2.35rem);font-weight:600;letter-spacing:-.028em;
+  line-height:1.04;color:var(--ink);margin:0;
+}
+.brand .tag{
+  margin:.55rem 0 0;font-family:var(--mono);font-size:.75rem;letter-spacing:.05em;
+  color:var(--ink-2);
+}
+.brand:hover .name{color:#fff}
+
+.nav{display:flex;flex-wrap:wrap;gap:.15rem .35rem;align-items:center}
+.nav a{
+  font-family:var(--mono);font-size:.6875rem;font-weight:500;letter-spacing:.13em;
+  text-transform:uppercase;text-decoration:none;color:var(--ink-3);
+  padding:.5rem .7rem;border:1px solid transparent;transition:color .18s,border-color .18s;
+}
+.nav a:hover{color:var(--ink)}
+.nav a[aria-current]{color:var(--ink);border-color:var(--rule-2)}
+.nav a[aria-current]::before{
+  content:"";display:inline-block;width:.4rem;height:.4rem;background:var(--accent-mark);
+  margin-right:.5rem;vertical-align:.05em;
+}
+
+/* status strip */
+.strip{
+  display:flex;flex-wrap:wrap;gap:.4rem 1.6rem;align-items:center;
+  padding:.7rem 0;border-top:1px solid var(--rule);
+  font-family:var(--mono);font-size:.6875rem;letter-spacing:.11em;
+  text-transform:uppercase;color:var(--ink-3);
+}
+.strip .on{color:var(--ink-2)}
+.strip .dot{
+  display:inline-block;width:.4rem;height:.4rem;background:var(--accent-mark);
+  margin-right:.5rem;vertical-align:.06em;
+}
+
+/* ------------------------------------------------------------------- lead */
+.lead{padding-block:clamp(2.4rem,6vw,4.5rem) clamp(2rem,4vw,3rem)}
+.lead-kick{
+  display:flex;flex-wrap:wrap;gap:.35rem 1.1rem;align-items:baseline;
+  margin-bottom:clamp(1.1rem,2.6vw,1.9rem);
+}
+/* The accent marks the dispatch number itself — the same square the index rows
+   use — rather than floating as a loose rule fragment under the masthead. */
+.lead-kick .n,.crumb .n{
+  font-family:var(--mono);font-size:.75rem;font-weight:700;letter-spacing:.12em;
+  color:var(--accent-lit);
+}
+.lead-kick .n::before,.crumb .n::before{
+  content:"";display:inline-block;width:.4rem;height:.4rem;background:var(--accent-mark);
+  margin-right:.55rem;vertical-align:.08em;
+}
+.lead h2{margin:0;max-width:18ch;text-wrap:balance}
+.lead h2 a{
+  text-decoration:none;display:inline-block;
+  font-size:clamp(2.05rem,6.1vw,4.05rem);font-weight:600;letter-spacing:-.035em;
+  line-height:1.01;color:var(--ink);
+  transition:color .18s;
+}
+.lead h2 a:hover{color:#fff}
+/* Deck and hook sit side by side under a headline that spans the field, and the
+   readout closes the block as a ruled strip the full width — so the meta table
+   is part of the composition rather than parked in the corner. */
+.lead-grid{
+  display:grid;grid-template-columns:minmax(0,1fr) minmax(0,24rem);
+  gap:clamp(1.4rem,3vw,2.8rem) clamp(1.8rem,4vw,3.5rem);align-items:start;
+  margin-top:clamp(1.2rem,2.6vw,1.9rem);
+}
+.lead .sub{
+  margin:0;max-width:46ch;
+  font-size:clamp(1.05rem,1.7vw,1.3rem);line-height:1.45;color:var(--ink-2);
+  font-weight:400;letter-spacing:-.008em;
+}
+.hook{
+  margin:0;padding-left:clamp(1rem,2vw,1.6rem);
+  border-left:2px solid var(--accent-mark);
+  font-size:1.0625rem;line-height:1.62;color:var(--ink);max-width:44ch;
+}
+.readout{
+  margin-top:clamp(2rem,4.5vw,3.2rem);
+  border-top:1px solid var(--rule-2);border-bottom:1px solid var(--rule-2);
+}
+.readout dl{
+  margin:0;display:grid;grid-auto-flow:column;grid-template-rows:auto auto;
+  grid-auto-columns:minmax(0,1fr);
+  font-family:var(--mono);font-size:.75rem;line-height:1.5;
+}
+.readout dt{
+  padding:.85rem 0 .3rem;color:var(--ink-3);
+  letter-spacing:.14em;text-transform:uppercase;font-size:.625rem;
+}
+.readout dd{margin:0;padding:0 0 .95rem;color:var(--ink-2)}
+.readout dl > *:nth-child(n+3){border-left:1px solid var(--rule);padding-left:clamp(1rem,2vw,1.6rem)}
+.go{
+  display:inline-flex;align-items:center;gap:.6rem;margin-top:1.6rem;
+  font-family:var(--mono);font-size:.75rem;font-weight:500;letter-spacing:.12em;
+  text-transform:uppercase;text-decoration:none;color:var(--ink);
+  border-bottom:1px solid var(--accent-mark);padding-bottom:.35rem;
+  transition:color .18s,gap .18s;
+}
+.go:hover{color:var(--accent-lit);gap:.95rem}
+.go .arw{color:var(--accent-lit)}
+
+/* ------------------------------------------------------------------ index */
+.idx{padding-bottom:clamp(3rem,7vw,5rem)}
+.idx-bar{
+  display:flex;flex-wrap:wrap;gap:.75rem 1.5rem;align-items:baseline;
+  justify-content:space-between;padding-bottom:.85rem;
+}
+.idx-bar h2{
+  margin:0;font-family:var(--mono);font-size:.8125rem;font-weight:700;
+  letter-spacing:.16em;text-transform:uppercase;color:var(--ink);
+}
+.toggle{
+  font-family:var(--mono);font-size:.6875rem;font-weight:500;letter-spacing:.12em;
+  text-transform:uppercase;color:var(--ink-3);background:transparent;
+  border:1px solid var(--rule-2);padding:.45rem .8rem;cursor:pointer;
+  transition:color .18s,border-color .18s;
+}
+.toggle:hover{color:var(--ink);border-color:var(--ink-3)}
+.toggle[aria-pressed="true"]{color:var(--accent-lit);border-color:var(--accent-mark)}
+
+.cols{--g:3.6rem 8.5rem minmax(0,1fr) 11.5rem 4.5rem}
+.idx-head{
+  position:sticky;top:0;z-index:6;background:var(--ground);
+  display:grid;grid-template-columns:var(--g);column-gap:1.5rem;
+  padding:.7rem 0;border-top:1px solid var(--rule-2);border-bottom:1px solid var(--rule-2);
+  font-family:var(--mono);font-size:.625rem;font-weight:500;letter-spacing:.16em;
+  text-transform:uppercase;color:var(--ink-3);
+}
+.idx-head .r{text-align:right}
+
+.rows{border-bottom:1px solid var(--rule)}
+.row{
+  position:relative;display:grid;grid-template-columns:var(--g);
+  grid-template-areas:"num date title sec read" "num date dek dek dek";
+  column-gap:1.5rem;align-items:baseline;
+  padding:.95rem 0;border-bottom:1px solid var(--rule);
+  text-decoration:none;color:inherit;
+}
+.row:last-child{border-bottom:0}
+.row::after{
+  content:"";position:absolute;left:0;right:0;bottom:-1px;height:1px;
+  background:var(--accent-mark);transform:scaleX(0);transform-origin:left center;
+  transition:transform .45s cubic-bezier(.22,.7,.25,1);
+}
+/* The index number is the log's signature: it carries the accent and the weight,
+   and it is the only bright thing in the row besides the title. */
+.c-num{grid-area:num;font-family:var(--mono);font-size:.8125rem;font-weight:700;
+  letter-spacing:.04em;color:var(--accent-lit);white-space:nowrap;align-self:start;
+  padding-top:.1rem}
+.c-meta{display:contents}
+.d-short{display:none}
+.c-date{grid-area:date;font-family:var(--mono);font-size:.75rem;color:var(--ink-3);
+  white-space:nowrap;align-self:start;padding-top:.15rem;transition:color .18s}
+.c-title{grid-area:title;font-size:1.0625rem;font-weight:500;letter-spacing:-.014em;
+  line-height:1.32;color:var(--ink);transition:color .18s}
+.c-sec{grid-area:sec;font-family:var(--mono);font-size:.6875rem;letter-spacing:.09em;
+  text-transform:uppercase;color:var(--ink-3);align-self:start;padding-top:.28rem;
+  transition:color .18s}
+.c-read{grid-area:read;font-family:var(--mono);font-size:.75rem;color:var(--ink-3);
+  text-align:right;white-space:nowrap;align-self:start;padding-top:.15rem;
+  transition:color .18s}
+.c-dek{
+  grid-area:dek;max-height:0;overflow:hidden;opacity:0;
+  transition:max-height .38s cubic-bezier(.22,.7,.25,1),opacity .26s ease;
+}
+.c-dek span{display:block;padding:.55rem 0 .15rem;max-width:64ch;
+  font-size:.9375rem;line-height:1.58;color:var(--ink-2)}
+
+.row:hover .c-title,.row:focus-visible .c-title{color:#fff}
+.row:hover .c-date,.row:focus-visible .c-date,
+.row:hover .c-sec,.row:focus-visible .c-sec,
+.row:hover .c-read,.row:focus-visible .c-read{color:var(--ink-2)}
+.row:hover::after,.row:focus-visible::after{transform:scaleX(1)}
+.row:hover .c-dek,.row:focus-visible .c-dek,
+.rows.open .c-dek{max-height:11rem;opacity:1}
+
+/* --------------------------------------------------------------- subscribe */
+.sub-block{
+  display:grid;grid-template-columns:minmax(0,1fr) minmax(0,22rem);
+  gap:clamp(1.6rem,4vw,3.5rem);align-items:start;
+  padding:clamp(2rem,4.5vw,3.2rem) 0;
+  border-top:1px solid var(--rule-2);border-bottom:1px solid var(--rule-2);
+  margin-bottom:clamp(3rem,6vw,4.5rem);
+}
+.sub-block h2{margin:.7rem 0 0;font-size:clamp(1.35rem,2.8vw,1.9rem);font-weight:600;
+  letter-spacing:-.026em;line-height:1.12;max-width:18ch}
+.sub-block p{margin:.8rem 0 0;color:var(--ink-2);font-size:.9375rem;max-width:48ch;line-height:1.6}
+.field{display:block}
+.field + .field{margin-top:.9rem}
+.field span.lbl{display:block;margin-bottom:.4rem}
+input,textarea{
+  width:100%;font-family:var(--mono);font-size:.875rem;color:var(--ink);
+  background:var(--ground-2);border:1px solid var(--rule-2);border-radius:0;
+  padding:.7rem .8rem;transition:border-color .18s;
+}
+textarea{font-family:var(--sans);font-size:.9375rem;line-height:1.55;min-height:8rem;resize:vertical}
+input::placeholder,textarea::placeholder{color:var(--ink-3)}
+input:hover,textarea:hover{border-color:var(--ink-3)}
+input:focus,textarea:focus{border-color:var(--accent-lit);outline-offset:1px}
+input[aria-invalid="true"],textarea[aria-invalid="true"]{border-color:var(--accent-lit)}
+.btn{
+  font-family:var(--mono);font-size:.75rem;font-weight:700;letter-spacing:.14em;
+  text-transform:uppercase;color:var(--ground);background:var(--ink);
+  border:1px solid var(--ink);border-radius:0;padding:.75rem 1.3rem;cursor:pointer;
+  transition:background .18s,color .18s,border-color .18s;
+}
+.btn:hover{background:var(--accent-lit);border-color:var(--accent-lit);color:#12060a}
+.err{
+  display:block;min-height:1.1rem;margin-top:.35rem;font-family:var(--mono);
+  font-size:.6875rem;letter-spacing:.06em;color:var(--accent-lit);
+}
+.said{
+  margin-top:1rem;padding:.75rem .9rem;border:1px solid var(--rule-2);
+  border-left:2px solid var(--accent-mark);background:var(--ground-2);
+  font-family:var(--mono);font-size:.75rem;line-height:1.6;color:var(--ink-2);
+}
+.said:empty{display:none}
+.fine{margin-top:.85rem;font-family:var(--mono);font-size:.6875rem;color:var(--ink-3);line-height:1.6}
+
+/* ------------------------------------------------------------------ footer */
+.foot{border-top:1px solid var(--rule);padding:clamp(2.2rem,4.5vw,3.2rem) 0 2.4rem}
+.foot-grid{display:grid;grid-template-columns:minmax(0,1.4fr) minmax(0,1fr) minmax(0,1fr);
+  gap:2rem clamp(1.6rem,4vw,3.5rem)}
+.foot .fname{font-size:1.05rem;font-weight:600;letter-spacing:-.02em;margin:0}
+.foot p{margin:.7rem 0 0;color:var(--ink-3);font-size:.875rem;line-height:1.6;max-width:44ch}
+.foot ul{list-style:none;margin:.9rem 0 0;padding:0;display:grid;gap:.5rem}
+.foot ul a{font-family:var(--mono);font-size:.75rem;letter-spacing:.08em;color:var(--ink-2);
+  text-decoration:none;border-bottom:1px solid transparent;transition:color .18s,border-color .18s}
+.foot ul a:hover{color:var(--accent-lit);border-color:var(--accent-mark)}
+.colophon{
+  display:flex;flex-wrap:wrap;gap:.6rem 1.5rem;justify-content:space-between;align-items:baseline;
+  margin-top:clamp(2rem,4vw,3rem);padding-top:1rem;border-top:1px solid var(--rule);
+  font-family:var(--mono);font-size:.6875rem;letter-spacing:.09em;text-transform:uppercase;
+  color:var(--ink-3);
+}
+.colophon a{color:var(--ink-3);text-decoration:none;border-bottom:1px solid var(--rule-2)}
+.colophon a:hover{color:var(--ink)}
+
+/* ================================================================ post page */
+.progress-top{
+  position:fixed;top:0;left:0;height:2px;width:0;background:var(--accent-lit);
+  z-index:40;display:none;
+}
+/* The dispatch page is a document, not a full-bleed page: its frame is exactly
+   rail + gutter + measure, so masthead, rail, title, body and end matter all
+   resolve to one composition with no leftover right third. */
+body.doc{--maxw:calc(var(--rail) + var(--railgap) + var(--measure) + var(--pad) * 2)}
+.post-head{grid-area:head;padding:clamp(2.4rem,5.5vw,4rem) 0 clamp(1.6rem,3vw,2.2rem)}
+.crumb{display:flex;flex-wrap:wrap;gap:.4rem 1.1rem;align-items:baseline;margin-bottom:1.4rem}
+.crumb a{font-family:var(--mono);font-size:.6875rem;letter-spacing:.12em;text-transform:uppercase;
+  color:var(--ink-3);text-decoration:none}
+.crumb a:hover{color:var(--accent-lit)}
+.post-head h1{
+  margin:0;font-size:clamp(2.05rem,5.6vw,3.7rem);font-weight:600;
+  letter-spacing:-.035em;line-height:1.02;text-wrap:balance;
+}
+.post-head .sub{margin:clamp(1rem,2vw,1.4rem) 0 0;max-width:54ch;color:var(--ink-2);
+  font-size:clamp(1.05rem,1.6vw,1.25rem);line-height:1.46;letter-spacing:-.008em}
+.byline{
+  display:flex;flex-wrap:wrap;gap:.45rem 1.4rem;margin-top:clamp(1.5rem,3vw,2.2rem);
+  padding-top:.9rem;border-top:1px solid var(--rule);
+  font-family:var(--mono);font-size:.75rem;color:var(--ink-3);
+}
+.byline .who{color:var(--ink)}
+
+/* Title, deck, byline, body and end matter share column 2 — one left axis for
+   every word on the page. The rail hangs in the outer column beside them. */
+.post-wrap{
+  display:grid;grid-template-columns:var(--rail) minmax(0,1fr);
+  grid-template-areas:". head" "rail read";
+  column-gap:var(--railgap);padding-bottom:clamp(3rem,6vw,4.5rem);
+}
+.read-col{grid-area:read;min-width:0}
+.rail{grid-area:rail;position:sticky;top:2rem;align-self:start}
+.rail h2{margin:0 0 .9rem;font-family:var(--mono);font-size:.625rem;font-weight:500;
+  letter-spacing:.16em;text-transform:uppercase;color:var(--ink-3)}
+.rail ol{list-style:none;margin:0;padding:0;counter-reset:toc}
+.rail li{counter-increment:toc}
+.rail a{
+  display:grid;grid-template-columns:1.9rem minmax(0,1fr);gap:.2rem;
+  padding:.5rem 0 .5rem .7rem;border-left:1px solid var(--rule-2);
+  font-family:var(--mono);font-size:.6875rem;line-height:1.45;letter-spacing:.02em;
+  color:var(--ink-3);text-decoration:none;transition:color .18s,border-color .18s;
+}
+.rail a::before{content:"0" counter(toc);color:var(--ink-3);transition:color .18s}
+.rail a:hover{color:var(--ink)}
+.rail a[aria-current="true"]{color:var(--ink);border-left-color:var(--accent-mark)}
+.rail a[aria-current="true"]::before{color:var(--accent-lit)}
+.rail .meter{margin-top:1.4rem;padding-top:1rem;border-top:1px solid var(--rule)}
+.rail .track{height:3.5rem;width:2px;background:var(--rule-2);position:relative}
+.rail .fill{position:absolute;top:0;left:0;width:2px;height:0;background:var(--accent-mark)}
+.rail .pct{margin-top:.6rem;font-family:var(--mono);font-size:.625rem;letter-spacing:.14em;
+  text-transform:uppercase;color:var(--ink-3)}
+
+/* The reading voice is a humanist text face, deliberately not the grotesque the
+   headlines are set in, and the dispatch opens on a lede a step above the body
+   so 2,000 words do not arrive at a single pitch. */
+.body{max-width:var(--measure);font-family:var(--read);font-size:1.1875rem;
+  line-height:1.72;color:var(--ink);letter-spacing:0;counter-reset:sec}
+.body p{margin:0 0 1.45em}
+.body > p:first-child{
+  font-size:1.375rem;line-height:1.52;letter-spacing:-.01em;color:var(--ink-hi);
+  margin-bottom:1.55em;
+}
+/* Section starts are a different rank from the bolded run-in sentences inside
+   paragraphs: a rule across the measure, a numbered mono marker in the accent,
+   and a heading well clear of body size. */
+.body h2{
+  counter-increment:sec;font-family:var(--sans);
+  margin:2.9em 0 .85em;padding-top:1.5em;border-top:1px solid var(--rule);
+  font-size:clamp(1.55rem,3vw,2rem);font-weight:600;
+  letter-spacing:-.03em;line-height:1.14;scroll-margin-top:5rem;color:var(--ink-hi);
+}
+.body h2::before{
+  content:"\00a7 " counter(sec,decimal-leading-zero);display:block;
+  font-family:var(--mono);font-size:.6875rem;font-weight:700;letter-spacing:.18em;
+  color:var(--accent-lit);margin-bottom:.75rem;
+}
+.body > h2:first-child{margin-top:0;padding-top:0;border-top:0}
+.body a{color:var(--ink);text-decoration:none;
+  background-image:linear-gradient(var(--accent-mark),var(--accent-mark));
+  background-repeat:no-repeat;background-size:100% 1px;background-position:0 100%;
+  padding-bottom:.06em;transition:color .18s,background-size .18s}
+.body a:hover{color:var(--accent-lit);background-size:100% 2px}
+/* Run-in leads stay a paragraph-level signal: weight only, no extra brightness,
+   so they never compete with a section start. */
+.body strong{font-weight:600;color:var(--ink)}
+.body em{font-style:italic}
+.body code{
+  font-family:var(--mono);font-size:.86em;background:var(--ground-3);
+  border:1px solid var(--rule);padding:.08em .38em;color:var(--ink);
+}
+.pull{
+  margin:2.8em 0;padding:0 0 0 clamp(1rem,2vw,1.6rem);border-left:2px solid var(--accent-mark);
+}
+.pull p{margin:0;font-family:var(--sans);font-size:clamp(1.3rem,2.6vw,1.7rem);
+  font-weight:500;line-height:1.24;letter-spacing:-.028em;color:var(--ink-hi)}
+.pull .lbl{display:block;margin-top:.9rem}
+
+/* Every end-matter block shares the article's right edge — tags, sources,
+   responses and related all stop on the same line. */
+.after{max-width:var(--measure);margin-top:clamp(3rem,6vw,4.5rem)}
+.sec-head{
+  display:flex;flex-wrap:wrap;gap:.4rem 1rem;align-items:baseline;justify-content:space-between;
+  padding-bottom:.65rem;border-bottom:1px solid var(--rule-2);margin-bottom:1.4rem;
+}
+.sec-head h2{margin:0;font-family:var(--mono);font-size:.75rem;font-weight:700;
+  letter-spacing:.16em;text-transform:uppercase;color:var(--ink)}
+.sec-head .count{font-family:var(--mono);font-size:.6875rem;letter-spacing:.1em;color:var(--ink-3)}
+/* Ruled lists hang straight off the section rule, exactly like the index. */
+.sec-head.tight{margin-bottom:0}
+
+/* Tags are mono words on the section hairline, not pills — this design has no
+   other rounded or boxed container. */
+.tags{list-style:none;margin:0;padding:0;display:flex;flex-wrap:wrap;gap:.45rem 1.6rem}
+.tags a{
+  display:inline-block;font-family:var(--mono);font-size:.75rem;letter-spacing:.06em;
+  color:var(--ink-2);text-decoration:none;padding-bottom:.15rem;
+  border-bottom:1px solid transparent;transition:color .18s,border-color .18s;
+}
+.tags a:hover{color:var(--accent-lit);border-bottom-color:var(--accent-mark)}
+
+.cites{list-style:none;margin:0;padding:0}
+.cites li{padding:.6rem 0;border-bottom:1px solid var(--rule);
+  display:grid;grid-template-columns:2.1rem minmax(0,1fr) auto;column-gap:1rem;align-items:baseline}
+.cites .n{font-family:var(--mono);font-size:.6875rem;color:var(--ink-3)}
+.cites a{font-size:.9375rem;line-height:1.5;color:var(--ink-2);text-decoration:none;
+  border-bottom:1px solid transparent;transition:color .18s,border-color .18s}
+.cites a:hover{color:var(--accent-lit);border-bottom-color:var(--accent-mark)}
+.cites .dom{font-family:var(--mono);font-size:.625rem;letter-spacing:.07em;
+  color:var(--ink-3);text-align:right;overflow-wrap:anywhere}
+
+.thread{list-style:none;margin:0;padding:0}
+.thread li{padding:1.2rem 0;border-bottom:1px solid var(--rule)}
+.thread .hd{display:flex;flex-wrap:wrap;gap:.2rem .9rem;align-items:baseline}
+.thread .nm{font-size:.9375rem;font-weight:600;letter-spacing:-.01em}
+.thread .dt{font-family:var(--mono);font-size:.6875rem;color:var(--ink-3)}
+.thread p{margin:.45rem 0 0;font-family:var(--read);font-size:.9375rem;line-height:1.62;
+  color:var(--ink-2);max-width:60ch}
+
+form.reply{margin-top:1.8rem}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:1rem}
+.reply .actions{display:flex;flex-wrap:wrap;gap:1rem;align-items:center;margin-top:1rem}
+
+/* Related dispatches are index rows, carrying their real index numbers — no
+   thumbnails, so the log reads the same wherever it appears. */
+.rel a{
+  position:relative;display:grid;grid-template-columns:3.4rem minmax(0,1fr) auto;
+  column-gap:1.2rem;align-items:baseline;padding:.9rem 0;
+  border-bottom:1px solid var(--rule);text-decoration:none;color:inherit;
+}
+.rel a::after{
+  content:"";position:absolute;left:0;right:0;bottom:-1px;height:1px;
+  background:var(--accent-mark);transform:scaleX(0);transform-origin:left center;
+  transition:transform .45s cubic-bezier(.22,.7,.25,1);
+}
+.rel a:hover::after,.rel a:focus-visible::after{transform:scaleX(1)}
+.rel .n{font-family:var(--mono);font-size:.8125rem;font-weight:700;letter-spacing:.04em;
+  color:var(--accent-lit);white-space:nowrap}
+.rel .t{font-size:1rem;font-weight:500;line-height:1.35;letter-spacing:-.014em;transition:color .18s}
+.rel a:hover .t,.rel a:focus-visible .t{color:#fff}
+.rel .m{font-family:var(--mono);font-size:.6875rem;letter-spacing:.08em;
+  color:var(--ink-3);white-space:nowrap;text-align:right;transition:color .18s}
+.rel a:hover .m,.rel a:focus-visible .m{color:var(--ink-2)}
+
+/* ------------------------------------------------------------ responsive */
+@media (max-width:1080px){
+  /* Below the two-column frame the document narrows to the measure itself and
+     the rail folds into a band above the text — still one left axis. */
+  body.doc{--maxw:calc(var(--measure) + var(--pad) * 2)}
+  .post-wrap{grid-template-columns:minmax(0,1fr);grid-template-areas:"head" "rail" "read";
+    row-gap:2rem}
+  .post-head{padding-bottom:0}
+  .rail{position:static;border:1px solid var(--rule-2);padding:1rem 1.1rem}
+  .rail ol{display:flex;flex-wrap:wrap;gap:.15rem 1.5rem}
+  .rail a{border-left:0;border-bottom:1px solid transparent;padding:.35rem 0;
+    grid-template-columns:1.7rem minmax(0,1fr)}
+  .rail a[aria-current="true"]{border-left:0;border-bottom-color:var(--accent-mark)}
+  .rail .meter{display:none}
+  .progress-top{display:block}
+}
+@media (max-width:900px){
+  .lead-grid{grid-template-columns:minmax(0,1fr)}
+  /* Narrow: the strip becomes the stacked readout it always was underneath. */
+  .readout{border-bottom:0}
+  .readout dl{grid-auto-flow:row;grid-template-rows:none;
+    grid-template-columns:5.5rem minmax(0,1fr)}
+  .readout dt{padding:.6rem 0;border-bottom:1px solid var(--rule)}
+  .readout dd{padding:.6rem 0;border-bottom:1px solid var(--rule)}
+  .readout dl > *:nth-child(n+3){border-left:0;padding-left:0}
+  .sub-block{grid-template-columns:minmax(0,1fr)}
+  .foot-grid{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}
+  .foot .about{grid-column:1 / -1}
+}
+@media (max-width:760px){
+  .idx-head{display:none}
+  /* Two lines per entry: number and title, then one metadata line. The number
+     keeps only the width it needs so the title gets the rest. */
+  .cols{--g:2.15rem minmax(0,1fr)}
+  .row{
+    grid-template-columns:var(--g);
+    grid-template-areas:"num title" "meta meta" "dek dek";
+    column-gap:.75rem;row-gap:.12rem;padding:.85rem 0;
+  }
+  .c-num{padding-top:.12rem;font-size:.75rem}
+  .c-title{font-size:1rem;padding-top:0}
+  .c-meta{
+    grid-area:meta;display:flex;flex-wrap:wrap;align-items:baseline;
+    gap:0 .55rem;margin-top:.35rem;padding-left:calc(2.15rem + .75rem);
+  }
+  .c-date,.c-read,.c-sec{padding-top:0;margin-top:0;text-align:left}
+  .c-meta > span + span::before{content:"·";margin-right:.55rem;color:var(--rule-2)}
+  .c-date,.c-read{font-size:.6875rem}
+  .d-long{display:none}
+  .d-short{display:inline}
+  .c-dek span{padding-left:calc(2.15rem + .75rem)}
+  .rel a{
+    grid-template-columns:2.4rem minmax(0,1fr);
+    grid-template-areas:"n t" ". m";column-gap:.75rem;row-gap:.3rem;
+  }
+  .rel .n{grid-area:n}
+  .rel .t{grid-area:t}
+  .rel .m{grid-area:m;text-align:left;white-space:normal}
+  .cites li{grid-template-columns:2.1rem minmax(0,1fr);row-gap:.28rem}
+  .cites .dom{grid-column:2;text-align:left}
+  .two{grid-template-columns:minmax(0,1fr)}
+  .mast{align-items:flex-start;flex-direction:column;gap:1rem}
+  .nav{margin-left:-.7rem}
+  .nav a[aria-current]{border-color:transparent}
+}
+@media (max-width:560px){
+  .body{font-size:1.0625rem;line-height:1.68}
+  .body > p:first-child{font-size:1.1875rem;line-height:1.54}
+  .body h2{margin-top:2.2em}
+}
+@media (max-width:520px){
+  .foot-grid{grid-template-columns:minmax(0,1fr)}
+}
+
+/* Touch / no-hover: rows cannot expand on hover, so the summaries control does
+   the work — and the log stays two lines an entry until the reader asks. */
+@media (hover:none){
+  .row::after{transform:scaleX(1);background:var(--rule-2)}
+}
+
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{
+    animation-duration:.001ms!important;animation-iteration-count:1!important;
+    transition-duration:.001ms!important;scroll-behavior:auto!important;
+  }
+}
+
+/* On paper the field inverts to ink on white — the tokens do the whole job —
+   the index opens every summary, and the live furniture (nav, forms, progress)
+   drops out rather than printing as dead ornament. */
+@media print{
+  :root{
+    --ground:#fff;--ground-2:#fff;--ground-3:#fff;
+    --ink:#16181c;--ink-hi:#000;--ink-2:#3b3e45;--ink-3:#55585f;
+    --rule:#c9ccd2;--rule-2:#9aa0a8;--accent-mark:#6c7078;--accent-lit:#3b3e45;
+  }
+  body,body.doc{background:#fff;color:#16181c;--maxw:100%;--measure:100%}
+  .progress-top,.nav,.toggle,.rail .meter,form,.colophon a{display:none}
+  .post-wrap{display:block}
+  .rail{position:static;border:0;padding:0;margin-bottom:1.5rem}
+  .idx-head{position:static}
+  .c-dek{max-height:none;opacity:1;overflow:visible}
+  .body a{background-image:none;text-decoration:underline}
+  .row,.rel a,.cites li,.thread li,.readout{break-inside:avoid}
+  .body h2,.sec-head{break-after:avoid}
+}
+
+</style>
+<noscript><style>
+/* Without scripting the summaries control cannot do anything, so it goes
+   rather than sitting there dead; hover and keyboard focus still open a row. */
+.toggle{display:none}
+</style></noscript>
+</head>
+<body class="doc">
+<div class="progress-top" id="ptop" aria-hidden="true"></div>
+<header class="top">
+  <div class="wrap">
+    <div class="mast">
+      <a class="brand" href="index.html">
+        <p class="name">Looking Ahead</p>
+        <p class="tag">AI, and what it means for the rest of us</p>
+      </a>
+      <nav class="nav" aria-label="Primary">
+        <a href="index.html">Home</a>
+        <a href="index.html#index">Archive</a>
+        <a href="index.html#subscribe">Subscribe</a>
+      </nav>
+    </div>
+    <div class="strip">
+      <span><span class="dot" aria-hidden="true"></span>Issue 41</span>
+      <span class="on">Sunday, September 6, 2026</span>
+      <span>8 dispatches on file</span>
+    </div>
+  </div>
+</header>
+<main id="main">
+  <div class="wrap post-wrap">
+    <header class="post-head">
+      <div class="crumb">
+        <span class="n">Dispatch 001</span>
+        <a href="index.html">&larr; Back to the index</a>
+        <span class="lbl">Product strategy</span>
+      </div>
+      <h1>Agent First Development is The Future</h1>
+      <p class="sub">Mobile-first was a rethink of where you start. This is the same move, one layer deeper.</p>
+      <div class="byline">
+        <span class="who">Shahar Nechmad</span>
+        <span><time datetime="2026-09-02">September 2, 2026</time></span>
+        <span>9 min read</span>
+        <span>1,740 words</span>
+        <span>13 sources</span>
+      </div>
+    </header>
+
+    <nav class="rail" id="rail" aria-label="Sections of this dispatch">
+        <h2>In this dispatch</h2>
+        <ol>
+        <li><a href="#my-thesis" data-toc="my-thesis">My thesis</a></li>
+        <li><a href="#start-with-the-api" data-toc="start-with-the-api">Start with the API, not the frontend</a></li>
+        <li><a href="#frontend-too" data-toc="frontend-too">Agent First changes the frontend too</a></li>
+        <li><a href="#not-agents-over-humans" data-toc="not-agents-over-humans">The point isn’t agents over humans</a></li>
+        </ol>
+        <div class="meter">
+          <div class="track" aria-hidden="true"><div class="fill" id="fill"></div></div>
+          <p class="pct" id="pct">Read <span>&mdash;</span></p>
+        </div>
+      </nav>
+
+      <div class="read-col">
+        <article class="body">
+<p>Back when mobile took off, every product team went through the same reckoning. You couldn’t just shrink your desktop site down and call it a mobile experience. The winners were the teams that flipped the process: design for the small screen first, then expand out to desktop. “Mobile first” wasn’t a slogan, it was a complete rethink of where you start.</p>
+<p>I think we’re at the exact same inflection point again, except this time the new screen isn’t a screen at all. It’s an agent.</p>
+<p>Here’s the thing that makes this not just a hot take: it already happened. In June 2026, Cloudflare CEO Matthew Prince confirmed that bot and agent traffic officially <a href="https://www.techspot.com/news/112657-bots-have-officially-overtaken-humans-internet-cloudflare.html" target="_blank" rel="noopener noreferrer">passed human traffic on the internet</a> for the first time ever. He’d predicted this would happen in 2027. It happened a year early. Cloudflare Radar puts it at roughly 57% of requests now coming from bots and agents, not people.</p>
+<p>And the reason isn’t spam. It’s scale. A human comparing cameras might check five websites. An agent doing the same task might check five thousand. Multiply that across every shopping decision, every research task, every “hey, can you handle this for me” moment, and you get an internet where the primary requester of your product is increasingly a piece of software acting on someone’s behalf.</p>
+<p>Stripe’s own research backs this up with a number that’s hard to ignore: agentic shoppers could account for as much as <a href="https://stripe.com/resources/more/agentic-commerce" target="_blank" rel="noopener noreferrer">$385 billion in US ecommerce spending by 2030</a>. That’s not a niche use case. That’s a second customer base showing up at your door, and in a lot of businesses, it’ll eventually be the bigger one.</p>
+<h2 id="my-thesis">My thesis</h2>
+<p>The old playbook was: build the product for humans, then bolt on an API later so “enterprise customers” or “developers” could integrate. Agents were an afterthought, something you served through a thin wrapper around your real product.</p>
+<p>I think that playbook is now backwards. The right way to build a product going forward is <strong>Agent First Development</strong>: design for the agent as your primary user, and treat the human-facing UI as one client among several, not the canonical one.</p>
+<p>This isn’t about ignoring humans. Plenty of your users will still be people clicking around a dashboard. It’s about recognizing that the agent calling your API might be the one actually making the purchase decision, filing the ticket, or configuring the account. And if your product wasn’t built with that in mind, you’re invisible to it.</p>
+<h2 id="start-with-the-api">Start with the API, not the frontend</h2>
+<p>Agents are getting shockingly good at “computer use”: clicking buttons, reading screenshots, filling out forms like a human would. But that’s still the slow, fragile, expensive path for them. Give an agent a well-designed API instead of a UI to fumble through, and it’ll be faster, cheaper, and far more reliable every time.</p>
+<p>So the first thing you should design isn’t the frontend UX. It’s the API UX.</p>
+<p>That means every single thing a human can do in your product should be reachable through an API. Not just the core feature set. The boring stuff too. Creating a new user. Grabbing API keys. Changing a plan. Resetting a password. If a human can click it, an agent should be able to call it.</p>
+<p>Stripe is a good case study here, mostly because they’ve been transparent about the process. They didn’t just add an “AI mode.” They built the <a href="https://stripe.com/blog/developing-an-open-standard-for-agentic-commerce" target="_blank" rel="noopener noreferrer">Agentic Commerce Protocol</a> with OpenAI as an open standard for how agents transact with businesses, introduced <a href="https://stripe.com/blog/introducing-our-agentic-commerce-solutions" target="_blank" rel="noopener noreferrer">Shared Payment Tokens</a> so an agent can pay on someone’s behalf without ever touching raw card details, and shipped an official MCP server at mcp.stripe.com so any MCP-compatible agent can work with the Stripe API directly. The pattern across all of it: don’t make the agent guess. Give it a typed, scoped, well-documented surface built for exactly what they want to accomplish.</p>
+<p>That last point matters more than it sounds. Your API shouldn’t just be a plain HTTP interface anymore. It needs to be reachable through <a href="https://modelcontextprotocol.io/introduction" target="_blank" rel="noopener noreferrer">MCP</a>, through OAuth, and through plain old REST, because different agent harnesses will reach for different tools, and you don’t get to pick which one shows up at your door. And here’s the part people get wrong: don’t build a separate “agent API” next to your “real API.” Build one API that both your frontend and your agents consume. The moment you fork them, they drift, and eventually your agent experience quietly rots while nobody notices because the humans never hit that code path.</p>
+<p>There’s a side benefit to this that’s easy to miss: once your API genuinely covers every feature, your own internal coding agents get an enormous gift. They can test the thing they’re building the same way an external agent would, by hitting the same API, instead of scripting a browser to click through your UI. If you’re using Claude Code, Cursor, or any coding agent to ship features faster, an API-first product is the difference between that agent verifying its own work in seconds versus flying blind.</p>
+
+<aside class="pull">
+  <p>&ldquo;If a human can click it, an agent should be able to call it.&rdquo;</p>
+  <span class="lbl">From &sect;02 &mdash; Start with the API</span>
+</aside>
+<h2 id="frontend-too">Agent First changes the frontend too</h2>
+<p>None of this means the frontend doesn’t matter. It means the frontend needs to change in ways most teams haven’t thought about yet.</p>
+<p><strong>Give coding agents a real way to log in.</strong> If your coding agent is iterating on your frontend, it needs to authenticate against your live app to actually test what it built. “Login with Google” is fine for a human clicking a button, but it’s a wall for an agent. You need an auth path, a service account, an API key flow, something, that lets your own agents log in and verify their work without a human clicking through an OAuth consent screen every time.</p>
+<p><strong>Make your marketing content legible to agents, not just search engines.</strong> This is where <code>llms.txt</code> comes in: a plain-text file that tells agents what your product does and where to find more. Stripe already publishes theirs at <a href="https://stripe.com/guides/how-to-prepare-for-agentic-commerce-technical-field-guide" target="_blank" rel="noopener noreferrer">stripe.com/llms.txt</a>, alongside Markdown versions of their docs, specifically so an agent can parse “what does this company offer and how do I use it” without having to render a JavaScript-heavy page first. If an agent is doing the research and recommending your product to a human, and it can’t parse your homepage, you’re not in the running.</p>
+<p><strong>Get ahead with new discovery standards like WebMCP.</strong> <a href="https://developer.chrome.com/docs/ai/webmcp" target="_blank" rel="noopener noreferrer">WebMCP</a> is a proposed web standard, already shipping behind a flag in Chrome 146, that lets a webpage declare its own callable tools directly to an in-browser agent. Think <code>bookFlight()</code> or <code>checkout()</code> instead of an agent trying to guess which button does what. Google’s own numbers on this are eye-opening: roughly <a href="https://www.codewithseb.com/blog/webmcp-website-ai-agent-tools-guide" target="_blank" rel="noopener noreferrer">89% fewer tokens</a> spent when an agent calls a declared tool versus scraping pixels and DOM to figure out what’s clickable. It’s early, it’s experimental, and it might not be the exact standard that wins. But the direction is unmistakable, and the products that adopt this kind of thing early will have a real edge with browser-native agents.</p>
+<h2 id="not-agents-over-humans">The point isn’t agents over humans</h2>
+<p>None of this is an argument for building soulless, headless products with no UI. Humans still need a place to see what happened, feel good about their purchase, and trust the brand behind it. What’s changing is the order of operations, and who you assume is knocking on your API first.</p>
+<p>Mobile-first didn’t mean nobody used desktops anymore. It meant you stopped treating mobile as the cut-down version of the “real” product. Agent-first is the same move, one layer deeper. Your agent interface isn’t the stripped-down version of your product for robots. For a growing share of your users, it <em>is</em> the product. Everything else is just a nicer way to look at what already happened.</p>
+<p>The teams that get this early won’t just be more “AI-friendly.” They’ll be the ones agents actually recommend, actually complete transactions with, and actually keep coming back to, because they built for that reality instead of retrofitting it in six months from now, after everyone else already did.</p>
+        </article>
+
+        <section class="after" aria-labelledby="tags-title">
+          <div class="sec-head"><h2 id="tags-title">Tags</h2><span class="count">3</span></div>
+          <ul class="tags">
+      <li><a href="index.html#index">agent-first development</a></li>
+      <li><a href="index.html#index">api design</a></li>
+      <li><a href="index.html#index">product strategy</a></li>
+          </ul>
+        </section>
+
+        <section class="after" aria-labelledby="src-title">
+          <div class="sec-head tight"><h2 id="src-title">Sources</h2><span class="count">13 cited</span></div>
+          <ol class="cites">
+      <li><span class="n">01</span><a href="https://www.techspot.com/news/112657-bots-have-officially-overtaken-humans-internet-cloudflare.html" target="_blank" rel="noopener noreferrer">Bots have officially overtaken humans on the internet</a><span class="dom">techspot.com</span></li>
+      <li><span class="n">02</span><a href="https://www.nbcnews.com/tech/tech-news/bot-web-traffic-overtaken-human-web-traffic-data-shows-rcna348522" target="_blank" rel="noopener noreferrer">Bot web traffic has overtaken human web traffic, data shows</a><span class="dom">nbcnews.com</span></li>
+      <li><span class="n">03</span><a href="https://stripe.com/resources/more/agentic-commerce" target="_blank" rel="noopener noreferrer">Agentic Commerce: A Guide for Businesses</a><span class="dom">stripe.com</span></li>
+      <li><span class="n">04</span><a href="https://stripe.com/blog/developing-an-open-standard-for-agentic-commerce" target="_blank" rel="noopener noreferrer">Developing an open standard for agentic commerce</a><span class="dom">stripe.com</span></li>
+      <li><span class="n">05</span><a href="https://stripe.com/blog/introducing-our-agentic-commerce-solutions" target="_blank" rel="noopener noreferrer">Introducing our agentic commerce solutions</a><span class="dom">stripe.com</span></li>
+      <li><span class="n">06</span><a href="https://stripe.com/blog/agentic-commerce-suite" target="_blank" rel="noopener noreferrer">Introducing the Agentic Commerce Suite</a><span class="dom">stripe.com</span></li>
+      <li><span class="n">07</span><a href="https://stripe.com/guides/how-to-prepare-for-agentic-commerce-technical-field-guide" target="_blank" rel="noopener noreferrer">How to prepare for agentic commerce: A technical field guide</a><span class="dom">stripe.com</span></li>
+      <li><span class="n">08</span><a href="https://docs.stripe.com/agents" target="_blank" rel="noopener noreferrer">Agents and AI on Stripe</a><span class="dom">docs.stripe.com</span></li>
+      <li><span class="n">09</span><a href="https://developer.chrome.com/docs/ai/webmcp" target="_blank" rel="noopener noreferrer">WebMCP | AI on Chrome</a><span class="dom">developer.chrome.com</span></li>
+      <li><span class="n">10</span><a href="https://www.codewithseb.com/blog/webmcp-website-ai-agent-tools-guide" target="_blank" rel="noopener noreferrer">WebMCP: Turn Your Website Into a Tool for AI Agents</a><span class="dom">codewithseb.com</span></li>
+      <li><span class="n">11</span><a href="https://blog.cloudflare.com/agentic-internet-bot-report/" target="_blank" rel="noopener noreferrer">Building the business model for the agentic Internet</a><span class="dom">blog.cloudflare.com</span></li>
+      <li><span class="n">12</span><a href="https://modelcontextprotocol.io/introduction" target="_blank" rel="noopener noreferrer">Model Context Protocol Introduction</a><span class="dom">modelcontextprotocol.io</span></li>
+      <li><span class="n">13</span><a href="https://dev.to/adamklein/the-agent-first-approach-to-building-products-51oj" target="_blank" rel="noopener noreferrer">The agent-first approach to building products</a><span class="dom">dev.to</span></li>
+          </ol>
+        </section>
+
+        <section class="after" aria-labelledby="cmt-title">
+          <div class="sec-head tight"><h2 id="cmt-title">Responses</h2><span class="count">3</span></div>
+          <ul class="thread">
+    <li>
+      <div class="hd"><span class="nm">Dana R.</span><span class="dt">September 3, 2026</span></div>
+      <p>The point about not forking a separate “agent API” is the one I keep having to argue internally. Two surfaces means one of them rots.</p>
+    </li>
+    <li>
+      <div class="hd"><span class="nm">Michael Osei</span><span class="dt">September 3, 2026</span></div>
+      <p>Curious how you’d sequence this for a team with an existing product. Do you retrofit the API coverage first, or start with llms.txt and discovery?</p>
+    </li>
+    <li>
+      <div class="hd"><span class="nm">Priya N.</span><span class="dt">September 4, 2026</span></div>
+      <p>The 89% token reduction number for WebMCP is what convinced me. That’s not a nice-to-have, that’s a cost line.</p>
+    </li>
+          </ul>
+
+          <form method="dialog" class="reply" id="comment-form">
+            <p class="lbl" style="margin:0 0 .9rem">Add a response</p>
+            <div class="two">
+              <div>
+                <label class="field">
+                  <span class="lbl">Name</span>
+                  <input type="text" name="name" autocomplete="name" placeholder="Your name" aria-describedby="e-name">
+                </label>
+                <span class="err" data-err="name" id="e-name" role="alert"></span>
+              </div>
+              <div>
+                <label class="field">
+                  <span class="lbl">Email <span style="text-transform:none;letter-spacing:0">(not published)</span></span>
+                  <input type="email" name="email" autocomplete="email" placeholder="you@domain.com" aria-describedby="e-email">
+                </label>
+                <span class="err" data-err="email" id="e-email" role="alert"></span>
+              </div>
+            </div>
+            <label class="field">
+              <span class="lbl">Response</span>
+              <textarea name="comment" placeholder="Keep it useful." aria-describedby="e-comment"></textarea>
+            </label>
+            <span class="err" data-err="comment" id="e-comment" role="alert"></span>
+            <div class="actions">
+              <button class="btn" type="submit">Post response</button>
+              <span class="fine" style="margin:0">Prototype &mdash; submissions are handled locally.</span>
+            </div>
+            <p class="said" data-said role="status"></p>
+          </form>
+        </section>
+
+        <section class="after" aria-labelledby="rel-title">
+          <div class="sec-head tight"><h2 id="rel-title">Related dispatches</h2><span class="count">03</span></div>
+          <div class="rel">
+    <a href="post.html">
+      <span class="n">003</span>
+      <span class="t">OpenAI’s Pentagon Deal and the Red Lines Problem</span>
+      <span class="m">March 1, 2026 &middot; 11 min</span>
+    </a>
+    <a href="post.html">
+      <span class="n">004</span>
+      <span class="t">Should AI Agents be Friends?</span>
+      <span class="m">February 24, 2026 &middot; 8 min</span>
+    </a>
+    <a href="post.html">
+      <span class="n">005</span>
+      <span class="t">From Copilot to Colleague: The Five Pillars of an Agentic AI Strategy</span>
+      <span class="m">February 20, 2026 &middot; 12 min</span>
+    </a>
+          </div>
+        </section>
+      </div>
+  </div>
+</main>
+<footer class="foot">
+  <div class="wrap">
+    <div class="foot-grid">
+      <div class="about">
+        <p class="fname">Looking Ahead</p>
+        <p>Notes from a five-time AI founder on what’s actually being built, what it means, and what to do about it.</p>
+      </div>
+      <div>
+        <p class="lbl">Follow</p>
+        <ul>
+      <li><a href="#">X</a></li>
+      <li><a href="#">LinkedIn</a></li>
+      <li><a href="#">RSS</a></li>
+        </ul>
+      </div>
+      <div>
+        <p class="lbl">Sections</p>
+        <ul>
+          <li><a href="index.html#index">Full index</a></li>
+          <li><a href="index.html#subscribe">Subscribe</a></li>
+          <li><a href="post.html">Latest dispatch</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="colophon">
+      <span>Powered by Hot Metal</span>
+      <span>&copy; 2026 Shahar Nechmad</span>
+      <a href="../index.html">&larr; All concepts</a>
+    </div>
+  </div>
+</footer>
+
+<script>
+(function () {
+  'use strict';
+  var article = document.querySelector('.body');
+  var links = Array.prototype.slice.call(document.querySelectorAll('[data-toc]'));
+  var heads = links.map(function (a) { return document.getElementById(a.getAttribute('data-toc')); });
+  if (!article || !links.length) return;
+
+  function setActive(id) {
+    for (var i = 0; i < links.length; i++) {
+      links[i].setAttribute('aria-current', links[i].getAttribute('data-toc') === id ? 'true' : 'false');
+    }
+  }
+  setActive(links[0].getAttribute('data-toc'));
+
+  // The deepest heading that has crossed the reading line is the active one.
+  function pick() {
+    var line = window.innerHeight * 0.32;
+    var idx = 0;
+    for (var i = 0; i < heads.length; i++) {
+      if (heads[i] && heads[i].getBoundingClientRect().top <= line) idx = i;
+    }
+    setActive(links[idx].getAttribute('data-toc'));
+  }
+
+  if ('IntersectionObserver' in window) {
+    var io = new IntersectionObserver(pick, { rootMargin: '-72px 0px -55% 0px', threshold: [0, 1] });
+    for (var k = 0; k < heads.length; k++) { if (heads[k]) io.observe(heads[k]); }
+  }
+
+  var fill = document.getElementById('fill');
+  var pct = document.getElementById('pct');
+  var top = document.getElementById('ptop');
+  var ticking = false;
+  function measure() {
+    ticking = false;
+    var box = article.getBoundingClientRect();
+    var travelled = -box.top + window.innerHeight * 0.42;
+    var p = Math.max(0, Math.min(1, travelled / Math.max(1, box.height)));
+    var n = Math.round(p * 100);
+    if (fill) fill.style.height = n + '%';
+    if (pct) pct.innerHTML = 'Read <span>' + n + '%</span>';
+    if (top) top.style.width = n + '%';
+    pick();
+  }
+  function onScroll() { if (!ticking) { ticking = true; window.requestAnimationFrame(measure); } }
+  window.addEventListener('scroll', onScroll, { passive: true });
+  window.addEventListener('resize', onScroll);
+  measure();
+})();
+</script>
+
+<script>
+(function () {
+  'use strict';
+  function isMail(v) { return /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(v); }
+
+  function wire(form, rules, message) {
+    if (!form) return;
+    var out = form.querySelector('[data-said]');
+    form.setAttribute('novalidate', 'novalidate');
+    form.addEventListener('submit', function (e) {
+      e.preventDefault();
+      var bad = null;
+      for (var i = 0; i < rules.length; i++) {
+        var f = form.querySelector('[name="' + rules[i].name + '"]');
+        var slot = form.querySelector('[data-err="' + rules[i].name + '"]');
+        var ok = rules[i].test(f.value.trim());
+        f.setAttribute('aria-invalid', ok ? 'false' : 'true');
+        if (slot) slot.textContent = ok ? '' : rules[i].msg;
+        if (!ok && !bad) bad = f;
+      }
+      if (bad) { if (out) out.textContent = ''; bad.focus(); return; }
+      form.reset();
+      for (var j = 0; j < rules.length; j++) {
+        var g = form.querySelector('[name="' + rules[j].name + '"]');
+        g.setAttribute('aria-invalid', 'false');
+      }
+      if (out) out.textContent = message;
+    });
+    form.addEventListener('input', function (e) {
+      var slot = form.querySelector('[data-err="' + e.target.name + '"]');
+      if (slot && slot.textContent) { slot.textContent = ''; e.target.setAttribute('aria-invalid', 'false'); }
+    });
+  }
+
+  wire(document.getElementById('subscribe-form'), [
+    { name: 'email', test: isMail, msg: 'Enter a valid email address.' }
+  ], 'Demo only \u2014 nothing was sent. This prototype has no network connection.');
+
+  wire(document.getElementById('comment-form'), [
+    { name: 'name', test: function (v) { return v.length >= 2; }, msg: 'Tell us who you are.' },
+    { name: 'email', test: isMail, msg: 'Enter a valid email address.' },
+    { name: 'comment', test: function (v) { return v.length >= 4; }, msg: 'Your comment is empty.' }
+  ], 'Demo only \u2014 nothing was sent. Your comment stayed in this browser.');
+})();
+</script>
+</body>
+</html>

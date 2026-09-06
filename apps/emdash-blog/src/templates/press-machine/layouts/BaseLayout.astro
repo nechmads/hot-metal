@@ -1,0 +1,124 @@
+---
+import { ClientRouter } from 'astro:transitions';
+import HeadMeta from '../../../components/HeadMeta.astro';
+import themeUrl from '../styles/theme.css?url';
+
+interface Props {
+  title: string;
+  publicationName: string;
+  description?: string;
+  ogImage?: string;
+  canonicalUrl?: string;
+  accentColor?: string | null;
+  ogType?: string;
+  jsonLd?: Record<string, unknown>;
+  rssUrl?: string;
+  articlePublishedTime?: string;
+  articleModifiedTime?: string;
+  articleAuthor?: string;
+  articleTags?: string[];
+  articleSection?: string;
+  twitterSite?: string;
+  twitterCreator?: string;
+}
+
+const {
+  title,
+  publicationName,
+  description,
+  ogImage,
+  canonicalUrl,
+  accentColor,
+  ogType = 'website',
+  jsonLd,
+  rssUrl,
+  articlePublishedTime,
+  articleModifiedTime,
+  articleAuthor,
+  articleTags,
+  articleSection,
+  twitterSite,
+  twitterCreator,
+} = Astro.props;
+
+const HEX_COLOR_PATTERN = /^#[0-9a-fA-F]{3,8}$/;
+const validAccent = accentColor && HEX_COLOR_PATTERN.test(accentColor) ? accentColor : null;
+const accentStyle = validAccent
+  ? `--publication-accent: ${validAccent};`
+  : undefined;
+---
+
+<!--
+  The `press-machine` class on <html> scopes this template's tokens and base
+  type. The switchers import every template's BaseLayout, so every template's
+  stylesheet shares this page's bundle; the class keeps the paper, ink and
+  accent of *this* template from being decided by bundle order.
+-->
+<html lang="en" class="press-machine" style={accentStyle}>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <!-- Press Machine fonts: Instrument Serif, Source Serif 4, IBM Plex Sans -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=Instrument+Serif:ital@0;1&family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;1,8..60,400&display=swap"
+      rel="stylesheet"
+    />
+
+    <link rel="stylesheet" href={themeUrl} />
+
+    <HeadMeta
+      {title}
+      {publicationName}
+      {description}
+      {ogImage}
+      {canonicalUrl}
+      {ogType}
+      {jsonLd}
+      {rssUrl}
+      {articlePublishedTime}
+      {articleModifiedTime}
+      {articleAuthor}
+      {articleTags}
+      {articleSection}
+      {twitterSite}
+      {twitterCreator}
+    />
+
+    <ClientRouter />
+  </head>
+  <body class="min-h-screen flex flex-col">
+    <slot />
+
+    <script>
+      function initScrollAnimations() {
+        const targets = document.querySelectorAll('.animate-on-scroll');
+        if (targets.length === 0) return;
+
+        if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+          targets.forEach((el) => el.classList.add('is-visible'));
+          return;
+        }
+
+        const observer = new IntersectionObserver(
+          (entries) => {
+            for (const entry of entries) {
+              if (entry.isIntersecting) {
+                entry.target.classList.add('is-visible');
+                observer.unobserve(entry.target);
+              }
+            }
+          },
+          { threshold: 0.1 },
+        );
+
+        targets.forEach((el) => observer.observe(el));
+      }
+
+      initScrollAnimations();
+      document.addEventListener('astro:after-swap', initScrollAnimations);
+    </script>
+  </body>
+</html>

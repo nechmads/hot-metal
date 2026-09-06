@@ -1,0 +1,896 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Looking Ahead — AI, and what it means for the rest of us</title>
+<meta name="description" content="Notes from a five-time AI founder on what’s actually being built, what it means, and what to do about it.">
+<style>
+@font-face {
+  font-family: 'Archivo';
+  font-style: normal;
+  font-weight: 400;
+  font-stretch: 100%;
+  font-display: swap;
+  src: url(fonts/archivo-0.woff2) format('woff2');
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+@font-face {
+  font-family: 'Archivo';
+  font-style: normal;
+  font-weight: 400;
+  font-stretch: 100%;
+  font-display: swap;
+  src: url(fonts/archivo-1.woff2) format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+@font-face {
+  font-family: 'Archivo';
+  font-style: normal;
+  font-weight: 500;
+  font-stretch: 100%;
+  font-display: swap;
+  src: url(fonts/archivo-2.woff2) format('woff2');
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+@font-face {
+  font-family: 'Archivo';
+  font-style: normal;
+  font-weight: 500;
+  font-stretch: 100%;
+  font-display: swap;
+  src: url(fonts/archivo-3.woff2) format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+@font-face {
+  font-family: 'Archivo';
+  font-style: normal;
+  font-weight: 600;
+  font-stretch: 100%;
+  font-display: swap;
+  src: url(fonts/archivo-4.woff2) format('woff2');
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+@font-face {
+  font-family: 'Archivo';
+  font-style: normal;
+  font-weight: 600;
+  font-stretch: 100%;
+  font-display: swap;
+  src: url(fonts/archivo-5.woff2) format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+@font-face {
+  font-family: 'Archivo';
+  font-style: normal;
+  font-weight: 700;
+  font-stretch: 100%;
+  font-display: swap;
+  src: url(fonts/archivo-6.woff2) format('woff2');
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+@font-face {
+  font-family: 'Archivo';
+  font-style: normal;
+  font-weight: 700;
+  font-stretch: 100%;
+  font-display: swap;
+  src: url(fonts/archivo-7.woff2) format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+@font-face {
+  font-family: 'Archivo';
+  font-style: normal;
+  font-weight: 900;
+  font-stretch: 100%;
+  font-display: swap;
+  src: url(fonts/archivo-8.woff2) format('woff2');
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+@font-face {
+  font-family: 'Archivo';
+  font-style: normal;
+  font-weight: 900;
+  font-stretch: 100%;
+  font-display: swap;
+  src: url(fonts/archivo-9.woff2) format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+:root {
+  /* The publication's own colour. Everything below is derived from it — in the
+     shipped template this arithmetic happens server-side from the stored hex,
+     which is why the panel stays readable on brick, navy or chartreuse alike. */
+  --accent: #b4361f;
+  --accent-ink: #b4361f;     /* accent darkened until it clears 4.5:1 on paper */
+  --accent-tint: #f8ebe9;   /* accent washed 90% into white */
+  --panel-fg: #faf3f2;         /* accent pushed 94% toward whichever pole wins */
+  --panel-fg-dim: #f9efed; /* eased back, held at 4.5:1 on plane AND soft fill */
+  --panel-rule: #c86b5a;     /* hairline: held at 1.6:1 so it survives a light accent */
+  --panel-soft: #ba4732;     /* barely-there fills inside the plane */
+  --paper: #faf9f7;
+  --ink: #171615;
+  --ink-2: #6b6763;
+  --rule: #ddd9d3;
+  /* One measure governs every block of running text. Measured on this article
+     rather than assumed: 29.5em of Archivo at 17px averages 66 characters a
+     line, inside the 62-70 band long-form reading wants. Every rule, the
+     section heads and the pull quote deliberately run wider than it. */
+  --measure: 29.5em;
+  --panel-w: clamp(320px, 38%, 34rem);
+  --pad: clamp(1.25rem, 4vw, 4rem);
+  --pad-panel: clamp(1.25rem, 3vw, 3rem);
+  /* Archivo 900 uppercase runs about .75em per character after tracking, so the
+     masthead can be capped against the plane it has to fit inside. The template
+     knows the publication name, so --mast-em is emitted per publication and a
+     long name shrinks instead of hyphenating. */
+  --mast-em: 5.25;
+  --mast-box: calc(100vw - 2 * var(--pad-panel));
+}
+
+
+*, *::before, *::after { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+body {
+  margin: 0;
+  background: var(--paper);
+  color: var(--ink);
+  font-family: 'Archivo', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+  font-size: 17px;
+  font-weight: 400;
+  line-height: 1.65;
+  overflow-wrap: break-word;
+  -webkit-font-smoothing: antialiased;
+}
+img { display: block; max-width: 100%; }
+a { color: inherit; }
+h1, h2, h3, p, ul, ol, figure, blockquote { margin: 0; }
+button, input, textarea { font: inherit; color: inherit; }
+
+:focus-visible { outline: 3px solid var(--ink); outline-offset: 3px; }
+.panel :focus-visible, .sub :focus-visible { outline-color: var(--panel-fg); }
+
+.vh {
+  position: absolute; width: 1px; height: 1px; margin: -1px;
+  padding: 0; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0;
+}
+.skip {
+  position: absolute; left: -9999px; top: 0; z-index: 50;
+  background: var(--ink); color: var(--paper); padding: .7rem 1rem;
+  text-transform: uppercase; letter-spacing: .14em; font-size: .72rem; font-weight: 600;
+}
+.skip:focus { left: 0; }
+
+/* ---------- the accent plane ---------- */
+
+.panel {
+  background: var(--accent);
+  color: var(--panel-fg);
+  padding: var(--pad-panel);
+  display: flex;
+  flex-direction: column;
+}
+.mast {
+  display: block;
+  text-decoration: none;
+  font-weight: 900;
+  /* The masthead has to hold the plane while the story scrolls, so it is the
+     second-largest voice on the page rather than a caption: about two-thirds of
+     the lead headline at every width. Capped against the plane it sits in, so a
+     long publication name shrinks instead of hyphenating. */
+  font-size: max(1.35rem, min(clamp(1.85rem, 7.3vw, 2.95rem), calc(var(--mast-box) / var(--mast-em))));
+  line-height: .9;
+  letter-spacing: -.035em;
+  text-transform: uppercase;
+  hyphens: auto;
+}
+.mast span { display: block; }
+.tag {
+  margin-top: 1rem;
+  max-width: 22em;
+  font-size: 1rem;
+  font-weight: 500;
+  line-height: 1.35;
+  color: var(--panel-fg-dim);
+}
+.pnav {
+  margin-top: 1.6rem;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: .55rem 1.4rem;
+  border-top: 1px solid var(--panel-rule);
+  padding-top: 1rem;
+}
+.pnav a {
+  text-decoration: none;
+  text-transform: uppercase;
+  letter-spacing: .16em;
+  font-size: .72rem;
+  font-weight: 600;
+  padding: .2rem 0;
+  border-bottom: 2px solid transparent;
+}
+.pnav a:hover { border-bottom-color: var(--panel-fg); }
+.pnav a[aria-current="page"] { border-bottom-color: var(--panel-fg); }
+
+.now { display: none; }
+.pfoot {
+  margin-top: 1.4rem;
+  font-size: .68rem;
+  text-transform: uppercase;
+  letter-spacing: .18em;
+  font-weight: 600;
+  color: var(--panel-fg-dim);
+}
+
+/* ---------- reading column ---------- */
+
+.column {
+  max-width: 76rem;
+  padding: 0 var(--pad);
+}
+
+.eyebrow {
+  font-size: .7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: .18em;
+  color: var(--ink-2);
+}
+.eyebrow b { color: var(--ink); font-weight: 600; }
+
+.sec-h {
+  margin: 0 0 1.6rem calc(-1 * var(--pad));
+  padding: 1rem 0 0 var(--pad);
+  border-top: 2px solid var(--ink);
+  font-size: .72rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: .2em;
+  color: var(--ink);
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+.sec-h em { font-style: normal; color: var(--ink-2); }
+
+/* lead */
+.lead { padding: 2.6rem 0 3rem; }
+/* The largest type on the page. 6.9vw is the largest setting at which the
+   longest line of the sample headline still clears the reading column at both
+   1000px and 1440px, so the three-line break holds without manual hyphens;
+   13ch forces that break rather than letting a wide column run it to two. */
+.lead-h {
+  margin: 1rem 0 0;
+  font-weight: 900;
+  font-size: clamp(2.6rem, 6.9vw, 6.7rem);
+  line-height: .9;
+  letter-spacing: -.042em;
+  max-width: 13ch;
+}
+.lead-h a { text-decoration: none; }
+.lead-h a:hover { color: var(--accent-ink); }
+.lead-dek {
+  margin-top: 1.3rem;
+  max-width: 34em;
+  font-size: clamp(1.05rem, 1.6vw, 1.3rem);
+  line-height: 1.45;
+  color: #35322f;
+}
+.hook {
+  margin: 2.2rem 0 2rem calc(-1 * var(--pad));
+  background: var(--accent-tint);
+  border-top: 5px solid var(--accent-ink);
+  padding: 1.5rem var(--pad) 1.6rem;
+}
+.hook p {
+  max-width: 30em;
+  font-size: clamp(1.1rem, 1.9vw, 1.45rem);
+  font-weight: 500;
+  line-height: 1.36;
+  letter-spacing: -.012em;
+  color: #241f1d;
+}
+.hook .hook-l {
+  display: block;
+  margin-bottom: .7rem;
+  font-size: .68rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: .2em;
+  color: var(--accent-ink);
+}
+.lead-foot { display: flex; flex-wrap: wrap; align-items: baseline; gap: 1rem 1.6rem; }
+.cta {
+  text-decoration: none;
+  font-weight: 700;
+  font-size: .9rem;
+  text-transform: uppercase;
+  letter-spacing: .1em;
+  border-bottom: 3px solid var(--accent);
+  padding-bottom: .2rem;
+}
+.cta:hover { color: var(--accent-ink); }
+.meta {
+  font-size: .72rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: .16em;
+  color: var(--ink-2);
+}
+
+/* archive */
+.archive { padding-bottom: 3rem; }
+.row {
+  /* Every crop in the list is tall and, on the split layout, exactly as tall as
+     every other one. A square AI image is never shown at its own aspect, and the
+     list never reads as a column of conventional square thumbnails. */
+  --thumb: clamp(84px, 8.6vw, 112px);
+  --thumb-h: auto;
+  display: grid;
+  grid-template-columns: var(--thumb) minmax(0, 1fr);
+  gap: 0 clamp(1rem, 2.2vw, 1.9rem);
+  align-items: start;
+  margin-left: calc(-1 * var(--pad));
+  padding: 1.4rem 0 1.5rem var(--pad);
+  border-top: 1px solid var(--rule);
+}
+.archive .row:first-of-type { border-top: 0; padding-top: .3rem; }
+/* One entry carries more weight so the archive reads as a rhythm rather than
+   the same beat seven times. */
+.row--lead { --thumb: clamp(112px, 11vw, 148px); padding-bottom: 2.1rem; }
+.row--lead .row-h { font-size: clamp(1.55rem, 2.9vw, 2.4rem); max-width: 17ch; line-height: 1.0; }
+.row--lead .row-dek { font-size: 1.06rem; max-width: 38em; }
+/* The hairline still runs to the plane; the photograph never does. The row's
+   own left padding is the gutter, so no image touches an arbitrary accent. */
+.row-media {
+  display: block;
+  overflow: hidden;
+  background: var(--accent-tint);
+  aspect-ratio: 3 / 4;
+  height: var(--thumb-h);
+}
+.row-media img {
+  width: 100%; height: 100%;
+  object-fit: cover;
+  transition: transform .5s cubic-bezier(.2,.7,.2,1);
+}
+.row:hover .row-media img { transform: scale(1.045); }
+/* Featured images are frequently missing — the newest piece in the sample has
+   none. The slot then becomes a piece of the identity plane itself, set at the
+   same tall crop and carrying the date as its whole composition: a typographic
+   tile that belongs in the list rather than a hole where a picture failed. */
+.plate {
+  display: flex; flex-direction: column; justify-content: space-between;
+  background: var(--accent);
+  color: var(--panel-fg);
+  padding: .7em .55em .5em;
+  overflow: hidden;
+}
+.plate .pm {
+  display: block; font-size: .42em; font-weight: 600;
+  text-transform: uppercase; letter-spacing: .2em; color: var(--panel-fg-dim);
+}
+.plate .pd {
+  display: block; font-weight: 900;
+  font-size: 2.1em; line-height: .78; letter-spacing: -.055em;
+}
+.row-media--none {
+  aspect-ratio: 3 / 4; height: var(--thumb-h);
+  font-size: clamp(1.15rem, 1.7vw, 1.6rem);
+}
+.row--lead .row-media--none { font-size: clamp(1.5rem, 2.3vw, 2.1rem); }
+.row-body { min-width: 0; }
+.row-h {
+  margin: .45rem 0 0;
+  font-weight: 900;
+  font-size: clamp(1.2rem, 1.85vw, 1.6rem);
+  line-height: 1.06;
+  letter-spacing: -.026em;
+  max-width: 23ch;
+}
+.row-h a { text-decoration: none; }
+.row:hover .row-h a { color: var(--accent-ink); }
+.row-dek {
+  margin-top: .55rem;
+  max-width: 44em;
+  font-size: .97rem;
+  line-height: 1.5;
+  color: #45413d;
+}
+.row-meta { margin-top: .7rem; }
+
+/* subscribe */
+.sub {
+  background: var(--accent);
+  color: var(--panel-fg);
+  margin: 0 calc(-1 * var(--pad));
+  padding: clamp(2rem, 4vw, 3.4rem) var(--pad) clamp(2.2rem, 4vw, 3.4rem);
+}
+.sub-h {
+  margin: .8rem 0 0;
+  font-weight: 900;
+  font-size: clamp(1.9rem, 4.4vw, 3.2rem);
+  line-height: .96;
+  letter-spacing: -.035em;
+  max-width: 15ch;
+}
+.sub-p {
+  margin-top: 1rem; max-width: 42em;
+  color: var(--panel-fg-dim); font-size: 1rem; line-height: 1.5;
+}
+.sub-form { margin-top: 1.8rem; display: flex; flex-wrap: wrap; gap: .7rem; max-width: 34rem; }
+.sub-form input {
+  flex: 1 1 15rem; min-width: 0;
+  background: var(--panel-soft);
+  border: 2px solid var(--panel-rule);
+  color: var(--panel-fg);
+  padding: .8rem .9rem;
+  border-radius: 0;
+}
+.sub-form input::placeholder { color: var(--panel-fg-dim); opacity: 1; }
+.sub-form input[aria-invalid="true"] { border-color: var(--panel-fg); }
+.sub-form button {
+  background: var(--panel-fg);
+  color: var(--accent);
+  border: 2px solid var(--panel-fg);
+  padding: .8rem 1.5rem;
+  font-weight: 700; text-transform: uppercase; letter-spacing: .12em; font-size: .8rem;
+  cursor: pointer; border-radius: 0;
+}
+.sub-form button:hover { background: transparent; color: var(--panel-fg); }
+.form-msg { flex: 1 0 100%; font-size: .85rem; min-height: 1.4em; color: var(--panel-fg-dim); }
+.form-msg[data-state="ok"] { color: var(--panel-fg); font-weight: 600; }
+
+/* ---------- article ---------- */
+.art-head { padding: 2.6rem 0 0; }
+.art-h {
+  margin: 1.1rem 0 0;
+  font-weight: 900;
+  font-size: clamp(2.3rem, 5.6vw, 4.2rem);
+  line-height: .94;
+  letter-spacing: -.038em;
+  max-width: 17ch;
+}
+.art-sub {
+  margin-top: 1.2rem; max-width: 34em;
+  font-size: clamp(1.05rem, 1.6vw, 1.3rem);
+  font-weight: 400; line-height: 1.45; color: #35322f;
+}
+.byline {
+  margin-top: 1.6rem; padding-top: 1rem;
+  border-top: 1px solid var(--rule);
+  display: flex; flex-wrap: wrap; gap: .4rem 1.4rem;
+}
+.byline .who { color: var(--ink); }
+
+.prose { padding: 2.4rem 0 1rem; }
+/* The text block is the narrowest thing on the page; the rules, the pull
+   quote and the section heads all break wider than it, so the measure reads as
+   a deliberate column inside the page rather than a shrunken layout. */
+.prose p { margin: 0 0 1.35em; max-width: var(--measure); font-size: 1.0625rem; line-height: 1.72; }
+.prose ul, .prose ol { max-width: var(--measure); margin: 0 0 1.35em; padding-left: 1.2em; }
+.prose li { margin-bottom: .5em; }
+.prose h2 {
+  margin: 2.7em 0 .85em;
+  font-weight: 900;
+  font-size: clamp(1.5rem, 2.8vw, 2.15rem);
+  line-height: 1.04;
+  letter-spacing: -.028em;
+  max-width: 20ch;
+}
+.prose h2::before {
+  content: ""; display: block; width: 2.2rem; height: 4px;
+  background: var(--ink); margin-bottom: .8rem;
+}
+.prose a {
+  color: var(--accent-ink);
+  text-decoration: underline;
+  text-underline-offset: .18em;
+  text-decoration-thickness: .07em;
+}
+.prose a:hover { background: var(--accent-tint); }
+.prose strong { font-weight: 700; }
+.prose code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: .88em; background: var(--accent-tint); padding: .1em .35em;
+}
+.pull {
+  margin: 3rem 0 3.2rem calc(-1 * var(--pad));
+  padding: 1.8rem var(--pad) 1.9rem;
+  border-top: 6px solid var(--accent);
+  border-bottom: 1px solid var(--rule);
+}
+.pull p {
+  margin: 0; max-width: 19ch;
+  font-weight: 900;
+  font-size: clamp(1.45rem, 3.2vw, 2.35rem);
+  line-height: 1.08;
+  letter-spacing: -.032em;
+}
+.pull cite {
+  display: block; margin-top: 1rem; font-style: normal;
+  font-size: .82rem; font-weight: 600; color: var(--ink-2);
+}
+
+.tags { padding: 1.6rem 0 2.6rem; display: flex; flex-wrap: wrap; gap: .5rem; }
+/* Tags are lowercase in the data; setting them in tracked caps would add
+   another label voice to a page that already has enough. */
+.tags a {
+  text-decoration: none; border: 1px solid var(--rule);
+  padding: .4rem .7rem;
+  font-size: .85rem; font-weight: 500;
+}
+.tags a:hover { background: var(--accent); color: var(--panel-fg); border-color: var(--accent); }
+
+.block { padding: 2.4rem 0; }
+.cites { list-style: none; margin: 0; padding: 0; counter-reset: c; }
+.cites li { counter-increment: c; border-bottom: 1px solid var(--rule); }
+.cites a {
+  display: grid;
+  grid-template-columns: 2.6rem minmax(0, 1fr);
+  gap: 0 .9rem;
+  align-items: baseline;
+  padding: .8rem 0;
+  text-decoration: none;
+}
+.cites a::before {
+  content: counter(c, decimal-leading-zero);
+  font-weight: 900; font-size: .82rem; letter-spacing: .02em;
+  color: var(--accent-ink);
+}
+.cites .t { font-size: .98rem; line-height: 1.35; font-weight: 500; }
+.cites .d {
+  grid-column: 2; margin-top: .2rem;
+  font-size: .68rem; font-weight: 600;
+  text-transform: uppercase; letter-spacing: .14em; color: var(--ink-2);
+}
+.cites a:hover .t { color: var(--accent-ink); text-decoration: underline; text-underline-offset: .18em; }
+
+/* Comment and form rules bleed to the plane exactly like the section rules
+   above them, so the whole block shares one left and right edge. */
+.cmt {
+  margin-left: calc(-1 * var(--pad));
+  padding: 1.4rem 0 1.4rem var(--pad);
+  border-top: 1px solid var(--rule);
+}
+.cmt > * { max-width: 40rem; }
+.cmt-head { display: flex; flex-wrap: wrap; gap: .3rem .9rem; align-items: baseline; }
+.cmt-who { font-weight: 700; font-size: 1rem; }
+.cmt-body { margin-top: .5rem; max-width: var(--measure); font-size: 1rem; line-height: 1.6; color: #45413d; }
+
+.cform {
+  margin: 2.2rem 0 0 calc(-1 * var(--pad));
+  padding: 1.6rem 0 0 var(--pad);
+  border-top: 2px solid var(--ink);
+}
+.cform > * { max-width: 40rem; }
+.cform h3 { font-size: 1.05rem; font-weight: 700; letter-spacing: -.015em; }
+.fields { margin-top: 1.1rem; display: grid; gap: .8rem; grid-template-columns: 1fr 1fr; }
+.field { display: flex; flex-direction: column; gap: .35rem; }
+.field--wide { grid-column: 1 / -1; }
+.field label {
+  font-size: .68rem; font-weight: 600; text-transform: uppercase;
+  letter-spacing: .14em; color: var(--ink-2);
+}
+.field input, .field textarea {
+  background: #fff; border: 1px solid var(--rule); padding: .7rem .8rem; border-radius: 0;
+}
+.field textarea { min-height: 7rem; resize: vertical; }
+.field input[aria-invalid="true"], .field textarea[aria-invalid="true"] { border-color: var(--accent-ink); border-width: 2px; }
+.err { font-size: .78rem; color: var(--accent-ink); min-height: 1.1em; font-weight: 500; }
+.cform button {
+  margin-top: 1.2rem; background: var(--accent); color: var(--panel-fg);
+  border: 2px solid var(--accent); padding: .8rem 1.5rem; cursor: pointer; border-radius: 0;
+  font-weight: 700; text-transform: uppercase; letter-spacing: .12em; font-size: .8rem;
+}
+.cform button:hover { background: transparent; color: var(--accent-ink); border-color: var(--accent-ink); }
+.cform .form-msg { color: var(--ink-2); margin-top: .9rem; }
+.cform .form-msg[data-state="ok"] { color: var(--accent-ink); font-weight: 600; }
+
+.rel { display: grid; gap: 1.4rem clamp(1rem, 2vw, 1.8rem); grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); }
+.rel a { text-decoration: none; display: block; }
+.rel .shot { display: block; aspect-ratio: 3 / 4; overflow: hidden; background: var(--accent-tint); }
+/* The dated tile keeps the plane's colours here too — `.rel .shot` would
+   otherwise out-specify `.plate` and leave a pale square with invisible type. */
+.rel .shot--none {
+  display: flex; font-size: 1.35rem;
+  background: var(--accent); color: var(--panel-fg);
+}
+.rel .shot img { width: 100%; height: 100%; object-fit: cover; transition: transform .5s cubic-bezier(.2,.7,.2,1); }
+.rel a:hover .shot img { transform: scale(1.05); }
+.rel h3 {
+  margin-top: .7rem; font-weight: 900; font-size: 1.02rem;
+  line-height: 1.12; letter-spacing: -.02em;
+}
+.rel a:hover h3 { color: var(--accent-ink); }
+.rel .meta { display: block; margin-top: .45rem; }
+
+/* ---------- footer ---------- */
+.foot {
+  border-top: 2px solid var(--ink);
+  margin-left: calc(-1 * var(--pad));
+  padding: 2rem 0 3rem var(--pad);
+}
+.foot-top { display: flex; flex-wrap: wrap; gap: 1.4rem 2.5rem; justify-content: space-between; }
+.foot-about { max-width: 34em; font-size: .95rem; line-height: 1.55; color: var(--ink-2); }
+.foot-links { display: flex; flex-wrap: wrap; align-items: flex-start; gap: .5rem 1.3rem; }
+.foot-links a {
+  text-decoration: none; font-size: .72rem; font-weight: 600;
+  text-transform: uppercase; letter-spacing: .16em;
+  border-bottom: 2px solid var(--rule); padding-bottom: .15rem;
+}
+.foot-links a:hover { border-bottom-color: var(--accent); }
+.foot-end {
+  margin-top: 1.8rem; display: flex; flex-wrap: wrap; gap: .5rem 1.4rem;
+  justify-content: space-between;
+  font-size: .8rem; font-weight: 500; color: var(--ink-2);
+}
+.foot-end a { color: var(--ink-2); }
+
+/* ---------- desktop split ---------- */
+@media (min-width: 1000px) {
+  .panel {
+    position: fixed;
+    top: 0; left: 0; bottom: 0;
+    width: var(--panel-w);
+    overflow-y: auto;
+    padding: clamp(2rem, 3.2vw, 3.4rem) var(--pad-panel);
+    --mast-box: calc(clamp(320px, 38vw, 34rem) - 2 * var(--pad-panel));
+  }
+  /* The plane is one vertical structure, not three stranded clusters: an
+     identity block at the top, a ruled index that stretches to take up the
+     slack between them, and a single anchored cluster at the foot. There is no
+     free space left over to look accidental. */
+  .mast {
+    font-size: max(1.35rem, min(clamp(2.8rem, 4.2vw, 3.85rem), calc(var(--mast-box) / var(--mast-em))));
+    line-height: .86;
+    letter-spacing: -.045em;
+  }
+  .tag { margin-top: 1.15rem; font-size: 1rem; max-width: 19em; }
+  /* The nav absorbs the panel's slack instead of a spacer doing it. Each item
+     is a row of a ruled index whose hairlines distribute down the plane, and
+     the last of those hairlines is what opens the bottom cluster. */
+  .pnav {
+    margin-top: 2.2rem;
+    flex: 1 1 auto;
+    flex-direction: column;
+    flex-wrap: nowrap;
+    gap: 0;
+    align-items: stretch;
+    border-top: 0;
+    padding-top: 0;
+  }
+  .pnav a {
+    flex: 1 1 auto;
+    display: flex;
+    align-items: center;
+    min-height: 2.6rem;
+    padding: .4rem 0;
+    border-bottom: 1px solid var(--panel-rule);
+    border-top: 0;
+  }
+  .pnav a:first-child { border-top: 1px solid var(--panel-rule); }
+  .pnav a:hover, .pnav a[aria-current="page"] { border-bottom-color: var(--panel-fg); }
+  /* A stretched row would throw its focus ring across the neighbouring rules;
+     inset it so the ring reads as this row and not as two. */
+  .pnav a:focus-visible { outline-offset: -3px; }
+  /* The plane's second voice: the section the reader is actually in, set at a
+     fixed fraction of the masthead — near enough to read as the same system,
+     far enough that identity still leads. It names a place rather than
+     reporting a number; no progress metering on a reading page. */
+  .now { display: block; padding-top: 1.6rem; }
+  .now-l {
+    font-size: .66rem; font-weight: 600; text-transform: uppercase;
+    letter-spacing: .2em; color: var(--panel-fg-dim);
+  }
+  .now-swap { transition: opacity .18s ease; }
+  .now.fading .now-swap { opacity: 0; }
+  .now-t {
+    margin-top: .6rem; font-weight: 900;
+    font-size: max(1.35rem, min(clamp(1.7rem, 2.5vw, 2.3rem), calc(var(--mast-box) / 7.4)));
+    line-height: .94; letter-spacing: -.038em; max-width: 13ch;
+  }
+  /* Caption and issue line are one cluster on the floor of the plane, held
+     together by a single hairline rather than floating apart. */
+  .pfoot { margin-top: 1.3rem; padding-top: .9rem; border-top: 1px solid var(--panel-rule); }
+  .column { margin-left: var(--panel-w); }
+  .lead { padding-top: clamp(3rem, 6vw, 5.5rem); }
+  .art-head { padding-top: clamp(3rem, 6vw, 5.5rem); }
+  /* Desktop crops are genuinely tall and share one height across every row, so
+     the archive holds a single baseline grid down its media column. The lead
+     entry is wider at the same height rather than simply bigger. */
+  .row { --thumb: clamp(96px, 7.8vw, 118px); --thumb-h: clamp(184px, 15vw, 222px); }
+  .row--lead { --thumb: clamp(126px, 10.2vw, 154px); }
+  .row-media, .row-media--none { aspect-ratio: auto; }
+}
+
+@media (max-width: 999.98px) {
+  /* Stacked, the reading column is the full page, so the lead can open much
+     larger than the split layout allows — and stay decisively above the
+     masthead at every width down to 360px. */
+  .lead-h { font-size: clamp(2.5rem, 10.5vw, 5.4rem); }
+  .sub { margin-right: calc(-1 * var(--pad)); }
+}
+
+@media (max-width: 560px) {
+  /* The tall crop is what gives the archive its character; it carries through
+     to mobile rather than flipping to a full-bleed wide strip. */
+  .row { --thumb: clamp(74px, 22vw, 104px); gap: 0 1rem; }
+  .row--lead { --thumb: clamp(96px, 28vw, 134px); }
+  .row-media--none { font-size: 1.15rem; }
+  .row--lead .row-media--none { font-size: 1.45rem; }
+  .fields { grid-template-columns: 1fr; }
+  .hook { margin-right: calc(-1 * var(--pad)); }
+  .pull { margin-right: calc(-1 * var(--pad)); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: .01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: .01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+</style>
+</head>
+<body>
+<a class="skip" href="#top">Skip to content</a>
+<header class="panel"><a class="mast" href="index.html"><span>Looking</span><span>Ahead</span></a><p class="tag">AI, and what it means for the rest of us</p><nav class="pnav" aria-label="Publication"><a href="index.html" aria-current="page">Home</a><a href="#archive">Archive</a><a href="#">RSS</a><a href="#subscribe">Subscribe</a></nav><div class="now" id="now" aria-live="polite"><p class="now-l">Now showing</p><div class="now-swap"><p class="now-t">The lead</p></div></div><p class="pfoot">No. 41 &middot; Sunday, September 6, 2026</p></header>
+<div class="column"><main id="top"><section class="lead" data-now="The lead"><p class="eyebrow"><b>Product strategy</b> &middot; September 2, 2026</p><h1 class="lead-h"><a href="post.html">Agent First Development is The Future</a></h1><p class="lead-dek">Cloudflare’s CEO predicted bots would outnumber humans online by 2027. It happened a year early — and your product probably isn’t ready.</p><div class="hook"><span class="hook-l">The short version</span><p>In June 2026, bot and agent traffic passed human traffic on the internet for the first time. The winning products will be the ones an agent can actually use.</p></div><p class="lead-foot"><a class="cta" href="post.html">Read the piece <span aria-hidden="true">&rarr;</span></a><span class="meta">9 min read &middot; agent-first development, api design</span></p></section><section class="archive" id="archive" data-now="The archive"><h2 class="sec-h">Archive <em>7 pieces</em></h2><article class="row row--lead"><a class="row-media" href="post.html" tabindex="-1" aria-hidden="true"><img src="img/iran.jpg" alt=""></a><div class="row-body"><p class="eyebrow"><b>Geopolitics</b></p><h3 class="row-h"><a href="post.html">The Iran War Is Not Really About Iran</a></h3><p class="row-dek">The US strike on Iran is a message aimed at Beijing. China buys 90–95% of Iran’s oil, and a destabilized regime puts that lifeline at risk.</p><p class="meta row-meta">March 4, 2026 &middot; 7 min read</p></div></article><article class="row"><a class="row-media" href="post.html" tabindex="-1" aria-hidden="true"><img src="img/pentagon.jpg" alt=""></a><div class="row-body"><p class="eyebrow"><b>AI &amp; policy</b></p><h3 class="row-h"><a href="post.html">OpenAI’s Pentagon Deal and the Red Lines Problem</a></h3><p class="row-dek">OpenAI signed a Pentagon deal while the US military was already running Claude — the model it had officially blacklisted — on live operations.</p><p class="meta row-meta">March 1, 2026 &middot; 11 min read</p></div></article><article class="row"><div class="plate row-media--none" aria-hidden="true"><span class="pm">Feb</span><span class="pd">24</span></div><div class="row-body"><p class="eyebrow"><b>Research</b></p><h3 class="row-h"><a href="post.html">Should AI Agents be Friends?</a></h3><p class="row-dek">Large-scale research shows agents simulate social behavior rather than genuinely socialize. The real question isn’t whether they can — it’s whether they should.</p><p class="meta row-meta">February 24, 2026 &middot; 8 min read</p></div></article><article class="row"><a class="row-media" href="post.html" tabindex="-1" aria-hidden="true"><img src="img/copilot.jpg" alt=""></a><div class="row-body"><p class="eyebrow"><b>Strategy</b></p><h3 class="row-h"><a href="post.html">From Copilot to Colleague: The Five Pillars of an Agentic AI Strategy</a></h3><p class="row-dek">Most “AI strategies” are a list of tools. Here is the structure that survives contact with an actual org chart.</p><p class="meta row-meta">February 20, 2026 &middot; 12 min read</p></div></article><article class="row"><a class="row-media" href="post.html" tabindex="-1" aria-hidden="true"><img src="img/hyperlearner.jpg" alt=""></a><div class="row-body"><p class="eyebrow"><b>Essay</b></p><h3 class="row-h"><a href="post.html">The Hyper Learner</a></h3><p class="row-dek">The most valuable skill of the next decade isn’t prompting. It’s the ability to absorb an entire field in a weekend.</p><p class="meta row-meta">February 18, 2026 &middot; 6 min read</p></div></article><article class="row"><a class="row-media" href="post.html" tabindex="-1" aria-hidden="true"><img src="img/github.jpg" alt=""></a><div class="row-body"><p class="eyebrow"><b>Tools</b></p><h3 class="row-h"><a href="post.html">GitHub’s Agentic Workflows and the Coming ‘Continuous AI’ Era</a></h3><p class="row-dek">What continuous integration did for tests, continuous AI is about to do for everything else a solo founder can’t staff.</p><p class="meta row-meta">February 17, 2026 &middot; 9 min read</p></div></article><article class="row"><a class="row-media" href="post.html" tabindex="-1" aria-hidden="true"><img src="img/productivity.jpg" alt=""></a><div class="row-body"><p class="eyebrow"><b>Practice</b></p><h3 class="row-h"><a href="post.html">How I 10x’d My AI Coding Productivity (And You Can Too)</a></h3><p class="row-dek">Nine months of working almost entirely through coding agents, and the handful of habits that made the difference.</p><p class="meta row-meta">February 16, 2026 &middot; 10 min read</p></div></article></section><section class="sub" id="subscribe" data-now="Subscribe"><h2 class="sub-h">Every piece, straight to your inbox.</h2><p class="sub-p">Notes from a five-time AI founder on what’s actually being built, what it means, and what to do about it.</p><form method="dialog" class="sub-form" data-demo="Demo only — nothing was sent." novalidate><label class="vh" for="sub-email">Email address</label><input id="sub-email" name="email" type="email" inputmode="email" autocomplete="email" placeholder="you@example.com" data-check="email" aria-describedby="sub-err"><button type="submit">Subscribe</button><span class="vh" id="sub-err"></span><p class="form-msg" role="status"></p></form></section></main><footer class="foot"><div class="foot-top"><div><p class="foot-about">My name is Shahar Nechmad. I’m a five-time startup founder specializing in AI, and I’ve built a range of AI-driven products. Here I share what I’m learning along the way—AI news and breakthroughs, what they might mean for our lives and the world, plus practical recommendations, new releases, and tools worth trying.</p></div><nav class="foot-links" aria-label="Elsewhere"><a href="#">X</a><a href="#">LinkedIn</a><a href="#">RSS</a></nav></div><div class="foot-end"><span>Powered by Hot Metal</span><a href="../index.html">&larr; All concepts</a></div></footer></div>
+<script>
+(function () {
+  var reduce = window.matchMedia('(prefers-reduced-motion: reduce)');
+
+  /* ---- the panel's "now showing" line ----
+     This is measured, not observed. An IntersectionObserver only reports a
+     heading while it sits inside a band, which means a long section, a fast
+     flick, an anchor jump or a restored scroll position can all leave the
+     caption stuck on whatever heading last happened to cross that band. The
+     question the caption answers is simply "which is the last heading above the
+     reading line", and that has an exact answer at any scroll offset — so it is
+     computed from the headings' positions on every frame that scrolls. */
+  var now = document.getElementById('now');
+  var marks = Array.prototype.slice.call(document.querySelectorAll('[data-now]'));
+  if (now && marks.length) {
+    var tEl = now.querySelector('.now-t');
+    var key = null, timer = null, queued = false;
+
+    function apply(t) { tEl.textContent = t; }
+    function setNow(t) {
+      if (t === key) return;
+      key = t;
+      if (reduce.matches) { apply(t); return; }
+      now.classList.add('fading');
+      window.clearTimeout(timer);
+      timer = window.setTimeout(function () {
+        apply(t);
+        now.classList.remove('fading');
+      }, 180);
+    }
+
+    /* The reading line sits a third of the way down: a heading that has passed
+       it is the section you are reading, not the one you are approaching. */
+    function current() {
+      var line = window.innerHeight * 0.34;
+      var cur = marks[0];
+      for (var i = 0; i < marks.length; i++) {
+        if (marks[i].getBoundingClientRect().top <= line) cur = marks[i];
+      }
+      return cur;
+    }
+    function update() {
+      var m = current();
+      setNow(m.getAttribute('data-now'));
+    }
+    /* A frame is the right moment to measure, but frames stop in a background
+       tab while scroll positions can still change (a restored session, a
+       scripted jump, a link opened in the background). Whichever of the two
+       arrives first wins, so the caption is never left describing the wrong
+       section once the page is looked at again. */
+    function schedule() {
+      if (queued) return;
+      queued = true;
+      function run() { if (!queued) return; queued = false; update(); }
+      window.requestAnimationFrame(run);
+      window.setTimeout(run, 120);
+    }
+    window.addEventListener('scroll', schedule, { passive: true });
+    window.addEventListener('resize', schedule);
+    /* Fonts land after first paint and move every heading, so measure again. */
+    if (document.fonts && document.fonts.ready) { document.fonts.ready.then(schedule); }
+    window.addEventListener('load', schedule);
+    key = current().getAttribute('data-now');
+    apply(key);
+  }
+
+  /* ---- forms: local validation, nothing is ever sent ---- */
+  var EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
+  function fieldError(input, msg) {
+    input.setAttribute('aria-invalid', msg ? 'true' : 'false');
+    var box = input.getAttribute('aria-describedby');
+    var el = box && document.getElementById(box);
+    if (el) el.textContent = msg || '';
+  }
+  Array.prototype.forEach.call(document.querySelectorAll('form[data-demo]'), function (form) {
+    var msg = form.querySelector('.form-msg');
+    form.addEventListener('submit', function (ev) {
+      ev.preventDefault();
+      var bad = null;
+      Array.prototype.forEach.call(form.querySelectorAll('[data-check]'), function (input) {
+        var v = input.value.trim();
+        var kind = input.getAttribute('data-check');
+        var err = '';
+        if (!v) err = 'Required.';
+        else if (kind === 'email' && !EMAIL.test(v)) err = 'That doesn’t look like an email address.';
+        // 'required' is name-shaped: any non-empty value will do. Only prose has a floor.
+        else if (kind === 'text' && v.length < 4) err = 'A little more, please.';
+        fieldError(input, err);
+        if (err && !bad) bad = input;
+      });
+      if (bad) {
+        if (msg) { msg.textContent = 'Check the highlighted field.'; msg.setAttribute('data-state', 'err'); }
+        bad.focus();
+        return;
+      }
+      form.reset();
+      Array.prototype.forEach.call(form.querySelectorAll('[data-check]'), function (i) { fieldError(i, ''); });
+      if (msg) {
+        msg.textContent = form.getAttribute('data-demo');
+        msg.setAttribute('data-state', 'ok');
+      }
+    });
+  });
+
+  /* ---- prototype-only: re-derive the panel palette from a different accent.
+         Same arithmetic the build script runs; in the app it runs server-side. ---- */
+  var PAPER = [250, 249, 247];
+  function chan(c) { c /= 255; return c <= 0.04045 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4); }
+  function lum(c) { return 0.2126 * chan(c[0]) + 0.7152 * chan(c[1]) + 0.0722 * chan(c[2]); }
+  function ratio(a, b) { var x = lum(a), y = lum(b); return (Math.max(x, y) + 0.05) / (Math.min(x, y) + 0.05); }
+  function mix(a, b, t) { return [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t, a[2] + (b[2] - a[2]) * t]; }
+  function hex(c) {
+    return '#' + c.map(function (v) {
+      var s = Math.max(0, Math.min(255, Math.round(v))).toString(16);
+      return s.length < 2 ? '0' + s : s;
+    }).join('');
+  }
+  function parse(h) {
+    h = h.replace('#', '');
+    return [parseInt(h.slice(0, 2), 16), parseInt(h.slice(2, 4), 16), parseInt(h.slice(4, 6), 16)];
+  }
+  function derive(h) {
+    var a = parse(h);
+    var target = ratio(a, [255, 255, 255]) >= ratio(a, [0, 0, 0]) ? [255, 255, 255] : [0, 0, 0];
+    var fg = mix(a, target, 0.94);
+    function pull(maxT, minR, grounds) {
+      grounds = grounds || [a];
+      for (var t = maxT; t > 0; t -= 0.02) {
+        var c = parse(hex(mix(fg, a, t))), ok = true;
+        for (var g = 0; g < grounds.length; g++) { if (ratio(c, grounds[g]) < minR) { ok = false; break; } }
+        if (ok) return c;
+      }
+      return fg;
+    }
+    var soft = pull(0.93, 1.14);
+    var rule = pull(0.86, 1.60);
+    var dim = pull(0.42, 4.50, [a, soft]);
+    var ink = a;
+    for (var t = 0; ratio(ink, PAPER) < 4.5 && t < 1; ) { t += 0.02; ink = mix(a, [0, 0, 0], t); }
+    return {
+      '--accent': hex(a),
+      '--accent-ink': hex(ink),
+      '--accent-tint': hex(mix(a, [255, 255, 255], 0.90)),
+      '--panel-fg': hex(fg),
+      '--panel-fg-dim': hex(dim),
+      '--panel-rule': hex(rule),
+      '--panel-soft': hex(soft)
+    };
+  }
+})();
+</script>
+</body>
+</html>

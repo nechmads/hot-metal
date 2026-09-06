@@ -1,0 +1,726 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light">
+<title>Looking Ahead — AI, and what it means for the rest of us</title>
+<meta name="description" content="Notes from a five-time AI founder on what’s actually being built, what it means, and what to do about it.">
+<style>
+@font-face {
+  font-family: 'Newsreader';
+  font-style: italic;
+  font-weight: 300;
+  font-display: swap;
+  src: url(fonts/newsreader-0.woff2) format('woff2');
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+@font-face {
+  font-family: 'Newsreader';
+  font-style: italic;
+  font-weight: 300;
+  font-display: swap;
+  src: url(fonts/newsreader-1.woff2) format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+@font-face {
+  font-family: 'Newsreader';
+  font-style: italic;
+  font-weight: 400;
+  font-display: swap;
+  src: url(fonts/newsreader-2.woff2) format('woff2');
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+@font-face {
+  font-family: 'Newsreader';
+  font-style: italic;
+  font-weight: 400;
+  font-display: swap;
+  src: url(fonts/newsreader-3.woff2) format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+@font-face {
+  font-family: 'Newsreader';
+  font-style: normal;
+  font-weight: 300;
+  font-display: swap;
+  src: url(fonts/newsreader-4.woff2) format('woff2');
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+@font-face {
+  font-family: 'Newsreader';
+  font-style: normal;
+  font-weight: 300;
+  font-display: swap;
+  src: url(fonts/newsreader-5.woff2) format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+@font-face {
+  font-family: 'Newsreader';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url(fonts/newsreader-6.woff2) format('woff2');
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+@font-face {
+  font-family: 'Newsreader';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url(fonts/newsreader-7.woff2) format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+@font-face {
+  font-family: 'Newsreader';
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url(fonts/newsreader-8.woff2) format('woff2');
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+@font-face {
+  font-family: 'Newsreader';
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url(fonts/newsreader-9.woff2) format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+@font-face {
+  font-family: 'Newsreader';
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url(fonts/newsreader-10.woff2) format('woff2');
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+@font-face {
+  font-family: 'Newsreader';
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url(fonts/newsreader-11.woff2) format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+@font-face {
+  font-family: 'Inter';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url(fonts/inter-0.woff2) format('woff2');
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+@font-face {
+  font-family: 'Inter';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url(fonts/inter-1.woff2) format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+@font-face {
+  font-family: 'Inter';
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url(fonts/inter-2.woff2) format('woff2');
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+@font-face {
+  font-family: 'Inter';
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url(fonts/inter-3.woff2) format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+@font-face {
+  font-family: 'Inter';
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url(fonts/inter-4.woff2) format('woff2');
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+@font-face {
+  font-family: 'Inter';
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url(fonts/inter-5.woff2) format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+@font-face {
+  font-family: 'Inter';
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url(fonts/inter-6.woff2) format('woff2');
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+@font-face {
+  font-family: 'Inter';
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url(fonts/inter-7.woff2) format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+:root{
+  --paper:#faf7f2;
+  --paper-sunk:#f4f0e8;
+  --ink:#1b1714;
+  --ink-2:#463f38;
+  --ink-3:#6d6459;
+  --rule:rgba(27,23,20,.14);
+  --rule-firm:rgba(27,23,20,.30);
+  --accent:#b4361f;
+  /* Every mark the accent paints — numerals, hairlines, underlines — is pulled
+     46% toward the ink. That is what it takes for the worst realistic accent
+     (#ffd400: 1.34:1 raw) to clear 4.5:1 on this paper, and it also means the
+     folio numeral and the rule beside it are finally the same red. */
+  --accent-ink:color-mix(in srgb,var(--accent) 46%,var(--ink));
+  --rail:7.5rem;
+  --measure:34rem;
+  --gutter:clamp(1.25rem,5vw,4rem);
+  /* The page frame IS the field: folio rail + reading measure, nothing else.
+     Deriving the sheet from them means the single column always sits at optical
+     centre and the paper on either side is symmetric at every width — rather
+     than a wide frame with a live left half and a dead right half. */
+  --sheet:calc(var(--rail) + var(--measure) + 2 * var(--gutter));
+}
+
+*,*::before,*::after{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+/* `clip` rather than `hidden`, and on the root only: `overflow-x:hidden` on the
+   body turns it into a scroll container, which silently disables the sticky
+   running numeral in the essay's rail. */
+html{overflow-x:clip}
+html,body{max-width:100%}
+
+body{
+  margin:0;
+  background:var(--paper);
+  color:var(--ink);
+  font-family:'Newsreader',Georgia,'Times New Roman',serif;
+  font-optical-sizing:auto;
+  font-size:1.0625rem;
+  line-height:1.64;
+  font-synthesis-weight:none;
+  -webkit-font-smoothing:antialiased;
+  -moz-osx-font-smoothing:grayscale;
+}
+
+img{max-width:100%;height:auto;display:block}
+a{color:inherit}
+h1,h2,h3,h4{font-weight:400;margin:0;letter-spacing:-.022em;line-height:1.08}
+p{margin:0}
+ul,ol{margin:0;padding:0}
+
+:focus-visible{outline:2px solid var(--ink);outline-offset:4px;border-radius:1px}
+.vh{position:absolute;width:1px;height:1px;margin:-1px;padding:0;overflow:hidden;
+  clip-path:inset(50%);white-space:nowrap;border:0}
+
+.skip{position:absolute;left:-9999px;top:0;background:var(--ink);color:var(--paper);
+  padding:.7rem 1.1rem;z-index:60;font-family:'Inter',system-ui,sans-serif;font-size:.75rem;
+  letter-spacing:.1em;text-transform:uppercase}
+.skip:focus{left:.5rem;top:.5rem}
+
+.sheet{max-width:var(--sheet);margin:0 auto;padding-inline:var(--gutter)}
+
+/* ---- tiny metadata voice: the ONLY place Inter appears ---- */
+.meta,.kicker,.row-kicker,.lead-meta,.nav a,.sect-note,.src-domain,.tag,.btn,.field label,.byline,.foot-nav a,.comment-meta,.contents-h,.cform-head{
+  font-family:'Inter',system-ui,-apple-system,'Segoe UI',sans-serif;
+  text-transform:uppercase;
+  letter-spacing:.155em;
+  font-size:.6875rem;
+  font-weight:500;
+  font-variant-numeric:tabular-nums;
+  line-height:1.5;
+}
+/* The accent carries numerals, short rules and underlines ONLY — never
+   letterspaced label text, which stops being legible the moment a publication
+   picks a pale hex. Section eyebrows and every other label stay neutral ink. */
+.folio{
+  font-family:'Inter',system-ui,sans-serif;font-size:.6875rem;font-weight:600;
+  letter-spacing:.14em;font-variant-numeric:tabular-nums;
+  color:var(--accent-ink);
+}
+
+/* ---- masthead ---- */
+.mast{padding-top:1.15rem}
+.nav-band{
+  display:flex;align-items:baseline;justify-content:space-between;gap:1rem 2rem;flex-wrap:wrap;
+  padding-bottom:1.05rem;border-bottom:1px solid var(--rule);
+}
+.nav{display:flex;gap:1.7rem;flex-wrap:wrap;list-style:none}
+.nav a{color:var(--ink-2);text-decoration:none;padding-block:.15rem;display:inline-block}
+.nav a:hover{color:var(--ink)}
+.nav a[aria-current="page"]{color:var(--ink);box-shadow:inset 0 -1px 0 0 var(--accent-ink)}
+.stamp{color:var(--ink-3);display:flex;gap:1.1rem;flex-wrap:wrap}
+.stamp b{font-weight:600;color:var(--ink-2)}
+
+.identity{padding:clamp(3rem,8vw,6.5rem) 0 clamp(2.5rem,5vw,4rem)}
+.mast-name{
+  font-size:clamp(2.5rem,7.4vw,5rem);
+  font-weight:400;letter-spacing:-.042em;line-height:.92;
+  margin-left:-.045em;
+}
+.mast-name a{text-decoration:none}
+.identity-body{margin-left:var(--rail);margin-top:clamp(1.6rem,3vw,2.4rem);max-width:46ch}
+.mast-tag{font-size:clamp(1.15rem,2.1vw,1.5rem);font-style:italic;font-weight:300;color:var(--ink-2);line-height:1.35}
+.mast-desc{margin-top:1.15rem;color:var(--ink-3);font-size:1rem;line-height:1.66}
+
+/* compact masthead on the article page */
+.mast--compact .identity{padding:clamp(1.9rem,4vw,3rem) 0 0}
+.mast--compact .mast-name{font-size:clamp(1.5rem,3vw,2rem);letter-spacing:-.03em}
+.mast--compact .identity-body{margin-top:.5rem;margin-left:0}
+.mast--compact .mast-tag{font-size:1.0625rem}
+
+/* ---- rail layout: a folio rail beside the reading measure ---- */
+.railed{display:grid;grid-template-columns:var(--rail) minmax(0,1fr);gap:0 0}
+.railed > .rail{padding-top:.55rem}
+.railed > .col{max-width:var(--measure)}
+.rail-note{display:block;color:var(--ink-3);margin-top:.55rem;
+  font-family:'Inter',system-ui,sans-serif;font-size:.625rem;letter-spacing:.14em;text-transform:uppercase}
+.rail-rule{display:block;width:1.6rem;height:1px;background:var(--rule-firm);margin-top:.85rem}
+
+/* ---- lead ---- */
+.lead{padding-bottom:clamp(3rem,7vw,5.5rem)}
+.kicker{color:var(--ink-2)}
+.lead-title{
+  font-size:clamp(2.4rem,6.2vw,4.6rem);
+  font-weight:400;letter-spacing:-.036em;line-height:1.02;
+  margin-top:1.1rem;max-width:15ch;
+}
+.lead-title a{text-decoration:none;background-image:linear-gradient(var(--accent-ink),var(--accent-ink));
+  background-size:0 1px;background-repeat:no-repeat;background-position:0 92%;transition:background-size .4s ease}
+.lead-title a:hover{background-size:100% 1px}
+.lead-dek{margin-top:1.5rem;font-size:clamp(1.15rem,1.9vw,1.4rem);line-height:1.5;color:var(--ink-2);max-width:44ch}
+.lead-meta{margin-top:2rem;color:var(--ink-3);display:flex;gap:.85rem;flex-wrap:wrap;align-items:baseline}
+.lead-meta .sep{color:var(--rule-firm)}
+
+/* ---- plates: a square hung on the wall, mounted in a paper mat with a
+   hairline frame, so uneven AI art reads as a mounted work rather than a
+   banner or a card. The plate supports an entry; it never replaces the
+   entry's headline. ---- */
+.plate{display:block;width:100%;margin:0 auto}
+.plate .mat{
+  display:block;padding:clamp(.9rem,2vw,1.4rem);background:var(--paper);
+  border:1px solid var(--rule-firm);transition:border-color .3s ease;
+}
+.plate img{width:100%;aspect-ratio:1/1;object-fit:cover}
+
+/* typographic plates on the article page: one treatment for the standfirst and
+   the pull quote alike — hung roman type between two hairlines, no quotation
+   marks, no caption. Two devices doing the same job is one device too many. */
+.plate--type{width:100%}
+.plate--type .plate-body{
+  border-top:1px solid var(--rule-firm);border-bottom:1px solid var(--rule-firm);
+  padding:2.4rem 0 2.5rem;text-align:center;
+}
+.plate--type p{font-size:clamp(1.3rem,2.4vw,1.7rem);line-height:1.38;font-weight:300;letter-spacing:-.018em;color:var(--ink)}
+.plate--type blockquote{margin:0}
+
+/* ---- section heads ---- */
+.sect{display:grid;grid-template-columns:var(--rail) minmax(0,1fr);align-items:baseline;
+  padding-bottom:1.05rem;border-bottom:1px solid var(--rule-firm);margin-bottom:.5rem}
+.sect-mark{width:1.6rem;height:1px;background:var(--accent-ink);align-self:center}
+.sect-inner{display:flex;align-items:baseline;justify-content:space-between;gap:1rem 2rem;flex-wrap:wrap}
+.sect-title{font-size:clamp(1.15rem,2vw,1.4rem);font-weight:400;letter-spacing:-.01em}
+.sect-note{color:var(--ink-3)}
+
+/* ---- catalogue rows ----
+   One list system. Every entry is a headline block: folio in the rail, then a
+   single metadata line (section, date, reading time) sitting directly with its
+   own headline, then the title at full weight and left-aligned, then the note.
+   Some works also carry a plate, hung beneath their own headline as a
+   supporting square — the picture is never asked to be the title. */
+.rows{list-style:none}
+.row{border-bottom:1px solid var(--rule)}
+.row-link{
+  display:grid;grid-template-columns:var(--rail) minmax(0,1fr);gap:0;
+  text-decoration:none;padding:clamp(1.7rem,2.5vw,2.2rem) 0;align-items:start;
+}
+.row-link:hover .folio{color:var(--ink)}
+.row-rail{display:block;padding-top:.15rem}
+.row-body{display:block}
+.row-kicker{display:block;color:var(--ink-3)}
+.row-kicker .sep{color:var(--rule-firm);padding:0 .55rem}
+.row-title{margin-top:.75rem;font-size:clamp(1.45rem,2.5vw,2.05rem);font-weight:400;letter-spacing:-.028em;
+  line-height:1.1}
+.row-link:hover .row-title{box-shadow:inset 0 -1px 0 0 var(--accent-ink)}
+.row-dek{display:block;margin-top:1.05rem;color:var(--ink-2);line-height:1.58}
+/* the plate squares off exactly on the headline's own column — one left edge
+   and one right edge down the whole entry, headline and picture alike */
+.row-plate{margin:1.9rem 0 .3rem}
+.row-link:hover .mat{border-color:var(--ink)}
+
+/* ---- subscribe: the page's closing plate ---- */
+.subscribe{text-align:center;padding:clamp(2.5rem,5vw,3.5rem) 0 clamp(2.75rem,5vw,4rem)}
+.subscribe .sheet{border-top:1px solid var(--rule-firm);padding-top:clamp(3rem,6vw,4.5rem)}
+.subscribe .mark{width:1.6rem;height:1px;background:var(--accent-ink);margin:0 auto 2rem}
+.subscribe h2{font-size:clamp(1.9rem,4vw,3rem);font-weight:400;letter-spacing:-.032em;
+  max-width:22ch;margin-inline:auto;text-wrap:balance}
+.sub-copy{margin:1.35rem auto 0;max-width:44ch;color:var(--ink-2);font-size:1.0625rem}
+
+input,textarea{
+  width:100%;font:inherit;font-size:1rem;color:var(--ink);background:transparent;
+  border:0;border-bottom:1px solid var(--rule-firm);padding:.6rem 0;border-radius:0;
+}
+textarea{resize:vertical;min-height:6.5rem;line-height:1.55}
+input::placeholder,textarea::placeholder{color:var(--ink-3);opacity:.75}
+input:focus,textarea:focus{outline:0;border-bottom-color:var(--ink)}
+input:focus-visible,textarea:focus-visible{outline:2px solid var(--ink);outline-offset:4px}
+/* One control system: every field and every button is a word standing on a
+   hairline. No boxes anywhere — a bordered chip or a filled bar is the one
+   thing this page never draws. */
+.btn{
+  background:transparent;color:var(--ink);cursor:pointer;border:0;
+  border-bottom:1px solid var(--rule-firm);padding:.6rem 0;border-radius:0;
+  transition:border-color .2s ease,color .2s ease;
+}
+.btn:hover{border-bottom-color:var(--ink)}
+/* the subscribe field and its button share one continuous rule */
+.sub-form{margin:2.5rem auto 0;max-width:26rem;display:flex;align-items:flex-end;gap:0}
+.sub-form .field{flex:1 1 auto;min-width:0;text-align:left;margin-bottom:0}
+/* the button never wraps below the field: one rule, one row, at every width */
+.sub-form .btn{flex:0 0 auto;padding-left:1.2rem;white-space:nowrap}
+.sub-note{margin-top:1.5rem;color:var(--ink-3);font-size:.9375rem;font-style:italic;font-weight:300}
+.status{margin-top:1.25rem;min-height:1.4rem;font-size:.9375rem;color:var(--ink-2)}
+.status[data-tone="ok"]{color:var(--ink)}
+.status[data-tone="err"]{color:#8a2417}
+.err{display:block;margin-top:.45rem;font-size:.8125rem;color:#8a2417;font-style:italic}
+
+/* ---- footer ---- */
+.foot{padding:clamp(2rem,4vw,3rem) 0 3rem}
+.foot-grid{display:flex;justify-content:space-between;gap:1.5rem 3rem;flex-wrap:wrap;align-items:baseline;
+  border-top:1px solid var(--rule);padding-top:2.1rem}
+.foot-nav{display:flex;gap:1.6rem;list-style:none;flex-wrap:wrap}
+.foot-nav a{color:var(--ink-2);text-decoration:none}
+.foot-nav a:hover{color:var(--ink);box-shadow:inset 0 -1px 0 0 var(--accent-ink)}
+.colophon{color:var(--ink-3);font-size:.9375rem;font-style:italic;font-weight:300}
+.backlink{margin-top:2.5rem;font-size:.8125rem;color:var(--ink-3);font-family:'Inter',system-ui,sans-serif;letter-spacing:.04em}
+.backlink a{color:var(--ink-3);text-decoration:underline;text-underline-offset:3px}
+.backlink a:hover{color:var(--ink)}
+
+/* ---- article ---- */
+.art-head{padding-block:clamp(3.5rem,9vw,7.5rem) 0}
+.art-title{
+  font-size:clamp(2.6rem,7.4vw,5.4rem);
+  font-weight:400;letter-spacing:-.042em;line-height:1.0;max-width:14ch;
+}
+.art-sub{margin-top:1.6rem;font-size:clamp(1.2rem,2.2vw,1.6rem);font-style:italic;font-weight:300;
+  color:var(--ink-2);line-height:1.4;max-width:38ch}
+.byline{margin-top:2.4rem;color:var(--ink-3);display:flex;gap:.85rem;flex-wrap:wrap;align-items:baseline;
+  padding-top:1.4rem;border-top:1px solid var(--rule)}
+.byline .who{color:var(--ink-2);font-weight:600}
+.byline .sep{color:var(--rule-firm)}
+
+/* Two fields, the same two the whole site uses: folio rail and reading
+   measure. The contents list is set in the reading voice at the head of the
+   essay, and the rail keeps a running numeral that follows the reader down —
+   a numeral survives any accent hex; letterspaced small caps do not. */
+.artgrid{display:grid;grid-template-columns:var(--rail) minmax(0,1fr)}
+.artgrid > .rail{padding-top:.55rem}
+
+.contents{margin-top:2.1rem}
+.contents-h{color:var(--ink-3);margin-bottom:1rem}
+.contents ol{list-style:none}
+.contents li + li{margin-top:.55rem}
+.contents a{display:flex;gap:.95rem;align-items:baseline;text-decoration:none;
+  color:var(--ink-2);line-height:1.4;transition:color .2s ease}
+.contents a:hover{color:var(--ink)}
+.contents a:hover .c-title{box-shadow:inset 0 -1px 0 0 var(--accent-ink)}
+.c-no{
+  flex:0 0 1.5rem;font-family:'Inter',system-ui,sans-serif;font-size:.6875rem;
+  font-weight:600;letter-spacing:.1em;font-variant-numeric:tabular-nums;
+  color:var(--accent-ink);
+}
+
+.runner{position:sticky;top:4.5rem;display:block}
+.runner-no{
+  display:block;font-size:1.5rem;line-height:1;letter-spacing:-.01em;
+  color:var(--accent-ink);
+}
+.runner-rule{display:block;width:1.6rem;height:1px;background:var(--rule-firm);margin-top:.75rem}
+
+.body{margin-top:clamp(2.5rem,5vw,3.75rem)}
+.body > *{max-width:var(--measure)}
+.body p{margin:0 0 1.4em}
+.body .lede{font-size:1.3125rem;line-height:1.55;color:var(--ink);margin-bottom:0}
+.body h2{
+  font-size:clamp(1.75rem,3.4vw,2.65rem);font-weight:500;letter-spacing:-.03em;line-height:1.1;
+  margin:2.5em 0 .85em;padding-top:1.5rem;border-top:1px solid var(--rule);position:relative;
+}
+.body h2::after{content:"";position:absolute;top:-1px;left:0;width:2.6rem;height:1px;background:var(--accent-ink)}
+.body a{text-decoration:underline;text-decoration-thickness:1px;text-underline-offset:3.5px;
+  text-decoration-color:var(--accent-ink)}
+.body a:hover{text-decoration-thickness:2px}
+.body strong{font-weight:600}
+.body em{font-style:italic}
+.body code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:.86em;
+  background:var(--paper-sunk);padding:.12em .4em;border:1px solid var(--rule)}
+/* a hung type plate spans the measure and centres on it */
+.body > .plate{width:100%;margin:clamp(2.75rem,6vw,4.25rem) 0}
+
+/* ---- tags / sources / comments ---- */
+/* tags as an interpuncted list in the page's own metadata voice — a bordered
+   all-caps rectangle is a chip borrowed from somewhere else */
+.tags{display:flex;flex-wrap:wrap;row-gap:.45rem;list-style:none;align-items:baseline}
+.tags li + li::before{content:"\00b7";color:var(--rule-firm);padding:0 .7rem;
+  font-family:'Inter',system-ui,sans-serif;font-size:.6875rem}
+.tag{color:var(--ink-2);text-decoration:none;padding-block:.1rem}
+.tag:hover{color:var(--ink);box-shadow:inset 0 -1px 0 0 var(--accent-ink)}
+
+.block{padding-top:clamp(3.5rem,7vw,5.5rem)}
+.block-body{margin-left:var(--rail);padding-top:2rem;max-width:var(--measure)}
+
+.sources{list-style:none;counter-reset:src}
+.sources li{counter-increment:src;padding-left:3.1rem;text-indent:-3.1rem;margin-bottom:1.05rem;line-height:1.5}
+.sources li::before{
+  content:counter(src,decimal-leading-zero);display:inline-block;width:3.1rem;text-indent:0;
+  font-family:'Inter',system-ui,sans-serif;font-size:.6875rem;font-weight:600;letter-spacing:.1em;
+  font-variant-numeric:tabular-nums;color:var(--ink-3);vertical-align:.15em;
+}
+.sources a{text-decoration:underline;text-decoration-thickness:1px;text-underline-offset:3px;
+  text-decoration-color:var(--rule-firm)}
+.sources a:hover{text-decoration-color:var(--accent-ink)}
+.src-domain{display:block;margin-left:0;color:var(--ink-3);margin-top:.2rem;text-indent:0}
+
+.comments{list-style:none}
+.comments li{padding:1.9rem 0;border-top:1px solid var(--rule)}
+.comments li:first-child{border-top:0;padding-top:.6rem}
+.comment-meta{color:var(--ink-3);display:flex;gap:.8rem;flex-wrap:wrap;align-items:baseline}
+.comment-meta .who{color:var(--ink-2);font-weight:600}
+.comment-meta .sep{color:var(--rule-firm)}
+.comment-body{margin-top:.85rem;color:var(--ink-2);line-height:1.6}
+
+/* no rule above the first label: a stray hairline at the head of a form reads
+   as an empty input. A named heading does the separating instead. */
+.cform{margin-top:3.2rem}
+.cform-head{color:var(--ink-3);margin-bottom:1.5rem}
+.cform .grid{display:grid;grid-template-columns:1fr 1fr;gap:1.6rem}
+.field label{display:block;color:var(--ink-3);margin-bottom:.3rem}
+.field{margin-bottom:1.6rem}
+.cform .actions{display:flex;align-items:center;gap:1.5rem;flex-wrap:wrap}
+
+/* ---- responsive ---- */
+@media (max-width:1080px){
+  :root{--rail:5rem}
+}
+@media (max-width:860px){
+  :root{--rail:0rem}
+  body{font-size:1.0625rem}
+  .identity-body{margin-left:0}
+  .railed,.artgrid{display:block}
+  .railed > .rail,.artgrid > .rail{display:flex;align-items:baseline;gap:1rem;padding-top:0;margin-bottom:1.5rem}
+  .rail-rule{display:none}
+  .rail-note{margin-top:0}
+  /* the running numeral has no margin to live in on a phone; the contents
+     list at the head of the essay carries the whole job */
+  .artgrid > .rail{display:none}
+  .sect{grid-template-columns:1.6rem minmax(0,1fr);gap:0 1rem}
+  .row-link{grid-template-columns:minmax(0,1fr);gap:0;padding:1.8rem 0}
+  .row-rail{display:flex;align-items:baseline;gap:1rem;margin-bottom:.95rem;padding-top:0}
+  .row-plate{margin-top:1.7rem}
+  .block-body{margin-left:0}
+  .cform .grid{grid-template-columns:1fr;gap:0}
+  .art-title,.art-sub,.lead-title{max-width:none}
+}
+@media (max-width:420px){
+  .nav{gap:1.1rem}
+  .stamp{gap:.8rem}
+}
+
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation-duration:.001ms!important;transition-duration:.001ms!important}
+}
+
+@media print{
+  .runner,.skip,.nav-band,.backlink{display:none}
+  .row-link{break-inside:avoid}
+}
+
+</style>
+</head>
+<body>
+<a class="skip" href="#lead-title">Skip to content</a>
+<header class="mast" id="top">
+<div class="sheet">
+<div class="nav-band">
+  <nav aria-label="Primary"><ul class="nav"><li><a href="#top" aria-current="page">Home</a></li><li><a href="#catalogue">Archive</a></li><li><a href="#subscribe">Subscribe</a></li></ul></nav>
+  <p class="stamp"><span><b>No. 41</b></span><span>Sunday, September 6, 2026</span></p>
+</div>
+<div class="identity">
+<h1 class="mast-name">Looking Ahead</h1><div class="identity-body"><p class="mast-tag">AI, and what it means for the rest of us</p><p class="mast-desc">My name is Shahar Nechmad. I’m a five-time startup founder specializing in AI, and I’ve built a range of AI-driven products. Here I share what I’m learning along the way—AI news and breakthroughs, what they might mean for our lives and the world, plus practical recommendations, new releases, and tools worth trying.</p></div>
+</div>
+</div>
+</header>
+<main>
+<section class="lead sheet" aria-labelledby="lead-title">
+  <div class="railed">
+    <div class="rail">
+      <span class="folio">01</span>
+      <span class="rail-rule" aria-hidden="true"></span>
+      <span class="rail-note">Now showing</span>
+    </div>
+    <div class="col">
+      <p class="kicker">Product strategy</p>
+      <h2 class="lead-title" id="lead-title"><a href="post.html">Agent First Development is The Future</a></h2>
+      <p class="lead-dek">Cloudflare’s CEO predicted bots would outnumber humans online by 2027. It happened a year early — and your product probably isn’t ready.</p>
+      <p class="lead-meta"><span>Shahar Nechmad</span><span class="sep">/</span><time datetime="2026-09-02">September 2, 2026</time><span class="sep">/</span><span>9 min</span></p>
+    </div>
+  </div>
+</section>
+<section class="sheet" aria-labelledby="catalogue-h">
+<div class="sect" id="catalogue">
+  <span class="sect-mark" aria-hidden="true"></span>
+  <div class="sect-inner"><h2 class="sect-title" id="catalogue-h">The catalogue</h2></div>
+</div>
+<ul class="rows">
+<li class="row">
+  <a class="row-link" href="post.html">
+    <span class="row-rail"><span class="folio">02</span><span class="rail-note">Plate I</span></span>
+    <span class="row-body">
+      <span class="row-kicker">Geopolitics<span class="sep">&middot;</span><time datetime="2026-03-04">March 4, 2026</time><span class="sep">&middot;</span>7 min</span>
+      <h3 class="row-title">The Iran War Is Not Really About Iran</h3>
+      <span class="row-dek">The US strike on Iran is a message aimed at Beijing. China buys 90–95% of Iran’s oil, and a destabilized regime puts that lifeline at risk.</span>
+      <span class="plate row-plate"><span class="mat"><img src="img/iran.jpg" width="900" height="900" loading="lazy" decoding="async" alt=""></span></span>
+    </span>
+  </a>
+</li>
+<li class="row">
+  <a class="row-link" href="post.html">
+    <span class="row-rail"><span class="folio">03</span></span>
+    <span class="row-body">
+      <span class="row-kicker">AI &amp; policy<span class="sep">&middot;</span><time datetime="2026-03-01">March 1, 2026</time><span class="sep">&middot;</span>11 min</span>
+      <h3 class="row-title">OpenAI’s Pentagon Deal and the Red Lines Problem</h3>
+      <span class="row-dek">OpenAI signed a Pentagon deal while the US military was already running Claude — the model it had officially blacklisted — on live operations.</span>
+    </span>
+  </a>
+</li>
+<li class="row">
+  <a class="row-link" href="post.html">
+    <span class="row-rail"><span class="folio">04</span><span class="rail-note">Plate II</span></span>
+    <span class="row-body">
+      <span class="row-kicker">Research<span class="sep">&middot;</span><time datetime="2026-02-24">February 24, 2026</time><span class="sep">&middot;</span>8 min</span>
+      <h3 class="row-title">Should AI Agents be Friends?</h3>
+      <span class="row-dek">Large-scale research shows agents simulate social behavior rather than genuinely socialize. The real question isn’t whether they can — it’s whether they should.</span>
+      <span class="plate row-plate"><span class="mat"><img src="img/agents-friends.jpg" width="900" height="900" loading="lazy" decoding="async" alt=""></span></span>
+    </span>
+  </a>
+</li>
+<li class="row">
+  <a class="row-link" href="post.html">
+    <span class="row-rail"><span class="folio">05</span></span>
+    <span class="row-body">
+      <span class="row-kicker">Strategy<span class="sep">&middot;</span><time datetime="2026-02-20">February 20, 2026</time><span class="sep">&middot;</span>12 min</span>
+      <h3 class="row-title">From Copilot to Colleague: The Five Pillars of an Agentic AI Strategy</h3>
+      <span class="row-dek">Most “AI strategies” are a list of tools. Here is the structure that survives contact with an actual org chart.</span>
+    </span>
+  </a>
+</li>
+<li class="row">
+  <a class="row-link" href="post.html">
+    <span class="row-rail"><span class="folio">06</span><span class="rail-note">Plate III</span></span>
+    <span class="row-body">
+      <span class="row-kicker">Essay<span class="sep">&middot;</span><time datetime="2026-02-18">February 18, 2026</time><span class="sep">&middot;</span>6 min</span>
+      <h3 class="row-title">The Hyper Learner</h3>
+      <span class="row-dek">The most valuable skill of the next decade isn’t prompting. It’s the ability to absorb an entire field in a weekend.</span>
+      <span class="plate row-plate"><span class="mat"><img src="img/hyperlearner.jpg" width="900" height="900" loading="lazy" decoding="async" alt=""></span></span>
+    </span>
+  </a>
+</li>
+<li class="row">
+  <a class="row-link" href="post.html">
+    <span class="row-rail"><span class="folio">07</span></span>
+    <span class="row-body">
+      <span class="row-kicker">Tools<span class="sep">&middot;</span><time datetime="2026-02-17">February 17, 2026</time><span class="sep">&middot;</span>9 min</span>
+      <h3 class="row-title">GitHub’s Agentic Workflows and the Coming ‘Continuous AI’ Era</h3>
+      <span class="row-dek">What continuous integration did for tests, continuous AI is about to do for everything else a solo founder can’t staff.</span>
+    </span>
+  </a>
+</li>
+<li class="row">
+  <a class="row-link" href="post.html">
+    <span class="row-rail"><span class="folio">08</span></span>
+    <span class="row-body">
+      <span class="row-kicker">Practice<span class="sep">&middot;</span><time datetime="2026-02-16">February 16, 2026</time><span class="sep">&middot;</span>10 min</span>
+      <h3 class="row-title">How I 10x’d My AI Coding Productivity (And You Can Too)</h3>
+      <span class="row-dek">Nine months of working almost entirely through coding agents, and the handful of habits that made the difference.</span>
+    </span>
+  </a>
+</li>
+</ul>
+</section>
+<section class="subscribe" id="subscribe" aria-labelledby="sub-title">
+  <div class="sheet">
+    <div class="mark" aria-hidden="true"></div>
+    <h2 id="sub-title">Get the next essay by&nbsp;email</h2>
+    <p class="sub-copy">One long piece at a time, sent the morning it is published. You can also follow along by RSS or on X.</p>
+    <form class="sub-form" method="dialog" data-status="sub-status" data-done="Demo only — nothing was sent." novalidate>
+      <div class="field">
+        <label class="vh" for="sub-email">Email address</label>
+        <input id="sub-email" name="email" type="email" autocomplete="email" placeholder="you@example.com" required>
+      </div>
+      <button class="btn" type="submit">Subscribe</button>
+    </form>
+    <p class="status" id="sub-status" role="status" aria-live="polite"></p>
+    <p class="sub-note">This prototype never sends anything anywhere.</p>
+  </div>
+</section>
+</main>
+<footer class="foot">
+<div class="sheet">
+  <div class="foot-grid">
+    <ul class="foot-nav"><li><a href="#">X</a></li><li><a href="#">LinkedIn</a></li><li><a href="#">RSS</a></li></ul>
+    <p class="colophon">Looking Ahead · Edited and written by Shahar Nechmad · Powered by Hot Metal</p>
+  </div>
+  <p class="backlink"><a href="../index.html">&larr; All concepts</a></p>
+</div>
+</footer>
+<script>
+(function(){
+  var RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
+  function err(field, msg){
+    var e = field.querySelector('.err');
+    if(!e){ e = document.createElement('span'); e.className='err'; field.appendChild(e); }
+    e.textContent = msg || '';
+    var ctl = field.querySelector('input,textarea');
+    if(ctl) ctl.setAttribute('aria-invalid', msg ? 'true' : 'false');
+    return !msg;
+  }
+  function wire(form){
+    var status = document.getElementById(form.getAttribute('data-status'));
+    form.addEventListener('submit', function(ev){
+      ev.preventDefault();
+      var ok = true, first = null;
+      var fields = form.querySelectorAll('.field');
+      for(var i=0;i<fields.length;i++){
+        var f = fields[i], ctl = f.querySelector('input,textarea');
+        if(!ctl) continue;
+        var v = ctl.value.trim(), msg = '';
+        if(!v){ msg = 'This field is required.'; }
+        else if(ctl.type === 'email' && !RE.test(v)){ msg = 'That does not look like an email address.'; }
+        if(!err(f, msg)){ ok = false; if(!first) first = ctl; }
+      }
+      if(!ok){
+        status.setAttribute('data-tone','err');
+        status.textContent = 'Please check the highlighted fields.';
+        if(first) first.focus();
+        return;
+      }
+      status.setAttribute('data-tone','ok');
+      status.textContent = form.getAttribute('data-done');
+      form.reset();
+    });
+  }
+  var forms = document.querySelectorAll('form[data-status]');
+  for(var i=0;i<forms.length;i++) wire(forms[i]);
+})();
+</script>
+</body>
+</html>

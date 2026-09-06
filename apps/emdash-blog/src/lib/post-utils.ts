@@ -1,6 +1,16 @@
 import type { Post } from '@hotmetal/content-core';
 
 /**
+ * How many posts a home page shows before deferring to /posts. The home page
+ * fetches HOME_POST_LIMIT + 1 so that `posts.length > HOME_POST_LIMIT` answers
+ * "is there anything behind the View all link?" without a second query.
+ *
+ * Only `press-machine` and `one-signal` enforce it; the older templates slice
+ * their own way and are unaffected by the extra post.
+ */
+export const HOME_POST_LIMIT = 10;
+
+/**
  * Get a preview/excerpt for a post, trying hook > excerpt > content truncation.
  */
 export function getPreviewText(post: Post, maxLength = 160): string | null {

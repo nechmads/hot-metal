@@ -36,3 +36,9 @@ firebase-debug.log
 
 # TypeScript
 *.tsbuildinfo
+
+# Design prototype run artifacts. The concept folders and the review notes are
+# worth keeping; full-page screenshot sets and packaged zips are regenerable and
+# ran to ~70MB, which does not belong in clone history.
+design-prototypes/**/_shots/
+design-prototypes/**/*.zip

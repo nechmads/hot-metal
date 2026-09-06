@@ -1,0 +1,126 @@
+---
+import type { Post } from '@hotmetal/content-core';
+import { formatDate } from '../../../lib/format';
+import { getPreviewText, getFirstTopic } from '../../../lib/post-utils';
+
+interface Props {
+  posts: Post[];
+  heading?: string;
+  showViewAll?: boolean;
+}
+
+const { posts, heading = 'The index', showViewAll = true } = Astro.props;
+
+/** Plain-text word count, used only for the read estimate in the READ column. */
+function countWords(html: string | undefined): number {
+  if (!html) return 0;
+  return html.replace(/<[^>]*>/g, ' ').split(/\s+/).filter(Boolean).length;
+}
+
+const rows = posts.map((post, i) => {
+  const words = countWords(post.content);
+  return {
+    post,
+    number: String(i + 1).padStart(3, '0'),
+    isLead: i === 0,
+    date: post.publishedAt ? formatDate(post.publishedAt) : null,
+    shortDate: post.publishedAt
+      ? new Date(post.publishedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+      : null,
+    section: getFirstTopic(post),
+    read: words > 0 ? `${Math.max(1, Math.round(words / 220))} min` : null,
+    dek: getPreviewText(post, 220),
+  };
+});
+---
+
+<section class="sig-idx sig-wrap" id="index" aria-labelledby="sig-index-title">
+  <div class="sig-idx-bar">
+    <h2 id="sig-index-title">{heading}</h2>
+
+    <div class="sig-idx-actions">
+      {posts.length > 0 && (
+        <button
+          class="sig-toggle"
+          type="button"
+          id="sig-index-toggle"
+          aria-pressed="false"
+          aria-controls="sig-index-rows"
+        >
+          Show summaries
+        </button>
+      )}
+
+      {showViewAll && (
+        <a class="sig-viewall" href="/posts">
+          View all <span aria-hidden="true">&rarr;</span>
+        </a>
+      )}
+    </div>
+  </div>
+
+  <div class="sig-cols">
+    {/* A visual scaffold for the grid below, not a table header: every row
+        repeats its own metadata, so this is hidden from assistive tech. */}
+    <div class="sig-idx-head" aria-hidden="true">
+      <span>&#8470;</span>
+      <span>Date</span>
+      <span>Dispatch</span>
+      <span>Section</span>
+      <span class="sig-r">Read</span>
+    </div>
+
+    {rows.length > 0 ? (
+      <div class="sig-rows" id="sig-index-rows">
+        {rows.map(({ post, number, isLead, date, shortDate, section, read, dek }) => (
+          <a class="sig-row" href={`/${post.slug}`}>
+            <span class:list={['sig-num', isLead && 'is-lead']}>{number}</span>
+            <span class="sig-title">{post.title}</span>
+            <span class="sig-meta">
+              <span class="sig-date">
+                {date && post.publishedAt ? (
+                  <time datetime={post.publishedAt}>
+                    <span class="sig-d-long">{date}</span>
+                    <span class="sig-d-short">{shortDate}</span>
+                  </time>
+                ) : (
+                  <span>Undated</span>
+                )}
+              </span>
+              <span class="sig-sec">{section ?? 'Unfiled'}</span>
+              <span class="sig-read">{read ?? '—'}</span>
+            </span>
+            {dek && (
+              <span class="sig-dek"><span>{dek}</span></span>
+            )}
+          </a>
+        ))}
+      </div>
+    ) : (
+      <p class="sig-empty">No dispatches on file yet.</p>
+    )}
+  </div>
+</section>
+
+<noscript>
+  {/* Without scripting the summaries control cannot do anything, so it goes
+      rather than sitting there dead. Hover and keyboard focus still open a row. */}
+  <style is:inline>.sig-toggle{display:none}</style>
+</noscript>
+
+<script>
+  function initIndexToggle() {
+    const btn = document.getElementById('sig-index-toggle');
+    const rows = document.getElementById('sig-index-rows');
+    if (!btn || !rows) return;
+
+    btn.addEventListener('click', () => {
+      const open = rows.classList.toggle('is-open');
+      btn.setAttribute('aria-pressed', open ? 'true' : 'false');
+      btn.textContent = open ? 'Hide summaries' : 'Show summaries';
+    });
+  }
+
+  initIndexToggle();
+  document.addEventListener('astro:after-swap', initIndexToggle);
+</script>

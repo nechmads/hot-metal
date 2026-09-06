@@ -1,0 +1,172 @@
+"""Builds the run-root comparison gallery. Neutral: it links to every concept
+and describes what each one is, it does not rank them."""
+
+import os, sys
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import common
+
+RUN = common.RUN
+
+CONCEPTS = [
+    ("01-broadsheet", "Broadsheet",
+     "A newspaper front page, not a blog. The first screen is words: masthead, "
+     "dateline rule, a commanding lead headline over a three-column drop-capped "
+     "lede, and a ruled archive. Featured images are duotoned small so uneven "
+     "generated art reads as deliberate press illustration.",
+     ["Instrument Serif · IBM Plex Sans · Source Serif 4",
+      "Ruled multi-column grid, no cards anywhere",
+      "A missing image becomes a typographic date plate"]),
+    ("02-signal", "Signal",
+     "An intelligence dispatch log. The home page is a numbered, dated index — "
+     "no cards, no thumbnails — where each row opens its own summary in place. "
+     "Dark, monospaced structure around a long-form reading column.",
+     ["JetBrains Mono · Inter · IBM Plex Sans",
+      "Numbered index under sticky column headers",
+      "Ships no imagery at all — see the note below"]),
+    ("03-atrium", "Atrium",
+     "A gallery catalogue. The square featured image is treated as a square — a "
+     "centred plate in a mat with a numbered caption — and a continuous numbering "
+     "system addresses each piece from the archive through to the article.",
+     ["Newsreader · Inter",
+      "Catalogue numbering: 01–08, Plate I–III, No. 41",
+      "The article opens on type alone, no image"]),
+    ("04-split", "Split",
+     "A fixed identity panel filled with the publication's own colour as a solid "
+     "plane, beside a scrolling reading column, with no top navigation on desktop. "
+     "The panel names the section you are currently in as you scroll.",
+     ["Archivo",
+      "Accent used as a large plane, not a mark",
+      "Panel colours derived from the hex, not hard-coded"]),
+    ("05-marginalia", "Marginalia",
+     "An annotated researcher's notebook. A real outer margin carries dates, tags "
+     "and numbered citation notes, so each source sits beside the sentence that "
+     "cites it — which is what the platform's citations field is for.",
+     ["Crimson Pro · IBM Plex Mono",
+      "Numbered references linked to margin notes",
+      "Notes fold inline beneath their paragraph on mobile"]),
+]
+
+def has_preview(slug, page):
+    return os.path.exists(os.path.join(RUN, "previews", f"{slug}-{page}.png"))
+
+def build():
+    cards = []
+    for slug, name, blurb, facts in CONCEPTS:
+        num = slug.split("-")[0]
+        thumb = (f'<img src="previews/{slug}-home.png" alt="Home page of the '
+                 f'{name} concept" loading="lazy">') if has_preview(slug, "home") else \
+                '<div class="noshot">preview not captured</div>'
+        facts_html = "".join(f"<li>{f}</li>" for f in facts)
+        cards.append(f"""      <article class="card">
+        <a class="shot" href="{slug}/index.html">{thumb}</a>
+        <div class="meta">
+          <p class="num">{num}</p>
+          <h2>{name}</h2>
+          <p class="blurb">{blurb}</p>
+          <ul class="facts">{facts_html}</ul>
+          <p class="links">
+            <a href="{slug}/index.html">Home page</a>
+            <a href="{slug}/post.html">Article page</a>
+          </p>
+        </div>
+      </article>""")
+
+    html = f"""<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>EmDash blog templates — five design concepts</title>
+<style>
+  :root {{
+    --ink: #16181c; --muted: #6a6e78; --line: #d9d6cf; --bg: #f7f6f3;
+    --card: #fff; --accent: #b4361f;
+  }}
+  * {{ box-sizing: border-box; }}
+  body {{
+    margin: 0; background: var(--bg); color: var(--ink);
+    font: 16px/1.6 ui-sans-serif, -apple-system, "Segoe UI", Roboto, sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }}
+  .wrap {{ max-width: 1120px; margin: 0 auto; padding: 64px 24px 96px; }}
+  header p.eyebrow {{
+    font-size: 12px; letter-spacing: .14em; text-transform: uppercase;
+    color: var(--muted); margin: 0 0 14px;
+  }}
+  header h1 {{ font-size: clamp(30px, 4.5vw, 46px); line-height: 1.1; margin: 0 0 18px; letter-spacing: -.02em; }}
+  header .lede {{ max-width: 62ch; color: #40444c; font-size: 17px; margin: 0 0 10px; }}
+  header .note {{ max-width: 62ch; color: var(--muted); font-size: 14px; margin: 18px 0 0; }}
+  hr {{ border: 0; border-top: 1px solid var(--line); margin: 44px 0; }}
+  .card {{
+    display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr);
+    gap: 32px; align-items: start; padding: 30px 0; border-top: 1px solid var(--line);
+  }}
+  .card:first-of-type {{ border-top: 0; }}
+  .shot {{ display: block; border: 1px solid var(--line); background: var(--card); overflow: hidden; }}
+  .shot img {{
+    display: block; width: 100%; aspect-ratio: 16/10;
+    object-fit: cover; object-position: top center;
+  }}
+  .noshot {{
+    aspect-ratio: 16/10; display: grid; place-items: center;
+    color: var(--muted); font-size: 13px;
+  }}
+  .num {{ font-variant-numeric: tabular-nums; color: var(--accent); font-size: 13px;
+         letter-spacing: .1em; margin: 0 0 6px; }}
+  .card h2 {{ font-size: 26px; margin: 0 0 10px; letter-spacing: -.01em; }}
+  .blurb {{ margin: 0 0 14px; color: #40444c; }}
+  .facts {{ margin: 0 0 16px; padding: 0; list-style: none; }}
+  .facts li {{
+    font-size: 13px; color: var(--muted); padding: 5px 0;
+    border-top: 1px solid var(--line);
+  }}
+  .links a {{
+    display: inline-block; margin-right: 10px; padding: 8px 14px;
+    border: 1px solid var(--ink); color: var(--ink); text-decoration: none;
+    font-size: 14px;
+  }}
+  .links a:hover, .links a:focus-visible {{ background: var(--ink); color: #fff; }}
+  a:focus-visible, .shot:focus-visible {{ outline: 2px solid var(--accent); outline-offset: 3px; }}
+  footer {{ margin-top: 60px; color: var(--muted); font-size: 13px; max-width: 70ch; }}
+  @media (max-width: 800px) {{
+    .wrap {{ padding: 40px 18px 64px; }}
+    .card {{ grid-template-columns: 1fr; gap: 20px; }}
+  }}
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <p class="eyebrow">Hot Metal · EmDash publication templates</p>
+      <h1>Five design concepts</h1>
+      <p class="lede">Each concept is a working static prototype with a home page and a
+        full article page, built on identical content from the <em>Looking Ahead</em>
+        publication so they can be compared fairly. Open a few, then pick one — or
+        combine parts of several.</p>
+      <p class="note">These are prototypes, not the product: links inside a concept lead
+        to that concept's own two pages, and the comment forms are demo-only and never
+        send anything. Everything is self-contained — fonts and images are bundled, so
+        the pages work offline from a file. Nothing in the application has been changed.</p>
+    </header>
+    <hr>
+{chr(10).join(cards)}
+    <footer>
+      <p>Sample content is from your own public publication. The featured images are
+      its real generated art — deliberately kept, because they are what these templates
+      will actually have to work with: square, uneven, and often missing entirely. The
+      lead story genuinely has no image, and one archive row in Broadsheet and Split has
+      none either.</p>
+      <p><strong>One asymmetry worth knowing.</strong> Signal ended up with no imagery at
+      all. Review found its one remaining image band read as a second lead and undercut
+      the page, so it was removed. The direction still allows wide image strips — you just
+      won't see one exercised here. Every other concept shows images in use.</p>
+    </footer>
+  </div>
+</body>
+</html>
+"""
+    common.write(RUN, "index.html", html)
+    return os.path.join(RUN, "index.html")
+
+if __name__ == "__main__":
+    print(build())

@@ -3,7 +3,13 @@ import { Hono } from 'hono'
 import type { AppEnv } from '../server'
 import type { WriterAgent } from '../agent/writer-agent'
 import { verifyPublicationOwnership } from '../middleware/ownership'
-import { AUTO_PUBLISH_MODES, type AutoPublishMode, type ScoutSchedule } from '@hotmetal/content-core'
+import {
+  AUTO_PUBLISH_MODES,
+  PUBLICATION_TEMPLATE_IDS,
+  isValidTemplateId,
+  type AutoPublishMode,
+  type ScoutSchedule,
+} from '@hotmetal/content-core'
 import type { CmsProvider } from '@hotmetal/data-layer'
 import { validateSchedule, validateTimezone, computeNextRun, getCmsClient, getTierLimits, getTierDisplayName, isUnlimited, logger } from '@hotmetal/shared'
 import { checkPublicationQuota, checkScoutScheduleQuota, quotaExceededResponse } from '../lib/quota'
@@ -206,9 +212,8 @@ publications.patch('/publications/:id', async (c) => {
     return c.json({ error: `Invalid commentsModeration. Must be one of: ${VALID_MODERATION_MODES.join(', ')}` }, 400)
   }
 
-  const VALID_TEMPLATE_IDS = ['starter', 'editorial', 'bold']
-  if (body.templateId && !VALID_TEMPLATE_IDS.includes(body.templateId)) {
-    return c.json({ error: `Invalid templateId. Must be one of: ${VALID_TEMPLATE_IDS.join(', ')}` }, 400)
+  if (body.templateId && !isValidTemplateId(body.templateId)) {
+    return c.json({ error: `Invalid templateId. Must be one of: ${PUBLICATION_TEMPLATE_IDS.join(', ')}` }, 400)
   }
 
   if (body.autoPublishMode && !AUTO_PUBLISH_MODES.includes(body.autoPublishMode as AutoPublishMode)) {

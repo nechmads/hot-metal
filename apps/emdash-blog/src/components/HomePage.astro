@@ -6,6 +6,7 @@
  */
 import type { Post } from '@hotmetal/content-core';
 import type { PublicationBranding } from '../dl/publication';
+import { HOME_POST_LIMIT } from '../lib/post-utils';
 
 // Starter template
 import StarterBaseLayout from '../templates/starter/layouts/BaseLayout.astro';
@@ -22,6 +23,22 @@ import EditorialFeaturedPost from '../templates/editorial/components/FeaturedPos
 import EditorialPostList from '../templates/editorial/components/PostList.astro';
 import EditorialMoreStories from '../templates/editorial/components/MoreStories.astro';
 import EditorialFooter from '../templates/editorial/components/Footer.astro';
+
+// Press Machine template
+import PressBaseLayout from '../templates/press-machine/layouts/BaseLayout.astro';
+import PressHeader from '../templates/press-machine/components/Header.astro';
+import PressHero from '../templates/press-machine/components/PublicationHero.astro';
+import PressLeadStory from '../templates/press-machine/components/LeadStory.astro';
+import PressSectionIndex from '../templates/press-machine/components/SectionIndex.astro';
+import PressPostList from '../templates/press-machine/components/PostList.astro';
+import PressFooter from '../templates/press-machine/components/Footer.astro';
+
+// One Signal template
+import SignalBaseLayout from '../templates/one-signal/layouts/BaseLayout.astro';
+import SignalHeader from '../templates/one-signal/components/Header.astro';
+import SignalHero from '../templates/one-signal/components/PublicationHero.astro';
+import SignalPostList from '../templates/one-signal/components/PostList.astro';
+import SignalFooter from '../templates/one-signal/components/Footer.astro';
 
 // Bold template
 import BoldBaseLayout from '../templates/bold/layouts/BaseLayout.astro';
@@ -41,6 +58,9 @@ interface Props {
 
 const { templateId, branding, posts, baseUrl, jsonLd } = Astro.props;
 
+const homePosts = posts.slice(0, HOME_POST_LIMIT);
+const hasMorePosts = posts.length > HOME_POST_LIMIT;
+
 const layoutProps = {
   title: branding.name,
   publicationName: branding.name,
@@ -53,7 +73,59 @@ const layoutProps = {
 };
 ---
 
-{templateId === 'editorial' ? (
+{templateId === 'press-machine' ? (
+  <PressBaseLayout {...layoutProps}>
+    <PressHeader publicationName={branding.name} logoUrl={branding.logoUrl} showDate />
+    <PressHero
+      name={branding.name}
+      description={branding.description}
+      tagline={branding.tagline}
+      headerImageUrl={branding.headerImageUrl}
+      socialLinks={branding.socialLinks}
+    />
+    {homePosts.length > 0 && <PressLeadStory post={homePosts[0]} />}
+    <PressSectionIndex posts={homePosts} />
+    {/*
+      Three cases, not two. With no posts the archive carries the empty state
+      and is the only thing on the page; with exactly one, the lead already
+      shows it and an archive would say "nothing filed" directly beneath a
+      filed story; beyond that it lists everything after the lead.
+    */}
+    {homePosts.length === 0 ? (
+      <PressPostList posts={[]} heading="The archive" showViewAll={false} />
+    ) : homePosts.length > 1 ? (
+      <PressPostList
+        posts={homePosts.slice(1)}
+        heading="The archive"
+        showViewAll={hasMorePosts}
+        startNumber={2}
+      />
+    ) : null}
+    <PressFooter
+      publicationName={branding.name}
+      publicationSlug={branding.slug}
+      socialLinks={branding.socialLinks}
+    />
+  </PressBaseLayout>
+) : templateId === 'one-signal' ? (
+  <SignalBaseLayout {...layoutProps}>
+    <SignalHeader publicationName={branding.name} logoUrl={branding.logoUrl} showDate />
+    <SignalHero
+      name={branding.name}
+      description={branding.description}
+      tagline={branding.tagline}
+      headerImageUrl={branding.headerImageUrl}
+      socialLinks={branding.socialLinks}
+      featuredPost={homePosts.length > 0 ? homePosts[0] : null}
+    />
+    <SignalPostList posts={homePosts} heading="The index" showViewAll={hasMorePosts} />
+    <SignalFooter
+      publicationName={branding.name}
+      publicationSlug={branding.slug}
+      socialLinks={branding.socialLinks}
+    />
+  </SignalBaseLayout>
+) : templateId === 'editorial' ? (
   <EditorialBaseLayout {...layoutProps}>
     <EditorialHeader publicationName={branding.name} logoUrl={branding.logoUrl} showDate />
     <EditorialHero

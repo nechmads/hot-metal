@@ -1,0 +1,108 @@
+---
+import { ClientRouter } from 'astro:transitions';
+import HeadMeta from '../../../components/HeadMeta.astro';
+import themeUrl from '../styles/theme.css?url';
+
+interface Props {
+  title: string;
+  publicationName: string;
+  description?: string;
+  ogImage?: string;
+  canonicalUrl?: string;
+  accentColor?: string | null;
+  ogType?: string;
+  jsonLd?: Record<string, unknown>;
+  rssUrl?: string;
+  articlePublishedTime?: string;
+  articleModifiedTime?: string;
+  articleAuthor?: string;
+  articleTags?: string[];
+  articleSection?: string;
+  twitterSite?: string;
+  twitterCreator?: string;
+}
+
+const {
+  title,
+  publicationName,
+  description,
+  ogImage,
+  canonicalUrl,
+  accentColor,
+  ogType = 'website',
+  jsonLd,
+  rssUrl,
+  articlePublishedTime,
+  articleModifiedTime,
+  articleAuthor,
+  articleTags,
+  articleSection,
+  twitterSite,
+  twitterCreator,
+} = Astro.props;
+
+const HEX_COLOR_PATTERN = /^#[0-9a-fA-F]{3,8}$/;
+const validAccent = accentColor && HEX_COLOR_PATTERN.test(accentColor) ? accentColor : null;
+const accentStyle = validAccent
+  ? `--publication-accent: ${validAccent};`
+  : undefined;
+
+/**
+ * `article` pages narrow the whole frame to rail + gutter + measure, so the
+ * document reads as one composition instead of a page with a dead right third.
+ */
+const isDocument = ogType === 'article';
+---
+
+<!--
+  The `one-signal` class on <html> scopes this template's tokens and base type.
+  The switchers import every template's BaseLayout, so every template's
+  stylesheet shares this page's bundle; the class keeps the ground, ink and
+  accent of *this* template from being decided by bundle order.
+-->
+<html lang="en" class="one-signal" style={accentStyle}>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="color-scheme" content="dark" />
+
+    <!-- Signal fonts: JetBrains Mono (structure), Inter (display/UI), IBM Plex Sans (reading) -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:ital,wght@0,400;0,600;1,400&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;700&display=swap"
+      rel="stylesheet"
+    />
+
+    <link rel="stylesheet" href={themeUrl} />
+
+    <HeadMeta
+      {title}
+      {publicationName}
+      {description}
+      {ogImage}
+      {canonicalUrl}
+      {ogType}
+      {jsonLd}
+      {rssUrl}
+      {articlePublishedTime}
+      {articleModifiedTime}
+      {articleAuthor}
+      {articleTags}
+      {articleSection}
+      {twitterSite}
+      {twitterCreator}
+    />
+
+    <ClientRouter />
+  </head>
+  <body class:list={['min-h-screen', 'flex', 'flex-col', isDocument && 'sig-doc']}>
+    <slot />
+    {/*
+      No scroll-reveal observer here on purpose. This template reveals nothing
+      on scroll — its index and article are legible the moment they paint — and
+      Astro hoists every statically-imported template's scripts into the page,
+      so an observer that matched nothing would still run on every request.
+    */}
+  </body>
+</html>

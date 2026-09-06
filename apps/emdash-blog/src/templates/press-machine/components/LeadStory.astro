@@ -1,0 +1,70 @@
+---
+import type { Post } from '@hotmetal/content-core';
+import { formatDate } from '../../../lib/format';
+import { getPreviewText, getFirstTopic } from '../../../lib/post-utils';
+
+interface Props {
+  post: Post;
+}
+
+const { post } = Astro.props;
+
+const date = post.publishedAt ? formatDate(post.publishedAt) : null;
+const firstTopic = getFirstTopic(post);
+const dek = post.subtitle ?? null;
+/* The dek already carries the subtitle, so the lede must not repeat it. */
+const lede = getPreviewText(post, 880);
+const ledeIsDek = Boolean(dek && lede && dek.trim() === lede.trim());
+const ledeText = ledeIsDek ? null : lede;
+
+/** Never leave an empty ruled strip where the byline would be. */
+const hasByline = Boolean(post.author || (date && post.publishedAt));
+
+/**
+ * Column count is chosen from the length of the text itself: a one-line hook
+ * split across three ragged columns is worse than a single readable measure,
+ * and no column is ever clipped to fake a shared baseline.
+ */
+const ledeColumns = !ledeText
+  ? 'c1'
+  : ledeText.length > 560
+    ? 'c3'
+    : ledeText.length > 280
+      ? 'c2'
+      : 'c1';
+---
+
+<section class="pm-shell">
+  <article class="pm-lead animate-on-scroll">
+    <div class="pm-lead-rule">
+      <p class="pm-kicker">
+        <span class="pm-item-no pm-num">01</span>{firstTopic ?? 'The lead'}
+      </p>
+    </div>
+
+    <a class="pm-lead-head" href={`/${post.slug}`}>
+      <h2 class="pm-lead-title">{post.title}</h2>
+    </a>
+
+    {dek && <p class="pm-lead-dek">{dek}</p>}
+
+    {hasByline && (
+    <p class="pm-byline pm-meta pm-num">
+      {post.author && <span>By <b>{post.author}</b></span>}
+      {post.author && date && <span class="pm-sep" aria-hidden="true">&middot;</span>}
+      {date && post.publishedAt && <time datetime={post.publishedAt}>{date}</time>}
+    </p>
+    )}
+
+    {ledeText && (
+      <div class:list={['pm-lead-body', `pm-lead-body--${ledeColumns}`]}>
+        <p>{ledeText}</p>
+      </div>
+    )}
+
+    <div class="pm-lede-end">
+      <span class="pm-caps">Continued on the article page</span>
+      <a class="pm-readon" href={`/${post.slug}`}>Read the whole piece &rarr;</a>
+    </div>
+  </article>
+</section>

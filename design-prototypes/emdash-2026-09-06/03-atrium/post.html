@@ -1,0 +1,814 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light">
+<title>Agent First Development is The Future — Looking Ahead</title>
+<meta name="description" content="Cloudflare’s CEO predicted bots would outnumber humans online by 2027. It happened a year early — and your product probably isn’t ready.">
+<style>
+@font-face {
+  font-family: 'Newsreader';
+  font-style: italic;
+  font-weight: 300;
+  font-display: swap;
+  src: url(fonts/newsreader-0.woff2) format('woff2');
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+@font-face {
+  font-family: 'Newsreader';
+  font-style: italic;
+  font-weight: 300;
+  font-display: swap;
+  src: url(fonts/newsreader-1.woff2) format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+@font-face {
+  font-family: 'Newsreader';
+  font-style: italic;
+  font-weight: 400;
+  font-display: swap;
+  src: url(fonts/newsreader-2.woff2) format('woff2');
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+@font-face {
+  font-family: 'Newsreader';
+  font-style: italic;
+  font-weight: 400;
+  font-display: swap;
+  src: url(fonts/newsreader-3.woff2) format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+@font-face {
+  font-family: 'Newsreader';
+  font-style: normal;
+  font-weight: 300;
+  font-display: swap;
+  src: url(fonts/newsreader-4.woff2) format('woff2');
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+@font-face {
+  font-family: 'Newsreader';
+  font-style: normal;
+  font-weight: 300;
+  font-display: swap;
+  src: url(fonts/newsreader-5.woff2) format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+@font-face {
+  font-family: 'Newsreader';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url(fonts/newsreader-6.woff2) format('woff2');
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+@font-face {
+  font-family: 'Newsreader';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url(fonts/newsreader-7.woff2) format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+@font-face {
+  font-family: 'Newsreader';
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url(fonts/newsreader-8.woff2) format('woff2');
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+@font-face {
+  font-family: 'Newsreader';
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url(fonts/newsreader-9.woff2) format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+@font-face {
+  font-family: 'Newsreader';
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url(fonts/newsreader-10.woff2) format('woff2');
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+@font-face {
+  font-family: 'Newsreader';
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url(fonts/newsreader-11.woff2) format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+@font-face {
+  font-family: 'Inter';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url(fonts/inter-0.woff2) format('woff2');
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+@font-face {
+  font-family: 'Inter';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url(fonts/inter-1.woff2) format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+@font-face {
+  font-family: 'Inter';
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url(fonts/inter-2.woff2) format('woff2');
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+@font-face {
+  font-family: 'Inter';
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url(fonts/inter-3.woff2) format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+@font-face {
+  font-family: 'Inter';
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url(fonts/inter-4.woff2) format('woff2');
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+@font-face {
+  font-family: 'Inter';
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url(fonts/inter-5.woff2) format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+@font-face {
+  font-family: 'Inter';
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url(fonts/inter-6.woff2) format('woff2');
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+@font-face {
+  font-family: 'Inter';
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url(fonts/inter-7.woff2) format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+:root{
+  --paper:#faf7f2;
+  --paper-sunk:#f4f0e8;
+  --ink:#1b1714;
+  --ink-2:#463f38;
+  --ink-3:#6d6459;
+  --rule:rgba(27,23,20,.14);
+  --rule-firm:rgba(27,23,20,.30);
+  --accent:#b4361f;
+  /* Every mark the accent paints — numerals, hairlines, underlines — is pulled
+     46% toward the ink. That is what it takes for the worst realistic accent
+     (#ffd400: 1.34:1 raw) to clear 4.5:1 on this paper, and it also means the
+     folio numeral and the rule beside it are finally the same red. */
+  --accent-ink:color-mix(in srgb,var(--accent) 46%,var(--ink));
+  --rail:7.5rem;
+  --measure:34rem;
+  --gutter:clamp(1.25rem,5vw,4rem);
+  /* The page frame IS the field: folio rail + reading measure, nothing else.
+     Deriving the sheet from them means the single column always sits at optical
+     centre and the paper on either side is symmetric at every width — rather
+     than a wide frame with a live left half and a dead right half. */
+  --sheet:calc(var(--rail) + var(--measure) + 2 * var(--gutter));
+}
+
+*,*::before,*::after{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+/* `clip` rather than `hidden`, and on the root only: `overflow-x:hidden` on the
+   body turns it into a scroll container, which silently disables the sticky
+   running numeral in the essay's rail. */
+html{overflow-x:clip}
+html,body{max-width:100%}
+
+body{
+  margin:0;
+  background:var(--paper);
+  color:var(--ink);
+  font-family:'Newsreader',Georgia,'Times New Roman',serif;
+  font-optical-sizing:auto;
+  font-size:1.0625rem;
+  line-height:1.64;
+  font-synthesis-weight:none;
+  -webkit-font-smoothing:antialiased;
+  -moz-osx-font-smoothing:grayscale;
+}
+
+img{max-width:100%;height:auto;display:block}
+a{color:inherit}
+h1,h2,h3,h4{font-weight:400;margin:0;letter-spacing:-.022em;line-height:1.08}
+p{margin:0}
+ul,ol{margin:0;padding:0}
+
+:focus-visible{outline:2px solid var(--ink);outline-offset:4px;border-radius:1px}
+.vh{position:absolute;width:1px;height:1px;margin:-1px;padding:0;overflow:hidden;
+  clip-path:inset(50%);white-space:nowrap;border:0}
+
+.skip{position:absolute;left:-9999px;top:0;background:var(--ink);color:var(--paper);
+  padding:.7rem 1.1rem;z-index:60;font-family:'Inter',system-ui,sans-serif;font-size:.75rem;
+  letter-spacing:.1em;text-transform:uppercase}
+.skip:focus{left:.5rem;top:.5rem}
+
+.sheet{max-width:var(--sheet);margin:0 auto;padding-inline:var(--gutter)}
+
+/* ---- tiny metadata voice: the ONLY place Inter appears ---- */
+.meta,.kicker,.row-kicker,.lead-meta,.nav a,.sect-note,.src-domain,.tag,.btn,.field label,.byline,.foot-nav a,.comment-meta,.contents-h,.cform-head{
+  font-family:'Inter',system-ui,-apple-system,'Segoe UI',sans-serif;
+  text-transform:uppercase;
+  letter-spacing:.155em;
+  font-size:.6875rem;
+  font-weight:500;
+  font-variant-numeric:tabular-nums;
+  line-height:1.5;
+}
+/* The accent carries numerals, short rules and underlines ONLY — never
+   letterspaced label text, which stops being legible the moment a publication
+   picks a pale hex. Section eyebrows and every other label stay neutral ink. */
+.folio{
+  font-family:'Inter',system-ui,sans-serif;font-size:.6875rem;font-weight:600;
+  letter-spacing:.14em;font-variant-numeric:tabular-nums;
+  color:var(--accent-ink);
+}
+
+/* ---- masthead ---- */
+.mast{padding-top:1.15rem}
+.nav-band{
+  display:flex;align-items:baseline;justify-content:space-between;gap:1rem 2rem;flex-wrap:wrap;
+  padding-bottom:1.05rem;border-bottom:1px solid var(--rule);
+}
+.nav{display:flex;gap:1.7rem;flex-wrap:wrap;list-style:none}
+.nav a{color:var(--ink-2);text-decoration:none;padding-block:.15rem;display:inline-block}
+.nav a:hover{color:var(--ink)}
+.nav a[aria-current="page"]{color:var(--ink);box-shadow:inset 0 -1px 0 0 var(--accent-ink)}
+.stamp{color:var(--ink-3);display:flex;gap:1.1rem;flex-wrap:wrap}
+.stamp b{font-weight:600;color:var(--ink-2)}
+
+.identity{padding:clamp(3rem,8vw,6.5rem) 0 clamp(2.5rem,5vw,4rem)}
+.mast-name{
+  font-size:clamp(2.5rem,7.4vw,5rem);
+  font-weight:400;letter-spacing:-.042em;line-height:.92;
+  margin-left:-.045em;
+}
+.mast-name a{text-decoration:none}
+.identity-body{margin-left:var(--rail);margin-top:clamp(1.6rem,3vw,2.4rem);max-width:46ch}
+.mast-tag{font-size:clamp(1.15rem,2.1vw,1.5rem);font-style:italic;font-weight:300;color:var(--ink-2);line-height:1.35}
+.mast-desc{margin-top:1.15rem;color:var(--ink-3);font-size:1rem;line-height:1.66}
+
+/* compact masthead on the article page */
+.mast--compact .identity{padding:clamp(1.9rem,4vw,3rem) 0 0}
+.mast--compact .mast-name{font-size:clamp(1.5rem,3vw,2rem);letter-spacing:-.03em}
+.mast--compact .identity-body{margin-top:.5rem;margin-left:0}
+.mast--compact .mast-tag{font-size:1.0625rem}
+
+/* ---- rail layout: a folio rail beside the reading measure ---- */
+.railed{display:grid;grid-template-columns:var(--rail) minmax(0,1fr);gap:0 0}
+.railed > .rail{padding-top:.55rem}
+.railed > .col{max-width:var(--measure)}
+.rail-note{display:block;color:var(--ink-3);margin-top:.55rem;
+  font-family:'Inter',system-ui,sans-serif;font-size:.625rem;letter-spacing:.14em;text-transform:uppercase}
+.rail-rule{display:block;width:1.6rem;height:1px;background:var(--rule-firm);margin-top:.85rem}
+
+/* ---- lead ---- */
+.lead{padding-bottom:clamp(3rem,7vw,5.5rem)}
+.kicker{color:var(--ink-2)}
+.lead-title{
+  font-size:clamp(2.4rem,6.2vw,4.6rem);
+  font-weight:400;letter-spacing:-.036em;line-height:1.02;
+  margin-top:1.1rem;max-width:15ch;
+}
+.lead-title a{text-decoration:none;background-image:linear-gradient(var(--accent-ink),var(--accent-ink));
+  background-size:0 1px;background-repeat:no-repeat;background-position:0 92%;transition:background-size .4s ease}
+.lead-title a:hover{background-size:100% 1px}
+.lead-dek{margin-top:1.5rem;font-size:clamp(1.15rem,1.9vw,1.4rem);line-height:1.5;color:var(--ink-2);max-width:44ch}
+.lead-meta{margin-top:2rem;color:var(--ink-3);display:flex;gap:.85rem;flex-wrap:wrap;align-items:baseline}
+.lead-meta .sep{color:var(--rule-firm)}
+
+/* ---- plates: a square hung on the wall, mounted in a paper mat with a
+   hairline frame, so uneven AI art reads as a mounted work rather than a
+   banner or a card. The plate supports an entry; it never replaces the
+   entry's headline. ---- */
+.plate{display:block;width:100%;margin:0 auto}
+.plate .mat{
+  display:block;padding:clamp(.9rem,2vw,1.4rem);background:var(--paper);
+  border:1px solid var(--rule-firm);transition:border-color .3s ease;
+}
+.plate img{width:100%;aspect-ratio:1/1;object-fit:cover}
+
+/* typographic plates on the article page: one treatment for the standfirst and
+   the pull quote alike — hung roman type between two hairlines, no quotation
+   marks, no caption. Two devices doing the same job is one device too many. */
+.plate--type{width:100%}
+.plate--type .plate-body{
+  border-top:1px solid var(--rule-firm);border-bottom:1px solid var(--rule-firm);
+  padding:2.4rem 0 2.5rem;text-align:center;
+}
+.plate--type p{font-size:clamp(1.3rem,2.4vw,1.7rem);line-height:1.38;font-weight:300;letter-spacing:-.018em;color:var(--ink)}
+.plate--type blockquote{margin:0}
+
+/* ---- section heads ---- */
+.sect{display:grid;grid-template-columns:var(--rail) minmax(0,1fr);align-items:baseline;
+  padding-bottom:1.05rem;border-bottom:1px solid var(--rule-firm);margin-bottom:.5rem}
+.sect-mark{width:1.6rem;height:1px;background:var(--accent-ink);align-self:center}
+.sect-inner{display:flex;align-items:baseline;justify-content:space-between;gap:1rem 2rem;flex-wrap:wrap}
+.sect-title{font-size:clamp(1.15rem,2vw,1.4rem);font-weight:400;letter-spacing:-.01em}
+.sect-note{color:var(--ink-3)}
+
+/* ---- catalogue rows ----
+   One list system. Every entry is a headline block: folio in the rail, then a
+   single metadata line (section, date, reading time) sitting directly with its
+   own headline, then the title at full weight and left-aligned, then the note.
+   Some works also carry a plate, hung beneath their own headline as a
+   supporting square — the picture is never asked to be the title. */
+.rows{list-style:none}
+.row{border-bottom:1px solid var(--rule)}
+.row-link{
+  display:grid;grid-template-columns:var(--rail) minmax(0,1fr);gap:0;
+  text-decoration:none;padding:clamp(1.7rem,2.5vw,2.2rem) 0;align-items:start;
+}
+.row-link:hover .folio{color:var(--ink)}
+.row-rail{display:block;padding-top:.15rem}
+.row-body{display:block}
+.row-kicker{display:block;color:var(--ink-3)}
+.row-kicker .sep{color:var(--rule-firm);padding:0 .55rem}
+.row-title{margin-top:.75rem;font-size:clamp(1.45rem,2.5vw,2.05rem);font-weight:400;letter-spacing:-.028em;
+  line-height:1.1}
+.row-link:hover .row-title{box-shadow:inset 0 -1px 0 0 var(--accent-ink)}
+.row-dek{display:block;margin-top:1.05rem;color:var(--ink-2);line-height:1.58}
+/* the plate squares off exactly on the headline's own column — one left edge
+   and one right edge down the whole entry, headline and picture alike */
+.row-plate{margin:1.9rem 0 .3rem}
+.row-link:hover .mat{border-color:var(--ink)}
+
+/* ---- subscribe: the page's closing plate ---- */
+.subscribe{text-align:center;padding:clamp(2.5rem,5vw,3.5rem) 0 clamp(2.75rem,5vw,4rem)}
+.subscribe .sheet{border-top:1px solid var(--rule-firm);padding-top:clamp(3rem,6vw,4.5rem)}
+.subscribe .mark{width:1.6rem;height:1px;background:var(--accent-ink);margin:0 auto 2rem}
+.subscribe h2{font-size:clamp(1.9rem,4vw,3rem);font-weight:400;letter-spacing:-.032em;
+  max-width:22ch;margin-inline:auto;text-wrap:balance}
+.sub-copy{margin:1.35rem auto 0;max-width:44ch;color:var(--ink-2);font-size:1.0625rem}
+
+input,textarea{
+  width:100%;font:inherit;font-size:1rem;color:var(--ink);background:transparent;
+  border:0;border-bottom:1px solid var(--rule-firm);padding:.6rem 0;border-radius:0;
+}
+textarea{resize:vertical;min-height:6.5rem;line-height:1.55}
+input::placeholder,textarea::placeholder{color:var(--ink-3);opacity:.75}
+input:focus,textarea:focus{outline:0;border-bottom-color:var(--ink)}
+input:focus-visible,textarea:focus-visible{outline:2px solid var(--ink);outline-offset:4px}
+/* One control system: every field and every button is a word standing on a
+   hairline. No boxes anywhere — a bordered chip or a filled bar is the one
+   thing this page never draws. */
+.btn{
+  background:transparent;color:var(--ink);cursor:pointer;border:0;
+  border-bottom:1px solid var(--rule-firm);padding:.6rem 0;border-radius:0;
+  transition:border-color .2s ease,color .2s ease;
+}
+.btn:hover{border-bottom-color:var(--ink)}
+/* the subscribe field and its button share one continuous rule */
+.sub-form{margin:2.5rem auto 0;max-width:26rem;display:flex;align-items:flex-end;gap:0}
+.sub-form .field{flex:1 1 auto;min-width:0;text-align:left;margin-bottom:0}
+/* the button never wraps below the field: one rule, one row, at every width */
+.sub-form .btn{flex:0 0 auto;padding-left:1.2rem;white-space:nowrap}
+.sub-note{margin-top:1.5rem;color:var(--ink-3);font-size:.9375rem;font-style:italic;font-weight:300}
+.status{margin-top:1.25rem;min-height:1.4rem;font-size:.9375rem;color:var(--ink-2)}
+.status[data-tone="ok"]{color:var(--ink)}
+.status[data-tone="err"]{color:#8a2417}
+.err{display:block;margin-top:.45rem;font-size:.8125rem;color:#8a2417;font-style:italic}
+
+/* ---- footer ---- */
+.foot{padding:clamp(2rem,4vw,3rem) 0 3rem}
+.foot-grid{display:flex;justify-content:space-between;gap:1.5rem 3rem;flex-wrap:wrap;align-items:baseline;
+  border-top:1px solid var(--rule);padding-top:2.1rem}
+.foot-nav{display:flex;gap:1.6rem;list-style:none;flex-wrap:wrap}
+.foot-nav a{color:var(--ink-2);text-decoration:none}
+.foot-nav a:hover{color:var(--ink);box-shadow:inset 0 -1px 0 0 var(--accent-ink)}
+.colophon{color:var(--ink-3);font-size:.9375rem;font-style:italic;font-weight:300}
+.backlink{margin-top:2.5rem;font-size:.8125rem;color:var(--ink-3);font-family:'Inter',system-ui,sans-serif;letter-spacing:.04em}
+.backlink a{color:var(--ink-3);text-decoration:underline;text-underline-offset:3px}
+.backlink a:hover{color:var(--ink)}
+
+/* ---- article ---- */
+.art-head{padding-block:clamp(3.5rem,9vw,7.5rem) 0}
+.art-title{
+  font-size:clamp(2.6rem,7.4vw,5.4rem);
+  font-weight:400;letter-spacing:-.042em;line-height:1.0;max-width:14ch;
+}
+.art-sub{margin-top:1.6rem;font-size:clamp(1.2rem,2.2vw,1.6rem);font-style:italic;font-weight:300;
+  color:var(--ink-2);line-height:1.4;max-width:38ch}
+.byline{margin-top:2.4rem;color:var(--ink-3);display:flex;gap:.85rem;flex-wrap:wrap;align-items:baseline;
+  padding-top:1.4rem;border-top:1px solid var(--rule)}
+.byline .who{color:var(--ink-2);font-weight:600}
+.byline .sep{color:var(--rule-firm)}
+
+/* Two fields, the same two the whole site uses: folio rail and reading
+   measure. The contents list is set in the reading voice at the head of the
+   essay, and the rail keeps a running numeral that follows the reader down —
+   a numeral survives any accent hex; letterspaced small caps do not. */
+.artgrid{display:grid;grid-template-columns:var(--rail) minmax(0,1fr)}
+.artgrid > .rail{padding-top:.55rem}
+
+.contents{margin-top:2.1rem}
+.contents-h{color:var(--ink-3);margin-bottom:1rem}
+.contents ol{list-style:none}
+.contents li + li{margin-top:.55rem}
+.contents a{display:flex;gap:.95rem;align-items:baseline;text-decoration:none;
+  color:var(--ink-2);line-height:1.4;transition:color .2s ease}
+.contents a:hover{color:var(--ink)}
+.contents a:hover .c-title{box-shadow:inset 0 -1px 0 0 var(--accent-ink)}
+.c-no{
+  flex:0 0 1.5rem;font-family:'Inter',system-ui,sans-serif;font-size:.6875rem;
+  font-weight:600;letter-spacing:.1em;font-variant-numeric:tabular-nums;
+  color:var(--accent-ink);
+}
+
+.runner{position:sticky;top:4.5rem;display:block}
+.runner-no{
+  display:block;font-size:1.5rem;line-height:1;letter-spacing:-.01em;
+  color:var(--accent-ink);
+}
+.runner-rule{display:block;width:1.6rem;height:1px;background:var(--rule-firm);margin-top:.75rem}
+
+.body{margin-top:clamp(2.5rem,5vw,3.75rem)}
+.body > *{max-width:var(--measure)}
+.body p{margin:0 0 1.4em}
+.body .lede{font-size:1.3125rem;line-height:1.55;color:var(--ink);margin-bottom:0}
+.body h2{
+  font-size:clamp(1.75rem,3.4vw,2.65rem);font-weight:500;letter-spacing:-.03em;line-height:1.1;
+  margin:2.5em 0 .85em;padding-top:1.5rem;border-top:1px solid var(--rule);position:relative;
+}
+.body h2::after{content:"";position:absolute;top:-1px;left:0;width:2.6rem;height:1px;background:var(--accent-ink)}
+.body a{text-decoration:underline;text-decoration-thickness:1px;text-underline-offset:3.5px;
+  text-decoration-color:var(--accent-ink)}
+.body a:hover{text-decoration-thickness:2px}
+.body strong{font-weight:600}
+.body em{font-style:italic}
+.body code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:.86em;
+  background:var(--paper-sunk);padding:.12em .4em;border:1px solid var(--rule)}
+/* a hung type plate spans the measure and centres on it */
+.body > .plate{width:100%;margin:clamp(2.75rem,6vw,4.25rem) 0}
+
+/* ---- tags / sources / comments ---- */
+/* tags as an interpuncted list in the page's own metadata voice — a bordered
+   all-caps rectangle is a chip borrowed from somewhere else */
+.tags{display:flex;flex-wrap:wrap;row-gap:.45rem;list-style:none;align-items:baseline}
+.tags li + li::before{content:"\00b7";color:var(--rule-firm);padding:0 .7rem;
+  font-family:'Inter',system-ui,sans-serif;font-size:.6875rem}
+.tag{color:var(--ink-2);text-decoration:none;padding-block:.1rem}
+.tag:hover{color:var(--ink);box-shadow:inset 0 -1px 0 0 var(--accent-ink)}
+
+.block{padding-top:clamp(3.5rem,7vw,5.5rem)}
+.block-body{margin-left:var(--rail);padding-top:2rem;max-width:var(--measure)}
+
+.sources{list-style:none;counter-reset:src}
+.sources li{counter-increment:src;padding-left:3.1rem;text-indent:-3.1rem;margin-bottom:1.05rem;line-height:1.5}
+.sources li::before{
+  content:counter(src,decimal-leading-zero);display:inline-block;width:3.1rem;text-indent:0;
+  font-family:'Inter',system-ui,sans-serif;font-size:.6875rem;font-weight:600;letter-spacing:.1em;
+  font-variant-numeric:tabular-nums;color:var(--ink-3);vertical-align:.15em;
+}
+.sources a{text-decoration:underline;text-decoration-thickness:1px;text-underline-offset:3px;
+  text-decoration-color:var(--rule-firm)}
+.sources a:hover{text-decoration-color:var(--accent-ink)}
+.src-domain{display:block;margin-left:0;color:var(--ink-3);margin-top:.2rem;text-indent:0}
+
+.comments{list-style:none}
+.comments li{padding:1.9rem 0;border-top:1px solid var(--rule)}
+.comments li:first-child{border-top:0;padding-top:.6rem}
+.comment-meta{color:var(--ink-3);display:flex;gap:.8rem;flex-wrap:wrap;align-items:baseline}
+.comment-meta .who{color:var(--ink-2);font-weight:600}
+.comment-meta .sep{color:var(--rule-firm)}
+.comment-body{margin-top:.85rem;color:var(--ink-2);line-height:1.6}
+
+/* no rule above the first label: a stray hairline at the head of a form reads
+   as an empty input. A named heading does the separating instead. */
+.cform{margin-top:3.2rem}
+.cform-head{color:var(--ink-3);margin-bottom:1.5rem}
+.cform .grid{display:grid;grid-template-columns:1fr 1fr;gap:1.6rem}
+.field label{display:block;color:var(--ink-3);margin-bottom:.3rem}
+.field{margin-bottom:1.6rem}
+.cform .actions{display:flex;align-items:center;gap:1.5rem;flex-wrap:wrap}
+
+/* ---- responsive ---- */
+@media (max-width:1080px){
+  :root{--rail:5rem}
+}
+@media (max-width:860px){
+  :root{--rail:0rem}
+  body{font-size:1.0625rem}
+  .identity-body{margin-left:0}
+  .railed,.artgrid{display:block}
+  .railed > .rail,.artgrid > .rail{display:flex;align-items:baseline;gap:1rem;padding-top:0;margin-bottom:1.5rem}
+  .rail-rule{display:none}
+  .rail-note{margin-top:0}
+  /* the running numeral has no margin to live in on a phone; the contents
+     list at the head of the essay carries the whole job */
+  .artgrid > .rail{display:none}
+  .sect{grid-template-columns:1.6rem minmax(0,1fr);gap:0 1rem}
+  .row-link{grid-template-columns:minmax(0,1fr);gap:0;padding:1.8rem 0}
+  .row-rail{display:flex;align-items:baseline;gap:1rem;margin-bottom:.95rem;padding-top:0}
+  .row-plate{margin-top:1.7rem}
+  .block-body{margin-left:0}
+  .cform .grid{grid-template-columns:1fr;gap:0}
+  .art-title,.art-sub,.lead-title{max-width:none}
+}
+@media (max-width:420px){
+  .nav{gap:1.1rem}
+  .stamp{gap:.8rem}
+}
+
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation-duration:.001ms!important;transition-duration:.001ms!important}
+}
+
+@media print{
+  .runner,.skip,.nav-band,.backlink{display:none}
+  .row-link{break-inside:avoid}
+}
+
+</style>
+</head>
+<body>
+<a class="skip" href="#article">Skip to the essay</a>
+<header class="mast mast--compact" id="top">
+<div class="sheet">
+<div class="nav-band">
+  <nav aria-label="Primary"><ul class="nav"><li><a href="index.html">Home</a></li><li><a href="index.html#catalogue">Archive</a></li><li><a href="index.html#subscribe">Subscribe</a></li></ul></nav>
+  <p class="stamp"><span><b>No. 41</b></span><span>Sunday, September 6, 2026</span></p>
+</div>
+<div class="identity">
+<p class="mast-name"><a href="index.html">Looking Ahead</a></p><div class="identity-body"><p class="mast-tag">AI, and what it means for the rest of us</p></div>
+</div>
+</div>
+</header>
+<main>
+<article id="article">
+<header class="art-head sheet">
+  <div class="railed">
+    <div class="rail">
+      <span class="folio">01</span>
+      <span class="rail-rule" aria-hidden="true"></span>
+      <span class="rail-note">Product strategy</span>
+    </div>
+    <div class="col">
+      <h1 class="art-title">Agent First Development is The Future</h1>
+      <p class="art-sub">Mobile-first was a rethink of where you start. This is the same move, one layer deeper.</p>
+      <p class="byline"><span class="who">Shahar Nechmad</span><span class="sep">/</span><time datetime="2026-09-02">September 2, 2026</time><span class="sep">/</span><span>9 min read</span></p>
+      <nav class="contents" aria-label="Contents">
+        <p class="contents-h">Contents</p>
+        <ol>
+          <li><a href="#my-thesis" data-sec="my-thesis" data-no="I"><span class="c-no">I</span><span class="c-title">My thesis</span></a></li>
+          <li><a href="#start-with-the-api" data-sec="start-with-the-api" data-no="II"><span class="c-no">II</span><span class="c-title">Start with the API, not the frontend</span></a></li>
+          <li><a href="#frontend-too" data-sec="frontend-too" data-no="III"><span class="c-no">III</span><span class="c-title">Agent First changes the frontend too</span></a></li>
+          <li><a href="#not-agents-over-humans" data-sec="not-agents-over-humans" data-no="IV"><span class="c-no">IV</span><span class="c-title">The point isn’t agents over humans</span></a></li>
+        </ol>
+      </nav>
+    </div>
+  </div>
+</header>
+<div class="sheet">
+  <div class="artgrid">
+    <div class="rail" aria-hidden="true">
+      <span class="runner">
+        <span class="runner-no" data-runner>I</span>
+        <span class="runner-rule"></span>
+      </span>
+    </div>
+    <div class="col body">
+<p class="lede">Back when mobile took off, every product team went through the same reckoning. You couldn’t just shrink your desktop site down and call it a mobile experience. The winners were the teams that flipped the process: design for the small screen first, then expand out to desktop. “Mobile first” wasn’t a slogan, it was a complete rethink of where you start.</p>
+<div class="plate plate--type">
+  <div class="plate-body"><p>In June 2026, bot and agent traffic passed human traffic on the internet for the first time. The winning products will be the ones an agent can actually use.</p></div>
+</div>
+
+
+<p>I think we’re at the exact same inflection point again, except this time the new screen isn’t a screen at all. It’s an agent.</p>
+<p>Here’s the thing that makes this not just a hot take: it already happened. In June 2026, Cloudflare CEO Matthew Prince confirmed that bot and agent traffic officially <a href="https://www.techspot.com/news/112657-bots-have-officially-overtaken-humans-internet-cloudflare.html" target="_blank" rel="noopener noreferrer">passed human traffic on the internet</a> for the first time ever. He’d predicted this would happen in 2027. It happened a year early. Cloudflare Radar puts it at roughly 57% of requests now coming from bots and agents, not people.</p>
+<p>And the reason isn’t spam. It’s scale. A human comparing cameras might check five websites. An agent doing the same task might check five thousand. Multiply that across every shopping decision, every research task, every “hey, can you handle this for me” moment, and you get an internet where the primary requester of your product is increasingly a piece of software acting on someone’s behalf.</p>
+<p>Stripe’s own research backs this up with a number that’s hard to ignore: agentic shoppers could account for as much as <a href="https://stripe.com/resources/more/agentic-commerce" target="_blank" rel="noopener noreferrer">$385 billion in US ecommerce spending by 2030</a>. That’s not a niche use case. That’s a second customer base showing up at your door, and in a lot of businesses, it’ll eventually be the bigger one.</p>
+<h2 id="my-thesis">My thesis</h2>
+<p>The old playbook was: build the product for humans, then bolt on an API later so “enterprise customers” or “developers” could integrate. Agents were an afterthought, something you served through a thin wrapper around your real product.</p>
+<p>I think that playbook is now backwards. The right way to build a product going forward is <strong>Agent First Development</strong>: design for the agent as your primary user, and treat the human-facing UI as one client among several, not the canonical one.</p>
+<p>This isn’t about ignoring humans. Plenty of your users will still be people clicking around a dashboard. It’s about recognizing that the agent calling your API might be the one actually making the purchase decision, filing the ticket, or configuring the account. And if your product wasn’t built with that in mind, you’re invisible to it.</p>
+<h2 id="start-with-the-api">Start with the API, not the frontend</h2>
+<p>Agents are getting shockingly good at “computer use”: clicking buttons, reading screenshots, filling out forms like a human would. But that’s still the slow, fragile, expensive path for them. Give an agent a well-designed API instead of a UI to fumble through, and it’ll be faster, cheaper, and far more reliable every time.</p>
+<p>So the first thing you should design isn’t the frontend UX. It’s the API UX.</p>
+<p>That means every single thing a human can do in your product should be reachable through an API. Not just the core feature set. The boring stuff too. Creating a new user. Grabbing API keys. Changing a plan. Resetting a password. If a human can click it, an agent should be able to call it.</p>
+<p>Stripe is a good case study here, mostly because they’ve been transparent about the process. They didn’t just add an “AI mode.” They built the <a href="https://stripe.com/blog/developing-an-open-standard-for-agentic-commerce" target="_blank" rel="noopener noreferrer">Agentic Commerce Protocol</a> with OpenAI as an open standard for how agents transact with businesses, introduced <a href="https://stripe.com/blog/introducing-our-agentic-commerce-solutions" target="_blank" rel="noopener noreferrer">Shared Payment Tokens</a> so an agent can pay on someone’s behalf without ever touching raw card details, and shipped an official MCP server at mcp.stripe.com so any MCP-compatible agent can work with the Stripe API directly. The pattern across all of it: don’t make the agent guess. Give it a typed, scoped, well-documented surface built for exactly what they want to accomplish.</p>
+<p>That last point matters more than it sounds. Your API shouldn’t just be a plain HTTP interface anymore. It needs to be reachable through <a href="https://modelcontextprotocol.io/introduction" target="_blank" rel="noopener noreferrer">MCP</a>, through OAuth, and through plain old REST, because different agent harnesses will reach for different tools, and you don’t get to pick which one shows up at your door. And here’s the part people get wrong: don’t build a separate “agent API” next to your “real API.” Build one API that both your frontend and your agents consume. The moment you fork them, they drift, and eventually your agent experience quietly rots while nobody notices because the humans never hit that code path.</p>
+<p>There’s a side benefit to this that’s easy to miss: once your API genuinely covers every feature, your own internal coding agents get an enormous gift. They can test the thing they’re building the same way an external agent would, by hitting the same API, instead of scripting a browser to click through your UI. If you’re using Claude Code, Cursor, or any coding agent to ship features faster, an API-first product is the difference between that agent verifying its own work in seconds versus flying blind.</p>
+<figure class="plate plate--type">
+  <blockquote class="plate-body"><p>The moment you fork them, they drift, and eventually your agent experience quietly rots while nobody notices.</p></blockquote>
+</figure>
+<h2 id="frontend-too">Agent First changes the frontend too</h2>
+<p>None of this means the frontend doesn’t matter. It means the frontend needs to change in ways most teams haven’t thought about yet.</p>
+<p><strong>Give coding agents a real way to log in.</strong> If your coding agent is iterating on your frontend, it needs to authenticate against your live app to actually test what it built. “Login with Google” is fine for a human clicking a button, but it’s a wall for an agent. You need an auth path, a service account, an API key flow, something, that lets your own agents log in and verify their work without a human clicking through an OAuth consent screen every time.</p>
+<p><strong>Make your marketing content legible to agents, not just search engines.</strong> This is where <code>llms.txt</code> comes in: a plain-text file that tells agents what your product does and where to find more. Stripe already publishes theirs at <a href="https://stripe.com/guides/how-to-prepare-for-agentic-commerce-technical-field-guide" target="_blank" rel="noopener noreferrer">stripe.com/llms.txt</a>, alongside Markdown versions of their docs, specifically so an agent can parse “what does this company offer and how do I use it” without having to render a JavaScript-heavy page first. If an agent is doing the research and recommending your product to a human, and it can’t parse your homepage, you’re not in the running.</p>
+<p><strong>Get ahead with new discovery standards like WebMCP.</strong> <a href="https://developer.chrome.com/docs/ai/webmcp" target="_blank" rel="noopener noreferrer">WebMCP</a> is a proposed web standard, already shipping behind a flag in Chrome 146, that lets a webpage declare its own callable tools directly to an in-browser agent. Think <code>bookFlight()</code> or <code>checkout()</code> instead of an agent trying to guess which button does what. Google’s own numbers on this are eye-opening: roughly <a href="https://www.codewithseb.com/blog/webmcp-website-ai-agent-tools-guide" target="_blank" rel="noopener noreferrer">89% fewer tokens</a> spent when an agent calls a declared tool versus scraping pixels and DOM to figure out what’s clickable. It’s early, it’s experimental, and it might not be the exact standard that wins. But the direction is unmistakable, and the products that adopt this kind of thing early will have a real edge with browser-native agents.</p>
+<h2 id="not-agents-over-humans">The point isn’t agents over humans</h2>
+<p>None of this is an argument for building soulless, headless products with no UI. Humans still need a place to see what happened, feel good about their purchase, and trust the brand behind it. What’s changing is the order of operations, and who you assume is knocking on your API first.</p>
+<p>Mobile-first didn’t mean nobody used desktops anymore. It meant you stopped treating mobile as the cut-down version of the “real” product. Agent-first is the same move, one layer deeper. Your agent interface isn’t the stripped-down version of your product for robots. For a growing share of your users, it <em>is</em> the product. Everything else is just a nicer way to look at what already happened.</p>
+<p>The teams that get this early won’t just be more “AI-friendly.” They’ll be the ones agents actually recommend, actually complete transactions with, and actually keep coming back to, because they built for that reality instead of retrofitting it in six months from now, after everyone else already did.</p>
+</div>
+  </div>
+</div>
+</article>
+<section class="block sheet" aria-labelledby="tags-h">
+<div class="sect">
+  <span class="sect-mark" aria-hidden="true"></span>
+  <div class="sect-inner"><h2 class="sect-title" id="tags-h">Filed under</h2></div>
+</div>
+<div class="block-body"><ul class="tags"><li><a class="tag" href="index.html#catalogue">agent-first development</a></li><li><a class="tag" href="index.html#catalogue">api design</a></li><li><a class="tag" href="index.html#catalogue">product strategy</a></li></ul></div>
+</section>
+<section class="block sheet">
+<div class="sect">
+  <span class="sect-mark" aria-hidden="true"></span>
+  <div class="sect-inner"><h2 class="sect-title">Sources</h2><span class="sect-note">13 references</span></div>
+</div>
+<div class="block-body"><ol class="sources">
+<li><a href="https://www.techspot.com/news/112657-bots-have-officially-overtaken-humans-internet-cloudflare.html" target="_blank" rel="noopener noreferrer">Bots have officially overtaken humans on the internet</a><span class="src-domain">techspot.com</span></li>
+<li><a href="https://www.nbcnews.com/tech/tech-news/bot-web-traffic-overtaken-human-web-traffic-data-shows-rcna348522" target="_blank" rel="noopener noreferrer">Bot web traffic has overtaken human web traffic, data shows</a><span class="src-domain">nbcnews.com</span></li>
+<li><a href="https://stripe.com/resources/more/agentic-commerce" target="_blank" rel="noopener noreferrer">Agentic Commerce: A Guide for Businesses</a><span class="src-domain">stripe.com</span></li>
+<li><a href="https://stripe.com/blog/developing-an-open-standard-for-agentic-commerce" target="_blank" rel="noopener noreferrer">Developing an open standard for agentic commerce</a><span class="src-domain">stripe.com</span></li>
+<li><a href="https://stripe.com/blog/introducing-our-agentic-commerce-solutions" target="_blank" rel="noopener noreferrer">Introducing our agentic commerce solutions</a><span class="src-domain">stripe.com</span></li>
+<li><a href="https://stripe.com/blog/agentic-commerce-suite" target="_blank" rel="noopener noreferrer">Introducing the Agentic Commerce Suite</a><span class="src-domain">stripe.com</span></li>
+<li><a href="https://stripe.com/guides/how-to-prepare-for-agentic-commerce-technical-field-guide" target="_blank" rel="noopener noreferrer">How to prepare for agentic commerce: A technical field guide</a><span class="src-domain">stripe.com</span></li>
+<li><a href="https://docs.stripe.com/agents" target="_blank" rel="noopener noreferrer">Agents and AI on Stripe</a><span class="src-domain">docs.stripe.com</span></li>
+<li><a href="https://developer.chrome.com/docs/ai/webmcp" target="_blank" rel="noopener noreferrer">WebMCP | AI on Chrome</a><span class="src-domain">developer.chrome.com</span></li>
+<li><a href="https://www.codewithseb.com/blog/webmcp-website-ai-agent-tools-guide" target="_blank" rel="noopener noreferrer">WebMCP: Turn Your Website Into a Tool for AI Agents</a><span class="src-domain">codewithseb.com</span></li>
+<li><a href="https://blog.cloudflare.com/agentic-internet-bot-report/" target="_blank" rel="noopener noreferrer">Building the business model for the agentic Internet</a><span class="src-domain">blog.cloudflare.com</span></li>
+<li><a href="https://modelcontextprotocol.io/introduction" target="_blank" rel="noopener noreferrer">Model Context Protocol Introduction</a><span class="src-domain">modelcontextprotocol.io</span></li>
+<li><a href="https://dev.to/adamklein/the-agent-first-approach-to-building-products-51oj" target="_blank" rel="noopener noreferrer">The agent-first approach to building products</a><span class="src-domain">dev.to</span></li>
+</ol></div>
+</section>
+<section class="block sheet">
+<div class="sect">
+  <span class="sect-mark" aria-hidden="true"></span>
+  <div class="sect-inner"><h2 class="sect-title">Comments</h2><span class="sect-note">3 responses</span></div>
+</div>
+<div class="block-body"><ul class="comments">
+<li>
+  <p class="comment-meta"><span class="who">Dana R.</span><span class="sep">/</span><span>September 3, 2026</span></p>
+  <p class="comment-body">The point about not forking a separate “agent API” is the one I keep having to argue internally. Two surfaces means one of them rots.</p>
+</li>
+<li>
+  <p class="comment-meta"><span class="who">Michael Osei</span><span class="sep">/</span><span>September 3, 2026</span></p>
+  <p class="comment-body">Curious how you’d sequence this for a team with an existing product. Do you retrofit the API coverage first, or start with llms.txt and discovery?</p>
+</li>
+<li>
+  <p class="comment-meta"><span class="who">Priya N.</span><span class="sep">/</span><span>September 4, 2026</span></p>
+  <p class="comment-body">The 89% token reduction number for WebMCP is what convinced me. That’s not a nice-to-have, that’s a cost line.</p>
+</li>
+</ul>
+<form class="cform" method="dialog" data-status="c-status" data-done="Demo only — nothing was sent." novalidate>
+  <p class="cform-head">Leave a comment</p>
+  <div class="grid">
+    <div class="field"><label for="c-name">Name</label><input id="c-name" name="name" type="text" autocomplete="name" required></div>
+    <div class="field"><label for="c-email">Email</label><input id="c-email" name="email" type="email" autocomplete="email" required></div>
+  </div>
+  <div class="field"><label for="c-body">Your comment</label><textarea id="c-body" name="comment" rows="5" required></textarea></div>
+  <div class="actions">
+    <button class="btn" type="submit">Post comment</button>
+    <p class="status" id="c-status" role="status" aria-live="polite"></p>
+  </div>
+  <noscript><p class="sub-note">Demo only — this prototype never sends anything anywhere.</p></noscript>
+</form>
+</div>
+</section>
+<section class="block sheet">
+<div class="sect">
+  <span class="sect-mark" aria-hidden="true"></span>
+  <div class="sect-inner"><h2 class="sect-title">Also hanging</h2><span class="sect-note">Nos. 03, 05, 07</span></div>
+</div>
+<ul class="rows">
+<li class="row">
+  <a class="row-link" href="post.html">
+    <span class="row-rail"><span class="folio">03</span></span>
+    <span class="row-body">
+      <span class="row-kicker">AI &amp; policy<span class="sep">&middot;</span><time datetime="2026-03-01">March 1, 2026</time><span class="sep">&middot;</span>11 min</span>
+      <h3 class="row-title">OpenAI’s Pentagon Deal and the Red Lines Problem</h3>
+      <span class="row-dek">OpenAI signed a Pentagon deal while the US military was already running Claude — the model it had officially blacklisted — on live operations.</span>
+    </span>
+  </a>
+</li>
+<li class="row">
+  <a class="row-link" href="post.html">
+    <span class="row-rail"><span class="folio">05</span></span>
+    <span class="row-body">
+      <span class="row-kicker">Strategy<span class="sep">&middot;</span><time datetime="2026-02-20">February 20, 2026</time><span class="sep">&middot;</span>12 min</span>
+      <h3 class="row-title">From Copilot to Colleague: The Five Pillars of an Agentic AI Strategy</h3>
+      <span class="row-dek">Most “AI strategies” are a list of tools. Here is the structure that survives contact with an actual org chart.</span>
+    </span>
+  </a>
+</li>
+<li class="row">
+  <a class="row-link" href="post.html">
+    <span class="row-rail"><span class="folio">07</span></span>
+    <span class="row-body">
+      <span class="row-kicker">Tools<span class="sep">&middot;</span><time datetime="2026-02-17">February 17, 2026</time><span class="sep">&middot;</span>9 min</span>
+      <h3 class="row-title">GitHub’s Agentic Workflows and the Coming ‘Continuous AI’ Era</h3>
+      <span class="row-dek">What continuous integration did for tests, continuous AI is about to do for everything else a solo founder can’t staff.</span>
+    </span>
+  </a>
+</li>
+</ul>
+</section>
+</main>
+<footer class="foot">
+<div class="sheet">
+  <div class="foot-grid">
+    <ul class="foot-nav"><li><a href="#">X</a></li><li><a href="#">LinkedIn</a></li><li><a href="#">RSS</a></li></ul>
+    <p class="colophon">Looking Ahead · Edited and written by Shahar Nechmad · Powered by Hot Metal</p>
+  </div>
+  <p class="backlink"><a href="../index.html">&larr; All concepts</a></p>
+</div>
+</footer>
+<script>
+(function(){
+  var links = document.querySelectorAll('.contents a[data-sec]');
+  var runner = document.querySelector('[data-runner]');
+  if(!links.length || !runner) return;
+  var heads = [];
+  for(var i=0;i<links.length;i++){
+    var h = document.getElementById(links[i].getAttribute('data-sec'));
+    if(h) heads.push([h, links[i]]);
+  }
+  if(!heads.length) return;
+  function mark(){
+    var line = window.pageYOffset + window.innerHeight * 0.34;
+    var cur = heads[0][1];
+    for(var i=0;i<heads.length;i++){
+      if(heads[i][0].getBoundingClientRect().top + window.pageYOffset <= line) cur = heads[i][1];
+    }
+    var no = cur.getAttribute('data-no');
+    if(runner.textContent !== no) runner.textContent = no;
+  }
+  var queued = false;
+  function onScroll(){
+    if(queued) return;
+    queued = true;
+    window.requestAnimationFrame(function(){ queued = false; mark(); });
+  }
+  window.addEventListener('scroll', onScroll, {passive:true});
+  window.addEventListener('resize', onScroll);
+  mark();
+})();
+
+(function(){
+  var RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
+  function err(field, msg){
+    var e = field.querySelector('.err');
+    if(!e){ e = document.createElement('span'); e.className='err'; field.appendChild(e); }
+    e.textContent = msg || '';
+    var ctl = field.querySelector('input,textarea');
+    if(ctl) ctl.setAttribute('aria-invalid', msg ? 'true' : 'false');
+    return !msg;
+  }
+  function wire(form){
+    var status = document.getElementById(form.getAttribute('data-status'));
+    form.addEventListener('submit', function(ev){
+      ev.preventDefault();
+      var ok = true, first = null;
+      var fields = form.querySelectorAll('.field');
+      for(var i=0;i<fields.length;i++){
+        var f = fields[i], ctl = f.querySelector('input,textarea');
+        if(!ctl) continue;
+        var v = ctl.value.trim(), msg = '';
+        if(!v){ msg = 'This field is required.'; }
+        else if(ctl.type === 'email' && !RE.test(v)){ msg = 'That does not look like an email address.'; }
+        if(!err(f, msg)){ ok = false; if(!first) first = ctl; }
+      }
+      if(!ok){
+        status.setAttribute('data-tone','err');
+        status.textContent = 'Please check the highlighted fields.';
+        if(first) first.focus();
+        return;
+      }
+      status.setAttribute('data-tone','ok');
+      status.textContent = form.getAttribute('data-done');
+      form.reset();
+    });
+  }
+  var forms = document.querySelectorAll('form[data-status]');
+  for(var i=0;i<forms.length;i++) wire(forms[i]);
+})();
+</script>
+</body>
+</html>

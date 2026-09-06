@@ -1,0 +1,126 @@
+---
+import type { Post } from '@hotmetal/content-core';
+import type { SocialLinks } from '@hotmetal/data-layer';
+import { formatDate } from '../../../lib/format';
+import { getPreviewText, getFirstTopic, parseTopics } from '../../../lib/post-utils';
+
+interface Props {
+  name: string;
+  description: string | null;
+  tagline: string | null;
+  /**
+   * Declared for parity with the other templates but deliberately not rendered:
+   * One Signal shows at most one image per screen, and on the home page that
+   * slot belongs to the lead dispatch.
+   */
+  headerImageUrl: string | null;
+  socialLinks: SocialLinks | null;
+  featuredPost?: Post | null;
+}
+
+const { description, tagline, socialLinks, featuredPost } = Astro.props;
+
+/** Plain-text word count, used for the filing readout and the read estimate. */
+function countWords(html: string | undefined): number {
+  if (!html) return 0;
+  return html.replace(/<[^>]*>/g, ' ').split(/\s+/).filter(Boolean).length;
+}
+
+const words = countWords(featuredPost?.content);
+const readMinutes = words > 0 ? Math.max(1, Math.round(words / 220)) : null;
+
+const date = featuredPost?.publishedAt ? formatDate(featuredPost.publishedAt) : null;
+const topics = featuredPost ? parseTopics(featuredPost) : [];
+const kicker = featuredPost ? getFirstTopic(featuredPost) : null;
+const hook = featuredPost ? getPreviewText(featuredPost, 220) : null;
+const citationCount = featuredPost?.citations?.length ?? 0;
+
+const socials: { label: string; href: string }[] = [];
+if (socialLinks?.twitter) socials.push({ label: 'X', href: socialLinks.twitter });
+if (socialLinks?.linkedin) socials.push({ label: 'LinkedIn', href: socialLinks.linkedin });
+if (socialLinks?.github) socials.push({ label: 'GitHub', href: socialLinks.github });
+if (socialLinks?.website) socials.push({ label: 'Website', href: socialLinks.website });
+
+const hasStation = Boolean(tagline || description || socials.length > 0);
+---
+
+<div class="sig-wrap">
+  {hasStation && (
+    <div class="sig-station">
+      <div>
+        {tagline && <p class="sig-lbl">{tagline}</p>}
+        {description && <p class="sig-desc">{description}</p>}
+      </div>
+
+      {socials.length > 0 && (
+        <ul class="sig-social">
+          {socials.map(({ label, href }) => (
+            <li>
+              <a href={href} target="_blank" rel="noopener noreferrer">{label}</a>
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  )}
+
+  {featuredPost && (
+    <section class="sig-lead" aria-labelledby="sig-lead-title">
+      <div class="sig-lead-kick">
+        <span class="sig-kick-n">001 / Lead dispatch</span>
+        {kicker && <span class="sig-lbl">{kicker}</span>}
+        {date && <span class="sig-lbl">Filed {date}</span>}
+        {/* The generated art is a 1024x1024 square and is often absent. When it
+            is, the filing log states the fact rather than inventing a graphic. */}
+        {!featuredPost.featuredImage && <span class="sig-lbl">No image on file</span>}
+      </div>
+
+      <h2 id="sig-lead-title">
+        <a href={`/${featuredPost.slug}`}>{featuredPost.title}</a>
+      </h2>
+
+      <div class="sig-lead-grid">
+        <div>
+          {featuredPost.subtitle && <p class="sig-sub">{featuredPost.subtitle}</p>}
+          <a class="sig-go" href={`/${featuredPost.slug}`}>
+            Read dispatch 001 <span class="sig-arw" aria-hidden="true">&rarr;</span>
+          </a>
+        </div>
+
+        {hook && <p class="sig-hook">{hook}</p>}
+      </div>
+
+      {featuredPost.featuredImage && (
+        <div class="sig-lead-image">
+          <img
+            class="sig-strip"
+            src={featuredPost.featuredImage}
+            alt=""
+            width="1600"
+            height="500"
+            loading="eager"
+          />
+        </div>
+      )}
+
+      <div class="sig-readout">
+        <dl>
+          <dt>Length</dt>
+          <dd>
+            {words > 0 ? `${words.toLocaleString('en-US')} words` : 'Not counted'}
+            {readMinutes && ` · ${readMinutes} min`}
+          </dd>
+
+          <dt>Sources</dt>
+          <dd>{citationCount > 0 ? `${citationCount} cited` : 'None cited'}</dd>
+
+          <dt>Tags</dt>
+          <dd>{topics.length > 0 ? topics.join(', ') : 'Unfiled'}</dd>
+
+          <dt>Author</dt>
+          <dd>{featuredPost.author || 'Newsroom'}</dd>
+        </dl>
+      </div>
+    </section>
+  )}
+</div>
