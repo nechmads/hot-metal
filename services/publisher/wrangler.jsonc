@@ -49,4 +49,14 @@
 	// CMS_API_KEY, PUBLISHER_API_KEY, LINKEDIN_CLIENT_ID, LINKEDIN_CLIENT_SECRET
 	// TWITTER_CLIENT_ID, TWITTER_CLIENT_SECRET
 	// AXIOM_TOKEN — Axiom ingest token for structured logging
+  // EmDash tenant scripts (Workers for Platforms). Required to write to a
+  // tenant: fetching `<slug>.hotmetalapp.com` from inside a Worker on our own
+  // zone finds no origin and 522s, so the write path dispatches to the script
+  // instead. Same namespace publications-web binds to serve tenant pages.
+  "dispatch_namespaces": [
+    {
+      "binding": "EMDASH_DISPATCHER",
+      "namespace": "hotmetal-emdash",
+    },
+  ],
 }

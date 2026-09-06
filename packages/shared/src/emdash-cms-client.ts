@@ -28,24 +28,53 @@ import {
  * so our richer status (`idea`, `review`) is preserved in a `hm_status` field
  * and restored on read.
  */
+/**
+ * How the client reaches a tenant. Defaults to global `fetch`.
+ *
+ * In production a tenant is not an ordinary server: it is a script inside a
+ * Workers-for-Platforms dispatch namespace, and `<slug>.hotmetalapp.com` is a
+ * hostname on our OWN zone. A Worker's subrequest to its own zone does not
+ * re-enter the Worker route that serves it — it goes looking for an origin
+ * server, finds none, and times out with a 522. So our Workers must dispatch to
+ * the tenant script through a binding instead of fetching the hostname.
+ *
+ * Local development has no dispatch namespace and EmDash runs as a real server
+ * on localhost, where a plain fetch is both correct and simplest — hence this is
+ * optional and the URL path stays the fallback.
+ */
+export interface TenantFetcher {
+  fetch(request: Request): Promise<Response>
+}
+
+export interface EmdashClientOptions {
+  /** Dispatch straight to the tenant script instead of fetching its hostname. */
+  fetcher?: TenantFetcher
+  postsCollection?: string
+  renditionsCollection?: string
+}
+
 export class EmdashCmsClient implements CmsClient {
   private readonly base: string
+  private readonly fetcher: TenantFetcher | undefined
+  private readonly postsCollection: string
+  private readonly renditionsCollection: string
 
-  constructor(
-    baseUrl: string,
-    private token: string,
-    private postsCollection = 'posts',
-    private renditionsCollection = 'renditions',
-  ) {
+  constructor(baseUrl: string, private token: string, options: EmdashClientOptions = {}) {
     // Normalize trailing slash so path joins are predictable.
     this.base = baseUrl.replace(/\/$/, '')
+    this.fetcher = options.fetcher
+    this.postsCollection = options.postsCollection ?? 'posts'
+    this.renditionsCollection = options.renditionsCollection ?? 'renditions'
   }
 
   // ─── HTTP ────────────────────────────────────────────────────────────
 
   private async request<T>(method: string, path: string, body?: unknown): Promise<T> {
+    // The URL is built from the tenant's own hostname either way: when
+    // dispatching, it is what the tenant sees as its Host, which EmDash uses to
+    // build absolute links.
     const url = `${this.base}/_emdash/api${path}`
-    const res = await fetch(url, {
+    const init: RequestInit = {
       method,
       headers: {
         Authorization: `Bearer ${this.token}`,
@@ -53,7 +82,8 @@ export class EmdashCmsClient implements CmsClient {
       },
       body: body !== undefined ? JSON.stringify(body) : undefined,
       signal: AbortSignal.timeout(15_000),
-    })
+    }
+    const res = this.fetcher ? await this.fetcher.fetch(new Request(url, init)) : await fetch(url, init)
 
     if (!res.ok) {
       const errorBody = await res.text().catch(() => '')

@@ -247,7 +247,7 @@ Smaller EmDash-specific WfP unknowns to validate (not blocking): **static-asset 
 ### Data-model touchpoints in our system
 
 - `publications` gains `cms_provider` (`sonicjs` default / `emdash`), `cms_base_url`, `cms_token` (encrypted, like OAuth tokens in DAL), and provisioning state (`provisioning` / `ready` / `failed`).
-- Write path (WriterAgent, scout, publisher): when `cms_provider === 'emdash'`, push markdown→PT via `emdash/client` (or our adapter) to the publication's own `cms_base_url` with its `cms_token`. Legacy publications keep using the SonicJS `/api/v1` path unchanged.
+- Write path (WriterAgent, scout, publisher): when `cms_provider === 'emdash'`, push markdown→PT via `emdash/client` (or our adapter) to the publication's own instance with its `cms_token`. **Transport note (Phase 3+):** a fleet tenant is a script in the dispatch namespace and its hostname is on our own zone, so a Worker must reach it via the `EMDASH_DISPATCHER` binding — fetching `cms_base_url` from a Worker returns 522. `cms_base_url` remains the transport for non-fleet instances (local, manually deployed). See `docs/emdash-phase3-runbook.md`. Legacy publications keep using the SonicJS `/api/v1` path unchanged.
 - Provisioning trigger: on new-publication-create for EmDash-eligible tiers, enqueue the Dynamic Workflow provisioner.
 
 ---
