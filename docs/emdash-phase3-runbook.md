@@ -137,6 +137,27 @@ curl -X POST "$PROVISIONER_URL/api/fleet/upgrade" \
 - **Delete** → `apps/web` (and the agents API) call the provisioner `/api/teardown` with `force:true` **before** `deletePublication`, so the instance meta is still available. On teardown failure the delete is refused (502) and stays retryable — the publication record is never orphaned from its infra.
 - **Teardown** (`/api/teardown`): deletes script + R2 + D1 + KV. Resolves resources from `cms_instance_meta`, or derives them from the publication id/slug when meta is absent (a provision that failed before persisting meta still gets cleaned). Already-gone (404) resources count as success; any real failure is **reported** in the `failed[]` array (provisioner `component: 'teardown'` logs carry the full structured payload) and keeps the instance meta for retry. Requires `force:true` to tear down a `ready` or `provisioning` instance.
 
+### Reaching a tenant from our own Workers — use the binding, not the hostname
+
+`<slug>.hotmetalapp.com` is a hostname on our **own zone**. A Worker's subrequest
+to its own zone does not re-enter the Worker route that serves it: it goes looking
+for an origin server, finds none (this zone is served entirely by Workers), and
+times out with a **522**. External requests are fine, because they enter through
+the edge and hit the route normally.
+
+So a Worker that needs to *write* to a tenant must dispatch to the tenant script
+through the `hotmetal-emdash` dispatch namespace. `apps/web` and
+`services/publisher` bind it as `EMDASH_DISPATCHER`; `publications-web` already
+bound the same namespace to serve tenant pages, which is why reading always
+worked while writing never did. `getCmsClient` picks the transport: dispatch when
+the publication's `cms_instance_meta` carries a `scriptName` (every fleet tenant
+does), otherwise a plain fetch of `cms_base_url` — which is what local
+development and any non-fleet instance use.
+
+The provisioner hit this first and worked around it with `emdash-dispatch`; that
+relay exists only because a **Workflow step** cannot call a dispatch-namespace
+binding. Ordinary Workers bind the namespace directly and need no relay.
+
 ### The tenant token must stay role ADMIN (or at least EDITOR)
 
 `buildBootstrapStatements` seeds the tenant's `ec_pat_` at role 50 (ADMIN) with

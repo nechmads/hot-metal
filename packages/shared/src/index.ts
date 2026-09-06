@@ -3,8 +3,9 @@ export type { TierName, TierLimits } from './tiers'
 
 export { CmsApi, SonicCmsClient, CmsApiError, EmdashCmsClientUnavailableError } from './cms-api'
 export { EmdashCmsClient } from './emdash-cms-client'
-export { getCmsClient } from './cms-factory'
-export type { CmsPublicationRef, CmsCredentialResolver, SonicCmsEnv } from './cms-factory'
+export { getCmsClient, emdashScriptName } from './cms-factory'
+export type { CmsPublicationRef, CmsCredentialResolver, SonicCmsEnv, DispatchNamespace } from './cms-factory'
+export type { TenantFetcher, EmdashClientOptions } from './emdash-cms-client'
 export type {
   CmsClient,
   CreatePostInput,

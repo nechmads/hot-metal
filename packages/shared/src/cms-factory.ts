@@ -1,5 +1,5 @@
 import { SonicCmsClient, EmdashCmsClientUnavailableError, type CmsClient } from './cms-api'
-import { EmdashCmsClient } from './emdash-cms-client'
+import { EmdashCmsClient, type TenantFetcher } from './emdash-cms-client'
 
 /**
  * Per-publication CMS selection. The write path (WriterAgent, scout, publisher)
@@ -15,6 +15,35 @@ import { EmdashCmsClient } from './emdash-cms-client'
 export interface CmsPublicationRef {
   id: string
   cmsProvider?: string | null
+  /** JSON blob describing the provisioned tenant; carries its script name. */
+  cmsInstanceMeta?: string | null
+}
+
+/**
+ * Workers-for-Platforms dispatch namespace binding — `get(scriptName)` returns a
+ * Fetcher for that tenant's script. Same shape publications-web binds to serve
+ * tenant pages.
+ */
+export interface DispatchNamespace {
+  get(scriptName: string): TenantFetcher
+}
+
+/**
+ * The tenant's script name, parsed from `cms_instance_meta`.
+ *
+ * Returns null when the meta is missing or unparseable. Callers treat that as
+ * "cannot dispatch" rather than inventing the name: the provisioner owns the
+ * naming rule (`tenantNames`), and re-deriving it here is exactly how the two
+ * would drift apart.
+ */
+export function emdashScriptName(pub: { cmsInstanceMeta?: string | null }): string | null {
+  if (!pub.cmsInstanceMeta) return null
+  try {
+    const meta = JSON.parse(pub.cmsInstanceMeta) as { scriptName?: unknown }
+    return typeof meta.scriptName === 'string' && meta.scriptName ? meta.scriptName : null
+  } catch {
+    return null
+  }
 }
 
 /** Just enough of the DAL to fetch decrypted EmDash credentials. */
@@ -24,10 +53,16 @@ export interface CmsCredentialResolver {
   ): Promise<{ cmsProvider: string; cmsBaseUrl: string | null; cmsToken: string | null } | null>
 }
 
-/** The SonicJS connection config (the shared instance), from a service's env. */
+/** The CMS connection config a service's env must provide. */
 export interface SonicCmsEnv {
   CMS_URL: string
   CMS_API_KEY: string
+  /**
+   * Dispatch namespace holding the EmDash tenant scripts. Required in
+   * production: a Worker cannot reach a tenant by its hostname (see
+   * `TenantFetcher`). Absent in local dev, where the URL path is used instead.
+   */
+  EMDASH_DISPATCHER?: DispatchNamespace
 }
 
 /**
@@ -54,7 +89,23 @@ export async function getCmsClient(
         `EmDash publication ${publication.id} is missing cms_base_url or cms_token (provisioning incomplete?)`,
       )
     }
-    return new EmdashCmsClient(creds.cmsBaseUrl, creds.cmsToken)
+
+    // Two transports, and which one is right depends on what the instance is.
+    //
+    // A **fleet tenant** is a script in our dispatch namespace, and its hostname
+    // is on our own zone — a Worker fetching that hostname finds no origin and
+    // gets a 522, so it must be reached through the binding. Such a tenant
+    // always records its script name in `cms_instance_meta`.
+    //
+    // Anything else (a local instance, a manually deployed one) is an ordinary
+    // server with no script name and no same-zone problem, so the URL is both
+    // correct and the only option. Local dev also *has* the binding — miniflare
+    // stubs it and warns — which is why the script name, not the binding, is
+    // what decides.
+    const scriptName = emdashScriptName(publication)
+    const fetcher = scriptName && env.EMDASH_DISPATCHER ? env.EMDASH_DISPATCHER.get(scriptName) : undefined
+
+    return new EmdashCmsClient(creds.cmsBaseUrl, creds.cmsToken, fetcher ? { fetcher } : {})
   }
 
   throw new EmdashCmsClientUnavailableError(
