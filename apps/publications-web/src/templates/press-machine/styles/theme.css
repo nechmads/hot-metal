@@ -1,0 +1,1446 @@
+@import "tailwindcss";
+
+/* ============================================================================
+   Press Machine — a broadsheet template.
+
+   Everything here is prefixed `pm-` and every base rule is scoped under
+   `html.press-machine` on purpose. The home/post switchers import *every*
+   template's BaseLayout statically, so every template's theme.css ends up in
+   the same page bundle; bare `:root` / `body` rules from a sibling template
+   would otherwise win on source order alone. The class scope keeps this
+   template's paper, ink and accent stable no matter what else is bundled.
+   ========================================================================== */
+
+@theme {
+  /* paper & ink */
+  --color-paper: #faf9f6;
+  --color-paper-2: #f2f0ea;
+  --color-ink: #14130f;
+  --color-ink-2: #4b4842;
+  --color-ink-3: #75716a;
+  --color-rule: #cfccc3;
+  --color-rule-soft: #e2dfd7;
+
+  /* The ink a press cut is duotoned in. Deliberately NOT the accent: the
+     accent is an arbitrary publication hex, and a full-bleed duotone is where
+     an arbitrary hex fails worst (a neon or pale one erases the picture). */
+  --color-plate: #1d1a14;
+
+  /* Raw accent — rules and large marks only. */
+  --color-accent: #b4361f;
+  /* Contrast-floored accent — everything that has to be *read*: kickers,
+     small labels, link underlines, drop caps, item numbers. */
+  --color-accent-ink: #b4361f;
+
+  --font-display: 'Instrument Serif', 'Source Serif 4', Georgia, serif;
+  --font-serif: 'Source Serif 4', Georgia, 'Times New Roman', serif;
+  --font-sans: 'IBM Plex Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
+
+  --max-width-shell: 1320px;
+  --max-width-text: 44rem;
+}
+
+/* ------------------------------------------------------------ tokens ----- */
+
+html.press-machine {
+  --color-paper: #faf9f6;
+  --color-paper-2: #f2f0ea;
+  --color-ink: #14130f;
+  --color-ink-2: #4b4842;
+  --color-ink-3: #75716a;
+  --color-rule: #cfccc3;
+  --color-rule-soft: #e2dfd7;
+  --color-plate: #1d1a14;
+  --color-accent: #b4361f;
+  --color-accent-ink: #b4361f;
+  --color-accent-wash: #e6ded9;
+
+  /* The type tokens are re-declared here for the same reason the colours are:
+     `@theme` can only emit them on `:root`, where `--font-display`,
+     `--font-serif` and `--font-sans` collide with every sibling template's
+     `:root` and the last stylesheet in the bundle wins. Without this block the
+     broadsheet is set in whichever faces another template happens to ship. */
+  --font-display: 'Instrument Serif', 'Source Serif 4', Georgia, serif;
+  --font-serif: 'Source Serif 4', Georgia, 'Times New Roman', serif;
+  --font-sans: 'IBM Plex Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
+
+  --max-width-shell: 1320px;
+  --max-width-text: 44rem;
+
+  --pm-pad: clamp(1.15rem, 3.2vw, 2.5rem);
+  --pm-gut: clamp(1.5rem, 2.6vw, 2.75rem);
+
+  scroll-behavior: smooth;
+  -webkit-text-size-adjust: 100%;
+}
+
+/* The publication's own hex, injected as an inline style on <html> by
+   BaseLayout. Higher specificity than the block above so it always wins. */
+html.press-machine[style*="--publication-accent"] {
+  --color-accent: var(--publication-accent);
+}
+
+/* --accent-ink is the printable accent: mixed 46% toward near-black it clears
+   4.5:1 on this paper for every hue tested, including the pathological bright
+   ones (yellow, lime, cyan, white). It derives from --color-accent, so the
+   publication override above flows through it automatically. */
+@supports (color: color-mix(in oklab, red, blue)) {
+  html.press-machine {
+    --color-accent-ink: color-mix(in oklab, var(--color-accent) 46%, #100f0c);
+    --color-accent-wash: color-mix(in srgb, var(--color-accent) 12%, transparent);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html.press-machine {
+    scroll-behavior: auto;
+  }
+}
+
+html.press-machine body {
+  background-color: var(--color-paper);
+  color: var(--color-ink);
+  font-family: var(--font-serif);
+  font-size: 1.0625rem;
+  line-height: 1.6;
+  font-synthesis-weight: none;
+  hanging-punctuation: first last;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+.press-machine img {
+  max-width: 100%;
+  display: block;
+}
+
+/* Anchors take the surrounding ink instead of the UA's blue. Wrapped in
+   `:where()` so the reset carries no specificity of its own: as a plain
+   `.press-machine a` (0,1,1) it silently outranked every single-class link
+   colour below it — `.pm-viewall`, `.pm-readon`, `.pm-folio-link` — and those
+   links rendered in body ink with their accent and hover states dead. */
+:where(.press-machine) a {
+  color: inherit;
+}
+
+.press-machine a:focus-visible,
+.press-machine button:focus-visible,
+.press-machine summary:focus-visible {
+  outline: 2px solid var(--color-accent-ink);
+  outline-offset: 3px;
+  border-radius: 1px;
+}
+
+.press-machine ::selection {
+  background: var(--color-accent-wash);
+}
+
+/* ------------------------------------------------------- scroll reveal --- */
+
+/* Scoped like everything else here. `bold` declares the same class bare and is
+   the last BaseLayout imported into every switcher, so an unscoped rule loses
+   to it — including the reduced-motion block, since a media query adds no
+   specificity. `.press-machine .animate-on-scroll.is-visible` (0,3,0) has to
+   out-rank bold's `.animate-on-scroll.is-visible` (0,2,0). */
+.press-machine .animate-on-scroll {
+  opacity: 0;
+  transform: translateY(18px);
+  transition: opacity 0.5s ease-out, transform 0.5s ease-out;
+}
+
+.press-machine .animate-on-scroll.is-visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .press-machine .animate-on-scroll,
+  .press-machine .animate-on-scroll.is-visible {
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .pm-lead-title,
+  .pm-brief-title,
+  .pm-nav a,
+  .pm-folio-link,
+  .pm-readon,
+  .pm-btn {
+    transition: color 0.16s ease, border-color 0.16s ease;
+  }
+}
+
+/* ------------------------------------------------------------- shell ----- */
+
+/* `width: 100%` is load-bearing: several components put `.pm-shell` directly
+   inside the layout's `flex flex-col` body, and auto cross-axis margins switch
+   a flex item off `stretch` — without it the whole page shrinks to fit-content. */
+.pm-shell {
+  width: 100%;
+  max-width: var(--max-width-shell);
+  margin: 0 auto;
+  padding: 0 var(--pm-pad);
+}
+
+/* ----------------------------------------------------------- type kit --- */
+
+.pm-caps {
+  font-family: var(--font-sans);
+  font-weight: 600;
+  font-size: 0.6875rem;
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+  line-height: 1.3;
+  /* the label kit lands on <p> as often as on <span>; the default paragraph
+     margin would silently loosen every rule it sits against */
+  margin: 0;
+}
+
+.pm-num {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: 'tnum' 1;
+}
+
+.pm-kicker {
+  font-family: var(--font-sans);
+  font-weight: 600;
+  font-size: 0.6875rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--color-accent-ink);
+  margin: 0;
+}
+
+.pm-meta {
+  font-family: var(--font-sans);
+  font-weight: 400;
+  font-size: 0.75rem;
+  letter-spacing: 0.05em;
+  color: var(--color-ink-3);
+  font-variant-numeric: tabular-nums;
+  margin: 0;
+}
+
+.pm-meta b {
+  font-weight: 600;
+  color: var(--color-ink-2);
+}
+
+.pm-sep {
+  color: var(--color-rule);
+  padding: 0 0.45em;
+}
+
+@media (max-width: 560px) {
+  .pm-caps,
+  .pm-kicker {
+    font-size: 0.625rem;
+    letter-spacing: 0.08em;
+  }
+}
+
+/* ---------------------------------------------------------- masthead ----- */
+
+.pm-top-rule {
+  border-top: 2px solid var(--color-ink);
+}
+
+.pm-masthead {
+  text-align: center;
+  padding: clamp(0.7rem, 1.6vw, 1.15rem) 0 clamp(0.5rem, 1vw, 0.85rem);
+}
+
+/* The nameplate is sized from the publication's own name length (the two
+   custom properties are computed in Header.astro) so a long title lands at a
+   smaller, safe size with no client script at all. */
+.pm-wordmark {
+  font-family: var(--font-display);
+  font-weight: 400;
+  font-size: clamp(1.9rem, var(--pm-wm-vw, 11vw), var(--pm-wm-cap, 6.5rem));
+  line-height: 0.95;
+  letter-spacing: -0.03em;
+  margin: 0;
+  text-wrap: balance;
+}
+
+.pm-wordmark a {
+  text-decoration: none;
+  display: block;
+}
+
+.pm-standfirst {
+  font-family: var(--font-display);
+  font-style: italic;
+  font-size: clamp(0.95rem, 1.55vw, 1.2rem);
+  line-height: 1.3;
+  color: var(--color-ink-2);
+  margin: clamp(0.3rem, 0.7vw, 0.5rem) auto 0;
+  max-width: 54ch;
+}
+
+.pm-masthead--slim {
+  text-align: left;
+  padding: clamp(0.75rem, 1.8vw, 1.25rem) 0 clamp(0.6rem, 1.2vw, 0.9rem);
+}
+
+.pm-slim-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.2rem 1.5rem;
+  flex-wrap: wrap;
+}
+
+.pm-masthead--slim .pm-wordmark {
+  font-size: clamp(1.75rem, 4.6vw, 3.35rem);
+}
+
+/* the dateline rule that closes the nameplate and anchors the page */
+.pm-dateline {
+  border-top: 3px solid var(--color-ink);
+  border-bottom: 2px solid var(--color-ink);
+}
+
+.pm-dateline-in {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.3rem 1.75rem;
+  flex-wrap: wrap;
+  padding: 0.5rem 0;
+  color: var(--color-ink-2);
+}
+
+.pm-dateline-in .pm-caps {
+  font-weight: 500;
+  letter-spacing: 0.14em;
+}
+
+.pm-dateline-in .pm-mid {
+  color: var(--color-ink);
+  font-weight: 600;
+}
+
+.pm-nav ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.15rem clamp(0.9rem, 2.4vw, 1.9rem);
+}
+
+.pm-nav a {
+  display: inline-block;
+  text-decoration: none;
+  font-family: var(--font-sans);
+  font-weight: 600;
+  font-size: 0.6875rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--color-ink-2);
+  border-bottom: 1px solid transparent;
+  padding-bottom: 1px;
+}
+
+.pm-nav a:hover {
+  color: var(--color-accent-ink);
+  border-bottom-color: var(--color-accent-ink);
+}
+
+.pm-nav a[aria-current="page"] {
+  color: var(--color-ink);
+  border-bottom-color: var(--color-accent-ink);
+}
+
+@media (max-width: 560px) {
+  .pm-nav a {
+    font-size: 0.625rem;
+    letter-spacing: 0.09em;
+  }
+  .pm-dateline-in {
+    gap: 0.25rem 1rem;
+  }
+  .pm-nav ul {
+    gap: 0.15rem 1.1rem;
+  }
+}
+
+/* ------------------------------------------------------------- ears ------ */
+
+/* The band under the dateline: the publication's standing description and its
+   social links. Renders nothing when a publication has neither. */
+.pm-ears {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0.5rem 1.75rem;
+  padding: 0.75rem 0;
+  border-bottom: 1px solid var(--color-rule-soft);
+}
+
+.pm-ears-text {
+  font-family: var(--font-display);
+  font-style: italic;
+  font-size: clamp(1rem, 1.7vw, 1.25rem);
+  line-height: 1.35;
+  color: var(--color-ink-2);
+  margin: 0;
+  max-width: 60ch;
+}
+
+.pm-social {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.pm-social a {
+  display: inline-flex;
+  padding: 0.4rem;
+  color: var(--color-ink-3);
+}
+
+.pm-social a:hover {
+  color: var(--color-accent-ink);
+}
+
+/* -------------------------------------------------------- lead story ----- */
+
+.pm-lead {
+  min-width: 0;
+  padding-top: clamp(1.1rem, 2.4vw, 1.9rem);
+}
+
+.pm-lead-rule {
+  border-top: 2px solid var(--color-accent-ink);
+  padding-top: 0.6rem;
+}
+
+/* Every story in the issue carries its item number — the lead is 01, the
+   archive runs 02 onward — so the two bands read as one numbered issue. */
+.pm-item-no {
+  color: var(--color-accent-ink);
+  font-variant-numeric: tabular-nums;
+  margin-right: 0.65rem;
+  padding-right: 0.65rem;
+  border-right: 1px solid var(--color-rule);
+}
+
+.pm-lead-head {
+  display: block;
+  text-decoration: none;
+  margin: 0.35rem 0 0;
+}
+
+.pm-lead-title {
+  font-family: var(--font-display);
+  font-weight: 400;
+  font-size: clamp(2.4rem, 6.4vw, 5rem);
+  line-height: 0.95;
+  letter-spacing: -0.024em;
+  margin: 0;
+  text-wrap: balance;
+}
+
+.pm-lead-head:hover .pm-lead-title {
+  color: var(--color-accent-ink);
+}
+
+.pm-lead-dek {
+  font-family: var(--font-display);
+  font-style: italic;
+  font-size: clamp(1.2rem, 2.5vw, 1.85rem);
+  line-height: 1.3;
+  color: var(--color-ink-2);
+  margin: clamp(0.8rem, 1.8vw, 1.15rem) 0 0;
+  max-width: 44ch;
+}
+
+.pm-byline {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.1rem;
+  margin: clamp(1rem, 2vw, 1.4rem) 0 0;
+  padding: 0.55rem 0;
+  border-top: 1px solid var(--color-ink);
+  border-bottom: 1px solid var(--color-rule-soft);
+}
+
+/* The lede runs on a strict line grid: line-height in rem, no space between
+   paragraphs, an indent instead. Column count is chosen from the length of
+   the text itself (in LeadStory.astro), so a one-line hook never gets split
+   across three ragged columns. */
+.pm-lead-body {
+  --pm-lh: 1.72rem;
+  margin-top: 1.35rem;
+  font-size: 1.0625rem;
+  line-height: var(--pm-lh);
+  color: var(--color-ink);
+}
+
+.pm-lead-body p {
+  margin: 0;
+  text-indent: 1.35em;
+}
+
+.pm-lead-body p:first-of-type {
+  text-indent: 0;
+}
+
+.pm-lead-body--c1 {
+  max-width: 62ch;
+}
+
+.pm-lead-body p:first-child::first-letter {
+  float: left;
+  font-family: var(--font-display);
+  font-size: 3.55em;
+  line-height: 0.78;
+  padding: 0.06em 0.09em 0 0;
+  color: var(--color-accent-ink);
+}
+
+@media (min-width: 720px) {
+  .pm-lead-body--c2,
+  .pm-lead-body--c3 {
+    columns: 2;
+    column-gap: var(--pm-gut);
+    column-rule: 1px solid var(--color-rule-soft);
+  }
+}
+
+@media (min-width: 1220px) {
+  .pm-lead-body--c3 {
+    columns: 3;
+  }
+}
+
+.pm-lede-end {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.4rem 1.5rem;
+  margin-top: 0.95rem;
+  padding-top: 0.55rem;
+  border-top: 1px solid var(--color-ink);
+}
+
+.pm-lede-end .pm-caps {
+  color: var(--color-ink-3);
+  font-weight: 500;
+}
+
+.pm-readon {
+  display: inline-block;
+  font-family: var(--font-sans);
+  font-weight: 600;
+  font-size: 0.75rem;
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+  text-decoration: none;
+  color: var(--color-accent-ink);
+  border-bottom: 1px solid var(--color-accent-ink);
+  padding-bottom: 0.18rem;
+}
+
+.pm-readon:hover {
+  color: var(--color-ink);
+  border-bottom-color: var(--color-ink);
+}
+
+/* --------------------------------------------------- section digest ------ */
+
+/* Not an alphabetical back-of-book index — that breaks at both ends of the
+   scale. A digest of the sections actually present in the issue, each once,
+   with the number of dispatches filed under it. */
+.pm-digest {
+  margin-top: clamp(2rem, 4vw, 3rem);
+  border-top: 2px solid var(--color-ink);
+  padding-top: 0.6rem;
+}
+
+.pm-digest-head {
+  font-family: var(--font-sans);
+  font-weight: 600;
+  font-size: 0.6875rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--color-ink-3);
+  margin: 0 0 0.5rem;
+}
+
+.pm-digest-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  columns: 2;
+  column-gap: var(--pm-gut);
+}
+
+@media (min-width: 720px) {
+  .pm-digest-list {
+    columns: 3;
+  }
+}
+
+@media (min-width: 1100px) {
+  .pm-digest-list {
+    columns: 4;
+  }
+}
+
+.pm-digest-list li {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: baseline;
+  gap: 0.75rem;
+  padding: 0.4rem 0;
+  border-bottom: 1px solid var(--color-rule-soft);
+  break-inside: avoid;
+}
+
+.pm-dg-t {
+  font-size: 0.9375rem;
+  line-height: 1.3;
+  font-variant: small-caps;
+  letter-spacing: 0.02em;
+}
+
+.pm-dg-n {
+  font-family: var(--font-sans);
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  color: var(--color-accent-ink);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+/* ------------------------------------------------------------ plates ----- */
+
+/* Square generated art, printed as a two-tone press cut in the text ink so
+   uneven source images read as a house style rather than as stock photography.
+   Small everywhere — the least reliable asset on the page never appears at
+   its largest. */
+.pm-plate {
+  margin: 0;
+  min-width: 0;
+}
+
+.pm-plate-box {
+  position: relative;
+  isolation: isolate;
+  background: var(--color-plate);
+  border: 1px solid var(--color-ink);
+  overflow: hidden;
+}
+
+.pm-plate-box img {
+  width: 100%;
+  height: auto;
+  aspect-ratio: 1 / 1;
+  object-fit: cover;
+  filter: grayscale(1) contrast(1.2) brightness(0.94);
+  mix-blend-mode: screen;
+  opacity: 0.96;
+}
+
+/* No cut for this story. Rather than leave a hole — or a giant initial letter —
+   the slot is set with a date plate, so every row keeps identical measure
+   whether art exists or not. */
+.pm-plate--date .pm-plate-box {
+  background: var(--color-paper-2);
+  aspect-ratio: 1 / 1;
+  display: grid;
+  align-content: center;
+  justify-items: center;
+  gap: 0.1rem;
+  padding: 0.3rem;
+  text-align: center;
+}
+
+.pm-pd-m,
+.pm-pd-y {
+  font-family: var(--font-sans);
+  font-weight: 600;
+  font-size: 0.5625rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  /* set on the plate's own paper, one step darker than the page's metadata:
+     --color-ink-3 clears 4.5:1 on --color-paper but not on --color-paper-2 */
+  color: var(--color-ink-2);
+}
+
+.pm-pd-d {
+  font-family: var(--font-display);
+  font-weight: 400;
+  font-size: clamp(1.5rem, 3.2vw, 2.2rem);
+  line-height: 0.92;
+  letter-spacing: -0.02em;
+  color: var(--color-ink);
+  font-variant-numeric: lining-nums;
+}
+
+/* ----------------------------------------------------------- archive ----- */
+
+.pm-section-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+  margin: clamp(2.2rem, 5vw, 3.6rem) 0 0;
+  padding-bottom: 0.5rem;
+  border-bottom: 3px solid var(--color-ink);
+}
+
+.pm-section-head h2 {
+  font-family: var(--font-display);
+  font-weight: 400;
+  font-size: clamp(1.6rem, 3.2vw, 2.35rem);
+  line-height: 1;
+  letter-spacing: -0.01em;
+  margin: 0;
+}
+
+.pm-section-head .pm-caps {
+  color: var(--color-ink-3);
+  font-weight: 500;
+}
+
+.pm-section-aside {
+  display: flex;
+  align-items: baseline;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.pm-viewall {
+  font-family: var(--font-sans);
+  font-weight: 600;
+  font-size: 0.6875rem;
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+  text-decoration: none;
+  color: var(--color-accent-ink);
+  border-bottom: 1px solid var(--color-accent-ink);
+  padding-bottom: 0.15rem;
+  white-space: nowrap;
+}
+
+.pm-viewall:hover {
+  color: var(--color-ink);
+  border-bottom-color: var(--color-ink);
+}
+
+.pm-archive-grid {
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+}
+
+@media (min-width: 900px) {
+  .pm-archive-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    column-gap: var(--pm-gut);
+  }
+  .pm-archive-grid::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 50%;
+    width: 1px;
+    background: var(--color-rule);
+  }
+}
+
+.pm-brief {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) clamp(56px, 14vw, 84px);
+  column-gap: 1.1rem;
+  align-content: start;
+  padding: 1.15rem 0;
+  border-bottom: 1px solid var(--color-rule-soft);
+}
+
+/* Narrow screens give the cut only the headline's rows: the summary and the
+   date then run the full measure beneath it, instead of setting a thin
+   L-shaped column of text beside a square of white. */
+.pm-brief > .pm-plate {
+  grid-column: 2;
+  grid-row: 1;
+}
+
+.pm-brief-dek,
+.pm-brief-meta {
+  grid-column: 1 / -1;
+}
+
+@media (min-width: 620px) {
+  .pm-brief {
+    grid-template-columns: minmax(0, 1fr) clamp(74px, 9vw, 104px);
+  }
+  .pm-brief > .pm-plate {
+    grid-row: 1 / span 3;
+    align-self: start;
+  }
+  .pm-brief-dek,
+  .pm-brief-meta {
+    grid-column: 1;
+  }
+}
+
+.pm-brief-link {
+  grid-column: 1;
+  text-decoration: none;
+  display: block;
+  min-width: 0;
+}
+
+.pm-brief-title {
+  font-family: var(--font-display);
+  font-weight: 400;
+  font-size: clamp(1.3rem, 2.2vw, 1.65rem);
+  line-height: 1.08;
+  letter-spacing: -0.012em;
+  margin: 0.3rem 0 0;
+  text-wrap: pretty;
+}
+
+.pm-brief-link:hover .pm-brief-title {
+  color: var(--color-accent-ink);
+}
+
+.pm-brief-dek {
+  margin: 0.5rem 0 0.6rem;
+  font-size: 0.9375rem;
+  line-height: 1.52;
+  color: var(--color-ink-2);
+  max-width: 48ch;
+}
+
+.pm-empty {
+  padding: clamp(2.5rem, 6vw, 4.5rem) 0;
+  text-align: center;
+  color: var(--color-ink-3);
+  font-family: var(--font-display);
+  font-style: italic;
+  font-size: 1.35rem;
+}
+
+/* ------------------------------------------------------------ footer ----- */
+
+.pm-foot {
+  margin-top: clamp(2.4rem, 5vw, 3.6rem);
+  border-top: 2px solid var(--color-ink);
+  padding: 1.2rem 0 2.6rem;
+}
+
+.pm-foot-in {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem 2rem;
+  align-items: baseline;
+  justify-content: space-between;
+}
+
+.pm-foot-links {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 1.25rem;
+}
+
+.pm-foot a {
+  text-decoration: none;
+}
+
+.pm-foot a:hover {
+  color: var(--color-accent-ink);
+}
+
+.pm-foot .pm-caps {
+  color: var(--color-ink-3);
+  font-weight: 500;
+}
+
+.pm-foot-bottom {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem 1.5rem;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-top: 1.1rem;
+  padding-top: 0.8rem;
+  border-top: 1px solid var(--color-rule-soft);
+}
+
+/* ----------------------------------------------------------- article ----- */
+
+/* One grid holds the whole article page, and everything below the headline
+   resolves against the SAME two edges: the reading column sits dead centre
+   between equal margins, the contents rail lives in the left margin as
+   marginalia, and the apparatus — sources, correspondence — keeps the reading
+   column's measure instead of jumping to full width halfway down the page. */
+.pm-article-wrap {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  column-gap: var(--pm-gut);
+  padding-top: clamp(1.5rem, 3.4vw, 2.5rem);
+}
+
+@media (min-width: 1100px) {
+  .pm-article-wrap {
+    grid-template-columns:
+      [field-start] 12.5rem [text-start] minmax(0, var(--max-width-text)) [text-end] 12.5rem [field-end];
+    justify-content: center;
+  }
+  .pm-folio {
+    grid-column: field-start / text-start;
+  }
+  .pm-article,
+  .pm-after {
+    grid-column: text-start / text-end;
+  }
+}
+
+.pm-folio {
+  display: none;
+}
+
+@media (min-width: 1100px) {
+  .pm-folio {
+    display: block;
+  }
+  .pm-folio-in {
+    position: sticky;
+    top: 1.75rem;
+  }
+}
+
+/* a label, not a heading: the rail sits above the article's <h1> in source
+   order, so a real <h2> here would open the document outline in the margin */
+.pm-folio-h {
+  font-family: var(--font-sans);
+  font-weight: 600;
+  font-size: 0.6875rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--color-ink-3);
+  margin: 0 0 0.6rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid var(--color-ink);
+}
+
+.pm-folio ol,
+.pm-toc-m ol {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  counter-reset: pmf;
+}
+
+.pm-folio li,
+.pm-toc-m li {
+  counter-increment: pmf;
+}
+
+.pm-toc-m li {
+  border-top: 1px solid var(--color-rule-soft);
+}
+
+.pm-folio-link {
+  display: grid;
+  grid-template-columns: 1.5rem 1fr;
+  gap: 0.4rem;
+  padding: 0.45rem 0;
+  font-family: var(--font-sans);
+  font-size: 0.8125rem;
+  line-height: 1.35;
+  color: var(--color-ink-3);
+  text-decoration: none;
+  border-left: 2px solid transparent;
+  padding-left: 0.55rem;
+  margin-left: -0.55rem;
+}
+
+.pm-folio-link::before {
+  content: counter(pmf, decimal-leading-zero);
+  font-variant-numeric: tabular-nums;
+  font-size: 0.6875rem;
+  color: var(--color-rule);
+  font-weight: 600;
+}
+
+.pm-folio-link:hover {
+  color: var(--color-ink);
+}
+
+.pm-folio-link[aria-current="true"] {
+  color: var(--color-ink);
+  border-left-color: var(--color-accent-ink);
+}
+
+.pm-folio-link[aria-current="true"]::before {
+  color: var(--color-accent-ink);
+}
+
+/* The same contents carried to the phone as a running head: collapsed by
+   default, sticky to the top of the read. A long piece on a small screen is
+   exactly where it is needed most. */
+.pm-toc-m {
+  position: sticky;
+  top: 0;
+  z-index: 4;
+  margin: 1.5rem 0 0;
+  background: var(--color-paper);
+  border-top: 1px solid var(--color-ink);
+  border-bottom: 1px solid var(--color-ink);
+}
+
+@media (min-width: 1100px) {
+  .pm-toc-m {
+    display: none;
+  }
+}
+
+.pm-toc-m > summary {
+  list-style: none;
+  cursor: pointer;
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.55rem 0;
+  font-family: var(--font-sans);
+  font-weight: 600;
+  font-size: 0.6875rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--color-ink-2);
+}
+
+.pm-toc-m > summary::-webkit-details-marker {
+  display: none;
+}
+
+.pm-toc-m > summary::after {
+  content: "+";
+  color: var(--color-ink-3);
+  white-space: nowrap;
+}
+
+.pm-toc-m[open] > summary::after {
+  content: "\2212";
+  color: var(--color-accent-ink);
+}
+
+.pm-toc-m ol {
+  padding-bottom: 0.5rem;
+}
+
+.pm-toc-m .pm-folio-link {
+  font-size: 0.875rem;
+  padding: 0.5rem 0 0.5rem 0.55rem;
+  margin-left: 0;
+}
+
+.pm-article {
+  min-width: 0;
+  max-width: var(--max-width-text);
+  margin: 0 auto;
+  counter-reset: pmsec;
+}
+
+.pm-article-head {
+  border-top: 2px solid var(--color-accent-ink);
+  padding-top: 0.6rem;
+}
+
+.pm-article-head-row {
+  display: flex;
+  align-items: flex-start;
+  gap: clamp(1rem, 3vw, 2rem);
+}
+
+.pm-article-head-row > div {
+  min-width: 0;
+  flex: 1 1 auto;
+}
+
+.pm-article-head-row > .pm-plate {
+  flex: 0 0 auto;
+  width: clamp(5.5rem, 14vw, 8.5rem);
+  margin-top: 0.4rem;
+}
+
+/* On a phone the headline needs the whole measure, so the cut drops below it
+   instead of squeezing the title into a third of the screen. */
+@media (max-width: 619px) {
+  .pm-article-head-row {
+    display: block;
+  }
+  .pm-article-head-row > .pm-plate {
+    width: 5.5rem;
+    margin: 1rem 0 0;
+  }
+}
+
+.pm-article-title {
+  font-family: var(--font-display);
+  font-weight: 400;
+  font-size: clamp(2.2rem, 5.2vw, 4rem);
+  line-height: 0.96;
+  letter-spacing: -0.022em;
+  margin: 0.35rem 0 0;
+  max-width: 20ch;
+  text-wrap: balance;
+}
+
+.pm-article-sub {
+  font-family: var(--font-display);
+  font-style: italic;
+  font-size: clamp(1.1rem, 2.2vw, 1.6rem);
+  line-height: 1.32;
+  color: var(--color-ink-2);
+  margin: 0.85rem 0 0;
+  max-width: 46ch;
+}
+
+/* ------------------------------------------------------------- prose ----- */
+
+/* `.pm-prose`, not `.prose`: the sibling templates all style a global `.prose`
+   and their stylesheets share this page's bundle. */
+.pm-prose {
+  margin-top: 1.9rem;
+  font-size: 1.1875rem;
+  line-height: 1.66;
+}
+
+.pm-prose p {
+  margin: 0 0 1.35rem;
+}
+
+/* The rank step between body and section head is carried by size and by the
+   section's own number — the same number the contents rail uses. */
+.pm-prose h2 {
+  font-family: var(--font-display);
+  font-weight: 400;
+  font-size: clamp(1.9rem, 3.6vw, 2.7rem);
+  line-height: 1.04;
+  letter-spacing: -0.02em;
+  margin: 3.1rem 0 1.1rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid var(--color-rule);
+  scroll-margin-top: 4.5rem;
+  counter-increment: pmsec;
+  text-wrap: balance;
+}
+
+.pm-prose h2::before {
+  content: counter(pmsec, decimal-leading-zero);
+  display: block;
+  margin-bottom: 0.5rem;
+  font-family: var(--font-sans);
+  font-weight: 600;
+  font-size: 0.6875rem;
+  letter-spacing: 0.16em;
+  color: var(--color-accent-ink);
+  font-variant-numeric: tabular-nums;
+}
+
+@media (min-width: 1100px) {
+  .pm-prose h2 {
+    scroll-margin-top: 1.5rem;
+  }
+}
+
+.pm-prose h3 {
+  font-family: var(--font-display);
+  font-weight: 400;
+  font-size: clamp(1.35rem, 2.4vw, 1.75rem);
+  line-height: 1.2;
+  margin: 2rem 0 0.75rem;
+}
+
+.pm-prose a {
+  color: var(--color-ink);
+  text-decoration: underline;
+  text-decoration-color: var(--color-accent-ink);
+  text-underline-offset: 0.18em;
+  text-decoration-thickness: 1px;
+}
+
+.pm-prose a:hover {
+  color: var(--color-accent-ink);
+  text-decoration-thickness: 2px;
+}
+
+.pm-prose strong {
+  font-weight: 600;
+}
+
+.pm-prose em {
+  font-style: italic;
+}
+
+.pm-prose ul,
+.pm-prose ol {
+  padding-left: 1.4rem;
+  margin: 0 0 1.35rem;
+}
+
+.pm-prose li {
+  margin-bottom: 0.4rem;
+}
+
+.pm-prose blockquote {
+  margin: 2.4rem 0;
+  padding: 1rem 0;
+  border-top: 3px solid var(--color-accent-ink);
+  border-bottom: 1px solid var(--color-ink);
+}
+
+.pm-prose blockquote p {
+  font-family: var(--font-display);
+  font-size: clamp(1.4rem, 2.8vw, 2rem);
+  line-height: 1.18;
+  letter-spacing: -0.012em;
+  margin: 0;
+  text-wrap: pretty;
+}
+
+.pm-prose figure {
+  margin: 2rem 0;
+}
+
+.pm-prose figcaption {
+  margin-top: 0.5rem;
+  font-family: var(--font-sans);
+  font-size: 0.75rem;
+  letter-spacing: 0.05em;
+  color: var(--color-ink-3);
+}
+
+.pm-prose img {
+  margin: 2rem 0;
+  border: 1px solid var(--color-rule);
+}
+
+/* Set in the sans against the serif text, the way a paper sets a technical
+   term — no chip, no box, no fill. */
+.pm-prose code {
+  font-family: var(--font-sans);
+  font-weight: 500;
+  font-size: 0.82em;
+  letter-spacing: 0.015em;
+  color: var(--color-ink-2);
+}
+
+.pm-prose pre {
+  background: var(--color-paper-2);
+  border: 1px solid var(--color-rule);
+  padding: 1rem;
+  overflow-x: auto;
+  margin: 1.5rem 0;
+  font-size: 0.875rem;
+  line-height: 1.55;
+}
+
+.pm-prose pre code {
+  white-space: pre;
+}
+
+.pm-prose--open > p:first-child::first-letter {
+  float: left;
+  font-family: var(--font-display);
+  font-size: 3.35em;
+  line-height: 0.8;
+  padding: 0.05em 0.09em 0 0;
+  color: var(--color-accent-ink);
+}
+
+/* Filed-under is a ruled line of type, not a row of boxes. */
+.pm-tags {
+  margin: 2.5rem 0 0;
+  border-top: 1px solid var(--color-ink);
+  padding-top: 0.6rem;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.3rem 1.1rem;
+}
+
+.pm-tags > .pm-caps {
+  color: var(--color-ink-3);
+  font-weight: 500;
+}
+
+.pm-tag-list {
+  list-style: none;
+  display: flex;
+  flex-wrap: wrap;
+  margin: 0;
+  padding: 0;
+}
+
+.pm-tag-list li + li {
+  border-left: 1px solid var(--color-rule);
+}
+
+.pm-tag-list li {
+  padding: 0.05rem 0.75rem;
+  font-family: var(--font-sans);
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--color-ink-2);
+}
+
+.pm-tag-list li:first-child {
+  padding-left: 0;
+}
+
+.pm-share {
+  margin-top: 1.6rem;
+  padding-top: 0.7rem;
+  border-top: 1px solid var(--color-rule-soft);
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.5rem 1.5rem;
+}
+
+.pm-share-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1.1rem;
+}
+
+.pm-share-links a,
+.pm-share-links button {
+  font-family: var(--font-sans);
+  font-weight: 600;
+  font-size: 0.6875rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--color-ink-2);
+  text-decoration: none;
+  background: none;
+  border: 0;
+  padding: 0;
+  cursor: pointer;
+}
+
+.pm-share-links a:hover,
+.pm-share-links button:hover {
+  color: var(--color-accent-ink);
+}
+
+/* --------------------------------------------------------- apparatus ----- */
+
+.pm-after {
+  margin-top: clamp(2.2rem, 4.6vw, 3.4rem);
+  min-width: 0;
+}
+
+.pm-after .pm-section-head {
+  margin-top: clamp(1.8rem, 4vw, 2.8rem);
+}
+
+.pm-after > :first-child .pm-section-head {
+  margin-top: 0;
+}
+
+/* Read down in order, each reference taking only the depth its own title
+   needs. Nothing is padded to square the run. */
+.pm-sources-list {
+  list-style: none;
+  margin: 0.4rem 0 0;
+  padding: 0;
+  counter-reset: pms;
+}
+
+.pm-sources-list li {
+  counter-increment: pms;
+  border-bottom: 1px solid var(--color-rule-soft);
+}
+
+.pm-sources-list a {
+  display: grid;
+  grid-template-columns: 1.9rem minmax(0, 1fr);
+  gap: 0.5rem;
+  padding: 0.6rem 0;
+  text-decoration: none;
+}
+
+.pm-sources-list a::before {
+  content: counter(pms, decimal-leading-zero);
+  font-family: var(--font-sans);
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  color: var(--color-accent-ink);
+  font-variant-numeric: tabular-nums;
+  padding-top: 0.22rem;
+}
+
+.pm-src-t {
+  font-size: 0.9375rem;
+  line-height: 1.36;
+}
+
+.pm-sources-list a:hover .pm-src-t {
+  color: var(--color-accent-ink);
+  text-decoration: underline;
+}
+
+.pm-src-d {
+  display: block;
+  margin-top: 0.18rem;
+  font-family: var(--font-sans);
+  font-size: 0.6875rem;
+  letter-spacing: 0.06em;
+  color: var(--color-ink-3);
+  word-break: break-word;
+}
+
+.pm-comments {
+  margin-top: 2.4rem;
+}
+
+.pm-comments-body {
+  margin-top: 1.2rem;
+}
+
+/* ------------------------------------------------------------- print ----- */
+
+/* Browsers print with background graphics off by default, which would drop the
+   dark ground the duotone is screened against and leave every press cut an
+   empty box. On paper the plates print as plain greyscale. */
+@media print {
+  .pm-plate-box {
+    background: transparent;
+  }
+  .pm-plate-box img {
+    mix-blend-mode: normal;
+    filter: grayscale(1) contrast(1.05);
+    opacity: 1;
+  }
+  .pm-folio,
+  .pm-toc-m,
+  .pm-share {
+    display: none;
+  }
+}

@@ -16,6 +16,16 @@ import EditorialBaseLayout from '../templates/editorial/layouts/BaseLayout.astro
 import EditorialHeader from '../templates/editorial/components/Header.astro';
 import EditorialFooter from '../templates/editorial/components/Footer.astro';
 
+// Press Machine template
+import PressBaseLayout from '../templates/press-machine/layouts/BaseLayout.astro';
+import PressHeader from '../templates/press-machine/components/Header.astro';
+import PressFooter from '../templates/press-machine/components/Footer.astro';
+
+// One Signal template
+import SignalBaseLayout from '../templates/one-signal/layouts/BaseLayout.astro';
+import SignalHeader from '../templates/one-signal/components/Header.astro';
+import SignalFooter from '../templates/one-signal/components/Footer.astro';
+
 // Bold template
 import BoldBaseLayout from '../templates/bold/layouts/BaseLayout.astro';
 import BoldHeader from '../templates/bold/components/Header.astro';
@@ -39,7 +49,71 @@ const layoutProps = {
 };
 ---
 
-{templateId === 'editorial' ? (
+{templateId === 'press-machine' ? (
+  <PressBaseLayout {...layoutProps}>
+    {branding && <PressHeader publicationName={branding.name} logoUrl={branding.logoUrl} />}
+
+    <main class="flex-1 flex items-center px-6 py-24">
+      <div class="mx-auto w-full max-w-[var(--max-width-text)]">
+        <p class="font-sans text-xs uppercase tracking-[0.16em] text-accent-ink mb-3">
+          Error 404
+        </p>
+        <h1 class="font-display text-5xl md:text-6xl leading-[1.05] mb-4">
+          This page has gone to press elsewhere.
+        </h1>
+        <p class="font-serif text-lg text-ink-2 mb-8 border-t border-rule pt-5">
+          The page you are looking for does not exist or has been moved.
+        </p>
+        <a
+          href="/"
+          class="font-sans text-sm uppercase tracking-[0.12em] text-accent-ink border-b-2 border-accent pb-1 hover:border-ink transition-colors"
+        >
+          &larr; Back to the front page
+        </a>
+      </div>
+    </main>
+
+    {branding && (
+      <PressFooter
+        publicationName={branding.name}
+        publicationSlug={branding.slug}
+        socialLinks={branding.socialLinks}
+      />
+    )}
+  </PressBaseLayout>
+) : templateId === 'one-signal' ? (
+  <SignalBaseLayout {...layoutProps}>
+    {branding && <SignalHeader publicationName={branding.name} logoUrl={branding.logoUrl} />}
+
+    <main class="flex-1 flex items-center px-6 py-24">
+      <div class="mx-auto w-full max-w-[var(--max-width-measure)]">
+        <p class="font-mono text-xs uppercase tracking-[0.16em] text-ink-3 mb-3">
+          404 &middot; no dispatch on file
+        </p>
+        <h1 class="font-sans text-4xl md:text-5xl font-semibold leading-[1.08] text-ink-hi mb-4">
+          Nothing filed at this address.
+        </h1>
+        <p class="font-read text-lg text-ink-2 mb-8 border-t border-rule pt-5">
+          The page you are looking for does not exist or has been moved.
+        </p>
+        <a
+          href="/"
+          class="font-mono text-sm uppercase tracking-[0.12em] text-ink-hi border-b border-accent pb-1 hover:text-accent transition-colors"
+        >
+          &larr; Return to the index
+        </a>
+      </div>
+    </main>
+
+    {branding && (
+      <SignalFooter
+        publicationName={branding.name}
+        publicationSlug={branding.slug}
+        socialLinks={branding.socialLinks}
+      />
+    )}
+  </SignalBaseLayout>
+) : templateId === 'editorial' ? (
   <EditorialBaseLayout {...layoutProps}>
     {branding && <EditorialHeader publicationName={branding.name} logoUrl={branding.logoUrl} />}
 

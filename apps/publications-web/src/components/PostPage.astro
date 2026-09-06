@@ -20,6 +20,18 @@ import EditorialHeader from '../templates/editorial/components/Header.astro';
 import EditorialFooter from '../templates/editorial/components/Footer.astro';
 import EditorialPostContent from '../templates/editorial/components/PostContent.astro';
 
+// Press Machine template
+import PressBaseLayout from '../templates/press-machine/layouts/BaseLayout.astro';
+import PressHeader from '../templates/press-machine/components/Header.astro';
+import PressFooter from '../templates/press-machine/components/Footer.astro';
+import PressPostContent from '../templates/press-machine/components/PostContent.astro';
+
+// One Signal template
+import SignalBaseLayout from '../templates/one-signal/layouts/BaseLayout.astro';
+import SignalHeader from '../templates/one-signal/components/Header.astro';
+import SignalFooter from '../templates/one-signal/components/Footer.astro';
+import SignalPostContent from '../templates/one-signal/components/PostContent.astro';
+
 // Bold template
 import BoldBaseLayout from '../templates/bold/layouts/BaseLayout.astro';
 import BoldHeader from '../templates/bold/components/Header.astro';
@@ -111,7 +123,49 @@ const contentProps = {
 };
 ---
 
-{templateId === 'editorial' ? (
+{templateId === 'press-machine' ? (
+  <PressBaseLayout {...layoutProps}>
+    <PressHeader publicationName={branding.name} logoUrl={branding.logoUrl} />
+    <PressPostContent {...contentProps}>
+      {commentsEnabled && (
+        <CommentSection
+          slot="comments"
+          client:load
+          publicationSlug={publicationSlug}
+          postSlug={post.slug}
+          turnstileSiteKey={turnstileSiteKey}
+          commentsEnabled={commentsEnabled}
+        />
+      )}
+    </PressPostContent>
+    <PressFooter
+      publicationName={branding.name}
+      publicationSlug={branding.slug}
+      socialLinks={branding.socialLinks}
+    />
+  </PressBaseLayout>
+) : templateId === 'one-signal' ? (
+  <SignalBaseLayout {...layoutProps}>
+    <SignalHeader publicationName={branding.name} logoUrl={branding.logoUrl} />
+    <SignalPostContent {...contentProps}>
+      {commentsEnabled && (
+        <CommentSection
+          slot="comments"
+          client:load
+          publicationSlug={publicationSlug}
+          postSlug={post.slug}
+          turnstileSiteKey={turnstileSiteKey}
+          commentsEnabled={commentsEnabled}
+        />
+      )}
+    </SignalPostContent>
+    <SignalFooter
+      publicationName={branding.name}
+      publicationSlug={branding.slug}
+      socialLinks={branding.socialLinks}
+    />
+  </SignalBaseLayout>
+) : templateId === 'editorial' ? (
   <EditorialBaseLayout {...layoutProps}>
     <EditorialHeader publicationName={branding.name} logoUrl={branding.logoUrl} />
     <EditorialPostContent {...contentProps}>

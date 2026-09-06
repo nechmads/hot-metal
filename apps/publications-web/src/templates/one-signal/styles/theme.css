@@ -1,0 +1,1654 @@
+@import "tailwindcss";
+
+/*
+ * One Signal — an intelligence dispatch log.
+ *
+ * A warm near-black field, JetBrains Mono for every piece of structure and
+ * metadata, Inter for display and interface, IBM Plex Sans for the read. The
+ * home page is a numbered index on a hairline grid; nothing here is
+ * illustrated, and the index carries no thumbnails at all.
+ */
+
+@theme {
+  /* Ground: warm near-black, never pure #000. */
+  --color-ground: #0c0d10;
+  --color-ground-2: #101217;
+  --color-ground-3: #14161c;
+
+  /* Ink: warm off-white, never pure #fff. */
+  --color-ink: #e7e5e0;
+  --color-ink-hi: #f9f7f3;
+  --color-ink-2: #a3a5ab;
+  --color-ink-3: #7a7d86;
+
+  --color-rule: #20222a;
+  --color-rule-2: #2c2f38;
+
+  /* The one colour token a publication supplies. Overridden per publication. */
+  --color-accent: #d9603f;
+
+  --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  --font-read: 'IBM Plex Sans', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
+
+  --max-width-wide: 84rem;
+  /* Reading measure tuned to ~62-66 characters on the dark ground. Held in rem
+     so the 16px end-matter blocks land on the same right edge as the 19px body. */
+  --max-width-measure: 38rem;
+}
+
+/* ------------------------------------------------------------------ tokens */
+
+/* Every base rule below is scoped under `html.one-signal` on purpose. The
+   home/post switchers import *every* template's BaseLayout statically, so every
+   template's theme.css ends up in the same page bundle; a bare `body` rule from
+   this near-black template would otherwise paint a light sibling template dark
+   on source order alone.
+
+   The `@theme` block above has to emit its custom properties on `:root` for
+   Tailwind to generate utilities, and names like `--color-ink` and
+   `--color-accent` collide with the sibling templates there. So the same values
+   are re-declared here: `html.one-signal` (0,1,1) outranks `:root` (0,1,0), and
+   the active template's ground, ink and accent win at runtime regardless of
+   which template's `:root` happens to be bundled last. */
+html.one-signal {
+  /* Ground: warm near-black, never pure #000. */
+  --color-ground: #0c0d10;
+  --color-ground-2: #101217;
+  --color-ground-3: #14161c;
+
+  /* Ink: warm off-white, never pure #fff. */
+  --color-ink: #e7e5e0;
+  --color-ink-hi: #f9f7f3;
+  --color-ink-2: #a3a5ab;
+  --color-ink-3: #7a7d86;
+
+  --color-rule: #20222a;
+  --color-rule-2: #2c2f38;
+
+  /* The one colour token a publication supplies. Overridden per publication. */
+  --color-accent: #d9603f;
+
+  --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  --font-read: 'IBM Plex Sans', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
+
+  --max-width-wide: 84rem;
+  /* Reading measure tuned to ~62-66 characters on the dark ground. Held in rem
+     so the 16px end-matter blocks land on the same right edge as the 19px body. */
+  --max-width-measure: 38rem;
+
+  --sig-pad: clamp(1.15rem, 4vw, 3.25rem);
+  --sig-rail: 12rem;
+  --sig-railgap: 3rem;
+
+  /* Raw-accent fallbacks. Both derived values keep the publication's hue and
+     chroma and only put a floor under lightness, so a very dark hex still
+     reads as a mark and as text on the near-black ground. A hex that is
+     already light enough passes through untouched. */
+  --sig-accent-mark: var(--color-accent);
+  --sig-accent-lit: var(--color-accent);
+
+  scroll-behavior: smooth;
+  -webkit-text-size-adjust: 100%;
+  /* `clip`, never `hidden`: `overflow-x: hidden` on an ancestor silently
+     disables `position: sticky` for the index header and the article rail. */
+  overflow-x: clip;
+}
+
+/* Per-publication accent, injected as an inline custom property on <html>. */
+html.one-signal[style*="--publication-accent"] {
+  --color-accent: var(--publication-accent);
+}
+
+@supports (color: color-mix(in oklab, red 50%, blue)) {
+  html.one-signal {
+    --sig-accent-lit: color-mix(in oklab, var(--color-accent) 58%, #ffe4d8);
+  }
+}
+
+@supports (color: oklch(from red max(l, 0.5) c h)) {
+  html.one-signal {
+    --sig-accent-mark: oklch(from var(--color-accent) max(l, 0.52) c h);
+    --sig-accent-lit: oklch(from color-mix(in oklab, var(--color-accent) 58%, #ffe4d8) max(l, 0.68) c h);
+  }
+}
+
+html.one-signal body {
+  font-family: var(--font-sans);
+  color: var(--color-ink);
+  background-color: var(--color-ground);
+  font-size: 16px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+.one-signal ::selection {
+  background: var(--sig-accent-lit);
+  color: var(--color-ground);
+}
+
+.one-signal a:focus-visible,
+.one-signal button:focus-visible,
+.one-signal input:focus-visible,
+.one-signal textarea:focus-visible,
+.one-signal [tabindex]:focus-visible {
+  outline: 2px solid var(--sig-accent-lit);
+  outline-offset: 3px;
+  border-radius: 1px;
+}
+
+/* ------------------------------------------------------------------ shared */
+
+.sig-wrap {
+  max-width: var(--max-width-wide);
+  margin-inline: auto;
+  padding-inline: var(--sig-pad);
+}
+
+.sig-lbl {
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+  font-weight: 500;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--color-ink-3);
+}
+
+/* The one image treatment this design allows: a wide horizontal strip. The
+   generated art is a 1024x1024 square, so it is always cropped to 16:5 and
+   never shown at its own proportions. */
+.sig-strip {
+  display: block;
+  width: 100%;
+  aspect-ratio: 16 / 5;
+  object-fit: cover;
+  background-color: var(--color-ground-2);
+}
+
+/* ---------------------------------------------------------------- masthead */
+
+.sig-top {
+  border-bottom: 1px solid var(--color-rule);
+}
+
+.sig-mast {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 1.25rem 2rem;
+  padding: clamp(1.6rem, 3.6vw, 2.9rem) 0 clamp(1.1rem, 2.4vw, 1.6rem);
+}
+
+.sig-brand {
+  text-decoration: none;
+  display: block;
+  min-width: 0;
+}
+
+.sig-brand .sig-name {
+  margin: 0;
+  font-size: clamp(1.6rem, 3.5vw, 2.35rem);
+  font-weight: 600;
+  letter-spacing: -0.028em;
+  line-height: 1.04;
+  color: var(--color-ink);
+  transition: color 0.18s;
+}
+
+.sig-brand:hover .sig-name {
+  color: var(--color-ink-hi);
+}
+
+.sig-nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.15rem 0.35rem;
+  align-items: center;
+}
+
+.sig-nav a {
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+  font-weight: 500;
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+  text-decoration: none;
+  color: var(--color-ink-3);
+  padding: 0.5rem 0.7rem;
+  border: 1px solid transparent;
+  transition: color 0.18s, border-color 0.18s;
+}
+
+.sig-nav a:hover {
+  color: var(--color-ink);
+}
+
+.sig-nav a[aria-current] {
+  color: var(--color-ink);
+  border-color: var(--color-rule-2);
+}
+
+.sig-nav a[aria-current]::before {
+  content: "";
+  display: inline-block;
+  width: 0.4rem;
+  height: 0.4rem;
+  background: var(--sig-accent-mark);
+  margin-right: 0.5rem;
+  vertical-align: 0.05em;
+}
+
+.sig-strip-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem 1.6rem;
+  align-items: center;
+  padding: 0.7rem 0;
+  border-top: 1px solid var(--color-rule);
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+  letter-spacing: 0.11em;
+  text-transform: uppercase;
+  color: var(--color-ink-3);
+}
+
+.sig-strip-bar .sig-on {
+  color: var(--color-ink-2);
+}
+
+.sig-dot {
+  display: inline-block;
+  width: 0.4rem;
+  height: 0.4rem;
+  background: var(--sig-accent-mark);
+  margin-right: 0.5rem;
+  vertical-align: 0.06em;
+}
+
+/* -------------------------------------------------------------------- lead */
+
+.sig-lead {
+  padding-block: clamp(2.4rem, 6vw, 4.5rem) clamp(2rem, 4vw, 3rem);
+}
+
+.sig-station {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.8rem 2rem;
+  padding-block: clamp(1.4rem, 3vw, 2.2rem);
+  border-bottom: 1px solid var(--color-rule);
+}
+
+.sig-station p {
+  margin: 0;
+}
+
+.sig-station .sig-desc {
+  max-width: 52ch;
+  margin-top: 0.55rem;
+  color: var(--color-ink-2);
+  font-size: 0.9375rem;
+  line-height: 1.6;
+}
+
+.sig-social {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem 1.4rem;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.sig-social a {
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--color-ink-2);
+  text-decoration: none;
+  border-bottom: 1px solid transparent;
+  transition: color 0.18s, border-color 0.18s;
+}
+
+.sig-social a:hover {
+  color: var(--sig-accent-lit);
+  border-bottom-color: var(--sig-accent-mark);
+}
+
+.sig-lead-kick {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem 1.1rem;
+  align-items: baseline;
+  margin-bottom: clamp(1.1rem, 2.6vw, 1.9rem);
+}
+
+/* The accent marks the dispatch number itself — the same square the index rows
+   use — rather than floating as a loose rule fragment under the masthead. */
+.sig-kick-n {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  color: var(--sig-accent-lit);
+}
+
+.sig-kick-n::before {
+  content: "";
+  display: inline-block;
+  width: 0.4rem;
+  height: 0.4rem;
+  background: var(--sig-accent-mark);
+  margin-right: 0.55rem;
+  vertical-align: 0.08em;
+}
+
+.sig-lead h2 {
+  margin: 0;
+  max-width: 18ch;
+  text-wrap: balance;
+}
+
+.sig-lead h2 a {
+  display: inline-block;
+  text-decoration: none;
+  font-size: clamp(2.05rem, 6.1vw, 4.05rem);
+  font-weight: 600;
+  letter-spacing: -0.035em;
+  line-height: 1.01;
+  color: var(--color-ink);
+  transition: color 0.18s;
+}
+
+.sig-lead h2 a:hover {
+  color: var(--color-ink-hi);
+}
+
+/* Deck and hook sit side by side under a headline that spans the field, and the
+   readout closes the block as a ruled strip the full width — so the metadata
+   is part of the composition rather than parked in a corner. */
+.sig-lead-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 24rem);
+  gap: clamp(1.4rem, 3vw, 2.8rem) clamp(1.8rem, 4vw, 3.5rem);
+  align-items: start;
+  margin-top: clamp(1.2rem, 2.6vw, 1.9rem);
+}
+
+.sig-lead .sig-sub {
+  margin: 0;
+  max-width: 46ch;
+  font-size: clamp(1.05rem, 1.7vw, 1.3rem);
+  line-height: 1.45;
+  color: var(--color-ink-2);
+  letter-spacing: -0.008em;
+}
+
+.sig-hook {
+  margin: 0;
+  padding-left: clamp(1rem, 2vw, 1.6rem);
+  border-left: 2px solid var(--sig-accent-mark);
+  font-size: 1.0625rem;
+  line-height: 1.62;
+  color: var(--color-ink);
+  max-width: 44ch;
+}
+
+.sig-lead-image {
+  margin-top: clamp(1.6rem, 3.5vw, 2.6rem);
+}
+
+.sig-readout {
+  margin-top: clamp(2rem, 4.5vw, 3.2rem);
+  border-top: 1px solid var(--color-rule-2);
+  border-bottom: 1px solid var(--color-rule-2);
+}
+
+.sig-readout dl {
+  margin: 0;
+  display: grid;
+  grid-auto-flow: column;
+  grid-template-rows: auto auto;
+  grid-auto-columns: minmax(0, 1fr);
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  line-height: 1.5;
+}
+
+.sig-readout dt {
+  padding: 0.85rem 0 0.3rem;
+  color: var(--color-ink-3);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  font-size: 0.625rem;
+}
+
+.sig-readout dd {
+  margin: 0;
+  padding: 0 0 0.95rem;
+  color: var(--color-ink-2);
+}
+
+.sig-readout dl > *:nth-child(n + 3) {
+  border-left: 1px solid var(--color-rule);
+  padding-left: clamp(1rem, 2vw, 1.6rem);
+}
+
+.sig-go {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6rem;
+  margin-top: 1.6rem;
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  font-weight: 500;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  text-decoration: none;
+  color: var(--color-ink);
+  border-bottom: 1px solid var(--sig-accent-mark);
+  padding-bottom: 0.35rem;
+  transition: color 0.18s, gap 0.18s;
+}
+
+.sig-go:hover {
+  color: var(--sig-accent-lit);
+  gap: 0.95rem;
+}
+
+.sig-go .sig-arw {
+  color: var(--sig-accent-lit);
+}
+
+/* ------------------------------------------------------------------- index */
+
+.sig-idx {
+  padding-bottom: clamp(3rem, 7vw, 5rem);
+}
+
+.sig-idx-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem 1.5rem;
+  align-items: baseline;
+  justify-content: space-between;
+  padding-bottom: 0.85rem;
+}
+
+.sig-idx-bar h2 {
+  margin: 0;
+  font-family: var(--font-mono);
+  font-size: 0.8125rem;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--color-ink);
+}
+
+.sig-idx-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem 1.2rem;
+  align-items: center;
+}
+
+.sig-toggle {
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+  font-weight: 500;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--color-ink-3);
+  background: transparent;
+  border: 1px solid var(--color-rule-2);
+  padding: 0.45rem 0.8rem;
+  cursor: pointer;
+  transition: color 0.18s, border-color 0.18s;
+}
+
+.sig-toggle:hover {
+  color: var(--color-ink);
+  border-color: var(--color-ink-3);
+}
+
+.sig-toggle[aria-pressed="true"] {
+  color: var(--sig-accent-lit);
+  border-color: var(--sig-accent-mark);
+}
+
+.sig-viewall {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+  font-weight: 500;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  text-decoration: none;
+  color: var(--color-ink-2);
+  border-bottom: 1px solid var(--sig-accent-mark);
+  padding-bottom: 0.3rem;
+  transition: color 0.18s, gap 0.18s;
+}
+
+.sig-viewall:hover {
+  color: var(--sig-accent-lit);
+  gap: 0.85rem;
+}
+
+.sig-cols {
+  --sig-g: 3.6rem 8.5rem minmax(0, 1fr) 11.5rem 4.5rem;
+}
+
+/* Persistent column header. Reviewed up from --color-ink-3: at the faintest
+   ink the labels read as decoration rather than as a header that stays put. */
+.sig-idx-head {
+  position: sticky;
+  top: 0;
+  z-index: 6;
+  background: var(--color-ground);
+  display: grid;
+  grid-template-columns: var(--sig-g);
+  column-gap: 1.5rem;
+  padding: 0.7rem 0;
+  border-top: 1px solid var(--color-rule-2);
+  border-bottom: 1px solid var(--color-rule-2);
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--color-ink-2);
+}
+
+.sig-idx-head .sig-r {
+  text-align: right;
+}
+
+.sig-rows {
+  border-bottom: 1px solid var(--color-rule);
+}
+
+.sig-row {
+  position: relative;
+  display: grid;
+  grid-template-columns: var(--sig-g);
+  grid-template-areas:
+    "num date title sec read"
+    "num date dek dek dek";
+  column-gap: 1.5rem;
+  align-items: baseline;
+  padding: 0.95rem 0;
+  border-bottom: 1px solid var(--color-rule);
+  text-decoration: none;
+  color: inherit;
+}
+
+.sig-row:last-child {
+  border-bottom: 0;
+}
+
+.sig-row::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -1px;
+  height: 1px;
+  background: var(--sig-accent-mark);
+  transform: scaleX(0);
+  transform-origin: left center;
+  transition: transform 0.45s cubic-bezier(0.22, 0.7, 0.25, 1);
+}
+
+/* The index numeral is the log's signature. It reads in a legible neutral by
+   default — an arbitrary publication hex can be far too dark to carry text on
+   this ground — and the accent is reserved for the lead row and the row the
+   reader is actually on. */
+.sig-num {
+  grid-area: num;
+  font-family: var(--font-mono);
+  font-size: 0.8125rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  color: var(--color-ink-2);
+  white-space: nowrap;
+  align-self: start;
+  padding-top: 0.1rem;
+  transition: color 0.18s;
+}
+
+.sig-num.is-lead {
+  color: var(--sig-accent-lit);
+}
+
+.sig-row:hover .sig-num,
+.sig-row:focus-visible .sig-num {
+  color: var(--sig-accent-lit);
+}
+
+.sig-meta {
+  display: contents;
+}
+
+.sig-d-short {
+  display: none;
+}
+
+.sig-date {
+  grid-area: date;
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  color: var(--color-ink-3);
+  white-space: nowrap;
+  align-self: start;
+  padding-top: 0.15rem;
+  transition: color 0.18s;
+}
+
+.sig-title {
+  grid-area: title;
+  font-size: 1.0625rem;
+  font-weight: 500;
+  letter-spacing: -0.014em;
+  line-height: 1.32;
+  color: var(--color-ink);
+  transition: color 0.18s;
+}
+
+.sig-sec {
+  grid-area: sec;
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--color-ink-3);
+  align-self: start;
+  padding-top: 0.28rem;
+  transition: color 0.18s;
+}
+
+.sig-read {
+  grid-area: read;
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  color: var(--color-ink-3);
+  text-align: right;
+  white-space: nowrap;
+  align-self: start;
+  padding-top: 0.15rem;
+  transition: color 0.18s;
+}
+
+.sig-dek {
+  grid-area: dek;
+  max-height: 0;
+  overflow: hidden;
+  opacity: 0;
+  transition: max-height 0.38s cubic-bezier(0.22, 0.7, 0.25, 1), opacity 0.26s ease;
+}
+
+.sig-dek span {
+  display: block;
+  padding: 0.55rem 0 0.15rem;
+  max-width: 64ch;
+  font-size: 0.9375rem;
+  line-height: 1.58;
+  color: var(--color-ink-2);
+}
+
+.sig-row:hover .sig-title,
+.sig-row:focus-visible .sig-title {
+  color: var(--color-ink-hi);
+}
+
+.sig-row:hover .sig-date,
+.sig-row:focus-visible .sig-date,
+.sig-row:hover .sig-sec,
+.sig-row:focus-visible .sig-sec,
+.sig-row:hover .sig-read,
+.sig-row:focus-visible .sig-read {
+  color: var(--color-ink-2);
+}
+
+.sig-row:hover::after,
+.sig-row:focus-visible::after {
+  transform: scaleX(1);
+}
+
+/* Hover, keyboard focus and the summaries control all open a row. */
+.sig-row:hover .sig-dek,
+.sig-row:focus-visible .sig-dek,
+.sig-rows.is-open .sig-dek {
+  max-height: 14rem;
+  opacity: 1;
+}
+
+.sig-empty {
+  padding: clamp(2.5rem, 6vw, 4rem) 0;
+  font-family: var(--font-mono);
+  font-size: 0.8125rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--color-ink-3);
+  border-bottom: 1px solid var(--color-rule);
+}
+
+/* ------------------------------------------------------------------ footer */
+
+.sig-foot {
+  border-top: 1px solid var(--color-rule);
+  padding: clamp(2.2rem, 4.5vw, 3.2rem) 0 2.4rem;
+  margin-top: auto;
+}
+
+.sig-foot-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr) minmax(0, 1fr);
+  gap: 2rem clamp(1.6rem, 4vw, 3.5rem);
+}
+
+.sig-foot .sig-fname {
+  font-size: 1.05rem;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  margin: 0;
+}
+
+.sig-foot p {
+  margin: 0.7rem 0 0;
+  color: var(--color-ink-3);
+  font-size: 0.875rem;
+  line-height: 1.6;
+  max-width: 44ch;
+}
+
+.sig-foot ul {
+  list-style: none;
+  margin: 0.9rem 0 0;
+  padding: 0;
+  display: grid;
+  gap: 0.5rem;
+}
+
+.sig-foot ul a {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  letter-spacing: 0.08em;
+  color: var(--color-ink-2);
+  text-decoration: none;
+  border-bottom: 1px solid transparent;
+  transition: color 0.18s, border-color 0.18s;
+}
+
+.sig-foot ul a:hover {
+  color: var(--sig-accent-lit);
+  border-color: var(--sig-accent-mark);
+}
+
+.sig-colophon {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem 1.5rem;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-top: clamp(2rem, 4vw, 3rem);
+  padding-top: 1rem;
+  border-top: 1px solid var(--color-rule);
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--color-ink-3);
+}
+
+.sig-colophon a {
+  color: var(--color-ink-3);
+  text-decoration: none;
+  border-bottom: 1px solid var(--color-rule-2);
+  transition: color 0.18s;
+}
+
+.sig-colophon a:hover {
+  color: var(--color-ink);
+}
+
+/* ================================================================ dispatch */
+
+.sig-progress {
+  position: fixed;
+  top: 0;
+  left: 0;
+  height: 2px;
+  width: 0;
+  background: var(--sig-accent-lit);
+  z-index: 40;
+  display: none;
+}
+
+/* The dispatch page is a document, not a full-bleed page: its frame is exactly
+   rail + gutter + measure, so masthead, rail, title, body and end matter all
+   resolve to one composition with no leftover right third. */
+.sig-doc {
+  --max-width-wide: calc(
+    var(--sig-rail) + var(--sig-railgap) + var(--max-width-measure) + var(--sig-pad) * 2
+  );
+}
+
+.sig-post-wrap {
+  display: grid;
+  grid-template-columns: var(--sig-rail) minmax(0, 1fr);
+  grid-template-areas:
+    ". head"
+    "rail read";
+  column-gap: var(--sig-railgap);
+  padding-bottom: clamp(3rem, 6vw, 4.5rem);
+}
+
+/* A dispatch with no H2s renders no rail at all, so it must not keep the rail's
+   column or the frame's rail allowance — otherwise the article sits off-centre
+   behind an invisible 12rem gutter. `:has()` pulls the masthead and footer in
+   with it; the direct rule keeps the article itself centred without it. */
+.sig-doc:has(.sig-post-wrap.is-tocless) {
+  --max-width-wide: calc(var(--max-width-measure) + var(--sig-pad) * 2);
+}
+
+.sig-post-wrap.is-tocless {
+  --max-width-wide: calc(var(--max-width-measure) + var(--sig-pad) * 2);
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-areas:
+    "head"
+    "read";
+  column-gap: 0;
+}
+
+.sig-post-head {
+  grid-area: head;
+  padding: clamp(2.4rem, 5.5vw, 4rem) 0 clamp(1.6rem, 3vw, 2.2rem);
+}
+
+.sig-crumb {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem 1.1rem;
+  align-items: baseline;
+  margin-bottom: 1.4rem;
+}
+
+.sig-crumb a {
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--color-ink-3);
+  text-decoration: none;
+  transition: color 0.18s;
+}
+
+.sig-crumb a:hover {
+  color: var(--sig-accent-lit);
+}
+
+.sig-post-head h1 {
+  margin: 0;
+  font-size: clamp(2.05rem, 5.6vw, 3.7rem);
+  font-weight: 600;
+  letter-spacing: -0.035em;
+  line-height: 1.02;
+  text-wrap: balance;
+  color: var(--color-ink-hi);
+}
+
+.sig-post-head .sig-sub {
+  margin: clamp(1rem, 2vw, 1.4rem) 0 0;
+  max-width: 54ch;
+  color: var(--color-ink-2);
+  font-size: clamp(1.05rem, 1.6vw, 1.25rem);
+  line-height: 1.46;
+  letter-spacing: -0.008em;
+}
+
+.sig-byline {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem 1.4rem;
+  margin-top: clamp(1.5rem, 3vw, 2.2rem);
+  padding-top: 0.9rem;
+  border-top: 1px solid var(--color-rule);
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  color: var(--color-ink-3);
+}
+
+.sig-byline .sig-who {
+  color: var(--color-ink);
+}
+
+.sig-read-col {
+  grid-area: read;
+  min-width: 0;
+}
+
+.sig-rail {
+  grid-area: rail;
+  position: sticky;
+  top: 2rem;
+  align-self: start;
+}
+
+.sig-rail h2 {
+  margin: 0 0 0.9rem;
+  font-family: var(--font-mono);
+  font-size: 0.625rem;
+  font-weight: 500;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--color-ink-3);
+}
+
+.sig-rail ol {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  counter-reset: sig-toc;
+}
+
+.sig-rail li {
+  counter-increment: sig-toc;
+}
+
+.sig-rail ol a {
+  display: grid;
+  grid-template-columns: 1.9rem minmax(0, 1fr);
+  gap: 0.2rem;
+  padding: 0.5rem 0 0.5rem 0.7rem;
+  border-left: 1px solid var(--color-rule-2);
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+  line-height: 1.45;
+  letter-spacing: 0.02em;
+  color: var(--color-ink-3);
+  text-decoration: none;
+  transition: color 0.18s, border-color 0.18s;
+}
+
+.sig-rail ol a::before {
+  content: "0" counter(sig-toc);
+  color: var(--color-ink-3);
+  transition: color 0.18s;
+}
+
+.sig-rail ol a:hover {
+  color: var(--color-ink);
+}
+
+.sig-rail ol a[aria-current="true"] {
+  color: var(--color-ink);
+  border-left-color: var(--sig-accent-mark);
+}
+
+.sig-rail ol a[aria-current="true"]::before {
+  color: var(--sig-accent-lit);
+}
+
+.sig-meter {
+  margin-top: 1.4rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--color-rule);
+}
+
+.sig-track {
+  height: 3.5rem;
+  width: 2px;
+  background: var(--color-rule-2);
+  position: relative;
+}
+
+.sig-fill {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 2px;
+  height: 0;
+  background: var(--sig-accent-mark);
+}
+
+.sig-pct {
+  margin-top: 0.6rem;
+  font-family: var(--font-mono);
+  font-size: 0.625rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--color-ink-3);
+}
+
+.sig-post-image {
+  max-width: var(--max-width-measure);
+  margin-bottom: clamp(2rem, 4vw, 2.8rem);
+}
+
+/* The reading voice is a humanist text face, deliberately not the grotesque the
+   headlines are set in, and the dispatch opens on a lede a step above the body
+   so a long read does not arrive at a single pitch. */
+.sig-body {
+  max-width: var(--max-width-measure);
+  font-family: var(--font-read);
+  font-size: 1.1875rem;
+  line-height: 1.72;
+  color: var(--color-ink);
+  counter-reset: sig-sec;
+}
+
+.sig-body p {
+  margin: 0 0 1.45em;
+}
+
+.sig-body > p:first-child {
+  font-size: 1.375rem;
+  line-height: 1.52;
+  letter-spacing: -0.01em;
+  color: var(--color-ink-hi);
+  margin-bottom: 1.55em;
+}
+
+/* Section starts are a different rank from the bolded run-in sentences inside
+   paragraphs: a rule across the measure, a numbered mono marker in the accent,
+   and a heading well clear of body size. */
+.sig-body h2 {
+  counter-increment: sig-sec;
+  font-family: var(--font-sans);
+  margin: 2.9em 0 0.85em;
+  padding-top: 1.5em;
+  border-top: 1px solid var(--color-rule);
+  font-size: clamp(1.55rem, 3vw, 2rem);
+  font-weight: 600;
+  letter-spacing: -0.03em;
+  line-height: 1.14;
+  scroll-margin-top: 5rem;
+  color: var(--color-ink-hi);
+}
+
+.sig-body h2::before {
+  content: "\00a7 " counter(sig-sec, decimal-leading-zero);
+  display: block;
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  color: var(--sig-accent-lit);
+  margin-bottom: 0.75rem;
+}
+
+.sig-body > h2:first-child {
+  margin-top: 0;
+  padding-top: 0;
+  border-top: 0;
+}
+
+.sig-body h3 {
+  font-family: var(--font-sans);
+  margin: 2.1em 0 0.6em;
+  font-size: 1.25rem;
+  font-weight: 600;
+  letter-spacing: -0.018em;
+  line-height: 1.25;
+  color: var(--color-ink-hi);
+  scroll-margin-top: 5rem;
+}
+
+.sig-body a {
+  color: var(--color-ink);
+  text-decoration: none;
+  background-image: linear-gradient(var(--sig-accent-mark), var(--sig-accent-mark));
+  background-repeat: no-repeat;
+  background-size: 100% 1px;
+  background-position: 0 100%;
+  padding-bottom: 0.06em;
+  transition: color 0.18s, background-size 0.18s;
+}
+
+.sig-body a:hover {
+  color: var(--sig-accent-lit);
+  background-size: 100% 2px;
+}
+
+/* Run-in leads stay a paragraph-level signal: weight only, no extra brightness,
+   so they never compete with a section start. */
+.sig-body strong {
+  font-weight: 600;
+  color: var(--color-ink);
+}
+
+.sig-body em {
+  font-style: italic;
+}
+
+.sig-body ul,
+.sig-body ol {
+  margin: 0 0 1.45em;
+  padding-left: 1.4em;
+}
+
+.sig-body li {
+  margin-bottom: 0.5em;
+}
+
+.sig-body blockquote {
+  margin: 2.4em 0;
+  padding: 0 0 0 clamp(1rem, 2vw, 1.6rem);
+  border-left: 2px solid var(--sig-accent-mark);
+  color: var(--color-ink-hi);
+  font-family: var(--font-sans);
+  font-size: clamp(1.2rem, 2.4vw, 1.5rem);
+  font-weight: 500;
+  line-height: 1.28;
+  letter-spacing: -0.024em;
+}
+
+.sig-body blockquote p {
+  margin: 0;
+}
+
+.sig-body code {
+  font-family: var(--font-mono);
+  font-size: 0.86em;
+  background: var(--color-ground-3);
+  border: 1px solid var(--color-rule);
+  padding: 0.08em 0.38em;
+  color: var(--color-ink);
+}
+
+.sig-body pre {
+  background: var(--color-ground-3);
+  border: 1px solid var(--color-rule);
+  padding: 1rem;
+  overflow-x: auto;
+  margin: 0 0 1.45em;
+  font-size: 0.875rem;
+}
+
+.sig-body pre code {
+  background: none;
+  border: 0;
+  padding: 0;
+}
+
+.sig-body img {
+  display: block;
+  width: 100%;
+  aspect-ratio: 16 / 5;
+  object-fit: cover;
+  margin: 2em 0;
+}
+
+.sig-body figure {
+  margin: 2em 0;
+}
+
+.sig-body figcaption {
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+  letter-spacing: 0.08em;
+  color: var(--color-ink-3);
+  margin-top: 0.6rem;
+}
+
+/* Every end-matter block shares the article's right edge — tags, sources,
+   responses and share all stop on the same line. */
+.sig-after {
+  max-width: var(--max-width-measure);
+  margin-top: clamp(3rem, 6vw, 4.5rem);
+}
+
+.sig-sec-head {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem 1rem;
+  align-items: baseline;
+  justify-content: space-between;
+  padding-bottom: 0.65rem;
+  border-bottom: 1px solid var(--color-rule-2);
+  margin-bottom: 1.4rem;
+}
+
+.sig-sec-head h2 {
+  margin: 0;
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--color-ink);
+}
+
+.sig-sec-head .sig-count {
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+  letter-spacing: 0.1em;
+  color: var(--color-ink-3);
+}
+
+/* Ruled lists hang straight off the section rule, exactly like the index. */
+.sig-sec-head.is-tight {
+  margin-bottom: 0;
+}
+
+/* Tags are mono words on the section hairline, not pills — this design has no
+   other rounded or boxed container. */
+.sig-tags {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem 1.6rem;
+}
+
+.sig-tags li {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  letter-spacing: 0.06em;
+  color: var(--color-ink-2);
+}
+
+.sig-cites {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.sig-cites li {
+  padding: 0.6rem 0;
+  border-bottom: 1px solid var(--color-rule);
+  display: grid;
+  grid-template-columns: 2.1rem minmax(0, 1fr) auto;
+  column-gap: 1rem;
+  align-items: baseline;
+}
+
+.sig-cites .sig-n {
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+  color: var(--color-ink-3);
+}
+
+.sig-cites a {
+  font-size: 0.9375rem;
+  line-height: 1.5;
+  color: var(--color-ink-2);
+  text-decoration: none;
+  border-bottom: 1px solid transparent;
+  transition: color 0.18s, border-color 0.18s;
+}
+
+.sig-cites a:hover {
+  color: var(--sig-accent-lit);
+  border-bottom-color: var(--sig-accent-mark);
+}
+
+.sig-cites .sig-dom {
+  font-family: var(--font-mono);
+  font-size: 0.625rem;
+  letter-spacing: 0.07em;
+  color: var(--color-ink-3);
+  text-align: right;
+  overflow-wrap: anywhere;
+}
+
+.sig-share {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem 1.6rem;
+  align-items: baseline;
+  justify-content: space-between;
+  padding-top: 1rem;
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--color-ink-3);
+}
+
+.sig-share-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 1.4rem;
+  align-items: baseline;
+}
+
+.sig-share-links a,
+.sig-share-links button {
+  font: inherit;
+  letter-spacing: inherit;
+  text-transform: inherit;
+  color: var(--color-ink-2);
+  background: transparent;
+  border: 0;
+  border-bottom: 1px solid transparent;
+  padding: 0 0 0.15rem;
+  cursor: pointer;
+  text-decoration: none;
+  transition: color 0.18s, border-color 0.18s;
+}
+
+.sig-share-links a:hover,
+.sig-share-links button:hover {
+  color: var(--sig-accent-lit);
+  border-bottom-color: var(--sig-accent-mark);
+}
+
+/* --------------------------------------------------------------- responsive */
+
+@media (max-width: 1080px) {
+  /* Below the two-column frame the document narrows to the measure itself and
+     the rail folds into a band above the text — still one left axis. */
+  .sig-doc {
+    --max-width-wide: calc(var(--max-width-measure) + var(--sig-pad) * 2);
+  }
+
+  .sig-post-wrap {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas: "head" "rail" "read";
+    row-gap: 2rem;
+  }
+
+  .sig-post-head {
+    padding-bottom: 0;
+  }
+
+  .sig-rail {
+    position: static;
+    border: 1px solid var(--color-rule-2);
+    padding: 1rem 1.1rem;
+  }
+
+  .sig-rail ol {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.15rem 1.5rem;
+  }
+
+  .sig-rail ol a {
+    border-left: 0;
+    border-bottom: 1px solid transparent;
+    padding: 0.35rem 0;
+    grid-template-columns: 1.7rem minmax(0, 1fr);
+  }
+
+  .sig-rail ol a[aria-current="true"] {
+    border-left: 0;
+    border-bottom-color: var(--sig-accent-mark);
+  }
+
+  .sig-meter {
+    display: none;
+  }
+
+  .sig-progress {
+    display: block;
+  }
+}
+
+@media (max-width: 900px) {
+  .sig-lead-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  /* Narrow: the strip becomes the stacked readout it always was underneath. */
+  .sig-readout {
+    border-bottom: 0;
+  }
+
+  .sig-readout dl {
+    grid-auto-flow: row;
+    grid-template-rows: none;
+    grid-template-columns: 5.5rem minmax(0, 1fr);
+  }
+
+  .sig-readout dt,
+  .sig-readout dd {
+    padding: 0.6rem 0;
+    border-bottom: 1px solid var(--color-rule);
+  }
+
+  .sig-readout dl > *:nth-child(n + 3) {
+    border-left: 0;
+    padding-left: 0;
+  }
+
+  .sig-foot-grid {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  }
+
+  .sig-foot .sig-about {
+    grid-column: 1 / -1;
+  }
+}
+
+@media (max-width: 760px) {
+  .sig-idx-head {
+    display: none;
+  }
+
+  /* Two lines per entry: number and title, then one metadata line. The number
+     keeps only the width it needs so the title gets the rest. */
+  .sig-cols {
+    --sig-g: 2.15rem minmax(0, 1fr);
+  }
+
+  .sig-row {
+    grid-template-columns: var(--sig-g);
+    grid-template-areas:
+      "num title"
+      "meta meta"
+      "dek dek";
+    column-gap: 0.75rem;
+    row-gap: 0.12rem;
+    padding: 0.85rem 0;
+  }
+
+  .sig-num {
+    padding-top: 0.12rem;
+    font-size: 0.75rem;
+  }
+
+  .sig-title {
+    font-size: 1rem;
+    padding-top: 0;
+  }
+
+  .sig-meta {
+    grid-area: meta;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 0 0.55rem;
+    margin-top: 0.35rem;
+    padding-left: calc(2.15rem + 0.75rem);
+  }
+
+  .sig-date,
+  .sig-read,
+  .sig-sec {
+    padding-top: 0;
+    margin-top: 0;
+    text-align: left;
+  }
+
+  .sig-meta > span + span::before {
+    content: "\00b7";
+    margin-right: 0.55rem;
+    color: var(--color-rule-2);
+  }
+
+  .sig-date,
+  .sig-read {
+    font-size: 0.6875rem;
+  }
+
+  .sig-d-long {
+    display: none;
+  }
+
+  .sig-d-short {
+    display: inline;
+  }
+
+  .sig-dek span {
+    padding-left: calc(2.15rem + 0.75rem);
+  }
+
+  .sig-cites li {
+    grid-template-columns: 2.1rem minmax(0, 1fr);
+    row-gap: 0.28rem;
+  }
+
+  .sig-cites .sig-dom {
+    grid-column: 2;
+    text-align: left;
+  }
+
+  .sig-mast {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 1rem;
+  }
+
+  .sig-nav {
+    margin-left: -0.7rem;
+  }
+
+  .sig-nav a[aria-current] {
+    border-color: transparent;
+  }
+}
+
+@media (max-width: 560px) {
+  .sig-body {
+    font-size: 1.0625rem;
+    line-height: 1.68;
+  }
+
+  .sig-body > p:first-child {
+    font-size: 1.1875rem;
+    line-height: 1.54;
+  }
+
+  .sig-body h2 {
+    margin-top: 2.2em;
+  }
+}
+
+@media (max-width: 520px) {
+  .sig-foot-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* Touch / no-hover: rows cannot expand on hover, so the summaries control does
+   the work — and the log stays two lines an entry until the reader asks. */
+@media (hover: none) {
+  .sig-row::after {
+    transform: scaleX(1);
+    background: var(--color-rule-2);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  /* `html.one-signal` is listed alongside its descendants so the root's own
+     `scroll-behavior` is reset too — a bare `*` would reach every template. */
+  html.one-signal,
+  html.one-signal *,
+  html.one-signal *::before,
+  html.one-signal *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* On paper the field inverts to ink on white — the tokens do the whole job —
+   the index opens every summary, and the live furniture drops out rather than
+   printing as dead ornament. */
+@media print {
+  html.one-signal {
+    --color-ground: #fff;
+    --color-ground-2: #fff;
+    --color-ground-3: #fff;
+    --color-ink: #16181c;
+    --color-ink-hi: #000;
+    --color-ink-2: #3b3e45;
+    --color-ink-3: #55585f;
+    --color-rule: #c9ccd2;
+    --color-rule-2: #9aa0a8;
+    --sig-accent-mark: #6c7078;
+    --sig-accent-lit: #3b3e45;
+  }
+
+  html.one-signal body {
+    background: #fff;
+    color: #16181c;
+  }
+
+  /* Listed alongside the tocless selectors so print still wins over their
+     higher screen specificity. */
+  .sig-doc,
+  .sig-doc:has(.sig-post-wrap.is-tocless),
+  .sig-post-wrap.is-tocless {
+    --max-width-wide: 100%;
+    --max-width-measure: 100%;
+  }
+
+  .sig-progress,
+  .sig-nav,
+  .sig-toggle,
+  .sig-meter,
+  .sig-share {
+    display: none;
+  }
+
+  .sig-post-wrap {
+    display: block;
+  }
+
+  .sig-rail {
+    position: static;
+    border: 0;
+    padding: 0;
+    margin-bottom: 1.5rem;
+  }
+
+  .sig-idx-head {
+    position: static;
+  }
+
+  .sig-dek {
+    max-height: none;
+    opacity: 1;
+    overflow: visible;
+  }
+
+  .sig-body a {
+    background-image: none;
+    text-decoration: underline;
+  }
+
+  .sig-row,
+  .sig-cites li,
+  .sig-readout {
+    break-inside: avoid;
+  }
+
+  .sig-body h2,
+  .sig-sec-head {
+    break-after: avoid;
+  }
+}
