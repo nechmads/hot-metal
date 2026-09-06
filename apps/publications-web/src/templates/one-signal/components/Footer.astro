@@ -1,0 +1,62 @@
+---
+import type { SocialLinks } from '@hotmetal/data-layer';
+
+interface Props {
+  publicationName: string;
+  publicationSlug: string;
+  socialLinks: SocialLinks | null;
+}
+
+const { publicationName, socialLinks } = Astro.props;
+
+const socials: { label: string; href: string }[] = [];
+if (socialLinks?.twitter) socials.push({ label: 'X', href: socialLinks.twitter });
+if (socialLinks?.linkedin) socials.push({ label: 'LinkedIn', href: socialLinks.linkedin });
+if (socialLinks?.github) socials.push({ label: 'GitHub', href: socialLinks.github });
+if (socialLinks?.website) socials.push({ label: 'Website', href: socialLinks.website });
+
+const year = new Date().getFullYear();
+---
+
+<footer class="sig-foot">
+  <div class="sig-wrap">
+    <div class="sig-foot-grid">
+      <div class="sig-about">
+        <p class="sig-fname">{publicationName}</p>
+        <p>A dispatch log. Every filing is numbered, dated and kept on the index.</p>
+      </div>
+
+      {socials.length > 0 && (
+        <div>
+          <p class="sig-lbl">Follow</p>
+          <ul>
+            {socials.map(({ label, href }) => (
+              <li>
+                <a href={href} target="_blank" rel="noopener noreferrer">{label}</a>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+
+      <div>
+        <p class="sig-lbl">Sections</p>
+        <ul>
+          <li><a href="/">Lead dispatch</a></li>
+          <li><a href="/posts">Full index</a></li>
+          <li><a href="/rss">Subscribe by RSS</a></li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="sig-colophon">
+      <span>&copy; {year} {publicationName}</span>
+      <span>
+        Powered by{' '}
+        <a href="https://hotmetalapp.com" target="_blank" rel="noopener noreferrer">
+          Hot Metal
+        </a>
+      </span>
+    </div>
+  </div>
+</footer>

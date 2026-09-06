@@ -1,0 +1,66 @@
+---
+import type { Post } from '@hotmetal/content-core';
+import { getFirstTopic } from '../../../lib/post-utils';
+
+interface Props {
+  posts: Post[];
+}
+
+const { posts } = Astro.props;
+
+/**
+ * A digest of the sections in this issue — not an alphabetical index of every
+ * tag. A subject index breaks at both ends of the scale: a publication with
+ * four tags looks broken, and one with sixty runs past the fold. Grouping on
+ * each post's first topic gives one row per section with its count, capped,
+ * and the whole band disappears when a publication has no sections worth
+ * listing (no topics set, or everything filed under one).
+ */
+const MAX_SECTIONS = 8;
+
+const counts = new Map<string, { label: string; count: number }>();
+for (const post of posts) {
+  const topic = getFirstTopic(post);
+  if (!topic) continue;
+  const key = topic.toLowerCase();
+  const existing = counts.get(key);
+  if (existing) {
+    existing.count += 1;
+  } else {
+    counts.set(key, { label: topic, count: 1 });
+  }
+}
+
+const sections = [...counts.values()]
+  .sort((a, b) => b.count - a.count || a.label.localeCompare(b.label))
+  .slice(0, MAX_SECTIONS);
+
+const show = sections.length >= 2;
+const filed = sections.reduce((total, section) => total + section.count, 0);
+---
+
+{show && (
+  <section class="pm-shell" aria-labelledby="pm-digest-h">
+    <div class="pm-digest animate-on-scroll">
+      <p class="pm-digest-head" id="pm-digest-h">
+        In this issue &middot; {sections.length} sections
+      </p>
+      <ul class="pm-digest-list">
+        {sections.map((section) => (
+          <li>
+            <span class="pm-dg-t">{section.label}</span>
+            <span class="pm-dg-n pm-num">
+              {section.count}
+              <span class="sr-only"> {section.count === 1 ? 'dispatch' : 'dispatches'}</span>
+            </span>
+          </li>
+        ))}
+      </ul>
+      {filed < posts.length && (
+        <p class="pm-caps mt-2 text-ink-3 font-medium">
+          &amp; {posts.length - filed} filed elsewhere
+        </p>
+      )}
+    </div>
+  </section>
+)}
