@@ -1,7 +1,7 @@
 {
 	"info": {
 		"name": "Hot Metal — Provisioner",
-		"description": "# Hot Metal Provisioner Service\n\nThe Provisioner (`hotmetal-provisioner`) owns the per-publication EmDash fleet on Cloudflare Workers for Platforms: it holds the scoped `CF_API_TOKEN`, runs the `ProvisionWorkflow` (create D1/R2/KV → upload tenant script → first-boot migrate → headless bootstrap → store credentials → mark ready), and tears tenants down. One publication == one dedicated EmDash tenant (`pub-<id>` script + `emdash-tenant/media/session-<id>` infra) served at `<slug>.hotmetalapp.com`.\n\n## Authentication\n\nAll `/api/*` endpoints require `Authorization: Bearer <token>` matching the `API_KEY` secret on the provisioner worker (the same value web carries as `PROVISIONER_API_KEY`). `/health` is unauthenticated.\n\nThe provisioner is normally reached service-binding-only (web → provisioner); set `PROVISIONER_BASE_URL` to whatever URL you expose it on for direct admin calls.\n\n## Endpoints Overview\n\n| Method | Path | Auth | Description |\n|--------|------|------|-------------|\n| GET | `/health` | None | Service health check |\n| POST | `/api/provision` | Bearer | Start (or report in-flight) provisioning for a publication |\n| GET | `/api/provision/:publicationId/status` | Bearer | Provisioning state for the dashboard |\n| POST | `/api/teardown` | Bearer | Tear down a tenant's infra (deprovision) |\n| POST | `/api/fleet/upgrade` | Bearer | Roll the shared bundle out to a list / all ready tenants |\n\n## Environment Variables\n\n- `PROVISIONER_BASE_URL` — Base URL of the provisioner worker.\n- `PROVISIONER_API_KEY` — Bearer token (must match the provisioner `API_KEY` secret).\n- `publicationId` — collection variable for chaining requests.",
+		"description": "# Hot Metal Provisioner Service\n\nThe Provisioner (`hotmetal-provisioner`) owns the per-publication EmDash fleet on Cloudflare Workers for Platforms: it holds the scoped `CF_API_TOKEN`, runs the `ProvisionWorkflow` (create D1/R2/KV → upload tenant script → first-boot migrate → headless bootstrap → store credentials → mark ready), and tears tenants down. One publication == one dedicated EmDash tenant (`pub-<id>` script + `emdash-tenant/media/session-<id>` infra) served at `<slug>.hotmetalapp.com`.\n\n## Authentication\n\nAll `/api/*` endpoints require `Authorization: Bearer <token>` matching the `API_KEY` secret on the provisioner worker (the same value web carries as `PROVISIONER_API_KEY`). `/health` is unauthenticated.\n\nThe provisioner is normally reached service-binding-only (web → provisioner); set `PROVISIONER_BASE_URL` to whatever URL you expose it on for direct admin calls.\n\n## Endpoints Overview\n\n| Method | Path | Auth | Description |\n|--------|------|------|-------------|\n| GET | `/health` | None | Service health check |\n| POST | `/api/provision` | Bearer | Start (or report in-flight) provisioning for a publication |\n| GET | `/api/provision/:publicationId/status` | Bearer | Provisioning state for the dashboard |\n| POST | `/api/teardown` | Bearer | Tear down a tenant's infra (deprovision) |\n| POST | `/api/fleet/upgrade/plan` | Bearer | Read-only rollout plan with backup resource identifiers |\n| POST | `/api/fleet/upgrade` | Bearer | Roll an immutable, migration-aware bundle out to a list / all ready tenants |\n\n## Environment Variables\n\n- `PROVISIONER_BASE_URL` — Base URL of the provisioner worker.\n- `PROVISIONER_API_KEY` — Bearer token (must match the provisioner `API_KEY` secret).\n- `publicationId` — collection variable for chaining requests.\n- `bundleVersion` — immutable release name.\n- `d1BackupReference` / `r2BackupReference` — opaque per-tenant recovery references required when the migration identity changes.",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
 	},
 	"auth": {
@@ -16,6 +16,24 @@
 			"value": "",
 			"type": "string",
 			"description": "Publication ID for chaining requests — set manually or from your D1 publications table"
+		},
+		{
+			"key": "bundleVersion",
+			"value": "emdash-1.0.1-hotmetal.566dbe5dddda",
+			"type": "string",
+			"description": "Immutable EmDash tenant-bundle release"
+		},
+		{
+			"key": "d1BackupReference",
+			"value": "",
+			"type": "string",
+			"description": "D1 Time Travel timestamp/bookmark or external backup reference for this publication"
+		},
+		{
+			"key": "r2BackupReference",
+			"value": "",
+			"type": "string",
+			"description": "R2 snapshot/versioning/export reference for this publication"
 		}
 	],
 	"item": [
@@ -110,7 +128,7 @@
 							"status": "OK",
 							"code": 200,
 							"header": [{ "key": "Content-Type", "value": "application/json" }],
-							"body": "{\n  \"publicationId\": \"01JABCDEF\",\n  \"cmsProvider\": \"emdash\",\n  \"status\": \"ready\",\n  \"cmsBaseUrl\": \"https://my-blog.hotmetalapp.com\",\n  \"instanceMeta\": {\n    \"scriptName\": \"pub-01jabcdef\",\n    \"d1DatabaseId\": \"...\",\n    \"d1DatabaseName\": \"emdash-tenant-01jabcdef\",\n    \"r2BucketName\": \"emdash-media-01jabcdef\",\n    \"kvNamespaceId\": \"...\",\n    \"hostname\": \"my-blog.hotmetalapp.com\",\n    \"bundleVersion\": \"current\",\n    \"provisionedAt\": \"2026-06-24T12:00:00.000Z\"\n  }\n}"
+							"body": "{\n  \"publicationId\": \"01JABCDEF\",\n  \"cmsProvider\": \"emdash\",\n  \"status\": \"ready\",\n  \"cmsBaseUrl\": \"https://my-blog.hotmetalapp.com\",\n  \"instanceMeta\": {\n    \"scriptName\": \"pub-01jabcdef\",\n    \"d1DatabaseId\": \"...\",\n    \"d1DatabaseName\": \"emdash-tenant-01jabcdef\",\n    \"r2BucketName\": \"emdash-media-01jabcdef\",\n    \"kvNamespaceId\": \"...\",\n    \"hostname\": \"my-blog.hotmetalapp.com\",\n    \"bundleVersion\": \"emdash-1.0.1-hotmetal.566dbe5dddda\",\n    \"emdashVersion\": \"1.0.1\",\n    \"migrationSetFingerprint\": \"sha256:...\",\n    \"lastMigrationVerifiedAt\": \"2026-09-29T09:31:00.000Z\",\n    \"provisionedAt\": \"2026-06-24T12:00:00.000Z\"\n  }\n}"
 						}
 					]
 				},
@@ -161,14 +179,40 @@
 			"description": "Fleet-wide bundle rollout. Inherits Bearer authentication from the collection.",
 			"item": [
 				{
-					"name": "Fleet Upgrade — Rollout bundle",
-					"description": "Re-deploy the current shared EmDash bundle to a LIST of tenants (canary) or ALL ready tenants. A pure script re-upload — it reconstructs each tenant's bindings from `cms_instance_meta`, re-uploads the bundle, and bumps `cms_instance_meta.bundleVersion`. It does **not** run bootstrap (no PAT rotation) and never touches tenant D1/data.\n\nPer-tenant failures are reported, never abort the batch. **Release the new bundle first** (`pnpm release-bundle`), then canary a subset, then roll to all.\n\n### Request Body\n| Field | Type | Required | Description |\n|-------|------|----------|-------------|\n| `publicationIds` | string[] | One of | Explicit tenants to upgrade (canary). Mutually exclusive with `all`. |\n| `all` | boolean | One of | Upgrade every `emdash`+`ready` tenant. Mutually exclusive with `publicationIds`. |\n| `version` | string | No | Bundle release to deploy. Defaults to `EMDASH_BUNDLE_VERSION`. Allowed chars: letters, digits, `.`, `_`, `-`. |\n\nExactly one of `publicationIds` (non-empty) / `all:true` must be provided.\n\n### Response\n`{ version, targeted, upgraded[], failed[], skipped[] }` where `targeted == upgraded.length + failed.length`.\n- **skipped** — requested id not found / not `emdash` / not `ready`.\n- **failed** — `ready` tenant with missing/malformed `cms_instance_meta`, or whose upload threw.\n\n### Status codes\n- `200` — all targeted tenants upgraded, or nothing to do\n- `207` — partial: some tenants failed (inspect `failed[]`)\n- `502` — every targeted tenant failed\n- `400` — bad target selection (both/neither of `all`/`publicationIds`), invalid JSON, unknown/invalid `version`\n- `401` — bad bearer token",
+					"name": "Fleet Upgrade — Read-only plan",
+					"description": "Resolve a release and tenant selection without changing production state. This reads publication metadata and the paired release/migration manifests only; it does not upload Workers, run migrations, or update publications.\n\n### Request Body\n| Field | Type | Required | Description |\n|-------|------|----------|-------------|\n| `publicationIds` | string[] | One of | 1–100 unique ready EmDash publication IDs. Mutually exclusive with `all`. |\n| `all` | boolean | One of | Inspect every `emdash` + `ready` publication. Mutually exclusive with `publicationIds`. |\n| `version` | string | No | Immutable release. Defaults to `EMDASH_BUNDLE_VERSION`. |\n\n### Response\n`planned[]` includes current/target version identity, exact D1 and R2 resource names, `alreadyOnTarget`, and `requiresMigrationBackup`. `failed[]` reports incomplete tenant metadata; resolve it before rollout. `skipped[]` reports explicit IDs that are missing, use another CMS, or are not ready. A successful plan never authorizes or performs the upgrade.\n\n### Errors\n- `400` — invalid JSON/selection/version, unknown release, or missing paired migration manifest\n- `401` — bad bearer token",
 					"request": {
 						"method": "POST",
 						"header": [{ "key": "Content-Type", "value": "application/json" }],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n  \"publicationIds\": [\"{{publicationId}}\"]\n}"
+							"raw": "{\n  \"all\": true,\n  \"version\": \"{{bundleVersion}}\"\n}"
+						},
+						"url": {
+							"raw": "{{PROVISIONER_BASE_URL}}/api/fleet/upgrade/plan",
+							"host": ["{{PROVISIONER_BASE_URL}}"],
+							"path": ["api", "fleet", "upgrade", "plan"]
+						}
+					},
+					"response": [
+						{
+							"name": "200 — Plan",
+							"status": "OK",
+							"code": 200,
+							"header": [{ "key": "Content-Type", "value": "application/json" }],
+							"body": "{\n  \"version\": \"emdash-1.0.1-hotmetal.566dbe5dddda\",\n  \"emdashVersion\": \"1.0.1\",\n  \"migrationSetFingerprint\": \"sha256:...\",\n  \"targeted\": 1,\n  \"planned\": [\n    {\n      \"publicationId\": \"01JABCDEF\",\n      \"slug\": \"my-blog\",\n      \"scriptName\": \"pub-01jabcdef\",\n      \"hostname\": \"my-blog.hotmetalapp.com\",\n      \"d1DatabaseId\": \"...\",\n      \"d1DatabaseName\": \"emdash-tenant-01jabcdef\",\n      \"r2BucketName\": \"emdash-media-01jabcdef\",\n      \"currentBundleVersion\": \"current\",\n      \"currentEmdashVersion\": null,\n      \"currentMigrationSetFingerprint\": null,\n      \"alreadyOnTarget\": false,\n      \"requiresMigrationBackup\": true\n    }\n  ],\n  \"failed\": [],\n  \"skipped\": []\n}"
+						}
+					]
+				},
+				{
+					"name": "Fleet Upgrade — Rollout bundle",
+					"description": "Deploy an immutable EmDash bundle to a LIST of tenants (canary/batch) or ALL ready tenants. The provisioner reconstructs bindings, uploads the worker, and invokes it so pending EmDash migrations run and boot is verified before release metadata advances. Bootstrap does **not** rerun, so PATs are not rotated.\n\nA changed or previously unknown migration identity requires per-tenant D1 and R2 recovery references in `migrationBackups`. These are opaque operator evidence, not credentials; the provisioner records but does not create or validate them. **Publish the immutable release first**, then deploy the provisioner configuration that selects it, canary a subset, and continue in bounded batches.\n\n### Request Body\n| Field | Type | Required | Description |\n|-------|------|----------|-------------|\n| `publicationIds` | string[] | One of | 1–100 unique tenants to upgrade (canary/batch). Mutually exclusive with `all`. |\n| `all` | boolean | One of | Upgrade every `emdash`+`ready` tenant. Mutually exclusive with `publicationIds`. |\n| `version` | string | No | Immutable release. Defaults to `EMDASH_BUNDLE_VERSION`. Allowed chars: letters, digits, `.`, `_`, `-`. |\n| `migrationBackups` | object | Conditional | Map from publication id to `{ d1, r2 }`; required for every target whose stored migration identity differs or is absent. |\n\nExactly one of `publicationIds` (non-empty) / `all:true` must be provided.\n\n### Response\n`{ version, targeted, upgraded[], failed[], skipped[] }` where `targeted == upgraded.length + failed.length`.\n- **upgraded** — includes `publicationId`, `scriptName`, `bootStatus`, and `emdashVersion`.\n- **skipped** — requested id not found / not `emdash` / not `ready`.\n- **failed** — includes a `stage` of `metadata`, `upload`, or `migration-health`.\n\n### Status codes\n- `200` — all targeted tenants upgraded, or nothing to do\n- `207` — partial: some tenants failed (inspect `failed[]`)\n- `502` — every targeted tenant failed\n- `400` — bad target selection, invalid JSON/version, missing release/migration manifest, or missing backup references\n- `401` — bad bearer token\n\nIf migration health fails, stop the rollout. The new Worker may already be live while metadata remains on the previous release. Restore the previous immutable bundle and matching pre-migration D1/R2 recovery points if rollback is required; do not edit migration rows or improvise a down migration.",
+					"request": {
+						"method": "POST",
+						"header": [{ "key": "Content-Type", "value": "application/json" }],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"publicationIds\": [\"{{publicationId}}\"],\n  \"version\": \"{{bundleVersion}}\",\n  \"migrationBackups\": {\n    \"{{publicationId}}\": {\n      \"d1\": \"{{d1BackupReference}}\",\n      \"r2\": \"{{r2BackupReference}}\"\n    }\n  }\n}"
 						},
 						"url": {
 							"raw": "{{PROVISIONER_BASE_URL}}/api/fleet/upgrade",
@@ -182,21 +226,21 @@
 							"status": "OK",
 							"code": 200,
 							"header": [{ "key": "Content-Type", "value": "application/json" }],
-							"body": "{\n  \"version\": \"current\",\n  \"targeted\": 1,\n  \"upgraded\": [\n    { \"publicationId\": \"01JABCDEF\", \"scriptName\": \"pub-01jabcdef\" }\n  ],\n  \"failed\": [],\n  \"skipped\": []\n}"
+							"body": "{\n  \"version\": \"emdash-1.0.1-hotmetal.566dbe5dddda\",\n  \"targeted\": 1,\n  \"upgraded\": [\n    { \"publicationId\": \"01JABCDEF\", \"scriptName\": \"pub-01jabcdef\", \"bootStatus\": 200, \"emdashVersion\": \"1.0.1\" }\n  ],\n  \"failed\": [],\n  \"skipped\": []\n}"
 						},
 						{
 							"name": "200 — Nothing to do",
 							"status": "OK",
 							"code": 200,
 							"header": [{ "key": "Content-Type", "value": "application/json" }],
-							"body": "{\n  \"version\": \"current\",\n  \"targeted\": 0,\n  \"upgraded\": [],\n  \"failed\": [],\n  \"skipped\": [\n    { \"publicationId\": \"01JNOTREADY\", \"reason\": \"not ready (status=provisioning)\" }\n  ]\n}"
+							"body": "{\n  \"version\": \"emdash-1.0.1-hotmetal.566dbe5dddda\",\n  \"targeted\": 0,\n  \"upgraded\": [],\n  \"failed\": [],\n  \"skipped\": [\n    { \"publicationId\": \"01JNOTREADY\", \"reason\": \"not ready (status=provisioning)\" }\n  ]\n}"
 						},
 						{
 							"name": "207 — Partial",
 							"status": "Multi-Status",
 							"code": 207,
 							"header": [{ "key": "Content-Type", "value": "application/json" }],
-							"body": "{\n  \"version\": \"current\",\n  \"targeted\": 2,\n  \"upgraded\": [\n    { \"publicationId\": \"01JABCDEF\", \"scriptName\": \"pub-01jabcdef\" }\n  ],\n  \"failed\": [\n    { \"publicationId\": \"01JBROKEN\", \"error\": \"cms_instance_meta missing or malformed — cannot reconstruct bindings\" }\n  ],\n  \"skipped\": []\n}"
+							"body": "{\n  \"version\": \"emdash-1.0.1-hotmetal.566dbe5dddda\",\n  \"targeted\": 2,\n  \"upgraded\": [\n    { \"publicationId\": \"01JABCDEF\", \"scriptName\": \"pub-01jabcdef\", \"bootStatus\": 200, \"emdashVersion\": \"1.0.1\" }\n  ],\n  \"failed\": [\n    { \"publicationId\": \"01JBROKEN\", \"stage\": \"metadata\", \"error\": \"cms_instance_meta missing or malformed — cannot reconstruct bindings\" }\n  ],\n  \"skipped\": []\n}"
 						},
 						{
 							"name": "400 — Bad selection",
@@ -210,7 +254,7 @@
 							"status": "Bad Gateway",
 							"code": 502,
 							"header": [{ "key": "Content-Type", "value": "application/json" }],
-							"body": "{\n  \"version\": \"current\",\n  \"targeted\": 1,\n  \"upgraded\": [],\n  \"failed\": [\n    { \"publicationId\": \"01JABCDEF\", \"error\": \"cf api 500: ...\" }\n  ],\n  \"skipped\": []\n}"
+							"body": "{\n  \"version\": \"emdash-1.0.1-hotmetal.566dbe5dddda\",\n  \"targeted\": 1,\n  \"upgraded\": [],\n  \"failed\": [\n    { \"publicationId\": \"01JABCDEF\", \"stage\": \"migration-health\", \"error\": \"tenant boot verification failed with 500\" }\n  ],\n  \"skipped\": []\n}"
 						}
 					]
 				}

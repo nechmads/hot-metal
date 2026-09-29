@@ -73,30 +73,54 @@ Provisioner **vars** (`wrangler.jsonc`): `TURNSTILE_SITE_KEY` (public; same key 
 ## Publish a tenant bundle release
 
 The provisioner uploads a pre-built `apps/emdash-blog` bundle per tenant, read from
-R2 (`hotmetal-emdash-bundles`, key prefix = `EMDASH_BUNDLE_VERSION`, default
-`current`). After changing the blog app, rebuild and re-release:
+R2 (`hotmetal-emdash-bundles`, key prefix = `EMDASH_BUNDLE_VERSION`). Releases are
+immutable and include the exact EmDash migration manifest emitted by the build.
+After changing the blog app, build and publish an explicit version before deploying
+provisioner configuration that selects it:
 
 ```bash
 pnpm --filter @hotmetal/emdash-blog build
-cd services/provisioner && pnpm release-bundle      # needs CF_API_TOKEN in env/.dev.vars
+CLOUDFLARE_ACCOUNT_ID=<acct> pnpm --filter @hotmetal/provisioner release-bundle \
+	--dist ../../apps/emdash-blog/dist --version auto
 ```
+
+`release-bundle` rejects `current` and derives the immutable version from every
+deployable byte plus its runtime metadata. It uploads modules/assets, uploads
+`.emdash/migrations.json`, records its SHA-256 plus migration identity, and writes the
+release manifest last. Record the version printed by the command and set
+`EMDASH_BUNDLE_VERSION` to it. Do not deploy a provisioner that references a release
+until that manifest exists in R2.
 
 ## Fleet bundle rollout (Phase 4)
 
-Re-deploy the current shared bundle across **existing** tenants — e.g. after a blog
-template change or a binding fix. This is a pure **script re-upload**: it reconstructs
-each tenant's bindings from `cms_instance_meta`, re-uploads the bundle, and bumps
-`cms_instance_meta.bundleVersion`. It deliberately does **not** run bootstrap (no PAT
-rotation) and never touches the tenant's D1/data — only the worker code is swapped.
+Deploy an immutable shared bundle across **existing** tenants — e.g. after a blog
+template, binding, plugin, or EmDash core change. It reconstructs each tenant's
+bindings from `cms_instance_meta`, uploads the bundle, and invokes the tenant through
+`TENANT_INVOKER`. EmDash applies pending forward migrations during that first request;
+the provisioner records the new bundle/migration identity only after the worker boots.
+It deliberately does **not** run bootstrap, so PATs are not rotated.
+
+For a changed or previously unknown migration identity, create recovery points before
+the rollout and provide their per-tenant references. Legacy tenants have no stored
+identity and therefore require backup evidence on their first rollout through this
+path. The references are opaque audit/recovery evidence; they are not credentials and
+the provisioner does not create or validate the backups.
+
+Before creating backups or changing a tenant, call `POST /api/fleet/upgrade/plan`
+with the same target selector and release version. The read-only response lists each
+tenant's current migration identity, whether backup evidence will be required, and
+the exact D1 database and R2 bucket identifiers. It performs no Worker upload,
+migration, or publication update.
 
 `POST /api/fleet/upgrade` on the provisioner (same `API_KEY` bearer as the other
 `/api/*` routes):
 
 | Field | Type | Description |
 | --- | --- | --- |
-| `publicationIds` | `string[]` | Explicit tenants to upgrade (**canary**). Mutually exclusive with `all`. |
+| `publicationIds` | `string[]` | 1–100 unique tenants to upgrade (**canary/batch**). Mutually exclusive with `all`. |
 | `all` | `boolean` | Upgrade every `emdash`+`ready` tenant. Mutually exclusive with `publicationIds`. |
-| `version` | `string` | Bundle release to deploy. Defaults to the provisioner's `EMDASH_BUNDLE_VERSION`. |
+| `version` | `string` | Bundle release to deploy. Defaults to `EMDASH_BUNDLE_VERSION`; at most 128 chars from `[A-Za-z0-9._-]`. |
+| `migrationBackups` | `Record<string, { d1: string; r2: string }>` | Required for every target whose stored EmDash version/fingerprint differs from the release. |
 
 Response: `{ version, targeted, upgraded[], failed[], skipped[] }`. Per-tenant failures
 are **reported, never abort the batch**. Status codes: `200` all-good / nothing-to-do,
@@ -104,25 +128,59 @@ are **reported, never abort the batch**. Status codes: `200` all-good / nothing-
 failed, `400` bad target selection / unknown `version`.
 
 - **Skipped** = a requested id that is not found, not `emdash`, or not `ready`.
-- **Failed** = a `ready` tenant whose `cms_instance_meta` is missing/malformed, or whose
-  script upload threw.
+- **Upgraded** = tenant booted after upload; entry includes `bootStatus` and
+  `emdashVersion`.
+- **Failed** = a `ready` tenant failed at `metadata`, `upload`, or
+  `migration-health`. A failed health check does not update its metadata.
 
 **Always release first, then canary, then all:**
 
 ```bash
-# 1) Build + release the new bundle (see "Publish a tenant bundle release" above).
+# 1) Build + publish the immutable bundle (see above), then deploy the provisioner
+#    configuration that selects it.
 pnpm --filter @hotmetal/emdash-blog build
-cd services/provisioner && pnpm release-bundle
+CLOUDFLARE_ACCOUNT_ID=<acct> pnpm --filter @hotmetal/provisioner release-bundle \
+	--dist ../../apps/emdash-blog/dist --version auto
 
-# 2) Canary one tenant (its publication id), confirm it renders, then roll to all.
+# 2) Inspect every ready EmDash tenant and choose one canary. Fix any failed[]
+#    metadata entries before continuing.
+curl -X POST "$PROVISIONER_URL/api/fleet/upgrade/plan" \
+  -H "Authorization: Bearer $PROVISIONER_API_KEY" -H 'Content-Type: application/json' \
+  -d '{"all":true,"version":"emdash-1.0.1-hotmetal.566dbe5dddda"}'
+
+# 3) If required by the plan, create D1/R2 recovery points for the canary and
+#    include both references in the mutating request.
 curl -X POST "$PROVISIONER_URL/api/fleet/upgrade" \
   -H "Authorization: Bearer $PROVISIONER_API_KEY" -H 'Content-Type: application/json' \
-  -d '{ "publicationIds": ["<publication-id>"] }'
+  -d '{
+    "publicationIds": ["<publication-id>"],
+    "version": "emdash-1.0.1-hotmetal.566dbe5dddda",
+    "migrationBackups": {
+      "<publication-id>": {
+        "d1": "time-travel:<timestamp-or-bookmark>",
+        "r2": "copy:r2://<backup-bucket>/<backup-prefix>"
+      }
+    }
+  }'
 
+# 4) Verify the canary admin, REST API, and public site. Then repeat in bounded
+#    publicationIds batches; include every batch member's own recovery references.
 curl -X POST "$PROVISIONER_URL/api/fleet/upgrade" \
   -H "Authorization: Bearer $PROVISIONER_API_KEY" -H 'Content-Type: application/json' \
-  -d '{ "all": true }'
+  -d @upgrade-batch.json
 ```
+
+### Failure and rollback
+
+An `upload` failure leaves the previous script in place unless Cloudflare accepted a
+partial update. A `migration-health` failure is more sensitive: the new Worker may be
+live and its first request may already have changed D1, but metadata intentionally
+still names the previous release. Stop the rollout and inspect that tenant.
+
+If rollback is required, deploy the previous immutable Worker artifact and restore
+the matching pre-migration D1 recovery point. Restore the R2 snapshot as well if media
+state changed. Do not delete or edit EmDash migration-history rows and do not invent a
+down migration; EmDash migrations are forward-only.
 
 > **You need `API_KEY`, and it is write-only.** It exists as a `wrangler secret`
 > on the provisioner and as `PROVISIONER_API_KEY` on `apps/web`; neither can be
@@ -135,8 +193,9 @@ curl -X POST "$PROVISIONER_URL/api/fleet/upgrade" \
 > **Scale note.** The batch is sequential and synchronous (matches `/api/teardown`).
 > That is fine up to a few dozen tenants; the per-request CPU/subrequest budget — each
 > tenant is one multi-part dispatch-script upload — becomes the limit past ~100. Until
-> then, the canary-subset discipline above is the safeguard; beyond it, split `all` into
-> several `publicationIds` batches (or move the rollout to a Workflow).
+> then, bounded `publicationIds` batches are the safeguard and make per-tenant backup
+> evidence manageable. Move the rollout to a Workflow before relying on `all:true` at
+> that scale.
 
 ## Lifecycle
 

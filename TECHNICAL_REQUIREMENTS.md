@@ -1,11 +1,11 @@
 # Technical Requirements
 
-Last updated: 2026-02-07
+Last updated: 2026-09-29
 
 ## Platform
 - Runtime target: Cloudflare (Workers/Pages)
 - Monorepo manager: pnpm workspaces
-- Baseline Node version: >= 22.12.0 (Astro 6 requirement)
+- Baseline Node version: >= 22.16.0 (EmDash 1.x requirement)
 
 ## Core Apps
 1. `apps/cms-admin`
@@ -19,6 +19,19 @@ Last updated: 2026-02-07
 - Framework: Astro 6
 - Cloudflare deployment: `@astrojs/cloudflare` adapter
 - Output mode: `server`
+
+3. `apps/emdash-blog`
+- Framework: Astro 7 + EmDash 1.0.1
+- Cloudflare deployment: `@emdash-cms/cloudflare` + `@astrojs/cloudflare`
+- Runtime: dedicated Workers-for-Platforms tenant per EmDash publication
+- Data: per-tenant D1 (`DB`), R2 (`MEDIA`), and KV (`CACHE`)
+
+4. `services/provisioner`
+- Framework: Hono on Cloudflare Workers + Dynamic Workflows
+- Owns tenant lifecycle and immutable fleet-bundle rollout
+- Core upgrades must pair the Worker bundle with its generated EmDash migration
+  manifest, require per-tenant D1/R2 recovery references when the migration identity
+  changes, and verify tenant boot before recording the new release
 
 ## Core Packages
 - `packages/shared` for shared types and contracts

@@ -1,6 +1,6 @@
 # Hot Metal - System Reference
 
-AI-powered content creation and multi-outlet publishing platform. Built on Cloudflare Workers (D1, R2, KV, Durable Objects, Workflows, Queues). Monorepo managed by pnpm workspaces. Node >= 22.12.0.
+AI-powered content creation and multi-outlet publishing platform. Built on Cloudflare Workers (D1, R2, KV, Durable Objects, Workflows, Queues). Monorepo managed by pnpm workspaces. Node >= 22.16.0.
 
 Production domain: `hotmetalapp.com`
 
@@ -23,6 +23,9 @@ Production domain: `hotmetalapp.com`
                         D1 (hotmetal-writer-db)
 
     [apps/publications-web] --- Astro 6 --- wildcard *.hotmetalapp.com
+             |-- legacy SonicJS render
+             `-- dispatches ready EmDash publications to per-tenant Workers
+    [apps/emdash-blog]      --- Astro 7 + EmDash 1.0.1 tenant bundle
     [apps/blog-frontend]    --- Astro 6 --- static blog template
     [apps/docs]             --- Astro 6 --- MDX documentation
 ```
@@ -38,6 +41,7 @@ Production domain: `hotmetalapp.com`
 | `@hotmetal/web` | Vite + React 19 + Hono | 5173 | hotmetalapp.com | Main app: dashboard, editor, AI writing, analyzer |
 | `@hotmetal/publications-web` | Astro 6 + Cloudflare | 4322 | *.hotmetalapp.com | Multi-tenant publication frontends |
 | `@hotmetal/blog-frontend` | Astro 6 | 4321 | (template) | Blog template |
+| `@hotmetal/emdash-blog` | Astro 7 + EmDash 1.0.1 | 4321 | per-tenant `*.hotmetalapp.com` | Shared build deployed as one Workers-for-Platforms script per EmDash publication |
 | `@hotmetal/cms-admin` | SonicJS | 8788 | (internal) | Headless CMS, own D1 database |
 | `@hotmetal/docs` | Astro 6 + MDX | - | - | Documentation site |
 
@@ -50,6 +54,8 @@ Production domain: `hotmetalapp.com`
 | `@hotmetal/publisher` | 8788 | publisher.hotmetalapp.com | KV: `FEEDS` | Social publishing (LinkedIn, Twitter, blog) |
 | `@hotmetal/notifications` | 8792 | notifications.hotmetalapp.com | - | Email via Resend |
 | `@hotmetal/content-analyzer` | 8793 | content-analyzer.hotmetalapp.com | Workflow, Queue, R2: `REPORTS_BUCKET` | AEO/GEO content analysis + scoring |
+| `@hotmetal/provisioner` | - | service-binding/internal | Workflow, R2 bundle store, DAL, tenant invoker | Creates/tears down EmDash tenants and performs migration-aware immutable fleet rollouts |
+| `@hotmetal/emdash-dispatch` | - | service-binding-only | Workers-for-Platforms dispatch namespace | Relays provisioner first-boot and migration-health requests to tenant scripts |
 
 ### Packages (shared libraries)
 

@@ -3,9 +3,11 @@ import { createLogger } from '@hotmetal/shared'
 import { parseCmsInstanceMeta, type CmsInstanceMeta, type ProvisionWorkflowParams, type ProvisionerEnv } from './env'
 import { CfApiClient, CfApiError } from './cf-api'
 import { loadBundle } from './bundle'
+import type { BundleMigrationDescriptor } from './bundle'
 import { tenantNames } from './tenant'
 import { uploadTenantScript } from './tenant-script'
 import { buildBootstrapStatements } from './bootstrap'
+import { verifyTenantBoot } from './tenant-health'
 
 const STEP_RETRY = {
 	retries: { limit: 3, delay: '5 seconds', backoff: 'exponential' },
@@ -55,7 +57,7 @@ export class ProvisionWorkflow extends WorkflowEntrypoint<ProvisionerEnv, Provis
 			// 2) Upload the shared bundle as this tenant's script with its bindings.
 			//    Same `uploadTenantScript` op the fleet rollout uses, so a re-deploy
 			//    is byte-identical to the original provision's script upload.
-			await step.do('upload-script', STEP_RETRY, async () => {
+			const migrations = await step.do('upload-script', STEP_RETRY, async () => {
 				const bundle = await loadBundle(env.BUNDLE, version)
 				await uploadTenantScript(cf, env, {
 					scriptName: names.scriptName,
@@ -65,6 +67,7 @@ export class ProvisionWorkflow extends WorkflowEntrypoint<ProvisionerEnv, Provis
 					kvNamespaceId: kv.id,
 					bundle,
 				}, log)
+				return bundle.migrations
 			})
 
 			// 3) First boot → EmDash auto-migrates against the empty remote D1. We go
@@ -74,15 +77,10 @@ export class ProvisionWorkflow extends WorkflowEntrypoint<ProvisionerEnv, Provis
 			//    booted + migrated; a 5xx means migration failed, so fail fast here
 			//    rather than hitting a confusing missing-tables error in bootstrap.
 			await step.do('trigger-migrate', STEP_RETRY, async () => {
-				const res = await env.TENANT_INVOKER.fetch(
-					new Request(`https://${names.hostname}/_emdash/admin`, {
-						headers: { 'x-tenant-script': names.scriptName },
-					}),
-				)
-				const body = await res.text().catch(() => '')
-				if (res.status >= 400) {
-					throw new Error(`tenant first-boot returned ${res.status}: ${body.slice(0, 300)}`)
-				}
+				await verifyTenantBoot(env.TENANT_INVOKER, {
+					hostname: names.hostname,
+					scriptName: names.scriptName,
+				})
 			})
 
 			// 4) Headless bootstrap — seed admin + mint ec_pat_ into the migrated D1.
@@ -105,7 +103,7 @@ export class ProvisionWorkflow extends WorkflowEntrypoint<ProvisionerEnv, Provis
 					cmsProvider: 'emdash',
 					cmsBaseUrl: `https://${names.hostname}`,
 					cmsToken: rawToken,
-					cmsInstanceMeta: JSON.stringify(buildMeta(names, d1.id, kv.id, version)),
+					cmsInstanceMeta: JSON.stringify(buildMeta(names, d1.id, kv.id, version, migrations)),
 				})
 			})
 
@@ -145,6 +143,7 @@ function buildMeta(
 	d1DatabaseId: string,
 	kvNamespaceId: string,
 	bundleVersion: string,
+	migrations: BundleMigrationDescriptor | null,
 ): CmsInstanceMeta {
 	return {
 		scriptName: names.scriptName,
@@ -154,6 +153,13 @@ function buildMeta(
 		kvNamespaceId,
 		hostname: names.hostname,
 		bundleVersion,
+		...(migrations
+			? {
+				emdashVersion: migrations.emdashVersion,
+				migrationSetFingerprint: migrations.migrationSetFingerprint,
+				lastMigrationVerifiedAt: new Date().toISOString(),
+			}
+			: {}),
 		provisionedAt: new Date().toISOString(),
 	}
 }

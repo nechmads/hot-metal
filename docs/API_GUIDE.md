@@ -214,6 +214,111 @@ Two behaviours worth knowing before you switch:
   legacy frontend carry the same template set, so switching takes effect
   whichever one serves the publication.
 
+## Internal provisioner API
+
+The provisioner API is an operator/internal surface, not part of the public
+`/agents-api/v1` contract. Every `/api/*` request uses
+`Authorization: Bearer <API_KEY>`, where the token matches the provisioner's
+write-only `API_KEY` secret.
+
+### `POST /api/fleet/upgrade/plan` — inspect an EmDash rollout
+
+Builds a read-only plan for the same release and tenant selection accepted by the
+upgrade endpoint. It reads publication metadata plus the release and migration
+manifests; it does not upload Workers, run migrations, or update publications.
+
+The body requires exactly one of `publicationIds` (1–100 unique, non-empty strings)
+or `all:true`, plus an optional `version` that defaults to
+`EMDASH_BUNDLE_VERSION`:
+
+```bash
+curl -X POST "$PROVISIONER_URL/api/fleet/upgrade/plan" \
+  -H "Authorization: Bearer $PROVISIONER_API_KEY" \
+  -H 'Content-Type: application/json' \
+  -d '{"all":true,"version":"emdash-1.0.1-hotmetal.566dbe5dddda"}'
+```
+
+The response includes target release/migration identity and a `planned[]` entry for
+each operable tenant. Each entry contains the current version identity, an
+`alreadyOnTarget` flag, `requiresMigrationBackup`, and the exact D1 database and R2
+bucket identifiers needed to create recovery points. `failed[]` identifies ready
+tenants whose stored resource metadata is incomplete; `skipped[]` describes explicit
+IDs that do not resolve to a ready EmDash publication. Resolve failures before a
+rollout. A `200` response only means planning succeeded; it does not authorize or
+perform an upgrade.
+
+### `POST /api/fleet/upgrade` — deploy an EmDash fleet release
+
+Deploys one immutable tenant-bundle release to a canary list or all ready EmDash
+publications. It does not rerun bootstrap or rotate PATs. After uploading each tenant
+script, it invokes that tenant so pending EmDash migrations run and the new worker is
+known to boot before its release metadata is updated.
+
+Exactly one target selector is required:
+
+| Field | Type | Required | Description |
+| --- | --- | --- | --- |
+| `publicationIds` | `string[]` | One of | 1–100 unique explicit canary/batch IDs. Mutually exclusive with `all`. |
+| `all` | `boolean` | One of | Must be `true`; targets every `emdash` + `ready` publication. Mutually exclusive with `publicationIds`. |
+| `version` | `string` | No | Immutable R2 release, at most 128 characters. Defaults to `EMDASH_BUNDLE_VERSION`; allowed characters are letters, digits, `.`, `_`, `-`. |
+| `migrationBackups` | `Record<string, { d1: string; r2: string }>` | Conditional | A D1 and R2 recovery reference for every target moving to a different or previously unknown EmDash migration identity. References are opaque operator evidence, not credentials. |
+
+Example migration-aware canary:
+
+```bash
+curl -X POST "$PROVISIONER_URL/api/fleet/upgrade" \
+  -H "Authorization: Bearer $PROVISIONER_API_KEY" \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "publicationIds": ["01JABCDEF"],
+    "version": "emdash-1.0.1-hotmetal.566dbe5dddda",
+    "migrationBackups": {
+      "01JABCDEF": {
+        "d1": "time-travel:2026-09-29T09:30:00Z",
+        "r2": "copy:r2://operations/hotmetal/01JABCDEF/pre-emdash-1.0.1-hotmetal.566dbe5dddda"
+      }
+    }
+  }'
+```
+
+Successful response:
+
+```json
+{
+  "version": "emdash-1.0.1-hotmetal.566dbe5dddda",
+  "targeted": 1,
+  "upgraded": [
+    {
+      "publicationId": "01JABCDEF",
+      "scriptName": "pub-01jabcdef",
+      "bootStatus": 200,
+      "emdashVersion": "1.0.1"
+    }
+  ],
+  "failed": [],
+  "skipped": []
+}
+```
+
+`failed[]` entries contain `publicationId`, a `stage` of `metadata`, `upload`, or
+`migration-health`, and a safe error message. `skipped[]` entries identify requested
+publications that were absent, used another CMS, or were not ready.
+
+Status codes:
+
+- `200` — every targeted tenant upgraded, or there were no eligible tenants.
+- `207` — some targeted tenants upgraded and some failed.
+- `502` — every targeted tenant failed.
+- `400` — invalid JSON/selector/version, missing release or migration manifest, or
+  missing backup references for one or more migration targets.
+- `401` — invalid bearer token.
+
+If `migration-health` fails, the new Worker may already be live even though its
+metadata was not advanced. Stop the batch. Roll back with the previous immutable
+bundle plus the matching pre-migration D1 recovery point (and R2 snapshot if needed).
+Do not edit EmDash migration rows or improvise a down migration. The full release and
+recovery procedure is in `docs/emdash-phase3-runbook.md`.
+
 ## Local development
 
 ```bash

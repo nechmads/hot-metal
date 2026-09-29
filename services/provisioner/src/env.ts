@@ -22,12 +22,6 @@ export interface ProvisionerEnv extends Omit<Env, 'DAL' | 'PROVISION_WORKFLOW'> 
 	 */
 	TURNSTILE_SECRET_KEY?: string
 
-	/**
-	 * Public Turnstile site key (from `vars`) — injected into each tenant as a
-	 * plain var so the comment form widget renders. Same key used by
-	 * publications-web + the single-instance emdash-blog across *.hotmetalapp.com.
-	 */
-	TURNSTILE_SITE_KEY?: string
 }
 
 /** Input to a single tenant-provision run. */
@@ -60,6 +54,19 @@ export interface CmsInstanceMeta {
 	cfHostnameId?: string
 	/** The bundle release version this tenant currently runs (bumped by fleet rollout). */
 	bundleVersion: string
+	/** EmDash core version paired with the running bundle. Absent on legacy metadata. */
+	emdashVersion?: string
+	/** Fingerprint of the EmDash core migration set paired with the bundle. */
+	migrationSetFingerprint?: string
+	/** ISO timestamp of the last successful boot/migration verification. */
+	lastMigrationVerifiedAt?: string
+	/** Recovery evidence captured before the most recent core migration change. */
+	lastMigrationBackup?: {
+		bundleVersion: string
+		d1: string
+		r2: string
+		recordedAt: string
+	}
 	/** ISO timestamp the instance reached `ready`. */
 	provisionedAt?: string
 	/** ISO timestamp of the last fleet bundle rollout to this tenant (if any). */

@@ -45,7 +45,7 @@
     "dev:stack-pub": "STACK=true pnpm --filter @hotmetal/publications-web dev"
   },
   "engines": {
-    "node": ">=22.12.0"
+    "node": ">=22.16.0"
   },
   "pnpm": {
     "onlyBuiltDependencies": [

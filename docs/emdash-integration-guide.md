@@ -62,11 +62,34 @@ Because the seam is an **HTTP contract**, not a SonicJS-specific client, **swapp
 
 ## Part 2 — What EmDash actually is
 
-Source: EmDash docs (`docs.emdashcms.com`), GitHub (`emdash-cms/emdash`), CF blog. Researched 2026-06-23. **Latest version 0.22.0 (2026-06-22), pre-1.0 / beta-preview.**
+Source: EmDash docs (`docs.emdashcms.com`), GitHub (`emdash-cms/emdash`), CF blog.
+Originally researched 2026-06-23; current integration status updated 2026-09-29.
+**Hot Metal is pinned to EmDash 1.0.1, the first stable line, with Astro 7 and
+Node >=22.16.0.** The 0.22-era discussion below is retained as decision history;
+Part 7 describes the per-publication architecture that was subsequently shipped.
 
 ### The short version
 
-EmDash is **not** a standalone headless Worker you bind to. It is an **Astro 6 integration (npm package) that you embed into an Astro app**, which deploys as a **single Cloudflare Worker** bundling: (a) admin SPA at `/_emdash/admin`, (b) REST API at `/_emdash/api/*`, (c) the rendered public site. It is the closest thing to "WordPress on Workers."
+EmDash is **not** a standalone headless Worker you bind to. It is an **Astro integration (npm package) that you embed into an Astro app**, which deploys as a **single Cloudflare Worker** bundling: (a) admin SPA at `/_emdash/admin`, (b) REST API at `/_emdash/api/*`, (c) the rendered public site. Hot Metal's current tenant app uses Astro 7 and EmDash 1.0.1.
+
+### Stable-release upgrade contract (2026-09-29)
+
+- Keep `emdash` and `@emdash-cms/cloudflare` on the same exact core version. Plugins
+  are independently versioned and should use their compatible published versions.
+- The deprecated centralized `marketplace` option is removed from the tenant config.
+  With the sandbox runner enabled, EmDash 1.x uses its hosted decentralized registry
+  by default; the legacy marketplace URL is only for updating old marketplace installs.
+- EmDash emits `.emdash/migrations.json` during build. Hot Metal stores that exact
+  file alongside the immutable tenant bundle and verifies its digest and migration
+  identity before rollout.
+- EmDash migrations are forward-only and run on tenant boot. A changed or unknown
+  migration identity requires operator-created D1 and R2 recovery references; the
+  provisioner invokes the new tenant and records the release only after boot succeeds.
+- Headless bootstrap still writes EmDash internal tables directly. Provisioner tests
+  exercise both a fresh 1.0.1 schema and the exact 0.22 → 1.0.1 migration path before
+  executing the bootstrap SQL, so schema or upgrade drift fails CI before release.
+- The `/_emdash/api` wire format uses camelCase timestamps (`createdAt`, `updatedAt`,
+  `publishedAt`, `scheduledAt`); the shared client maps those into Hot Metal models.
 
 ### Facts that matter for us
 

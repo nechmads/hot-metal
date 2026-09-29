@@ -15,7 +15,8 @@
 
 	// Durable workflow that provisions one EmDash tenant end-to-end. Each step is
 	// retryable/crash-resilient; on terminal failure we mark the publication
-	// cms_provisioning_status='failed' and tear down partial infra.
+	// cms_provisioning_status='failed'. Partial infra stays in place for an
+	// idempotent retry or an explicit /api/teardown.
 	"workflows": [
 		{
 			"name": "provision-workflow",
@@ -45,8 +46,9 @@
 	],
 
 	// Pre-built EmDash tenant bundle ("releases"), stashed by `release-bundle`.
-	// The provisioner reads the current release's worker modules + static assets
-	// from here and uploads them to the dispatch namespace per tenant. Versioned
+	// The provisioner reads the selected immutable release's worker modules, assets,
+	// and paired migration manifest from here and uploads them to the dispatch
+	// namespace per tenant. Versioned
 	// keys enable Phase-4 fleet rollouts.
 	"r2_buckets": [
 		{
@@ -65,7 +67,7 @@
 		"ZONE_NAME": "hotmetalapp.com",
 		// The release version (R2 key prefix under BUNDLE) tenants are provisioned
 		// from. Bump on a fleet rollout (Phase 4).
-		"EMDASH_BUNDLE_VERSION": "current",
+		"EMDASH_BUNDLE_VERSION": "emdash-1.0.1-hotmetal.566dbe5dddda",
 		"AXIOM_DATASET": "hotmetal-prod",
 		// Public Turnstile site key injected into each tenant so the comment-form
 		// widget renders. Same key publications-web + emdash-blog use across

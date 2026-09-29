@@ -28,7 +28,6 @@ export default defineConfig({
 			plugins: [formsPlugin()],
 			sandboxed: [webhookNotifier],
 			sandboxRunner: sandbox(),
-			marketplace: "https://marketplace.emdashcms.com",
 		}),
 	],
 	fonts: [
