@@ -14,21 +14,31 @@
 import type { AppLogger } from '@hotmetal/shared'
 import type { Publication } from '@hotmetal/data-layer'
 import { CfApiClient } from './cf-api'
-import { loadBundle, BundleNotFoundError } from './bundle'
+import {
+	loadBundle,
+	loadBundleMetadata,
+	BundleNotFoundError,
+	type BundleMigrationDescriptor,
+} from './bundle'
 import { parseCmsInstanceMeta, type CmsInstanceMeta, type ProvisionerEnv } from './env'
 import { uploadTenantScript } from './tenant-script'
 import { verifyTenantBoot } from './tenant-health'
 
-export interface FleetUpgradeRequest {
+export interface FleetTargetRequest {
 	/** Explicit tenants to upgrade (canary). Mutually exclusive with `all`. */
 	publicationIds?: string[]
 	/** Upgrade every `emdash` + `ready` tenant. Mutually exclusive with `publicationIds`. */
 	all?: boolean
 	/** Bundle release to deploy. Defaults to the provisioner's EMDASH_BUNDLE_VERSION. */
 	version?: string
+}
+
+export interface FleetUpgradeRequest extends FleetTargetRequest {
 	/** Per-tenant recovery evidence, required for a different migration set. */
 	migrationBackups?: Record<string, FleetMigrationBackup>
 }
+
+export type FleetPlanRequest = FleetTargetRequest
 
 export interface FleetMigrationBackup {
 	/** Opaque D1 Time Travel timestamp/bookmark or external backup reference. */
@@ -68,6 +78,37 @@ export interface FleetUpgradeResult {
 	skipped: FleetUpgradeSkip[]
 }
 
+export interface FleetPlanTenant {
+	publicationId: string
+	slug: string
+	scriptName: string
+	hostname: string
+	d1DatabaseId: string
+	d1DatabaseName: string
+	r2BucketName: string
+	currentBundleVersion: string
+	currentEmdashVersion: string | null
+	currentMigrationSetFingerprint: string | null
+	alreadyOnTarget: boolean
+	requiresMigrationBackup: boolean
+}
+
+export interface FleetPlanFailure {
+	publicationId: string
+	error: string
+}
+
+export interface FleetPlanResult {
+	version: string
+	emdashVersion: string
+	migrationSetFingerprint: string
+	/** Ready EmDash tenants considered by the plan, including metadata failures. */
+	targeted: number
+	planned: FleetPlanTenant[]
+	failed: FleetPlanFailure[]
+	skipped: FleetUpgradeSkip[]
+}
+
 /** Thrown for a malformed request (bad target selection / version) → 400 at the route. */
 export class FleetUpgradeRequestError extends Error {}
 
@@ -78,6 +119,73 @@ export class FleetUpgradeRequestError extends Error {}
  * API_KEY boundary.
  */
 const VERSION_PATTERN = /^[A-Za-z0-9._-]+$/
+const MAX_EXPLICIT_TARGETS = 100
+
+function validateFleetTargetRequest(req: FleetTargetRequest, defaultVersion: string): string {
+	const ids = req.publicationIds
+	if (ids !== undefined && !Array.isArray(ids)) {
+		throw new FleetUpgradeRequestError('publicationIds must be an array')
+	}
+	if (req.all !== undefined && req.all !== true) {
+		throw new FleetUpgradeRequestError('all must be true when provided')
+	}
+	const hasList = Array.isArray(ids) && ids.length > 0
+	if (req.all === true && ids !== undefined) {
+		throw new FleetUpgradeRequestError('provide either all:true or publicationIds[], not both')
+	}
+	if (req.all !== true && !hasList) {
+		throw new FleetUpgradeRequestError('provide either all:true or a non-empty publicationIds[]')
+	}
+	if (hasList) {
+		if (ids.length > MAX_EXPLICIT_TARGETS) {
+			throw new FleetUpgradeRequestError(`publicationIds may contain at most ${MAX_EXPLICIT_TARGETS} entries`)
+		}
+		if (ids.some((id) => typeof id !== 'string' || id.trim().length === 0 || id.length > 128)) {
+			throw new FleetUpgradeRequestError('publicationIds must contain non-empty strings no longer than 128 characters')
+		}
+		if (new Set(ids).size !== ids.length) {
+			throw new FleetUpgradeRequestError('publicationIds must not contain duplicates')
+		}
+	}
+
+	const version = req.version ?? defaultVersion
+	if (typeof version !== 'string' || version.length > 128 || !VERSION_PATTERN.test(version)) {
+		throw new FleetUpgradeRequestError(`invalid version "${String(version)}" — use at most 128 letters, digits, dots, underscores, or hyphens`)
+	}
+	return version
+}
+
+function hasFleetTenantMeta(meta: CmsInstanceMeta | null): meta is CmsInstanceMeta {
+	if (!meta) return false
+	return [
+		meta.scriptName,
+		meta.d1DatabaseId,
+		meta.d1DatabaseName,
+		meta.r2BucketName,
+		meta.kvNamespaceId,
+		meta.hostname,
+		meta.bundleVersion,
+	].every((value) => typeof value === 'string' && value.trim().length > 0)
+}
+
+function requireMigrationDescriptor(
+	version: string,
+	migrations: BundleMigrationDescriptor | null,
+): BundleMigrationDescriptor {
+	if (!migrations) {
+		throw new FleetUpgradeRequestError(
+			`bundle release "${version}" has no paired EmDash migration manifest — rebuild and publish it with the current release-bundle command`,
+		)
+	}
+	return migrations
+}
+
+function mapBundleLookupError(version: string, err: unknown): never {
+	if (err instanceof BundleNotFoundError) {
+		throw new FleetUpgradeRequestError(`bundle release "${version}" not found — run release-bundle first`)
+	}
+	throw err
+}
 
 export function requiresMigrationBackup(
 	meta: CmsInstanceMeta,
@@ -110,7 +218,7 @@ export function hasMigrationBackupEvidence(value: unknown): value is FleetMigrat
  */
 async function resolveTargets(
 	env: ProvisionerEnv,
-	req: FleetUpgradeRequest,
+	req: FleetTargetRequest,
 	skipped: FleetUpgradeSkip[],
 ): Promise<Publication[]> {
 	if (req.all) {
@@ -138,6 +246,66 @@ async function resolveTargets(
 	return targets
 }
 
+/** Build a non-mutating rollout plan with the exact resources an operator backs up. */
+export async function planFleetUpgrade(
+	env: ProvisionerEnv,
+	req: FleetPlanRequest,
+	log: AppLogger,
+): Promise<FleetPlanResult> {
+	const version = validateFleetTargetRequest(req, env.EMDASH_BUNDLE_VERSION)
+	const skipped: FleetUpgradeSkip[] = []
+	const failed: FleetPlanFailure[] = []
+	const planned: FleetPlanTenant[] = []
+	const targets = await resolveTargets(env, req, skipped)
+
+	const release = await loadBundleMetadata(env.BUNDLE, version).catch((err: unknown) =>
+		mapBundleLookupError(version, err),
+	)
+	const migrations = requireMigrationDescriptor(version, release.migrations)
+
+	for (const pub of targets) {
+		const meta = parseCmsInstanceMeta(pub.cmsInstanceMeta)
+		if (!hasFleetTenantMeta(meta)) {
+			failed.push({
+				publicationId: pub.id,
+				error: 'cms_instance_meta missing or malformed — cannot identify tenant resources',
+			})
+			continue
+		}
+		planned.push({
+			publicationId: pub.id,
+			slug: pub.slug,
+			scriptName: meta.scriptName,
+			hostname: meta.hostname,
+			d1DatabaseId: meta.d1DatabaseId,
+			d1DatabaseName: meta.d1DatabaseName,
+			r2BucketName: meta.r2BucketName,
+			currentBundleVersion: meta.bundleVersion,
+			currentEmdashVersion: meta.emdashVersion ?? null,
+			currentMigrationSetFingerprint: meta.migrationSetFingerprint ?? null,
+			alreadyOnTarget: meta.bundleVersion === version,
+			requiresMigrationBackup: requiresMigrationBackup(meta, migrations),
+		})
+	}
+
+	log.info('Planned fleet upgrade', {
+		version,
+		targeted: targets.length,
+		planned: planned.length,
+		failed: failed.length,
+		skipped: skipped.length,
+	})
+	return {
+		version,
+		emdashVersion: migrations.emdashVersion,
+		migrationSetFingerprint: migrations.migrationSetFingerprint,
+		targeted: targets.length,
+		planned,
+		failed,
+		skipped,
+	}
+}
+
 /**
  * Roll the bundle `version` out to the resolved tenants. Validates the target
  * selection (exactly one of `all` / `publicationIds`), loads the bundle ONCE, then
@@ -148,18 +316,7 @@ export async function upgradeFleet(
 	req: FleetUpgradeRequest,
 	log: AppLogger,
 ): Promise<FleetUpgradeResult> {
-	const hasList = Array.isArray(req.publicationIds) && req.publicationIds.length > 0
-	if (req.all === true && hasList) {
-		throw new FleetUpgradeRequestError('provide either all:true or publicationIds[], not both')
-	}
-	if (req.all !== true && !hasList) {
-		throw new FleetUpgradeRequestError('provide either all:true or a non-empty publicationIds[]')
-	}
-
-	const version = req.version ?? env.EMDASH_BUNDLE_VERSION
-	if (!VERSION_PATTERN.test(version)) {
-		throw new FleetUpgradeRequestError(`invalid version "${version}" — allowed characters: letters, digits, dot, underscore, hyphen`)
-	}
+	const version = validateFleetTargetRequest(req, env.EMDASH_BUNDLE_VERSION)
 	const skipped: FleetUpgradeSkip[] = []
 	const upgraded: FleetUpgradeSuccess[] = []
 	const failed: FleetUpgradeFailure[] = []
@@ -180,21 +337,14 @@ export async function upgradeFleet(
 	// as a 400 rather than a 500; a corrupt release (missing modules/assets) is a
 	// real server fault and propagates as-is.
 	const bundle = await loadBundle(env.BUNDLE, version).catch((err: unknown) => {
-		if (err instanceof BundleNotFoundError) {
-			throw new FleetUpgradeRequestError(`bundle release "${version}" not found — run release-bundle first`)
-		}
-		throw err
+		return mapBundleLookupError(version, err)
 	})
-	if (!bundle.migrations) {
-		throw new FleetUpgradeRequestError(
-			`bundle release "${version}" has no paired EmDash migration manifest — rebuild and publish it with the current release-bundle command`,
-		)
-	}
+	const migrations = requireMigrationDescriptor(version, bundle.migrations)
 
 	const validTargets: Array<{ pub: Publication; meta: CmsInstanceMeta }> = []
 	for (const pub of targets) {
 		const meta = parseCmsInstanceMeta(pub.cmsInstanceMeta)
-		if (!meta) {
+		if (!hasFleetTenantMeta(meta)) {
 			failed.push({
 				publicationId: pub.id,
 				stage: 'metadata',
@@ -205,7 +355,7 @@ export async function upgradeFleet(
 		validTargets.push({ pub, meta })
 	}
 
-	const migrationTargets = validTargets.filter(({ meta }) => requiresMigrationBackup(meta, bundle.migrations!))
+	const migrationTargets = validTargets.filter(({ meta }) => requiresMigrationBackup(meta, migrations))
 	const missingBackups = migrationTargets.filter(
 		({ pub }) => !hasMigrationBackupEvidence(req.migrationBackups?.[pub.id]),
 	)
@@ -218,7 +368,7 @@ export async function upgradeFleet(
 
 	for (const { pub, meta } of validTargets) {
 		let stage: FleetUpgradeStage = 'upload'
-		const migrationChanges = requiresMigrationBackup(meta, bundle.migrations)
+		const migrationChanges = requiresMigrationBackup(meta, migrations)
 		const migrationBackup = migrationChanges ? req.migrationBackups?.[pub.id] : undefined
 		try {
 			await uploadTenantScript(cf, env, {
@@ -243,8 +393,8 @@ export async function upgradeFleet(
 			const nextMeta: CmsInstanceMeta = {
 				...meta,
 				bundleVersion: version,
-				emdashVersion: bundle.migrations.emdashVersion,
-				migrationSetFingerprint: bundle.migrations.migrationSetFingerprint,
+				emdashVersion: migrations.emdashVersion,
+				migrationSetFingerprint: migrations.migrationSetFingerprint,
 				lastMigrationVerifiedAt: verifiedAt,
 				...(migrationBackup
 					? {
@@ -264,13 +414,13 @@ export async function upgradeFleet(
 				publicationId: pub.id,
 				scriptName: meta.scriptName,
 				bootStatus,
-				emdashVersion: bundle.migrations.emdashVersion,
+				emdashVersion: migrations.emdashVersion,
 			})
 			log.info('Upgraded and verified tenant', {
 				publicationId: pub.id,
 				scriptName: meta.scriptName,
 				version,
-				emdashVersion: bundle.migrations.emdashVersion,
+				emdashVersion: migrations.emdashVersion,
 				bootStatus,
 			})
 		} catch (err) {

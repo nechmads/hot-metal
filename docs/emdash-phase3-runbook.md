@@ -81,13 +81,15 @@ provisioner configuration that selects it:
 ```bash
 pnpm --filter @hotmetal/emdash-blog build
 CLOUDFLARE_ACCOUNT_ID=<acct> pnpm --filter @hotmetal/provisioner release-bundle \
-  --dist ../../apps/emdash-blog/dist --version emdash-1.0.1
+	--dist ../../apps/emdash-blog/dist --version auto
 ```
 
-`release-bundle` rejects `current`. It uploads modules/assets, uploads
+`release-bundle` rejects `current` and derives the immutable version from every
+deployable byte plus its runtime metadata. It uploads modules/assets, uploads
 `.emdash/migrations.json`, records its SHA-256 plus migration identity, and writes the
-release manifest last. Do not deploy a provisioner that references a release until
-that manifest exists in R2.
+release manifest last. Record the version printed by the command and set
+`EMDASH_BUNDLE_VERSION` to it. Do not deploy a provisioner that references a release
+until that manifest exists in R2.
 
 ## Fleet bundle rollout (Phase 4)
 
@@ -104,14 +106,20 @@ identity and therefore require backup evidence on their first rollout through th
 path. The references are opaque audit/recovery evidence; they are not credentials and
 the provisioner does not create or validate the backups.
 
+Before creating backups or changing a tenant, call `POST /api/fleet/upgrade/plan`
+with the same target selector and release version. The read-only response lists each
+tenant's current migration identity, whether backup evidence will be required, and
+the exact D1 database and R2 bucket identifiers. It performs no Worker upload,
+migration, or publication update.
+
 `POST /api/fleet/upgrade` on the provisioner (same `API_KEY` bearer as the other
 `/api/*` routes):
 
 | Field | Type | Description |
 | --- | --- | --- |
-| `publicationIds` | `string[]` | Explicit tenants to upgrade (**canary**). Mutually exclusive with `all`. |
+| `publicationIds` | `string[]` | 1–100 unique tenants to upgrade (**canary/batch**). Mutually exclusive with `all`. |
 | `all` | `boolean` | Upgrade every `emdash`+`ready` tenant. Mutually exclusive with `publicationIds`. |
-| `version` | `string` | Bundle release to deploy. Defaults to the provisioner's `EMDASH_BUNDLE_VERSION`. |
+| `version` | `string` | Bundle release to deploy. Defaults to `EMDASH_BUNDLE_VERSION`; at most 128 chars from `[A-Za-z0-9._-]`. |
 | `migrationBackups` | `Record<string, { d1: string; r2: string }>` | Required for every target whose stored EmDash version/fingerprint differs from the release. |
 
 Response: `{ version, targeted, upgraded[], failed[], skipped[] }`. Per-tenant failures
@@ -132,23 +140,30 @@ failed, `400` bad target selection / unknown `version`.
 #    configuration that selects it.
 pnpm --filter @hotmetal/emdash-blog build
 CLOUDFLARE_ACCOUNT_ID=<acct> pnpm --filter @hotmetal/provisioner release-bundle \
-  --dist ../../apps/emdash-blog/dist --version emdash-1.0.1
+	--dist ../../apps/emdash-blog/dist --version auto
 
-# 2) Create D1/R2 recovery points. Canary one tenant and include both references.
+# 2) Inspect every ready EmDash tenant and choose one canary. Fix any failed[]
+#    metadata entries before continuing.
+curl -X POST "$PROVISIONER_URL/api/fleet/upgrade/plan" \
+  -H "Authorization: Bearer $PROVISIONER_API_KEY" -H 'Content-Type: application/json' \
+  -d '{"all":true,"version":"emdash-1.0.1-hotmetal.566dbe5dddda"}'
+
+# 3) If required by the plan, create D1/R2 recovery points for the canary and
+#    include both references in the mutating request.
 curl -X POST "$PROVISIONER_URL/api/fleet/upgrade" \
   -H "Authorization: Bearer $PROVISIONER_API_KEY" -H 'Content-Type: application/json' \
   -d '{
     "publicationIds": ["<publication-id>"],
-    "version": "emdash-1.0.1",
+    "version": "emdash-1.0.1-hotmetal.566dbe5dddda",
     "migrationBackups": {
       "<publication-id>": {
         "d1": "time-travel:<timestamp-or-bookmark>",
-        "r2": "snapshot:<reference>"
+        "r2": "copy:r2://<backup-bucket>/<backup-prefix>"
       }
     }
   }'
 
-# 3) Verify the canary admin, REST API, and public site. Then repeat in bounded
+# 4) Verify the canary admin, REST API, and public site. Then repeat in bounded
 #    publicationIds batches; include every batch member's own recovery references.
 curl -X POST "$PROVISIONER_URL/api/fleet/upgrade" \
   -H "Authorization: Bearer $PROVISIONER_API_KEY" -H 'Content-Type: application/json' \

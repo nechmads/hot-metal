@@ -221,6 +221,32 @@ The provisioner API is an operator/internal surface, not part of the public
 `Authorization: Bearer <API_KEY>`, where the token matches the provisioner's
 write-only `API_KEY` secret.
 
+### `POST /api/fleet/upgrade/plan` — inspect an EmDash rollout
+
+Builds a read-only plan for the same release and tenant selection accepted by the
+upgrade endpoint. It reads publication metadata plus the release and migration
+manifests; it does not upload Workers, run migrations, or update publications.
+
+The body requires exactly one of `publicationIds` (1–100 unique, non-empty strings)
+or `all:true`, plus an optional `version` that defaults to
+`EMDASH_BUNDLE_VERSION`:
+
+```bash
+curl -X POST "$PROVISIONER_URL/api/fleet/upgrade/plan" \
+  -H "Authorization: Bearer $PROVISIONER_API_KEY" \
+  -H 'Content-Type: application/json' \
+  -d '{"all":true,"version":"emdash-1.0.1-hotmetal.566dbe5dddda"}'
+```
+
+The response includes target release/migration identity and a `planned[]` entry for
+each operable tenant. Each entry contains the current version identity, an
+`alreadyOnTarget` flag, `requiresMigrationBackup`, and the exact D1 database and R2
+bucket identifiers needed to create recovery points. `failed[]` identifies ready
+tenants whose stored resource metadata is incomplete; `skipped[]` describes explicit
+IDs that do not resolve to a ready EmDash publication. Resolve failures before a
+rollout. A `200` response only means planning succeeded; it does not authorize or
+perform an upgrade.
+
 ### `POST /api/fleet/upgrade` — deploy an EmDash fleet release
 
 Deploys one immutable tenant-bundle release to a canary list or all ready EmDash
@@ -232,9 +258,9 @@ Exactly one target selector is required:
 
 | Field | Type | Required | Description |
 | --- | --- | --- | --- |
-| `publicationIds` | `string[]` | One of | Non-empty explicit canary/batch list. Mutually exclusive with `all`. |
+| `publicationIds` | `string[]` | One of | 1–100 unique explicit canary/batch IDs. Mutually exclusive with `all`. |
 | `all` | `boolean` | One of | Must be `true`; targets every `emdash` + `ready` publication. Mutually exclusive with `publicationIds`. |
-| `version` | `string` | No | Immutable R2 release. Defaults to `EMDASH_BUNDLE_VERSION`; allowed characters are letters, digits, `.`, `_`, `-`. |
+| `version` | `string` | No | Immutable R2 release, at most 128 characters. Defaults to `EMDASH_BUNDLE_VERSION`; allowed characters are letters, digits, `.`, `_`, `-`. |
 | `migrationBackups` | `Record<string, { d1: string; r2: string }>` | Conditional | A D1 and R2 recovery reference for every target moving to a different or previously unknown EmDash migration identity. References are opaque operator evidence, not credentials. |
 
 Example migration-aware canary:
@@ -245,11 +271,11 @@ curl -X POST "$PROVISIONER_URL/api/fleet/upgrade" \
   -H 'Content-Type: application/json' \
   -d '{
     "publicationIds": ["01JABCDEF"],
-    "version": "emdash-1.0.1",
+    "version": "emdash-1.0.1-hotmetal.566dbe5dddda",
     "migrationBackups": {
       "01JABCDEF": {
         "d1": "time-travel:2026-09-29T09:30:00Z",
-        "r2": "snapshot:r2://operations/hotmetal/01JABCDEF/pre-emdash-1.0.1"
+        "r2": "copy:r2://operations/hotmetal/01JABCDEF/pre-emdash-1.0.1-hotmetal.566dbe5dddda"
       }
     }
   }'
@@ -259,7 +285,7 @@ Successful response:
 
 ```json
 {
-  "version": "emdash-1.0.1",
+  "version": "emdash-1.0.1-hotmetal.566dbe5dddda",
   "targeted": 1,
   "upgraded": [
     {

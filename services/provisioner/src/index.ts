@@ -3,7 +3,13 @@ import { createLogger, flushLogs } from '@hotmetal/shared'
 import { parseCmsInstanceMeta, type ProvisionerEnv } from './env'
 import { ProvisionWorkflow, resolveTenantResources, teardownTenant } from './workflow'
 import { CfApiClient } from './cf-api'
-import { upgradeFleet, FleetUpgradeRequestError, type FleetUpgradeRequest } from './fleet'
+import {
+	planFleetUpgrade,
+	upgradeFleet,
+	FleetUpgradeRequestError,
+	type FleetPlanRequest,
+	type FleetUpgradeRequest,
+} from './fleet'
 
 const app = new Hono<{ Bindings: ProvisionerEnv }>()
 
@@ -161,6 +167,26 @@ app.post('/api/fleet/upgrade', async (c) => {
 		const result = await upgradeFleet(c.env, body, log)
 		const status = result.failed.length === 0 ? 200 : result.upgraded.length === 0 ? 502 : 207
 		return c.json(result, status)
+	} catch (err) {
+		if (err instanceof FleetUpgradeRequestError) return c.json({ error: err.message }, 400)
+		throw err
+	}
+})
+
+/**
+ * Read-only preflight for a fleet rollout. Resolves the same target selection and
+ * release metadata as the mutation endpoint, but performs no uploads, migrations,
+ * or metadata writes. The response identifies exact D1/R2 resources to back up.
+ */
+app.post('/api/fleet/upgrade/plan', async (c) => {
+	const body = await c.req.json<FleetPlanRequest>().catch(() => null)
+	if (!body || typeof body !== 'object' || Array.isArray(body)) {
+		return c.json({ error: 'invalid JSON body' }, 400)
+	}
+	const log = createLogger({ service: 'provisioner' }).child({ component: 'fleet-upgrade-plan' })
+
+	try {
+		return c.json(await planFleetUpgrade(c.env, body, log))
 	} catch (err) {
 		if (err instanceof FleetUpgradeRequestError) return c.json({ error: err.message }, 400)
 		throw err

@@ -12,18 +12,20 @@
  *
  * Usage (needs both env vars; source services/provisioner/.dev.vars for the token):
  *   CLOUDFLARE_ACCOUNT_ID=... CF_API_TOKEN=... tsx scripts/release-bundle.ts \
- *     --dist ../../apps/emdash-blog/dist --version emdash-1.0.1
+ *     --dist ../../apps/emdash-blog/dist --version auto
  */
 import { readFileSync, readdirSync, statSync, writeFileSync } from 'node:fs'
 import { createHash } from 'node:crypto'
 import { join, relative } from 'node:path'
+import {
+	assertReleaseIsUnpublished,
+	releaseVersionFor,
+	RELEASE_VERSION_PATTERN,
+} from './release-bundle-lib'
 
 const BUCKET = 'hotmetal-emdash-bundles'
 const ACCOUNT_ID = process.env.CLOUDFLARE_ACCOUNT_ID
 const API_TOKEN = process.env.CF_API_TOKEN
-if (!ACCOUNT_ID || !API_TOKEN) {
-	throw new Error('Set CLOUDFLARE_ACCOUNT_ID and CF_API_TOKEN (source services/provisioner/.dev.vars)')
-}
 const UPLOAD_CONCURRENCY = 12
 
 function arg(name: string, fallback?: string): string | undefined {
@@ -32,9 +34,9 @@ function arg(name: string, fallback?: string): string | undefined {
 }
 
 const distDir = arg('dist', '../../apps/emdash-blog/dist')!
-const version = arg('version')
-if (!version || version === 'current' || !/^[A-Za-z0-9._-]+$/.test(version)) {
-	throw new Error('Pass an immutable --version using letters, digits, dot, underscore, or hyphen (for example emdash-1.0.1); "current" is not allowed')
+const requestedVersion = arg('version')
+if (!requestedVersion || requestedVersion === 'current' || !RELEASE_VERSION_PATTERN.test(requestedVersion)) {
+	throw new Error('Pass --version auto or a content-derived immutable version; "current" is not allowed')
 }
 
 function walk(dir: string): string[] {
@@ -80,13 +82,13 @@ function assetContentType(path: string): string {
 	return contentType(path)
 }
 
-async function put(key: string, file: string, type: string): Promise<void> {
+async function put(key: string, body: Buffer, type: string): Promise<void> {
 	const res = await fetch(
 		`https://api.cloudflare.com/client/v4/accounts/${ACCOUNT_ID}/r2/buckets/${BUCKET}/objects/${key}`,
 		{
 			method: 'PUT',
 			headers: { Authorization: `Bearer ${API_TOKEN}`, 'Content-Type': type },
-			body: readFileSync(file),
+			body,
 		},
 	)
 	if (!res.ok) {
@@ -136,24 +138,69 @@ if (!migrationManifest.emdashVersion || !migrationManifest.migrationSet?.fingerp
 // module/asset identity the provisioner reuses from the manifest) stay exact.
 const safeKey = (s: string): string => s.replace(/\.\./g, '_dd_')
 
-const modules = walk(serverDir)
+const moduleSources = walk(serverDir)
 	.filter((p) => p.endsWith('.mjs') || p.endsWith('.js') || p.endsWith('.wasm'))
 	.map((p) => {
 		const name = relative(serverDir, p)
-		return { name, key: `releases/${version}/server/${safeKey(name)}`, contentType: contentType(p), file: p }
+		return { name, contentType: contentType(p), bytes: readFileSync(p) }
 	})
 
-const assets = walk(clientDir).map((p) => {
+const assetSources = walk(clientDir).map((p) => {
 	const rel = relative(clientDir, p)
-	return { path: `/${rel}`, key: `releases/${version}/client/${safeKey(rel)}`, contentType: assetContentType(p), file: p }
+	return { path: `/${rel}`, relativePath: rel, contentType: assetContentType(p), bytes: readFileSync(p) }
 })
+
+const migrationSha256 = createHash('sha256').update(migrationBytes).digest('hex')
+const expectedVersion = releaseVersionFor({
+	emdashVersion: migrationManifest.emdashVersion,
+	mainModule: serverCfg.main,
+	compatibilityDate: serverCfg.compatibility_date,
+	compatibilityFlags: serverCfg.compatibility_flags ?? ['nodejs_compat'],
+	migrationSha256,
+	migrationSetFingerprint: migrationManifest.migrationSet.fingerprint,
+	files: [
+		...moduleSources.map(({ name, contentType, bytes }) => ({
+			identity: `server/${name}`,
+			contentType,
+			sha256: createHash('sha256').update(bytes).digest('hex'),
+		})),
+		...assetSources.map(({ path, contentType, bytes }) => ({
+			identity: `client${path}`,
+			contentType,
+			sha256: createHash('sha256').update(bytes).digest('hex'),
+		})),
+	],
+})
+const version = requestedVersion === 'auto' ? expectedVersion : requestedVersion
+if (version !== expectedVersion) {
+	throw new Error(`Release version must match its content: expected --version ${expectedVersion}`)
+}
+if (!ACCOUNT_ID || !API_TOKEN) {
+	throw new Error('Set CLOUDFLARE_ACCOUNT_ID and CF_API_TOKEN (source services/provisioner/.dev.vars)')
+}
+
+await assertReleaseIsUnpublished({
+	accountId: ACCOUNT_ID,
+	apiToken: API_TOKEN,
+	bucket: BUCKET,
+	version,
+})
+
+const modules = moduleSources.map((module) => ({
+	...module,
+	key: `releases/${version}/server/${safeKey(module.name)}`,
+}))
+const assets = assetSources.map(({ relativePath, ...asset }) => ({
+	...asset,
+	key: `releases/${version}/client/${safeKey(relativePath)}`,
+}))
 
 const files = [...modules, ...assets]
 console.log(`Uploading ${modules.length} modules + ${assets.length} assets (concurrency ${UPLOAD_CONCURRENCY})…`)
-await pool(files, UPLOAD_CONCURRENCY, (f) => put(f.key, f.file, f.contentType))
+await pool(files, UPLOAD_CONCURRENCY, (f) => put(f.key, f.bytes, f.contentType))
 
 const migrationKey = `releases/${version}/migrations.json`
-await put(migrationKey, migrationsPath, 'application/json')
+await put(migrationKey, migrationBytes, 'application/json')
 
 const manifest = {
 	version,
@@ -162,7 +209,7 @@ const manifest = {
 	compatibilityFlags: serverCfg.compatibility_flags ?? ['nodejs_compat'],
 	migrations: {
 		key: migrationKey,
-		sha256: createHash('sha256').update(migrationBytes).digest('hex'),
+		sha256: migrationSha256,
 		emdashVersion: migrationManifest.emdashVersion,
 		migrationSetFingerprint: migrationManifest.migrationSet.fingerprint,
 	},
@@ -170,8 +217,9 @@ const manifest = {
 	assets: assets.map(({ path, key, contentType }) => ({ path, key, contentType })),
 }
 const manifestPath = join(distDir, 'release-manifest.json')
-writeFileSync(manifestPath, JSON.stringify(manifest, null, 2))
+const manifestBytes = Buffer.from(JSON.stringify(manifest, null, 2))
+writeFileSync(manifestPath, manifestBytes)
 // Manifest LAST: the provisioner keys off it, so it only points at fully-uploaded files.
-await put(`releases/${version}/manifest.json`, manifestPath, 'application/json')
+await put(`releases/${version}/manifest.json`, manifestBytes, 'application/json')
 
 console.log(`✅ Release "${version}" published to r2://${BUCKET}/releases/${version}/`)

@@ -67,7 +67,7 @@
 		"ZONE_NAME": "hotmetalapp.com",
 		// The release version (R2 key prefix under BUNDLE) tenants are provisioned
 		// from. Bump on a fleet rollout (Phase 4).
-		"EMDASH_BUNDLE_VERSION": "emdash-1.0.1",
+		"EMDASH_BUNDLE_VERSION": "emdash-1.0.1-hotmetal.566dbe5dddda",
 		"AXIOM_DATASET": "hotmetal-prod",
 		// Public Turnstile site key injected into each tenant so the comment-form
 		// widget renders. Same key publications-web + emdash-blog use across

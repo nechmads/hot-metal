@@ -1,6 +1,6 @@
 import { createHash } from 'node:crypto'
 import { describe, expect, it, vi } from 'vitest'
-import { loadBundle, type BundleManifest } from '../src/bundle'
+import { loadBundle, loadBundleMetadata, type BundleManifest } from '../src/bundle'
 
 function jsonObject(value: unknown) {
 	const bytes = new TextEncoder().encode(JSON.stringify(value))
@@ -46,6 +46,21 @@ function manifest(overrides: Partial<BundleManifest> = {}): BundleManifest {
 }
 
 describe('loadBundle migration pairing', () => {
+	it('loads only the manifest pair for a read-only rollout plan', async () => {
+		const bucket = bucketWith({
+			'releases/emdash-1.0.1/manifest.json': jsonObject(manifest({
+				modules: [{ name: 'entry.mjs', key: 'server/entry.mjs', contentType: 'application/javascript+module' }],
+				assets: [{ path: '/app.js', key: 'client/app.js', contentType: 'text/javascript' }],
+			})),
+			[migrationDescriptor.key]: jsonObject(generatedMigrationManifest),
+		})
+
+		const metadata = await loadBundleMetadata(bucket, 'emdash-1.0.1')
+
+		expect(metadata.migrations).toEqual(migrationDescriptor)
+		expect(bucket.get).toHaveBeenCalledTimes(2)
+	})
+
 	it('loads migration identity from the manifest emitted by the same release', async () => {
 		const bucket = bucketWith({
 			'releases/emdash-1.0.1/manifest.json': jsonObject(manifest()),

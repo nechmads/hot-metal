@@ -34,6 +34,12 @@ export interface LoadedBundle {
 	migrations: BundleMigrationDescriptor | null
 }
 
+export interface LoadedBundleMetadata {
+	manifest: BundleManifest
+	/** Null only for legacy releases created before manifests were paired. */
+	migrations: BundleMigrationDescriptor | null
+}
+
 /**
  * No release exists at the requested version. A typed error (vs a generic Error
  * matched by message) lets callers distinguish "unknown/unreleased version" — a
@@ -72,7 +78,12 @@ async function loadMigrationDescriptor(
 	return manifest.migrations
 }
 
-export async function loadBundle(bucket: R2Bucket, version: string): Promise<LoadedBundle> {
+/**
+ * Load and verify only the release manifest and its paired migration manifest.
+ * Fleet planning uses this path so a read-only plan does not pull every module
+ * and static asset into the Worker.
+ */
+export async function loadBundleMetadata(bucket: R2Bucket, version: string): Promise<LoadedBundleMetadata> {
 	const prefix = `releases/${version}/`
 	const manifestObj = await bucket.get(`${prefix}manifest.json`)
 	if (!manifestObj) {
@@ -83,6 +94,11 @@ export async function loadBundle(bucket: R2Bucket, version: string): Promise<Loa
 		throw new Error(`bundle manifest version mismatch: requested ${version}, found ${manifest.version}`)
 	}
 	const migrations = await loadMigrationDescriptor(bucket, manifest)
+	return { manifest, migrations }
+}
+
+export async function loadBundle(bucket: R2Bucket, version: string): Promise<LoadedBundle> {
+	const { manifest, migrations } = await loadBundleMetadata(bucket, version)
 
 	const modules = await Promise.all(
 		manifest.modules.map(async (m): Promise<WorkerModule> => {
