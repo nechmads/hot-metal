@@ -137,12 +137,17 @@ app.post('/api/teardown', async (c) => {
 })
 
 /**
- * Fleet bundle rollout — re-deploy the current shared EmDash bundle to a LIST of
- * tenants (canary) or ALL ready tenants. A pure script re-upload (no bootstrap, no
- * D1 touch). Per-tenant failures are reported in the response, never abort the
- * batch. Release the new bundle first (`pnpm release-bundle`).
+ * Fleet bundle rollout — deploy an immutable EmDash release to a LIST of tenants
+ * (canary) or ALL ready tenants. The uploaded worker is invoked before its version
+ * is recorded, which lets EmDash apply pending migrations and proves the tenant
+ * boots. Bootstrap does not rerun, so PATs are not rotated. Per-tenant failures are
+ * reported in the response and never abort the batch.
  *
- * Body: `{ publicationIds?: string[], all?: boolean, version?: string }` (exactly
+ * A different or previously unknown migration identity requires per-tenant D1 and
+ * R2 recovery references in `migrationBackups`. Release the new bundle first.
+ *
+ * Body: `{ publicationIds?: string[], all?: boolean, version?: string,
+ * migrationBackups?: Record<publicationId, { d1: string, r2: string }> }` (exactly
  * one of `publicationIds` / `all`; `version` defaults to EMDASH_BUNDLE_VERSION).
  * Status: 200 all-good / nothing-to-do, 207 partial (some tenants failed), 502 if
  * every targeted tenant failed, 400 on a bad target selection.

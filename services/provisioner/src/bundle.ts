@@ -15,12 +15,23 @@ export interface BundleManifest {
 	compatibilityFlags: string[]
 	modules: Array<{ name: string; key: string; contentType: string }>
 	assets: Array<{ path: string; key: string; contentType: string }>
+	/** Migration manifest emitted by the same EmDash build as these modules. */
+	migrations?: BundleMigrationDescriptor
+}
+
+export interface BundleMigrationDescriptor {
+	key: string
+	sha256: string
+	emdashVersion: string
+	migrationSetFingerprint: string
 }
 
 export interface LoadedBundle {
 	manifest: BundleManifest
 	modules: WorkerModule[]
 	assets: StaticAsset[]
+	/** Null only for legacy releases created before manifests were paired. */
+	migrations: BundleMigrationDescriptor | null
 }
 
 /**
@@ -30,6 +41,37 @@ export interface LoadedBundle {
  */
 export class BundleNotFoundError extends Error {}
 
+interface EmdashMigrationManifest {
+	emdashVersion?: unknown
+	migrationSet?: { fingerprint?: unknown }
+}
+
+async function loadMigrationDescriptor(
+	bucket: R2Bucket,
+	manifest: BundleManifest,
+): Promise<BundleMigrationDescriptor | null> {
+	if (!manifest.migrations) return null
+
+	const object = await bucket.get(manifest.migrations.key)
+	if (!object) throw new Error(`bundle migration manifest missing in R2: ${manifest.migrations.key}`)
+	const bytes = await object.arrayBuffer()
+	const digest = Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256', bytes)))
+		.map((byte) => byte.toString(16).padStart(2, '0'))
+		.join('')
+	if (digest !== manifest.migrations.sha256) {
+		throw new Error('bundle migration manifest digest does not match its release metadata')
+	}
+	const generated = JSON.parse(new TextDecoder().decode(bytes)) as EmdashMigrationManifest
+	if (
+		generated.emdashVersion !== manifest.migrations.emdashVersion ||
+		generated.migrationSet?.fingerprint !== manifest.migrations.migrationSetFingerprint
+	) {
+		throw new Error('bundle migration metadata does not match its generated EmDash migration manifest')
+	}
+
+	return manifest.migrations
+}
+
 export async function loadBundle(bucket: R2Bucket, version: string): Promise<LoadedBundle> {
 	const prefix = `releases/${version}/`
 	const manifestObj = await bucket.get(`${prefix}manifest.json`)
@@ -37,6 +79,10 @@ export async function loadBundle(bucket: R2Bucket, version: string): Promise<Loa
 		throw new BundleNotFoundError(`No EmDash bundle release found at ${prefix}manifest.json — run release-bundle first`)
 	}
 	const manifest = (await manifestObj.json()) as BundleManifest
+	if (manifest.version !== version) {
+		throw new Error(`bundle manifest version mismatch: requested ${version}, found ${manifest.version}`)
+	}
+	const migrations = await loadMigrationDescriptor(bucket, manifest)
 
 	const modules = await Promise.all(
 		manifest.modules.map(async (m): Promise<WorkerModule> => {
@@ -54,5 +100,5 @@ export async function loadBundle(bucket: R2Bucket, version: string): Promise<Loa
 		}),
 	)
 
-	return { manifest, modules, assets }
+	return { manifest, modules, assets, migrations }
 }

@@ -376,10 +376,10 @@ export class EmdashCmsClient implements CmsClient {
       canonicalUrl: asString(d.canonical_url),
       ogImage: asString(d.og_image),
       author: asString(d.author) ?? '',
-      publishedAt: asString(d.hm_published_at) ?? asString(entry.published_at),
-      scheduledAt: asString(d.hm_scheduled_at) ?? asString(entry.scheduled_at),
-      createdAt: asString(entry.created_at) ?? now,
-      updatedAt: asString(entry.updated_at) ?? now,
+      publishedAt: asString(d.hm_published_at) ?? asString(entry.publishedAt),
+      scheduledAt: asString(d.hm_scheduled_at) ?? asString(entry.scheduledAt),
+      createdAt: asString(entry.createdAt) ?? now,
+      updatedAt: asString(entry.updatedAt) ?? now,
     }
   }
 
@@ -399,8 +399,8 @@ export class EmdashCmsClient implements CmsClient {
       lastGeneratedAt: asString(d.last_generated_at),
       lastEditedAt: asString(d.last_edited_at),
       publishErrors: parseJson<string[]>(d.publish_errors) ?? undefined,
-      createdAt: asString(entry.created_at) ?? now,
-      updatedAt: asString(entry.updated_at) ?? now,
+      createdAt: asString(entry.createdAt) ?? now,
+      updatedAt: asString(entry.updatedAt) ?? now,
     }
   }
 
@@ -530,10 +530,10 @@ interface EmdashEntry {
   id: string
   slug?: string
   status?: string
-  created_at?: string
-  updated_at?: string
-  published_at?: string
-  scheduled_at?: string
+  createdAt?: string
+  updatedAt?: string
+  publishedAt?: string
+  scheduledAt?: string
   data?: Record<string, unknown>
 }
 

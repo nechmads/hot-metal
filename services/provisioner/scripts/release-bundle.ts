@@ -12,9 +12,10 @@
  *
  * Usage (needs both env vars; source services/provisioner/.dev.vars for the token):
  *   CLOUDFLARE_ACCOUNT_ID=... CF_API_TOKEN=... tsx scripts/release-bundle.ts \
- *     --dist ../../apps/emdash-blog/dist --version current
+ *     --dist ../../apps/emdash-blog/dist --version emdash-1.0.1
  */
 import { readFileSync, readdirSync, statSync, writeFileSync } from 'node:fs'
+import { createHash } from 'node:crypto'
 import { join, relative } from 'node:path'
 
 const BUCKET = 'hotmetal-emdash-bundles'
@@ -25,13 +26,16 @@ if (!ACCOUNT_ID || !API_TOKEN) {
 }
 const UPLOAD_CONCURRENCY = 12
 
-function arg(name: string, fallback: string): string {
+function arg(name: string, fallback?: string): string | undefined {
 	const i = process.argv.indexOf(`--${name}`)
 	return i >= 0 && process.argv[i + 1] ? process.argv[i + 1] : fallback
 }
 
-const distDir = arg('dist', '../../apps/emdash-blog/dist')
-const version = arg('version', 'current')
+const distDir = arg('dist', '../../apps/emdash-blog/dist')!
+const version = arg('version')
+if (!version || version === 'current' || !/^[A-Za-z0-9._-]+$/.test(version)) {
+	throw new Error('Pass an immutable --version using letters, digits, dot, underscore, or hyphen (for example emdash-1.0.1); "current" is not allowed')
+}
 
 function walk(dir: string): string[] {
 	const out: string[] = []
@@ -109,12 +113,21 @@ async function pool<T>(items: T[], concurrency: number, fn: (item: T) => Promise
 
 const serverDir = join(distDir, 'server')
 const clientDir = join(distDir, 'client')
+const migrationsPath = arg('migrations', join(distDir, '..', '.emdash', 'migrations.json'))!
 
 // Compatibility settings come from the adapter-generated server config.
 const serverCfg = JSON.parse(readFileSync(join(serverDir, 'wrangler.json'), 'utf8')) as {
 	main: string
 	compatibility_date: string
 	compatibility_flags?: string[]
+}
+const migrationBytes = readFileSync(migrationsPath)
+const migrationManifest = JSON.parse(migrationBytes.toString('utf8')) as {
+	emdashVersion: string
+	migrationSet: { fingerprint: string }
+}
+if (!migrationManifest.emdashVersion || !migrationManifest.migrationSet?.fingerprint) {
+	throw new Error(`Invalid EmDash migration manifest: ${migrationsPath}`)
 }
 
 // R2 object keys travel in the api.cloudflare.com URL path. A `..` in a key
@@ -139,11 +152,20 @@ const files = [...modules, ...assets]
 console.log(`Uploading ${modules.length} modules + ${assets.length} assets (concurrency ${UPLOAD_CONCURRENCY})…`)
 await pool(files, UPLOAD_CONCURRENCY, (f) => put(f.key, f.file, f.contentType))
 
+const migrationKey = `releases/${version}/migrations.json`
+await put(migrationKey, migrationsPath, 'application/json')
+
 const manifest = {
 	version,
 	mainModule: serverCfg.main,
 	compatibilityDate: serverCfg.compatibility_date,
 	compatibilityFlags: serverCfg.compatibility_flags ?? ['nodejs_compat'],
+	migrations: {
+		key: migrationKey,
+		sha256: createHash('sha256').update(migrationBytes).digest('hex'),
+		emdashVersion: migrationManifest.emdashVersion,
+		migrationSetFingerprint: migrationManifest.migrationSet.fingerprint,
+	},
 	modules: modules.map(({ name, key, contentType }) => ({ name, key, contentType })),
 	assets: assets.map(({ path, key, contentType }) => ({ path, key, contentType })),
 }

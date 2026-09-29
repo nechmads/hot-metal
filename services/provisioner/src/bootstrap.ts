@@ -11,7 +11,10 @@
  * REMOTE D1 via the D1 HTTP API. `generatePrefixedToken` is Worker-safe — it uses
  * only `crypto.getRandomValues` + `@oslojs/crypto` SHA-256 (proven in Spike #0b).
  *
- * Couples to EmDash's internal schema → pin EmDash 0.22.0 (Track A removes this).
+ * Couples to EmDash's internal schema, so the EmDash packages are pinned to an
+ * exact version. `test/bootstrap.spec.ts` runs these statements against both a
+ * fresh schema and a database migrated from the fleet's 0.22 baseline, and must
+ * pass before any version bump ships.
  */
 import { generatePrefixedToken } from '@emdash-cms/auth'
 import { ulid } from 'ulidx'

@@ -18,7 +18,7 @@ ProvisionWorkflow (Dynamic Workflow, each step durable + retryable)
   create-d1 → create-r2 → create-kv → upload-script → trigger-migrate →
   bootstrap (seed admin + mint ec_pat_) → store-credentials (DAL, encrypted) →
   wire-hostname → mark-ready
-        │  failure → mark cms_provisioning_status='failed' + tear down partial infra
+        │  failure → mark cms_provisioning_status='failed' (cleanup stays explicit/retryable)
         ▼
 publication.cms_provider='emdash', cms_base_url, cms_token (AES-GCM via DAL),
 cms_provisioning_status, cms_instance_meta
@@ -33,12 +33,15 @@ publication record through the **DAL** service binding, and the CF REST API (via
 ```bash
 pnpm --filter @hotmetal/emdash-blog build
 CLOUDFLARE_ACCOUNT_ID=<acct> pnpm --filter @hotmetal/provisioner release-bundle \
-  --dist ../../apps/emdash-blog/dist --version current
+  --dist ../../apps/emdash-blog/dist --version emdash-1.0.1
 ```
 
 Uploads the build to `r2://hotmetal-emdash-bundles/releases/{version}/` + a
-`manifest.json`. Bump `--version` + `EMDASH_BUNDLE_VERSION` for a fleet rollout
-(Phase 4).
+`manifest.json`. The release also contains the exact
+`apps/emdash-blog/.emdash/migrations.json` emitted by that build; its SHA-256,
+EmDash version, and migration-set fingerprint are recorded in the release manifest.
+Release names are immutable (`current` is rejected). Publish the release first, then
+deploy the provisioner configuration that selects it with `EMDASH_BUNDLE_VERSION`.
 
 ## Fleet rollout (Phase 4)
 
@@ -46,11 +49,16 @@ Re-deploy a bundle release across **already-provisioned** tenants — a fleet ve
 rollout. Use it when you ship new `apps/emdash-blog` code, or to push a binding/config
 change (e.g. a Turnstile-key fix) without re-provisioning.
 
-It is a pure **script re-upload**: for each tenant it reconstructs the bindings from
-`cms_instance_meta`, re-uploads the bundle via the same `uploadTenantScript` seam the
-initial provision uses, and bumps `cms_instance_meta.bundleVersion`. It does **not**
-run bootstrap — no admin re-seed, no `ec_pat_` rotation — and never touches the
-tenant's D1/data. Only the Worker code (and its vars/secrets) is swapped.
+For each tenant, the provisioner reconstructs bindings from `cms_instance_meta`,
+uploads the bundle, and invokes `/_emdash/admin` through `TENANT_INVOKER`. That first
+request lets EmDash apply pending forward migrations and proves the new worker boots.
+Only then are the bundle version and migration identity recorded. Bootstrap does
+**not** rerun, so there is no admin re-seed or `ec_pat_` rotation.
+
+Because a core upgrade can mutate D1 during first boot, a tenant moving to a different
+or previously unknown migration identity must have operator-created D1 and R2 recovery
+points. Supply their opaque references in `migrationBackups`. The provisioner records
+the references for audit/recovery; it does not create or validate the backups.
 
 ### Endpoint
 
@@ -65,38 +73,58 @@ Body (exactly one of `publicationIds` / `all`):
 | `publicationIds` | `string[]` | Specific tenants to upgrade (**canary**). Mutually exclusive with `all`. |
 | `all` | `boolean` | Upgrade **every** `emdash`+`ready` tenant. Mutually exclusive with `publicationIds`. |
 | `version` | `string` | Bundle release to deploy. Defaults to `EMDASH_BUNDLE_VERSION`. Chars: `[A-Za-z0-9._-]`. |
+| `migrationBackups` | `Record<string, { d1: string; r2: string }>` | Required for every targeted tenant whose stored EmDash version/fingerprint differs from the release, including legacy tenants with no recorded identity. Values are opaque operator recovery references, not credentials. |
 
 Response: `{ version, targeted, upgraded[], failed[], skipped[] }` where
 `targeted === upgraded.length + failed.length`.
 
 - **`skipped`** — a requested id that is not found, not an EmDash publication, or not
   `ready` (reported, not an error).
-- **`failed`** — a `ready` tenant whose `cms_instance_meta` is missing/malformed, or
-  whose script upload threw. One tenant's failure never aborts the batch.
+- **`upgraded`** — includes `scriptName`, the verified `bootStatus`, and the target
+  `emdashVersion`.
+- **`failed`** — includes a `stage` (`metadata`, `upload`, or `migration-health`) and
+  error. One tenant's failure never aborts the batch.
 
 Status codes: **200** all upgraded / nothing to do · **207** partial (inspect
 `failed[]`) · **502** every targeted tenant failed · **400** bad target selection,
-invalid JSON, or unknown/invalid `version` · **401** bad bearer token.
+invalid JSON, unknown/invalid `version`, a release without a paired migration
+manifest, or missing backup references · **401** bad bearer token.
 
 ### Procedure — always release, then canary, then all
 
 ```bash
-# 1) Build + publish the new bundle (skip if you're only re-pushing the current one,
-#    e.g. a binding fix).
+# 1) Build + publish one immutable release. Do this before deploying the provisioner
+#    configuration that selects the release.
 pnpm --filter @hotmetal/emdash-blog build
 CLOUDFLARE_ACCOUNT_ID=<acct> pnpm --filter @hotmetal/provisioner release-bundle \
-  --dist ../../apps/emdash-blog/dist --version current
+  --dist ../../apps/emdash-blog/dist --version emdash-1.0.1
 
-# 2) Canary a single tenant by publication id, then confirm it renders correctly.
+# 2) Create D1 + R2 recovery points for the canary, then record their references.
 curl -X POST "$PROVISIONER_URL/api/fleet/upgrade" \
   -H "Authorization: Bearer $API_KEY" -H 'Content-Type: application/json' \
-  -d '{ "publicationIds": ["<publication-id>"] }'
+  -d '{
+    "publicationIds": ["<publication-id>"],
+    "version": "emdash-1.0.1",
+    "migrationBackups": {
+      "<publication-id>": {
+        "d1": "time-travel:<timestamp-or-bookmark>",
+        "r2": "snapshot:<reference>"
+      }
+    }
+  }'
 
-# 3) Roll out to the rest.
+# 3) Confirm the canary admin, API, and public site, then roll out in batches. Every
+#    migration target in a batch needs its own recovery references.
 curl -X POST "$PROVISIONER_URL/api/fleet/upgrade" \
   -H "Authorization: Bearer $API_KEY" -H 'Content-Type: application/json' \
-  -d '{ "all": true }'
+  -d @upgrade-batch.json
 ```
+
+If upload succeeds but migration health fails, the new Worker may already be live
+while metadata still points to the previous release. Stop the rollout and inspect the
+tenant. If recovery is required, restore the previous immutable Worker artifact and
+its matching pre-migration D1 recovery point; restore the R2 snapshot if media changed.
+Do not edit EmDash migration rows or attempt a hand-written down migration.
 
 > **Scale note.** The batch is sequential and synchronous (matches `/api/teardown`).
 > Fine up to a few dozen tenants; each tenant is one multi-part dispatch-script upload,

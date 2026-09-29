@@ -2,9 +2,10 @@
  * Fleet bundle rollout — re-deploy the current shared EmDash bundle across live
  * tenants (a list, for canary; or ALL ready tenants). Each tenant goes through the
  * same `uploadTenantScript` seam the initial provision uses, with its bindings
- * reconstructed from `cms_instance_meta` — so a rollout is a pure code swap that
- * NEVER re-runs bootstrap (no PAT rotation, no D1 touch) and never disturbs tenant
- * data. On success the tenant's `cms_instance_meta.bundleVersion` is bumped.
+ * reconstructed from `cms_instance_meta`. After upload, the tenant is invoked so
+ * EmDash can apply pending core migrations and prove the new worker boots before
+ * `cms_instance_meta.bundleVersion` is bumped. Bootstrap never runs, so PATs are
+ * not rotated.
  *
  * Per-tenant failures are COLLECTED and reported, never abort the batch (one bad
  * tenant must not block the rollout to the rest). Run a subset (canary) before
@@ -16,6 +17,7 @@ import { CfApiClient } from './cf-api'
 import { loadBundle, BundleNotFoundError } from './bundle'
 import { parseCmsInstanceMeta, type CmsInstanceMeta, type ProvisionerEnv } from './env'
 import { uploadTenantScript } from './tenant-script'
+import { verifyTenantBoot } from './tenant-health'
 
 export interface FleetUpgradeRequest {
 	/** Explicit tenants to upgrade (canary). Mutually exclusive with `all`. */
@@ -24,15 +26,29 @@ export interface FleetUpgradeRequest {
 	all?: boolean
 	/** Bundle release to deploy. Defaults to the provisioner's EMDASH_BUNDLE_VERSION. */
 	version?: string
+	/** Per-tenant recovery evidence, required for a different migration set. */
+	migrationBackups?: Record<string, FleetMigrationBackup>
+}
+
+export interface FleetMigrationBackup {
+	/** Opaque D1 Time Travel timestamp/bookmark or external backup reference. */
+	d1: string
+	/** Opaque R2 snapshot/versioning/export reference. */
+	r2: string
 }
 
 export interface FleetUpgradeSuccess {
 	publicationId: string
 	scriptName: string
+	bootStatus: number
+	emdashVersion: string
 }
+
+export type FleetUpgradeStage = 'metadata' | 'upload' | 'migration-health'
 
 export interface FleetUpgradeFailure {
 	publicationId: string
+	stage: FleetUpgradeStage
 	error: string
 }
 
@@ -62,6 +78,29 @@ export class FleetUpgradeRequestError extends Error {}
  * API_KEY boundary.
  */
 const VERSION_PATTERN = /^[A-Za-z0-9._-]+$/
+
+export function requiresMigrationBackup(
+	meta: CmsInstanceMeta,
+	migrations: { emdashVersion: string; migrationSetFingerprint: string },
+): boolean {
+	return (
+		meta.emdashVersion !== migrations.emdashVersion ||
+		meta.migrationSetFingerprint !== migrations.migrationSetFingerprint
+	)
+}
+
+export function hasMigrationBackupEvidence(value: unknown): value is FleetMigrationBackup {
+	if (!value || typeof value !== 'object') return false
+	const backup = value as Partial<FleetMigrationBackup>
+	return (
+		typeof backup.d1 === 'string' &&
+		backup.d1.trim().length > 0 &&
+		backup.d1.length <= 512 &&
+		typeof backup.r2 === 'string' &&
+		backup.r2.trim().length > 0 &&
+		backup.r2.length <= 512
+	)
+}
 
 /**
  * Resolve the publications to upgrade. `all` pulls every `emdash`+`ready` tenant;
@@ -146,17 +185,41 @@ export async function upgradeFleet(
 		}
 		throw err
 	})
-	log.info('Starting fleet upgrade', { version, targeted: targets.length })
+	if (!bundle.migrations) {
+		throw new FleetUpgradeRequestError(
+			`bundle release "${version}" has no paired EmDash migration manifest — rebuild and publish it with the current release-bundle command`,
+		)
+	}
 
+	const validTargets: Array<{ pub: Publication; meta: CmsInstanceMeta }> = []
 	for (const pub of targets) {
 		const meta = parseCmsInstanceMeta(pub.cmsInstanceMeta)
-		// A ready tenant should always have meta; without it we cannot reconstruct
-		// the bindings safely, so report it for investigation instead of guessing.
 		if (!meta) {
-			failed.push({ publicationId: pub.id, error: 'cms_instance_meta missing or malformed — cannot reconstruct bindings' })
+			failed.push({
+				publicationId: pub.id,
+				stage: 'metadata',
+				error: 'cms_instance_meta missing or malformed — cannot reconstruct bindings',
+			})
 			continue
 		}
+		validTargets.push({ pub, meta })
+	}
 
+	const migrationTargets = validTargets.filter(({ meta }) => requiresMigrationBackup(meta, bundle.migrations!))
+	const missingBackups = migrationTargets.filter(
+		({ pub }) => !hasMigrationBackupEvidence(req.migrationBackups?.[pub.id]),
+	)
+	if (missingBackups.length > 0) {
+		throw new FleetUpgradeRequestError(
+			`${missingBackups.length} target(s) may apply a different EmDash migration set and lack D1/R2 backup references in migrationBackups`,
+		)
+	}
+	log.info('Starting fleet upgrade', { version, targeted: targets.length })
+
+	for (const { pub, meta } of validTargets) {
+		let stage: FleetUpgradeStage = 'upload'
+		const migrationChanges = requiresMigrationBackup(meta, bundle.migrations)
+		const migrationBackup = migrationChanges ? req.migrationBackups?.[pub.id] : undefined
 		try {
 			await uploadTenantScript(cf, env, {
 				scriptName: meta.scriptName,
@@ -167,16 +230,53 @@ export async function upgradeFleet(
 				bundle,
 			}, log)
 
-			// Record the new running version (+ rollout timestamp) in the tenant meta.
-			const nextMeta: CmsInstanceMeta = { ...meta, bundleVersion: version, upgradedAt: new Date().toISOString() }
+			stage = 'migration-health'
+			const bootStatus = await verifyTenantBoot(env.TENANT_INVOKER, {
+				hostname: meta.hostname,
+				scriptName: meta.scriptName,
+			})
+
+			// Record the release only after the uploaded worker has booted and any
+			// pending automatic migrations have completed successfully.
+			stage = 'metadata'
+			const verifiedAt = new Date().toISOString()
+			const nextMeta: CmsInstanceMeta = {
+				...meta,
+				bundleVersion: version,
+				emdashVersion: bundle.migrations.emdashVersion,
+				migrationSetFingerprint: bundle.migrations.migrationSetFingerprint,
+				lastMigrationVerifiedAt: verifiedAt,
+				...(migrationBackup
+					? {
+						lastMigrationBackup: {
+							bundleVersion: version,
+							d1: migrationBackup.d1,
+							r2: migrationBackup.r2,
+							recordedAt: verifiedAt,
+						},
+					}
+					: {}),
+				upgradedAt: verifiedAt,
+			}
 			await env.DAL.updatePublication(pub.id, { cmsInstanceMeta: JSON.stringify(nextMeta) })
 
-			upgraded.push({ publicationId: pub.id, scriptName: meta.scriptName })
-			log.info('Upgraded tenant', { publicationId: pub.id, scriptName: meta.scriptName, version })
+			upgraded.push({
+				publicationId: pub.id,
+				scriptName: meta.scriptName,
+				bootStatus,
+				emdashVersion: bundle.migrations.emdashVersion,
+			})
+			log.info('Upgraded and verified tenant', {
+				publicationId: pub.id,
+				scriptName: meta.scriptName,
+				version,
+				emdashVersion: bundle.migrations.emdashVersion,
+				bootStatus,
+			})
 		} catch (err) {
 			const error = err instanceof Error ? err.message : String(err)
-			failed.push({ publicationId: pub.id, error })
-			log.error('Tenant upgrade failed', { publicationId: pub.id, scriptName: meta.scriptName, version, error })
+			failed.push({ publicationId: pub.id, stage, error })
+			log.error('Tenant upgrade failed', { publicationId: pub.id, scriptName: meta.scriptName, version, stage, error })
 		}
 	}
 

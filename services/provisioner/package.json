@@ -3,6 +3,9 @@
 	"version": "0.0.0",
 	"private": true,
 	"type": "module",
+	"engines": {
+		"node": ">=22.16.0"
+	},
 	"scripts": {
 		"deploy": "wrangler deploy",
 		"dev": "wrangler dev --persist-to ../../.wrangler/shared-state",
@@ -14,7 +17,7 @@
 		"release-bundle": "tsx scripts/release-bundle.ts"
 	},
 	"dependencies": {
-		"@emdash-cms/auth": "0.22.0",
+		"@emdash-cms/auth": "1.0.1",
 		"@hotmetal/data-layer": "workspace:*",
 		"@hotmetal/shared": "workspace:*",
 		"hono": "^4.12.25",
@@ -23,6 +26,9 @@
 	"devDependencies": {
 		"@cloudflare/vitest-pool-workers": "^0.16.15",
 		"@types/node": "^25.2.2",
+		"emdash": "1.0.1",
+		"emdash-legacy-0-22": "npm:emdash@0.22.0",
+		"kysely": "^0.29.2",
 		"tsx": "^4.19.0",
 		"typescript": "^5.5.2",
 		"vitest": "~4.1.8",
