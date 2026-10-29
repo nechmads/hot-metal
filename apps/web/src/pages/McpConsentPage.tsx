@@ -246,8 +246,8 @@ export function McpConsentPage() {
                     </span>
                   </span>
                   <span className="mt-1 block text-xs leading-relaxed text-[var(--color-text-muted)] dark:text-gray-400">
-                    View posts, topics, ideas and drafts in the publications you
-                    choose.
+                    View content in the publications you choose and unassigned
+                    writing sessions this connection creates.
                   </span>
                 </span>
               </label>
@@ -261,8 +261,8 @@ export function McpConsentPage() {
                 <span>
                   <span className="text-sm font-medium">Write content</span>
                   <span className="mt-1 block text-xs leading-relaxed text-[var(--color-text-muted)] dark:text-gray-400">
-                    Create drafts, edit writer drafts and manage topics. Your
-                    plan’s generation limits still apply.
+                    Work with Hot Metal’s AI writer, create and revise drafts,
+                    and manage topics. Your plan’s limits still apply.
                   </span>
                 </span>
               </label>

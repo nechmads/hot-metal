@@ -1,4 +1,8 @@
-import { AIChatAgent } from "@cloudflare/ai-chat";
+import {
+  AIChatAgent,
+  type ChatRecoveryContext,
+  type ChatRecoveryOptions,
+} from "@cloudflare/ai-chat";
 import { anthropic } from "@ai-sdk/anthropic";
 import {
   convertToModelMessages,
@@ -11,15 +15,30 @@ import {
   wrapLanguageModel,
   type GenerateTextOnEndCallback,
   type ToolSet,
+  type UIMessage,
 } from "ai";
+import { BusinessError } from "../bl/errors";
+import { authorizeWritingSession } from "../bl/generation";
+import { authorizeWriterExecution } from "../bl/writer-conversations";
+import { createGenerationDependencies } from "../infrastructure/generation-dependencies";
+import {
+  WriterTurnStore,
+  lastUserMessageId,
+  type StoredWriterTurn,
+} from "./mcp-writer-turns";
 import type { LanguageModelV4 } from "@ai-sdk/provider";
-import type { Connection, WSMessage } from "agents";
+import type { AgentContext, Connection, WSMessage } from "agents";
+import { MessageType, parseProtocolMessage } from "agents/chat";
 import {
   type WriterAgentState,
   type WritingPhase,
   INITIAL_STATE,
 } from "./state";
 import { initAgentSqlite } from "./sqlite-schema";
+import {
+  handleMcpWriterRequest,
+  parseMcpWriterCaller,
+} from "./mcp-writer-requests";
 import {
   buildSystemPrompt,
   buildAutonomousSystemPrompt,
@@ -60,9 +79,103 @@ export interface DraftSummary {
   created_at: number;
 }
 
+type ChatCompletion = Pick<
+  Parameters<GenerateTextOnEndCallback<ToolSet>>[0],
+  "finishReason" | "usage"
+>;
+type HttpChatCapture = Partial<ChatCompletion> & { error?: boolean };
+
 export class WriterAgent extends AIChatAgent<Env, WriterAgentState> {
   initialState: WriterAgentState = INITIAL_STATE;
   private _cachedUserTier: string | null = null;
+  private autoWriteInProgress = false;
+  private readonly httpChatCaptures = new Map<string, HttpChatCapture>();
+  private programmaticAdmissions = 0;
+  private programmaticExecutions = 0;
+  private ownerSocketHandlers = 0;
+  private readonly ownerSocketWaiters = new Set<() => void>();
+  private sdkOnMessage?: (
+    connection: Connection,
+    message: WSMessage,
+  ) => void | Promise<void>;
+
+  constructor(context: AgentContext, env: Env) {
+    super(context, env);
+    // AIChatAgent 0.12 persists WebSocket history BEFORE its turn mutex. Wrap the
+    // instance handler installed by super, not only our prototype onMessage.
+    const sdkOnMessage = this.onMessage.bind(this);
+    this.sdkOnMessage = sdkOnMessage;
+    this.onMessage = async (connection, message) => {
+      const event =
+        typeof message === "string" ? parseProtocolMessage(message) : null;
+      const safeControl =
+        event &&
+        ["cancel", "stream-resume-request", "stream-resume-ack"].includes(
+          event.type,
+        );
+      if (safeControl) return sdkOnMessage(connection, message);
+      // An existing owner interaction may need its client tool result to settle
+      // before a programmatic writer starts. Never accept it during execution.
+      const settlingOwnerInteraction =
+        event &&
+        (event.type === "tool-result" || event.type === "tool-approval") &&
+        this.programmaticExecutions === 0;
+      if (this.programmaticAdmissions > 0 && !settlingOwnerInteraction) {
+        connection.send(
+          JSON.stringify({
+            type: MessageType.CF_AGENT_USE_CHAT_RESPONSE,
+            id: event?.type === "chat-request" ? event.id : crypto.randomUUID(),
+            body: "The writer is busy. Wait for the current response, then try again.",
+            done: true,
+            error: true,
+            outcome: "error",
+          }),
+        );
+        return;
+      }
+      this.ownerSocketHandlers++;
+      // A permitted owner UI submission owns its own authority, including after
+      // recovery. It must never inherit a stale programmatic execution slot.
+      this.writerTurns().clearExecution();
+      try {
+        await sdkOnMessage(connection, message);
+      } finally {
+        this.ownerSocketHandlers--;
+        if (this.ownerSocketHandlers === 0) {
+          for (const wake of this.ownerSocketWaiters) wake();
+          this.ownerSocketWaiters.clear();
+        }
+      }
+    };
+  }
+
+  private async withProgrammaticWriter<T>(
+    operation: () => Promise<T>,
+  ): Promise<T> {
+    // Reserve synchronously, including the SDK queue/preparation interval, so a
+    // UI submission cannot overwrite the history or change delegated authority.
+    this.programmaticAdmissions++;
+    try {
+      if (this.ownerSocketHandlers > 0) {
+        await new Promise<void>((resolve, reject) => {
+          const timeout = setTimeout(() => {
+            this.ownerSocketWaiters.delete(wake);
+            reject(
+              new Error("Timed out waiting for the current writer response"),
+            );
+          }, 15 * 60_000);
+          const wake = () => {
+            clearTimeout(timeout);
+            resolve();
+          };
+          this.ownerSocketWaiters.add(wake);
+        });
+      }
+      return await operation();
+    } finally {
+      this.programmaticAdmissions--;
+    }
+  }
 
   async onStart() {
     initAgentSqlite(this.sql.bind(this));
@@ -87,6 +200,22 @@ export class WriterAgent extends AIChatAgent<Env, WriterAgentState> {
         });
       }
     }
+
+    const turns = this.writerTurns();
+    turns.interruptRunning(this.nowSeconds());
+    const lastUserId = lastUserMessageId(this.messages);
+    if (
+      lastUserId &&
+      turns.byUserMessage(lastUserId)?.status === "interrupted"
+    ) {
+      this.setState({
+        ...this.state,
+        isGenerating: false,
+        lastError: "The previous writer turn was interrupted",
+      });
+    }
+    for (const row of turns.queued())
+      await this.ensureWriterTurnQueued(row.turn_id);
   }
 
   /** Look up the user's tier from the DAL, caching it for the DO lifetime. */
@@ -161,7 +290,7 @@ export class WriterAgent extends AIChatAgent<Env, WriterAgentState> {
         },
       });
 
-      return super.onMessage(connection, wrapped);
+      return this.sdkOnMessage?.(connection, wrapped);
     }
 
     return super.onMessage(connection, message);
@@ -186,7 +315,15 @@ export class WriterAgent extends AIChatAgent<Env, WriterAgentState> {
     return undefined;
   }
 
-  private async prepareLlmCall() {
+  private async prepareLlmCall(delegated?: {
+    stylePrompt?: string;
+    guard: () => Promise<unknown>;
+  }) {
+    if (this.autoWriteInProgress)
+      throw new BusinessError(
+        "An auto-write operation is already in progress",
+        "CONFLICT",
+      );
     const newPhase =
       this.state.writingPhase === "idle"
         ? "interviewing"
@@ -198,7 +335,9 @@ export class WriterAgent extends AIChatAgent<Env, WriterAgentState> {
       writingPhase: newPhase,
     });
 
-    const customStylePrompt = await this.resolveCustomStyle();
+    const customStylePrompt = delegated
+      ? delegated.stylePrompt
+      : await this.resolveCustomStyle();
 
     const systemPrompt = buildSystemPrompt({
       phase: newPhase,
@@ -208,35 +347,119 @@ export class WriterAgent extends AIChatAgent<Env, WriterAgentState> {
       customStylePrompt,
     });
 
-    const tools = createToolSet(this);
+    if (!delegated)
+      return { systemPrompt, tools: createToolSet(this) as ToolSet };
 
-    return { systemPrompt, tools };
+    const tools: ToolSet = {};
+    for (const [name, definition] of Object.entries(
+      createAutoWriteToolSet(this),
+    )) {
+      const execute = definition.execute;
+      if (!execute) continue;
+      tools[name] = {
+        ...definition,
+        execute: async (input, options) => {
+          await delegated.guard();
+          // Each concrete tool validates its input through the unchanged AI SDK schema.
+          return execute(input as never, options);
+        },
+      };
+    }
+    return {
+      systemPrompt: `${systemPrompt}\n\nYou are the Hot Metal writer assisting another authorized agent. Draft, research and revise in this writing session. Publishing is performed separately by the calling assistant through the permission-checked publishDraft MCP action; do not claim to publish or use a fallback CMS destination.`,
+      tools,
+    };
   }
 
   async onChatMessage(
     onFinish: GenerateTextOnEndCallback<ToolSet>,
-    options?: { abortSignal?: AbortSignal },
+    options?: { abortSignal?: AbortSignal; requestId?: string },
   ) {
-    let systemPrompt: string;
-    let tools: ReturnType<typeof createToolSet>;
-    try {
-      ({ systemPrompt, tools } = await this.prepareLlmCall());
-    } catch (error) {
-      logger("web").error("onChatMessage prepareLlmCall failed", { component: "writer-agent", error: error instanceof Error ? error.message : String(error) });
-      this.setState({
-        ...this.state,
-        isGenerating: false,
-        lastError: error instanceof Error ? error.message : "Unknown error",
-      });
-      return Response.json(
-        { error: "Failed to prepare LLM call" },
-        { status: 500 },
+    // Bind delegation to the SDK request that entered the serialized updater,
+    // never to a mutable last-user message supplied by another UI submission.
+    const messages = structuredClone(this.messages);
+    const userMessageId = lastUserMessageId(messages);
+    const store = this.writerTurns();
+    const activeTurnId = store.activeExecutionId();
+    const mapped = options?.requestId
+      ? store.byRequest(options.requestId)
+      : null;
+    const delegated = mapped ?? (activeTurnId ? store.get(activeTurnId) : null);
+    if (activeTurnId && (!delegated || delegated.turn_id !== activeTurnId))
+      throw new BusinessError(
+        "Writer request context is unavailable",
+        "CONFLICT",
+      );
+    if (delegated) {
+      // The durable slot was installed by this SDK turn's updater. Fail closed
+      // if any unexpected transcript mutation has replaced its actual input.
+      if (
+        !options?.requestId ||
+        userMessageId !== delegated.user_message_id ||
+        delegated.status !== "running"
+      )
+        throw new BusinessError(
+          "Writer request context does not match its message",
+          "CONFLICT",
+        );
+      store.bindRequest(
+        delegated.turn_id,
+        options.requestId,
+        this.nowSeconds(),
       );
     }
+    const delegatedAbort = delegated ? new AbortController() : null;
+    const guard = async () => {
+      if (!delegated) return;
+      try {
+        return await this.authorizeDelegatedWriter(delegated);
+      } catch (error) {
+        const denied =
+          error instanceof BusinessError &&
+          ["FORBIDDEN", "NOT_FOUND"].includes(error.code);
+        this.writerTurns().finish(
+          delegated.turn_id,
+          denied ? "cancelled" : "failed",
+          denied
+            ? "The originating connection is no longer authorized for this writer turn."
+            : "Writer authorization is temporarily unavailable.",
+          this.nowSeconds(),
+        );
+        delegatedAbort?.abort(error);
+        throw error;
+      }
+    };
+    let systemPrompt: string;
+    let tools: ToolSet;
+    try {
+      const authorized = await guard();
+      ({ systemPrompt, tools } = await this.prepareLlmCall(
+        delegated ? { stylePrompt: authorized?.stylePrompt, guard } : undefined,
+      ));
+    } catch (error) {
+      if (userMessageId) {
+        const capture = this.httpChatCaptures.get(userMessageId);
+        if (capture) capture.error = true;
+      }
+      if (!this.autoWriteInProgress)
+        this.setState({
+          ...this.state,
+          isGenerating: false,
+          lastError: "Failed to prepare the writer turn",
+        });
+      logger("web").error("Writer turn preparation failed", {
+        component: "writer-agent",
+        errorType: error instanceof Error ? error.name : "Unknown",
+      });
+      throw error;
+    }
 
-    const cleaned = cleanupMessages(this.messages);
+    const cleaned = cleanupMessages(messages);
     const model = await this.trackedModel("claude-sonnet-5", "chat");
-
+    const signals = [options?.abortSignal, delegatedAbort?.signal].filter(
+      (signal): signal is AbortSignal => !!signal,
+    );
+    const abortSignal = signals.length ? AbortSignal.any(signals) : undefined;
     const stream = createUIMessageStream({
       execute: async ({ writer }) => {
         try {
@@ -246,49 +469,63 @@ export class WriterAgent extends AIChatAgent<Env, WriterAgentState> {
             messages: await convertToModelMessages(cleaned),
             tools,
             stopWhen: isStepCount(20),
-            abortSignal: options?.abortSignal,
+            abortSignal,
+            prepareStep: async () => {
+              await guard();
+              return {};
+            },
             onEnd: async (event) => {
               this.setState({
                 ...this.state,
                 isGenerating: false,
                 lastError: null,
               });
+              if (userMessageId) {
+                const capture = this.httpChatCaptures.get(userMessageId);
+                if (capture)
+                  Object.assign(capture, {
+                    finishReason: event.finishReason,
+                    usage: event.usage,
+                  });
+              }
               await onFinish(event);
             },
-            onError: (error) => {
-              logger("web").error("onChatMessage stream error", { component: "writer-agent", error: error instanceof Error ? error.message : String(error) });
+            onError: () => {
+              if (userMessageId) {
+                const capture = this.httpChatCaptures.get(userMessageId);
+                if (capture) capture.error = true;
+              }
               this.setState({
                 ...this.state,
                 isGenerating: false,
-                lastError:
-                  error instanceof Error ? error.message : "Unknown error",
+                lastError: "The writer response could not be completed",
               });
             },
           });
-
           writer.merge(toUIMessageStream({ stream: result.stream, tools }));
         } catch (error) {
-          logger("web").error("onChatMessage stream execute failed", { component: "writer-agent", error: error instanceof Error ? error.message : String(error) });
           this.setState({
             ...this.state,
             isGenerating: false,
-            lastError:
-              error instanceof Error ? error.message : "Unknown error",
+            lastError: "The writer response could not be completed",
+          });
+          logger("web").error("Writer stream failed", {
+            component: "writer-agent",
+            errorType: error instanceof Error ? error.name : "Unknown",
           });
           throw error;
         }
       },
-      onError: (error) => {
-        logger("web").error("onChatMessage UIMessageStream error", { component: "writer-agent", error: error instanceof Error ? error.message : String(error) });
-        return error instanceof Error ? error.message : "Unknown stream error";
-      },
+      onError: () =>
+        "The writer response could not be completed. Review the conversation and drafts before retrying.",
     });
-
     return createUIMessageStreamResponse({ stream });
   }
 
   async onRequest(request: Request): Promise<Response> {
     const url = new URL(request.url);
+    if (url.pathname.startsWith("/internal/writer/"))
+      return this.handleInternalWriterRequest(request, url.pathname);
 
     try {
       if (url.pathname.endsWith("/drafts") && request.method === "GET") {
@@ -308,7 +545,10 @@ export class WriterAgent extends AIChatAgent<Env, WriterAgentState> {
         return this.handleGenerateSeo();
       }
 
-      if (url.pathname.endsWith("/generate-tweet") && request.method === "POST") {
+      if (
+        url.pathname.endsWith("/generate-tweet") &&
+        request.method === "POST"
+      ) {
         return this.handleGenerateTweet(request);
       }
 
@@ -364,7 +604,10 @@ export class WriterAgent extends AIChatAgent<Env, WriterAgentState> {
           );
         }
         if (!body.message?.trim()) {
-          return Response.json({ error: "message is required" }, { status: 400 });
+          return Response.json(
+            { error: "message is required" },
+            { status: 400 },
+          );
         }
         return this.handleChat(body.message.trim());
       }
@@ -372,7 +615,12 @@ export class WriterAgent extends AIChatAgent<Env, WriterAgentState> {
       // Delegate to AIChatAgent base (handles /get-messages, etc.)
       return super.onRequest(request);
     } catch (error) {
-      logger("web").error("onRequest unhandled error", { component: "writer-agent", method: request.method, pathname: url.pathname, error: error instanceof Error ? error.message : String(error) });
+      logger("web").error("onRequest unhandled error", {
+        component: "writer-agent",
+        method: request.method,
+        pathname: url.pathname,
+        error: error instanceof Error ? error.message : String(error),
+      });
       // Reset isGenerating if it was left stuck
       if (this.state.isGenerating) {
         this.setState({
@@ -381,69 +629,269 @@ export class WriterAgent extends AIChatAgent<Env, WriterAgentState> {
           lastError: error instanceof Error ? error.message : "Unknown error",
         });
       }
-      return Response.json(
-        { error: "Internal server error" },
-        { status: 500 },
-      );
+      return Response.json({ error: "Internal server error" }, { status: 500 });
     }
   }
 
   async handleChat(userMessage: string): Promise<Response> {
-    let systemPrompt: string;
-    let tools: ReturnType<typeof createToolSet>;
-    try {
-      ({ systemPrompt, tools } = await this.prepareLlmCall());
-    } catch (error) {
-      logger("web").error("handleChat prepareLlmCall failed", { component: "writer-agent", error: error instanceof Error ? error.message : String(error) });
-      this.setState({
-        ...this.state,
-        isGenerating: false,
-        lastError: error instanceof Error ? error.message : "Unknown error",
-      });
+    if (this.autoWriteInProgress)
       return Response.json(
-        { error: "Failed to prepare LLM call" },
-        { status: 500 },
+        { error: "An auto-write operation is already in progress." },
+        { status: 429 },
       );
-    }
-
-    const userMsg = {
+    const userMsg: UIMessage = {
       id: crypto.randomUUID(),
-      role: "user" as const,
-      parts: [{ type: "text" as const, text: userMessage }],
+      role: "user",
+      parts: [{ type: "text", text: userMessage }],
     };
-    const currentMessages = [...this.messages, userMsg];
-    await this.persistMessages(currentMessages);
-
+    const capture: HttpChatCapture = {};
+    this.httpChatCaptures.set(userMsg.id, capture);
     try {
-      const chatModel = await this.trackedModel("claude-sonnet-5", "chat");
-      const modelMessages = await convertToModelMessages(currentMessages);
-      const result = await generateText({
-        model: chatModel,
-        instructions: systemPrompt,
-        messages: modelMessages,
-        tools,
-        stopWhen: isStepCount(20),
+      const result = await this.withProgrammaticWriter(async () => {
+        this.programmaticExecutions++;
+        try {
+          return await this.saveMessages((messages) => {
+            this.writerTurns().clearExecution();
+            return [...messages, userMsg];
+          });
+        } finally {
+          this.programmaticExecutions--;
+        }
       });
-
-      this.setState({ ...this.state, isGenerating: false });
-
+      if (result.status !== "completed" || capture.error) {
+        return Response.json(
+          { error: "Failed to generate response" },
+          { status: 500 },
+        );
+      }
+      const position = this.messages.findIndex(
+        (message) => message.id === userMsg.id,
+      );
+      const replies: UIMessage[] = [];
+      for (const message of this.messages.slice(position + 1)) {
+        if (message.role === "user") break;
+        if (message.role === "assistant") replies.push(message);
+      }
+      const text = replies
+        .flatMap((message) =>
+          message.parts
+            .filter((part) => part.type === "text")
+            .map((part) => part.text),
+        )
+        .join("\n");
       return Response.json({
-        text: result.text,
-        finishReason: result.finishReason,
-        usage: result.usage,
+        text,
+        finishReason: capture.finishReason,
+        usage: capture.usage,
       });
     } catch (error) {
-      logger("web").error("handleChat generateText failed", { component: "writer-agent", error: error instanceof Error ? error.message : String(error) });
-      this.setState({
-        ...this.state,
-        isGenerating: false,
-        lastError: error instanceof Error ? error.message : "Unknown error",
+      logger("web").error("Writer chat failed", {
+        component: "writer-agent",
+        errorType: error instanceof Error ? error.name : "Unknown",
       });
       return Response.json(
         { error: "Failed to generate response" },
         { status: 500 },
       );
+    } finally {
+      this.httpChatCaptures.delete(userMsg.id);
     }
+  }
+
+  private nowSeconds() {
+    return Math.floor(Date.now() / 1000);
+  }
+  private writerTurns() {
+    return new WriterTurnStore(this.sql.bind(this));
+  }
+
+  private async ensureWriterTurnQueued(turnId: string) {
+    if (!(await this.getQueue(turnId))) {
+      await this.queue(
+        "runMcpWriterTurn",
+        { turnId },
+        { id: turnId, retry: { maxAttempts: 1 } },
+      );
+    }
+  }
+
+  private async authorizeDelegatedWriter(row: StoredWriterTurn) {
+    if (this.writerTurns().get(row.turn_id)?.status !== "running")
+      throw new BusinessError(
+        "This writer turn is no longer running",
+        "CONFLICT",
+      );
+    if (this.autoWriteInProgress)
+      throw new BusinessError(
+        "An auto-write operation is already in progress",
+        "CONFLICT",
+      );
+    const stored: unknown = JSON.parse(row.caller_json);
+    const caller = parseMcpWriterCaller(stored);
+    const record = await authorizeWriterExecution(
+      caller,
+      this.name,
+      createGenerationDependencies(this.env),
+    );
+    // Use the same authorized snapshot, never a second unchecked publication/style pointer.
+    // Draft versions and writing phase belong to DO SQLite/state.
+    this.setState({
+      ...this.state,
+      sessionId: record.id,
+      userId: record.userId,
+      title: record.title ?? this.state.title,
+      publicationId: record.publicationId,
+      styleId: record.styleId ?? null,
+      seedContext: record.seedContext ?? null,
+    });
+    return record;
+  }
+
+  async runMcpWriterTurn(payload: unknown): Promise<void> {
+    if (
+      !payload ||
+      typeof payload !== "object" ||
+      !("turnId" in payload) ||
+      typeof payload.turnId !== "string"
+    )
+      return;
+    const turnId = payload.turnId;
+    const store = this.writerTurns();
+    const queued = store.get(turnId);
+    if (!queued || queued.status !== "queued") return;
+    try {
+      await this.withProgrammaticWriter(async () => {
+        // Non-chat callers must not overlap an active stream or pending client interaction.
+        if (
+          !(await this.waitUntilStable({
+            timeout: 15 * 60_000,
+            pendingInteraction: () => this.hasPendingClientInteraction(),
+          }))
+        ) {
+          store.finish(
+            turnId,
+            "failed",
+            "The writer is waiting for another interaction. Review the conversation before retrying.",
+            this.nowSeconds(),
+          );
+          return;
+        }
+        const row = store.claim(turnId, this.nowSeconds());
+        if (!row) return;
+        this.programmaticExecutions++;
+        try {
+          const outcome = await this.saveMessages(
+            async (messages) => {
+              // This durable slot belongs to the SDK turn, not an actor-wide
+              // caller variable. It exists before persistence/repair can yield.
+              store.activateExecution(row.turn_id);
+              await this.authorizeDelegatedWriter(row);
+              if (
+                messages.some((message) => message.id === row.user_message_id)
+              ) {
+                throw new Error(
+                  "Writer message was already persisted without a completed receipt",
+                );
+              }
+              return [
+                ...messages,
+                {
+                  id: row.user_message_id,
+                  role: "user" as const,
+                  parts: [{ type: "text" as const, text: row.message }],
+                },
+              ];
+            },
+            { signal: AbortSignal.timeout(15 * 60_000) },
+          );
+          if (outcome.status === "completed") {
+            await this.authorizeDelegatedWriter(row);
+            store.finish(turnId, "completed", null, this.nowSeconds());
+          } else {
+            store.finish(
+              turnId,
+              outcome.status === "aborted" ? "interrupted" : "failed",
+              "The writer turn did not complete. Review the conversation and drafts before sending another message.",
+              this.nowSeconds(),
+            );
+          }
+        } finally {
+          store.clearExecution(row.turn_id);
+          this.programmaticExecutions--;
+        }
+      });
+    } catch (error) {
+      const denied =
+        error instanceof BusinessError &&
+        ["FORBIDDEN", "NOT_FOUND"].includes(error.code);
+      store.finish(
+        turnId,
+        denied ? "cancelled" : "failed",
+        denied
+          ? "The originating connection is no longer authorized for this writer turn."
+          : "The writer turn failed. Review the conversation and drafts before sending another message.",
+        this.nowSeconds(),
+      );
+      logger("web").warn("Delegated writer turn stopped", {
+        component: "writer-agent",
+        turnId,
+        code: denied ? "FORBIDDEN" : "WRITER_FAILED",
+      });
+    } finally {
+      // A successor UI turn may already have acquired the SDK slot; do not clear its state.
+      if (
+        !this.autoWriteInProgress &&
+        lastUserMessageId(this.messages) === turnId
+      ) {
+        this.setState({ ...this.state, isGenerating: false });
+      }
+    }
+  }
+
+  protected async onChatRecovery(
+    context: ChatRecoveryContext,
+  ): Promise<ChatRecoveryOptions | void> {
+    const store = this.writerTurns();
+    const userId = lastUserMessageId(context.messages);
+    const row =
+      store.byRequest(context.requestId) ??
+      store.byRequest(context.recoveryRootRequestId) ??
+      (userId ? store.byUserMessage(userId) : null);
+    if (row) {
+      store.finish(
+        row.turn_id,
+        "interrupted",
+        "The writer turn was interrupted. Review the conversation and drafts before sending another message.",
+        this.nowSeconds(),
+      );
+      return { continue: false };
+    }
+    return super.onChatRecovery(context);
+  }
+
+  private handleInternalWriterRequest(request: Request, path: string) {
+    return handleMcpWriterRequest(request, path, {
+      internalApiKey: this.env.INTERNAL_API_KEY,
+      sessionId: this.name,
+      store: this.writerTurns(),
+      authorize: (caller, action) =>
+        action === "write"
+          ? authorizeWriterExecution(
+              caller,
+              this.name,
+              createGenerationDependencies(this.env),
+            )
+          : authorizeWritingSession(
+              caller,
+              this.name,
+              "read",
+              createGenerationDependencies(this.env),
+            ),
+      ensureQueued: (id) => this.ensureWriterTurnQueued(id),
+      messages: () => this.messages,
+      isAutoWriting: () => this.autoWriteInProgress,
+      now: () => this.nowSeconds(),
+    });
   }
 
   /**
@@ -452,13 +900,18 @@ export class WriterAgent extends AIChatAgent<Env, WriterAgentState> {
    * uses an autonomous system prompt, and returns the draft in the response.
    */
   async handleAutoWrite(instruction: string): Promise<Response> {
-    if (this.state.isGenerating) {
+    if (
+      this.state.isGenerating ||
+      this.autoWriteInProgress ||
+      this.programmaticAdmissions > 0
+    ) {
       return Response.json(
         { error: "An auto-write operation is already in progress." },
         { status: 429 },
       );
     }
 
+    this.autoWriteInProgress = true;
     let customStylePrompt: string | undefined;
     let systemPrompt: string;
     let tools: ReturnType<typeof createAutoWriteToolSet>;
@@ -470,7 +923,11 @@ export class WriterAgent extends AIChatAgent<Env, WriterAgentState> {
       });
       tools = createAutoWriteToolSet(this);
     } catch (error) {
-      logger("web").error("handleAutoWrite setup failed", { component: "writer-agent", error: error instanceof Error ? error.message : String(error) });
+      this.autoWriteInProgress = false;
+      logger("web").error("handleAutoWrite setup failed", {
+        component: "writer-agent",
+        error: error instanceof Error ? error.message : String(error),
+      });
       return Response.json(
         { success: false, error: "Failed to prepare auto-write" },
         { status: 500 },
@@ -488,13 +945,14 @@ export class WriterAgent extends AIChatAgent<Env, WriterAgentState> {
     // 9-minute safety timeout so the DO doesn't run indefinitely
     // if the calling workflow step times out (10 min)
     const abortController = new AbortController();
-    const timeoutId = setTimeout(
-      () => abortController.abort(),
-      9 * 60 * 1000,
-    );
+    const timeoutId = setTimeout(() => abortController.abort(), 9 * 60 * 1000);
 
     try {
-      const autoWriteModel = await this.trackedModel("claude-sonnet-5", "auto_write", "scout");
+      const autoWriteModel = await this.trackedModel(
+        "claude-sonnet-5",
+        "auto_write",
+        "scout",
+      );
       const result = await generateText({
         model: autoWriteModel,
         instructions: systemPrompt,
@@ -533,7 +991,10 @@ export class WriterAgent extends AIChatAgent<Env, WriterAgentState> {
       });
     } catch (error) {
       clearTimeout(timeoutId);
-      logger("web").error("handleAutoWrite generateText failed", { component: "writer-agent", error: error instanceof Error ? error.message : String(error) });
+      logger("web").error("handleAutoWrite generateText failed", {
+        component: "writer-agent",
+        error: error instanceof Error ? error.message : String(error),
+      });
       this.setState({
         ...this.state,
         isGenerating: false,
@@ -545,7 +1006,16 @@ export class WriterAgent extends AIChatAgent<Env, WriterAgentState> {
       try {
         draft = this.getCurrentDraft();
       } catch (draftError) {
-        logger("web").error("handleAutoWrite failed to check for partial draft", { component: "writer-agent", error: draftError instanceof Error ? draftError.message : String(draftError) });
+        logger("web").error(
+          "handleAutoWrite failed to check for partial draft",
+          {
+            component: "writer-agent",
+            error:
+              draftError instanceof Error
+                ? draftError.message
+                : String(draftError),
+          },
+        );
       }
 
       if (draft) {
@@ -566,6 +1036,8 @@ export class WriterAgent extends AIChatAgent<Env, WriterAgentState> {
         { success: false, error: "Auto-write failed" },
         { status: 500 },
       );
+    } finally {
+      this.autoWriteInProgress = false;
     }
   }
 

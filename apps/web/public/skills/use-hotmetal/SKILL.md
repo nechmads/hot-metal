@@ -1,66 +1,71 @@
 ---
 name: use-hotmetal
-description: Connect to Hot Metal through OAuth MCP and work with the user's publications, topics, ideas, writing drafts and publishing. Use when the user wants to connect an assistant to Hot Metal or create and manage content there.
+description: Connect to Hot Metal through OAuth MCP and collaborate with its AI writer on articles, conversation, versioned drafts and publishing. Use when the user wants to connect an assistant to Hot Metal or create and manage content there.
 ---
 
 # Use Hot Metal
 
-Hot Metal is a writing and publishing workspace for managing publications and their blogs. Users define topics, scout content ideas, research and generate drafts, review/edit them, and publish finished posts. They can also bring their own Markdown. Configured LinkedIn and X connections optionally share published posts. A publication is the scope for content and permissions; a writing session holds generated draft versions before publication.
+Hot Metal is a writing and publishing workspace with its own AI writer. Users manage publications/blogs, define topics, scout ideas, research articles, discuss and revise drafts with the writer, then review and publish. They can also bring authored Markdown. Configured LinkedIn and X connections optionally share published posts. A writing session holds the writer's conversation and versioned drafts; it can start before a publication is chosen.
 
 ## Connect and verify
 
-- Remote MCP endpoint: **https://hotmetalapp.com/mcp**
-- Transport: **Streamable HTTP**, with **OAuth**.
-- This skill: **https://hotmetalapp.com/skills/use-hotmetal/SKILL.md**
+- Remote MCP: **https://hotmetalapp.com/mcp** — Streamable HTTP with OAuth.
+- This skill: **https://hotmetalapp.com/skills/use-hotmetal/SKILL.md**.
 
-First discover whether the current assistant already has Hot Metal tools. If it can configure remote MCP connectors itself, use its supported configuration mechanism with that URL and OAuth. Otherwise, guide the user to add a remote/custom MCP connector using the same URL and start its authorization flow. Use the client's actual capabilities and current instructions; avoid inventing menu names, configuration APIs or installation success.
+Discover existing Hot Metal tools first. If the assistant can configure remote connectors, use its supported mechanism with that endpoint and OAuth. Otherwise guide the user to add it through their client's actual connection flow. Avoid invented menu names or configuration capabilities. The user signs in through Clerk and approves publication/action/outlet permissions in the browser. Let the client handle OAuth and cookies; do not request passwords, API keys or copied tokens.
 
-The user signs in to Hot Metal through Clerk and approves the publication/action/outlet choices in the browser. Let the client handle OAuth, redirects and cookies. Do not request passwords, API keys or copied bearer tokens. If tools are still unavailable, explain which connection step remains incomplete.
+After connection, call `getMe({})` and `listPublications({})`. Report the account and accessible publications; these read-only checks do not prove drafting/publishing. An empty publication list still permits creating a private unassigned writing session when write is granted. Use actual returned publication IDs and resolve ambiguous publication choices before assigning content.
 
-After authorization, discover the current tools and call `getMe({})` and `listPublications({})`. These read-only calls establish the connected account and accessible publications without changing content. Report the account name and available publications; do not claim publishing or generation was tested. If the list is empty, say so. Get publication IDs from actual results and resolve an ambiguous publication choice before writing.
+Runtime tool discovery is authoritative; clients may namespace names. Results include structured content and JSON text. Array results use `{ "data": [...] }`. If conversational tools are unavailable, explain that limitation; do not silently substitute an article you write yourself or claim the Hot Metal writer produced it.
 
-Runtime discovery is authoritative for tool availability, names and argument schemas. Clients may namespace tool names. Successful tool results include structured content and JSON text; array results are wrapped as `{ "data": [...] }`. Read actual results rather than assuming REST envelopes or fabricating IDs.
+## Collaborate with Hot Metal's writer
 
-## Respect the grant and the task
+Use this as the primary flow for discussing, researching and revising an article. Forward the user's goals and questions to Hot Metal's writer, read its replies, and send follow-up instructions in the same session. Let that writer create and revise its saved drafts.
 
-Read is required; write and publish are separate permissions. Selected-publication grants cover only their selection. All-publication grants cover current and future publications the account owns. Narrowing or revocation can remove access while a token or job still exists. Expanding access requires new consent; users manage connections in Hot Metal Settings.
+1. **Create a session.** `createWritingSession` accepts optional `title`, `publicationId`, `seedContext` and `styleId`. Begin without a publication when none is chosen:
 
-A publishing grant enables publication when the user's task authorizes it. A request to prepare or review a draft does not authorize publishing it. Leave `autoPublish` false unless the user authorized automatic publication. Social shares additionally require explicit outlet consent for LinkedIn (`linkedin`) or X (`twitter`) and an existing configured connection. Do not enable extra destinations merely because credentials exist.
+   ```json
+   {"title":"Architecture article","seedContext":"Prepare a sourced article for review. Discuss the angle before drafting."}
+   ```
 
-## Choose the content workflow
+   For a known publication, add `"publicationId":"actual-publication-id"`. Retain the returned `sessionId`; the result also includes title, status, nullable publicationId, currentDraftVersion and timestamps. Choose only a prebuilt style for an unassigned session. An assigned session can also use its publication's configured custom style.
 
-Useful read tools include `getPublication({"publicationId":"actual-id"})`, `listTopics`, `listIdeas`, `getIdea`, `listStyles`, and `listPosts` (optional `limit` 1–100 and `offset`). Use returned topic/idea/style IDs and the publication's context. Styles exposed by MCP are prebuilt or needed by accessible publications.
+2. **Ask the writer.** `sendWriterMessage` requires a session ID, message and a unique key for this turn:
 
-For text already written, `createPost` stores authored Markdown and defaults to a draft:
+   ```json
+   {"sessionId":"returned-session-id","message":"What angle would make this architecture article useful to a technical founder? Suggest an outline before drafting.","idempotencyKey":"article-angle-turn-1"}
+   ```
 
-```json
-{"publicationId":"actual-id","title":"Architecture notes","markdown":"## What we learned\n\nDraft text.","status":"draft"}
-```
+   It returns a durable receipt with `turnId`, `sessionId`, `status`, nullable `error`, `createdAt` and `updatedAt`. Retain the key/message for retries; a different message under the same key conflicts. Each new question or revision needs a new key.
 
-Every `updatePost` edits an existing CMS record and requires publish permission, even if its requested status is draft. For a writer-session draft, use `updateDraft` with `sessionId`, `content`, and optionally `title`/`version`; this requires write permission and leaves the live CMS post alone.
+3. **Read the reply.** Poll `getWriterConversation` with the returned IDs:
 
-Topics use `createTopic`, `updateTopic` and `deleteTopic`. Topic priority is 1 Normal, 2 High or 3 Urgent. `updatePublication` permits content settings only; publication creation/deletion, recurring automation changes, CMS linkage and account administration are outside MCP v1.
+   ```json
+   {"sessionId":"returned-session-id","turnId":"returned-turn-id","limit":50}
+   ```
 
-`runScout({"publicationId":"actual-id"})` queues discovery using stored automation settings. Full-auto settings can also generate and publish, so this operation may require publish permission. Treat it as potentially publishing and establish that its effects fit the task before triggering it. MCP publication details do not expose the automation mode. Use `listIdeas` for existing ideas; scout completion webhooks are unsupported.
+   The result contains `messages` (`id`, user/assistant `role`, `text`, optional `truncated`), `turns`, and nullable `nextCursor`. Follow returned cursors for more messages; do not invent them. Turn states are `queued`, `running`, `completed`, `failed`, `cancelled` or `interrupted`. Poll with reasonable spacing. If polling cannot continue, report the receipt and last state without promising background wakeups. History is a bounded plain-text projection; internal tool/model data is excluded.
 
-## Generate, review and publish
+4. **Continue and retrieve the writer's drafts.** After the reply, send another turn such as “Use that outline, research primary sources and save a complete draft.” Wait for completion, then call `listDrafts({"sessionId":"returned-session-id"})`. It returns `{data:[{version,title,wordCount,isFinal,createdAt}]}`. Read actual content with `getDraftVersion({"sessionId":"returned-session-id","version":1})`, replacing 1 with a returned version. Its fields include version, title, content, wordCount, isFinal and createdAt. A completed conversation turn need not save a draft: inspect the reply/list rather than assuming one exists.
 
-`generateDraft` is asynchronous. Choose an idempotency key for this writing request, retain it with the command and reuse both if submission must be retried:
+5. **Request revisions through the writer.** Send a new turn, for example “Revise the saved article to explain the tradeoffs more clearly; preserve citations and save the revision.” Poll, list drafts again and read the new version. Review the actual saved content before reporting completion. `getSession` provides an additional status/current-draft summary.
 
-```json
-{"publicationId":"actual-id","title":"Architecture notes","instructions":"Research the topic, cite primary sources and prepare a draft for review.","autoPublish":false,"idempotencyKey":"unique-key-for-this-writing-request"}
-```
+`updateDraft` is available for an explicitly requested direct saved-draft edit; it is not the default substitute for asking Hot Metal's writer to revise an article. `createPost` accepts existing authored Markdown and defaults to draft. Every `updatePost` mutates an existing CMS record and requires publish permission, even when its requested status is draft.
 
-The result contains `jobId`, `sessionId` and `status`. Poll `getGenerationJob({"jobId":"returned-id"})` with reasonable spacing. `queued`/`running` are pending; `draft_ready` and `published` are successful terminal states. `failed`, `cancelled` and `publish_unknown` require inspection or recovery. Avoid tight loops. If the current session cannot continue polling, report the handle and last state; do not promise background wakeups.
+## Permissions and publishing
 
-Once ready, use `getSession({"sessionId":"returned-id"})`. Its `currentDraft` summary identifies the saved version. Retrieve it with `getDraftVersion({"sessionId":"returned-id","version":1})`, replacing 1 with the actual version. That result includes `version`, `title`, `content`, `wordCount`, `isFinal` and `createdAt`. Review sources/content and make requested session-draft edits before publishing.
+Read is required; write and publish are separate. An assigned session follows the account's current publication grant. Selected grants cover their selection; all covers current and future owned publications. An **unassigned** session is accessible through MCP only to the connection that created it, plus its owner in the Hot Metal UI. This does not grant access to unrelated personal/UI sessions or another connection's unassigned work. Reconnecting as a different connection does not inherit that private session. Revocation/narrowing can deny queued turns.
 
-When publication is authorized, call `publishDraft` with the actual session ID, a lowercase hyphenated `slug`, and optional `draftVersion`/author metadata. Request social shares only when intended, using `publishToLinkedIn` or `publishToTwitter` and permitted optional text. Inspect `results` and `socialResults`: blog success with social failure is partial success. Report the actual post URL/ID and failed outlets without republishing the blog.
+Delegated writer turns use the same writer engine/history as the UI, with publishing omitted from their tools. Publish through explicit `publishDraft` only when the task authorizes it. For your own unassigned session, provide an authorized `publicationId` along with `sessionId`, lowercase hyphenated `slug` and optional `draftVersion`/author metadata. An already assigned session cannot be rehomed through publishing. Social flags additionally require intended sharing, explicit LinkedIn/X outlet consent and configured accounts. Inspect `results` and `socialResults`; blog success/social failure is partial success, not a reason to republish the blog.
 
-## Recover without duplicate work
+`generateDraft` remains a separate one-shot asynchronous option requiring a publication, title, instructions and idempotencyKey. It returns job/session IDs; poll `getGenerationJob`, then read the saved draft. Keep `autoPublish:false` unless automatic publication is authorized. Use conversational turns for collaborative article work.
 
-- Transport 401: let the client refresh/reconnect through OAuth; narrowed policies invalidate old tokens. Do not replace OAuth with account credentials.
-- Permission denial (`FORBIDDEN`, often HTTP 403): explain the missing grant/action/outlet. More access needs user consent; retrying unchanged cannot supply it. For `NOT_FOUND`, verify the real ID and allowed publication without probing unrelated resources.
-- `QUOTA_EXCEEDED`: report the limit; do not repeatedly submit new work. For rate limiting, honor `Retry-After` when available.
-- Service 503/upstream failures: use bounded retries for reads; check an existing job before resubmitting generation. Same key/input recovers the same submission; different input under that key conflicts.
-- `publish_unknown`/`PUBLISH_UNKNOWN`: inspect the actual publication and saved session. Never automatically republish or create a replacement publishing job while the outcome is ambiguous. Revocation cannot undo an external write already accepted.
+Other tools include publication/post/topic/idea/style reads and topic mutations. `runScout` uses stored automation settings and may generate/publish in full-auto mode; establish that those effects fit the task. Publication projections do not expose automation mode. Scout callbacks are unsupported. Publication lifecycle, recurring automation changes, CMS linkage and account administration are outside this connector's scope.
+
+## Recover safely
+
+Transport 401 calls for client refresh/reconnection. Permission denial requires the appropriate live grant, not repeated unchanged requests; expansion needs fresh user consent. For not-found, verify the actual ID and publication/private-session boundary. Respect quota/rate limits and Retry-After when present.
+
+For a disconnected turn submission, reuse the same session, key and message, or read its receipt/history; do not create a replacement session. Failed/cancelled/interrupted turns need inspection of replies and saved drafts before a new turn. Do not automatically rerun interrupted work. Use bounded read retries for transient service failures.
+
+One-shot `publish_unknown` or `PUBLISH_UNKNOWN` requires checking the actual publication and session. Never automatically republish while the outcome is ambiguous. Revocation cannot undo a provider write already accepted.

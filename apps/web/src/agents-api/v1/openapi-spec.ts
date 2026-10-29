@@ -836,6 +836,7 @@ export const openapiSpec = {
 					{
 						type: 'object',
 						properties: {
+							publicationId: { type: 'string', format: 'uuid', description: 'Destination publication; defaults to the session publication. Required when the session is unassigned.' },
 							slug: {
 								type: 'string',
 								description: 'URL slug for the published post',

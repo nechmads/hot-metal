@@ -2,7 +2,7 @@
   "info": {
     "name": "Hot Metal \u2014 OAuth MCP and Assistant Connections",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
-    "description": "Production MCP enabled on 2026-10-29; hosted public OAuth startup checks passed. No hosted signed-in grant/token or consumer workflow proof is claimed. OAuth discovery, registration, code+PKCE, refresh, MCP protocol and Clerk consent/list/narrow/revoke. docs/mcp.md is canonical. Set variables using your test environment; never export live tokens. Same-client grants remain independent. Mutation Origin is required. Internal scout request is trusted service-only. Live ChatGPT/Claude validation is a separate release gate."
+    "description": "Production MCP enabled on 2026-10-29; hosted public OAuth startup checks passed. No hosted signed-in grant/token or consumer workflow proof is claimed. OAuth discovery, registration, code+PKCE, refresh, MCP protocol and Clerk consent/list/narrow/revoke. docs/mcp.md is canonical. Set variables using your test environment; never export live tokens. Same-client grants remain independent. Mutation Origin is required. Internal scout request is trusted service-only. Live ChatGPT/Claude validation is a separate release gate.\n\nConversational article writing is the primary flow: createWritingSession (publication optional), sendWriterMessage with turn idempotency, poll getWriterConversation, then listDrafts/getDraftVersion and request writer revisions. Private unassigned sessions belong only to the originating connection. New conversation deployment/model/consumer proof is tracked separately in docs/mcp.md."
   },
   "variable": [
     {
@@ -87,6 +87,21 @@
     },
     {
       "key": "encodedMcpOrigin",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "sessionId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "turnId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "conversationCursor",
       "value": "",
       "type": "string"
     }
@@ -1122,6 +1137,663 @@
             }
           ],
           "body": "{\n  \"authorized\": true,\n  \"autoPublishMode\": \"draft\"\n}"
+        }
+      ]
+    },
+    {
+      "name": "createPrivateWritingSession",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{mcpAccessToken}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Accept",
+            "value": "application/json, text/event-stream"
+          }
+        ],
+        "url": "{{WEB_BASE_URL}}/mcp",
+        "description": "Write scope. Start without publicationId; only this MCP connection and owner UI can access the unassigned session. Keep returned sessionId. No model turn yet.",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"jsonrpc\": \"2.0\",\n  \"id\": 10,\n  \"method\": \"tools/call\",\n  \"params\": {\n    \"name\": \"createWritingSession\",\n    \"arguments\": {\n      \"title\": \"Architecture article\"\n    }\n  }\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "response": [
+        {
+          "name": "200 MCP result",
+          "originalRequest": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{mcpAccessToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json, text/event-stream"
+              }
+            ],
+            "url": "{{WEB_BASE_URL}}/mcp",
+            "description": "Write scope. Start without publicationId; only this MCP connection and owner UI can access the unassigned session. Keep returned sessionId. No model turn yet.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"jsonrpc\": \"2.0\",\n  \"id\": 10,\n  \"method\": \"tools/call\",\n  \"params\": {\n    \"name\": \"createWritingSession\",\n    \"arguments\": {\n      \"title\": \"Architecture article\"\n    }\n  }\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "status": "OK",
+          "code": 200,
+          "header": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "body": "{\n  \"jsonrpc\": \"2.0\",\n  \"id\": 10,\n  \"result\": {\n    \"content\": [\n      {\n        \"type\": \"text\",\n        \"text\": \"{\\\"sessionId\\\": \\\"session_uuid\\\", \\\"title\\\": \\\"Architecture article\\\", \\\"status\\\": \\\"active\\\", \\\"publicationId\\\": null, \\\"currentDraftVersion\\\": 0, \\\"createdAt\\\": 1793290000, \\\"updatedAt\\\": 1793290000}\"\n      }\n    ],\n    \"structuredContent\": {\n      \"sessionId\": \"session_uuid\",\n      \"title\": \"Architecture article\",\n      \"status\": \"active\",\n      \"publicationId\": null,\n      \"currentDraftVersion\": 0,\n      \"createdAt\": 1793290000,\n      \"updatedAt\": 1793290000\n    }\n  }\n}"
+        }
+      ]
+    },
+    {
+      "name": "createPublicationWritingSession",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{mcpAccessToken}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Accept",
+            "value": "application/json, text/event-stream"
+          }
+        ],
+        "url": "{{WEB_BASE_URL}}/mcp",
+        "description": "Write scope and actual publication grant. Optional seedContext/styleId; unassigned only prebuilt styles, assigned may use publication-configured custom style.",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"jsonrpc\": \"2.0\",\n  \"id\": 10,\n  \"method\": \"tools/call\",\n  \"params\": {\n    \"name\": \"createWritingSession\",\n    \"arguments\": {\n      \"title\": \"Architecture article\",\n      \"publicationId\": \"{{publicationId}}\"\n    }\n  }\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "response": [
+        {
+          "name": "200 MCP result",
+          "originalRequest": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{mcpAccessToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json, text/event-stream"
+              }
+            ],
+            "url": "{{WEB_BASE_URL}}/mcp",
+            "description": "Write scope and actual publication grant. Optional seedContext/styleId; unassigned only prebuilt styles, assigned may use publication-configured custom style.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"jsonrpc\": \"2.0\",\n  \"id\": 10,\n  \"method\": \"tools/call\",\n  \"params\": {\n    \"name\": \"createWritingSession\",\n    \"arguments\": {\n      \"title\": \"Architecture article\",\n      \"publicationId\": \"{{publicationId}}\"\n    }\n  }\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "status": "OK",
+          "code": 200,
+          "header": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "body": "{\n  \"jsonrpc\": \"2.0\",\n  \"id\": 10,\n  \"result\": {\n    \"content\": [\n      {\n        \"type\": \"text\",\n        \"text\": \"{\\\"sessionId\\\": \\\"session_uuid\\\", \\\"title\\\": \\\"Architecture article\\\", \\\"status\\\": \\\"active\\\", \\\"publicationId\\\": \\\"pub_uuid\\\", \\\"currentDraftVersion\\\": 0, \\\"createdAt\\\": 1793290000, \\\"updatedAt\\\": 1793290000}\"\n      }\n    ],\n    \"structuredContent\": {\n      \"sessionId\": \"session_uuid\",\n      \"title\": \"Architecture article\",\n      \"status\": \"active\",\n      \"publicationId\": \"pub_uuid\",\n      \"currentDraftVersion\": 0,\n      \"createdAt\": 1793290000,\n      \"updatedAt\": 1793290000\n    }\n  }\n}"
+        }
+      ]
+    },
+    {
+      "name": "askHotMetalWriter",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{mcpAccessToken}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Accept",
+            "value": "application/json, text/event-stream"
+          }
+        ],
+        "url": "{{WEB_BASE_URL}}/mcp",
+        "description": "Queue durable turn. Reuse identical session/key/message to recover a lost response. Different message under same key conflicts; each new turn needs a new key.",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"jsonrpc\": \"2.0\",\n  \"id\": 10,\n  \"method\": \"tools/call\",\n  \"params\": {\n    \"name\": \"sendWriterMessage\",\n    \"arguments\": {\n      \"sessionId\": \"{{sessionId}}\",\n      \"message\": \"What angle and outline would help a technical founder? Ask any clarifying questions before drafting.\",\n      \"idempotencyKey\": \"article-outline-turn-1\"\n    }\n  }\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "response": [
+        {
+          "name": "200 MCP result",
+          "originalRequest": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{mcpAccessToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json, text/event-stream"
+              }
+            ],
+            "url": "{{WEB_BASE_URL}}/mcp",
+            "description": "Queue durable turn. Reuse identical session/key/message to recover a lost response. Different message under same key conflicts; each new turn needs a new key.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"jsonrpc\": \"2.0\",\n  \"id\": 10,\n  \"method\": \"tools/call\",\n  \"params\": {\n    \"name\": \"sendWriterMessage\",\n    \"arguments\": {\n      \"sessionId\": \"{{sessionId}}\",\n      \"message\": \"What angle and outline would help a technical founder? Ask any clarifying questions before drafting.\",\n      \"idempotencyKey\": \"article-outline-turn-1\"\n    }\n  }\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "status": "OK",
+          "code": 200,
+          "header": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "body": "{\n  \"jsonrpc\": \"2.0\",\n  \"id\": 10,\n  \"result\": {\n    \"content\": [\n      {\n        \"type\": \"text\",\n        \"text\": \"{\\\"turnId\\\": \\\"turn_uuid\\\", \\\"sessionId\\\": \\\"session_uuid\\\", \\\"status\\\": \\\"queued\\\", \\\"error\\\": null, \\\"createdAt\\\": 1793290000, \\\"updatedAt\\\": 1793290000}\"\n      }\n    ],\n    \"structuredContent\": {\n      \"turnId\": \"turn_uuid\",\n      \"sessionId\": \"session_uuid\",\n      \"status\": \"queued\",\n      \"error\": null,\n      \"createdAt\": 1793290000,\n      \"updatedAt\": 1793290000\n    }\n  }\n}"
+        }
+      ]
+    },
+    {
+      "name": "pollWriterConversation",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{mcpAccessToken}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Accept",
+            "value": "application/json, text/event-stream"
+          }
+        ],
+        "url": "{{WEB_BASE_URL}}/mcp",
+        "description": "Read scope. turnId filters receipts; messages page independently. Use returned nextCursor to page. Status queued/running/completed/failed/cancelled/interrupted. A completed reply may not save any draft. Internal tool/model data excluded.",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"jsonrpc\": \"2.0\",\n  \"id\": 10,\n  \"method\": \"tools/call\",\n  \"params\": {\n    \"name\": \"getWriterConversation\",\n    \"arguments\": {\n      \"sessionId\": \"{{sessionId}}\",\n      \"turnId\": \"{{turnId}}\",\n      \"limit\": 50\n    }\n  }\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "response": [
+        {
+          "name": "200 MCP result",
+          "originalRequest": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{mcpAccessToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json, text/event-stream"
+              }
+            ],
+            "url": "{{WEB_BASE_URL}}/mcp",
+            "description": "Read scope. turnId filters receipts; messages page independently. Use returned nextCursor to page. Status queued/running/completed/failed/cancelled/interrupted. A completed reply may not save any draft. Internal tool/model data excluded.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"jsonrpc\": \"2.0\",\n  \"id\": 10,\n  \"method\": \"tools/call\",\n  \"params\": {\n    \"name\": \"getWriterConversation\",\n    \"arguments\": {\n      \"sessionId\": \"{{sessionId}}\",\n      \"turnId\": \"{{turnId}}\",\n      \"limit\": 50\n    }\n  }\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "status": "OK",
+          "code": 200,
+          "header": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "body": "{\n  \"jsonrpc\": \"2.0\",\n  \"id\": 10,\n  \"result\": {\n    \"content\": [\n      {\n        \"type\": \"text\",\n        \"text\": \"{\\\"sessionId\\\": \\\"session_uuid\\\", \\\"messages\\\": [{\\\"id\\\": \\\"user_message\\\", \\\"role\\\": \\\"user\\\", \\\"text\\\": \\\"What angle would help a technical founder?\\\"}, {\\\"id\\\": \\\"assistant_message\\\", \\\"role\\\": \\\"assistant\\\", \\\"text\\\": \\\"Who is the audience and which architecture decision should this article explain?\\\"}], \\\"turns\\\": [{\\\"turnId\\\": \\\"turn_uuid\\\", \\\"sessionId\\\": \\\"session_uuid\\\", \\\"status\\\": \\\"completed\\\", \\\"error\\\": null, \\\"createdAt\\\": 1793290000, \\\"updatedAt\\\": 1793290001}], \\\"nextCursor\\\": null}\"\n      }\n    ],\n    \"structuredContent\": {\n      \"sessionId\": \"session_uuid\",\n      \"messages\": [\n        {\n          \"id\": \"user_message\",\n          \"role\": \"user\",\n          \"text\": \"What angle would help a technical founder?\"\n        },\n        {\n          \"id\": \"assistant_message\",\n          \"role\": \"assistant\",\n          \"text\": \"Who is the audience and which architecture decision should this article explain?\"\n        }\n      ],\n      \"turns\": [\n        {\n          \"turnId\": \"turn_uuid\",\n          \"sessionId\": \"session_uuid\",\n          \"status\": \"completed\",\n          \"error\": null,\n          \"createdAt\": 1793290000,\n          \"updatedAt\": 1793290001\n        }\n      ],\n      \"nextCursor\": null\n    }\n  }\n}"
+        }
+      ]
+    },
+    {
+      "name": "requestWriterArticle",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{mcpAccessToken}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Accept",
+            "value": "application/json, text/event-stream"
+          }
+        ],
+        "url": "{{WEB_BASE_URL}}/mcp",
+        "description": "Continue the same writer conversation; poll receipt then list/read actual saved drafts.",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"jsonrpc\": \"2.0\",\n  \"id\": 10,\n  \"method\": \"tools/call\",\n  \"params\": {\n    \"name\": \"sendWriterMessage\",\n    \"arguments\": {\n      \"sessionId\": \"{{sessionId}}\",\n      \"message\": \"Write for technical founders. Use the agreed outline, research primary sources and save the complete article as a draft for review.\",\n      \"idempotencyKey\": \"article-draft-turn-2\"\n    }\n  }\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "response": [
+        {
+          "name": "200 MCP result",
+          "originalRequest": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{mcpAccessToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json, text/event-stream"
+              }
+            ],
+            "url": "{{WEB_BASE_URL}}/mcp",
+            "description": "Continue the same writer conversation; poll receipt then list/read actual saved drafts.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"jsonrpc\": \"2.0\",\n  \"id\": 10,\n  \"method\": \"tools/call\",\n  \"params\": {\n    \"name\": \"sendWriterMessage\",\n    \"arguments\": {\n      \"sessionId\": \"{{sessionId}}\",\n      \"message\": \"Write for technical founders. Use the agreed outline, research primary sources and save the complete article as a draft for review.\",\n      \"idempotencyKey\": \"article-draft-turn-2\"\n    }\n  }\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "status": "OK",
+          "code": 200,
+          "header": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "body": "{\n  \"jsonrpc\": \"2.0\",\n  \"id\": 10,\n  \"result\": {\n    \"content\": [\n      {\n        \"type\": \"text\",\n        \"text\": \"{\\\"turnId\\\": \\\"draft_turn_uuid\\\", \\\"sessionId\\\": \\\"session_uuid\\\", \\\"status\\\": \\\"queued\\\", \\\"error\\\": null, \\\"createdAt\\\": 1793290000, \\\"updatedAt\\\": 1793290000}\"\n      }\n    ],\n    \"structuredContent\": {\n      \"turnId\": \"draft_turn_uuid\",\n      \"sessionId\": \"session_uuid\",\n      \"status\": \"queued\",\n      \"error\": null,\n      \"createdAt\": 1793290000,\n      \"updatedAt\": 1793290000\n    }\n  }\n}"
+        }
+      ]
+    },
+    {
+      "name": "listWriterDrafts",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{mcpAccessToken}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Accept",
+            "value": "application/json, text/event-stream"
+          }
+        ],
+        "url": "{{WEB_BASE_URL}}/mcp",
+        "description": "Read summaries saved by Hot Metal writer. Empty list is valid when discussion has not saved a draft. Use an actual returned version in getDraftVersion.",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"jsonrpc\": \"2.0\",\n  \"id\": 10,\n  \"method\": \"tools/call\",\n  \"params\": {\n    \"name\": \"listDrafts\",\n    \"arguments\": {\n      \"sessionId\": \"{{sessionId}}\"\n    }\n  }\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "response": [
+        {
+          "name": "200 MCP result",
+          "originalRequest": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{mcpAccessToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json, text/event-stream"
+              }
+            ],
+            "url": "{{WEB_BASE_URL}}/mcp",
+            "description": "Read summaries saved by Hot Metal writer. Empty list is valid when discussion has not saved a draft. Use an actual returned version in getDraftVersion.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"jsonrpc\": \"2.0\",\n  \"id\": 10,\n  \"method\": \"tools/call\",\n  \"params\": {\n    \"name\": \"listDrafts\",\n    \"arguments\": {\n      \"sessionId\": \"{{sessionId}}\"\n    }\n  }\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "status": "OK",
+          "code": 200,
+          "header": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "body": "{\n  \"jsonrpc\": \"2.0\",\n  \"id\": 10,\n  \"result\": {\n    \"content\": [\n      {\n        \"type\": \"text\",\n        \"text\": \"{\\\"data\\\": [{\\\"version\\\": 1, \\\"title\\\": \\\"Architecture article\\\", \\\"wordCount\\\": 1240, \\\"isFinal\\\": false, \\\"createdAt\\\": 1793290002}]}\"\n      }\n    ],\n    \"structuredContent\": {\n      \"data\": [\n        {\n          \"version\": 1,\n          \"title\": \"Architecture article\",\n          \"wordCount\": 1240,\n          \"isFinal\": false,\n          \"createdAt\": 1793290002\n        }\n      ]\n    }\n  }\n}"
+        }
+      ]
+    },
+    {
+      "name": "readWriterDraft",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{mcpAccessToken}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Accept",
+            "value": "application/json, text/event-stream"
+          }
+        ],
+        "url": "{{WEB_BASE_URL}}/mcp",
+        "description": "Retrieve full writer-saved content. Replace example version1 with a version returned by listDrafts.",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"jsonrpc\": \"2.0\",\n  \"id\": 10,\n  \"method\": \"tools/call\",\n  \"params\": {\n    \"name\": \"getDraftVersion\",\n    \"arguments\": {\n      \"sessionId\": \"{{sessionId}}\",\n      \"version\": 1\n    }\n  }\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "response": [
+        {
+          "name": "200 MCP result",
+          "originalRequest": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{mcpAccessToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json, text/event-stream"
+              }
+            ],
+            "url": "{{WEB_BASE_URL}}/mcp",
+            "description": "Retrieve full writer-saved content. Replace example version1 with a version returned by listDrafts.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"jsonrpc\": \"2.0\",\n  \"id\": 10,\n  \"method\": \"tools/call\",\n  \"params\": {\n    \"name\": \"getDraftVersion\",\n    \"arguments\": {\n      \"sessionId\": \"{{sessionId}}\",\n      \"version\": 1\n    }\n  }\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "status": "OK",
+          "code": 200,
+          "header": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "body": "{\n  \"jsonrpc\": \"2.0\",\n  \"id\": 10,\n  \"result\": {\n    \"content\": [\n      {\n        \"type\": \"text\",\n        \"text\": \"{\\\"version\\\": 1, \\\"title\\\": \\\"Architecture article\\\", \\\"content\\\": \\\"# Architecture article\\\\n\\\\nThe first saved draft\\\\u2026\\\", \\\"wordCount\\\": 1240, \\\"isFinal\\\": false, \\\"createdAt\\\": 1793290002}\"\n      }\n    ],\n    \"structuredContent\": {\n      \"version\": 1,\n      \"title\": \"Architecture article\",\n      \"content\": \"# Architecture article\\n\\nThe first saved draft\\u2026\",\n      \"wordCount\": 1240,\n      \"isFinal\": false,\n      \"createdAt\": 1793290002\n    }\n  }\n}"
+        }
+      ]
+    },
+    {
+      "name": "requestWriterRevision",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{mcpAccessToken}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Accept",
+            "value": "application/json, text/event-stream"
+          }
+        ],
+        "url": "{{WEB_BASE_URL}}/mcp",
+        "description": "Ask Hot Metal writer to revise its own article; poll then list/read the new version. Direct updateDraft is not the default revision path.",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"jsonrpc\": \"2.0\",\n  \"id\": 10,\n  \"method\": \"tools/call\",\n  \"params\": {\n    \"name\": \"sendWriterMessage\",\n    \"arguments\": {\n      \"sessionId\": \"{{sessionId}}\",\n      \"message\": \"Revise the saved draft to clarify the tradeoffs. Preserve citations and save the revised version.\",\n      \"idempotencyKey\": \"article-revision-turn-3\"\n    }\n  }\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "response": [
+        {
+          "name": "200 MCP result",
+          "originalRequest": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{mcpAccessToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json, text/event-stream"
+              }
+            ],
+            "url": "{{WEB_BASE_URL}}/mcp",
+            "description": "Ask Hot Metal writer to revise its own article; poll then list/read the new version. Direct updateDraft is not the default revision path.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"jsonrpc\": \"2.0\",\n  \"id\": 10,\n  \"method\": \"tools/call\",\n  \"params\": {\n    \"name\": \"sendWriterMessage\",\n    \"arguments\": {\n      \"sessionId\": \"{{sessionId}}\",\n      \"message\": \"Revise the saved draft to clarify the tradeoffs. Preserve citations and save the revised version.\",\n      \"idempotencyKey\": \"article-revision-turn-3\"\n    }\n  }\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "status": "OK",
+          "code": 200,
+          "header": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "body": "{\n  \"jsonrpc\": \"2.0\",\n  \"id\": 10,\n  \"result\": {\n    \"content\": [\n      {\n        \"type\": \"text\",\n        \"text\": \"{\\\"turnId\\\": \\\"revision_turn_uuid\\\", \\\"sessionId\\\": \\\"session_uuid\\\", \\\"status\\\": \\\"queued\\\", \\\"error\\\": null, \\\"createdAt\\\": 1793290000, \\\"updatedAt\\\": 1793290000}\"\n      }\n    ],\n    \"structuredContent\": {\n      \"turnId\": \"revision_turn_uuid\",\n      \"sessionId\": \"session_uuid\",\n      \"status\": \"queued\",\n      \"error\": null,\n      \"createdAt\": 1793290000,\n      \"updatedAt\": 1793290000\n    }\n  }\n}"
+        }
+      ]
+    },
+    {
+      "name": "publishPrivateWriterDraft",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{mcpAccessToken}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Accept",
+            "value": "application/json, text/event-stream"
+          }
+        ],
+        "url": "{{WEB_BASE_URL}}/mcp",
+        "description": "Publish scope plus task authorization required. Choose allowed target only for origin-owned unassigned session. Assigned session cannot rehome. Optional social flags need explicit outlet consent. Never retry ambiguous publication automatically.",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"jsonrpc\": \"2.0\",\n  \"id\": 10,\n  \"method\": \"tools/call\",\n  \"params\": {\n    \"name\": \"publishDraft\",\n    \"arguments\": {\n      \"sessionId\": \"{{sessionId}}\",\n      \"publicationId\": \"{{publicationId}}\",\n      \"slug\": \"architecture-article\",\n      \"draftVersion\": 2\n    }\n  }\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "response": [
+        {
+          "name": "200 MCP result",
+          "originalRequest": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{mcpAccessToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json, text/event-stream"
+              }
+            ],
+            "url": "{{WEB_BASE_URL}}/mcp",
+            "description": "Publish scope plus task authorization required. Choose allowed target only for origin-owned unassigned session. Assigned session cannot rehome. Optional social flags need explicit outlet consent. Never retry ambiguous publication automatically.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"jsonrpc\": \"2.0\",\n  \"id\": 10,\n  \"method\": \"tools/call\",\n  \"params\": {\n    \"name\": \"publishDraft\",\n    \"arguments\": {\n      \"sessionId\": \"{{sessionId}}\",\n      \"publicationId\": \"{{publicationId}}\",\n      \"slug\": \"architecture-article\",\n      \"draftVersion\": 2\n    }\n  }\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "status": "OK",
+          "code": 200,
+          "header": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "body": "{\n  \"jsonrpc\": \"2.0\",\n  \"id\": 10,\n  \"result\": {\n    \"content\": [\n      {\n        \"type\": \"text\",\n        \"text\": \"{\\\"success\\\": true, \\\"results\\\": [{\\\"postId\\\": \\\"post_uuid\\\", \\\"publicationId\\\": \\\"pub_uuid\\\", \\\"slug\\\": \\\"architecture-article\\\", \\\"url\\\": \\\"https://engineering-notes.hotmetalapp.com/architecture-article\\\"}], \\\"socialResults\\\": [], \\\"postId\\\": \\\"post_uuid\\\", \\\"slug\\\": \\\"architecture-article\\\", \\\"url\\\": \\\"https://engineering-notes.hotmetalapp.com/architecture-article\\\"}\"\n      }\n    ],\n    \"structuredContent\": {\n      \"success\": true,\n      \"results\": [\n        {\n          \"postId\": \"post_uuid\",\n          \"publicationId\": \"pub_uuid\",\n          \"slug\": \"architecture-article\",\n          \"url\": \"https://engineering-notes.hotmetalapp.com/architecture-article\"\n        }\n      ],\n      \"socialResults\": [],\n      \"postId\": \"post_uuid\",\n      \"slug\": \"architecture-article\",\n      \"url\": \"https://engineering-notes.hotmetalapp.com/architecture-article\"\n    }\n  }\n}"
         }
       ]
     }

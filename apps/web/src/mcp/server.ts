@@ -10,6 +10,8 @@ import { createContentDependencies } from '../infrastructure/content-dependencie
 import { createTopicDependencies } from '../infrastructure/topic-dependencies'
 import { createGenerationDependencies } from '../infrastructure/generation-dependencies'
 import { logger } from '@hotmetal/shared'
+import { createWriterSession, sendWriterMessage, getWriterConversation, listWriterDrafts } from '../bl/writer-conversations'
+import { createWriterConversationDependencies } from '../infrastructure/writer-conversation-dependencies'
 
 const id = z.string().min(1).max(200)
 const text = z.string().max(5000)
@@ -27,6 +29,7 @@ export function createMcpServer(caller: AuthenticatedCaller, env: Env, context: 
   const content = createContentDependencies(env, context)
   const topics = createTopicDependencies(env.DAL, { mcpEnabled: env.MCP_ENABLED === 'true' })
   const generation = createGenerationDependencies(env)
+  const conversations = createWriterConversationDependencies(env)
   function tool<Shape extends z.ZodRawShape>(name: string, description: string, shape: Shape,
     action: McpAction, operation: (input: z.output<z.ZodObject<Shape>>) => Promise<unknown>, idempotent = false) {
     // Reduces noise for read-only connections; BL is still the security boundary.
@@ -62,12 +65,55 @@ export function createMcpServer(caller: AuthenticatedCaller, env: Env, context: 
   tool('listIdeas', 'List discovered ideas within an authorized publication.', { publicationId: id, status: z.enum(['new', 'reviewed', 'promoted', 'dismissed']).optional() }, 'read', (input) => listIdeas(caller, input, content))
   tool('getIdea', 'Read an idea only if its actual publication is accessible.', { ideaId: id }, 'read', ({ ideaId }) => getIdea(caller, ideaId, content))
   tool('listStyles', 'List prebuilt and publication-required writing styles allowed by this connection.', {}, 'read', () => listStyles(caller, content))
+  tool(
+    'createWritingSession',
+    'Start a conversation with Hot Metal’s AI writer. publicationId is optional; unassigned sessions are private to the connection that created them. Returns sessionId.',
+    {
+      title: z.string().max(500).optional(),
+      publicationId: id.optional(),
+      seedContext: z.string().max(100_000).optional(),
+      styleId: id.optional(),
+    },
+    'write',
+    (input) => createWriterSession(caller, input, generation),
+  )
+  tool(
+    'sendWriterMessage',
+    'Ask Hot Metal’s writer a question or request an article/revision in an existing session. Returns a durable queued turn immediately. Reuse idempotencyKey and identical message on retry; poll getWriterConversation with turnId. The writer saves its own drafts; it does not publish during this operation.',
+    {
+      sessionId: id,
+      message: z.string().min(1).max(100_000),
+      idempotencyKey: id,
+    },
+    'write',
+    (input) => sendWriterMessage(caller, input, conversations),
+    true,
+  )
+  tool(
+    'getWriterConversation',
+    'Read user and writer replies plus queued/running/completed turn states. Supports pagination and a specific turnId for polling. Internal tool results and private model metadata are excluded.',
+    {
+      sessionId: id,
+      limit: z.number().int().min(1).max(100).optional(),
+      cursor: z.string().max(15).optional(),
+      turnId: id.optional(),
+    },
+    'read',
+    (input) => getWriterConversation(caller, input, conversations),
+  )
+  tool(
+    'listDrafts',
+    'List draft versions saved by Hot Metal’s AI writer in a session, including sessions created without a publication. Retrieve full content with getDraftVersion.',
+    { sessionId: id },
+    'read',
+    ({ sessionId }) => listWriterDrafts(caller, sessionId, generation),
+  )
   tool('generateDraft', 'Start durable AI draft generation and return a job/session ID immediately. Reuse the same idempotencyKey for retries. Poll getGenerationJob then retrieve the draft. Auto-publish requires publish permission.', { publicationId: id, title: z.string().min(1).max(500), instructions: z.string().min(1).max(100_000), styleId: id.optional(), autoPublish: z.boolean().optional(), idempotencyKey: z.string().min(1).max(200) }, 'write', (input) => submitGeneration(caller, input, generation), true)
   tool('getGenerationJob', 'Get durable generation progress. A publish_unknown result requires reconciliation; do not resubmit publishing automatically.', { jobId: id }, 'read', ({ jobId }) => getGenerationJob(caller, jobId, generation))
   tool('getSession', 'Read the status and draft summary of an authorized writing session.', { sessionId: id }, 'read', ({ sessionId }) => getSession(caller, sessionId, generation))
   tool('getDraftVersion', 'Read a saved draft version in an authorized session.', { sessionId: id, version: z.number().int().min(1) }, 'read', ({ sessionId, version }) => getDraftVersion(caller, sessionId, version, generation))
   tool('updateDraft', 'Edit a saved writer-session draft without changing a live CMS post. Publishing is a separate operation.', { sessionId: id, content: z.string().min(1).max(500_000), title: z.string().max(500).optional(), version: z.number().int().min(1).optional() }, 'write', ({ sessionId, ...input }) => updateDraft(caller, sessionId, input, generation))
-  tool('publishDraft', 'Publish an authorized session draft. Optional social shares additionally require explicit consent for each configured outlet.', { sessionId: id, slug: text.optional(), author: text.optional(), tags: text.optional(), excerpt: text.optional(), draftVersion: z.number().int().min(1).optional(), publishToLinkedIn: z.boolean().optional(), publishToTwitter: z.boolean().optional(), linkedInText: z.string().max(3000).optional(), tweetText: z.string().max(280).optional() }, 'publish', (input) => publishDraft(caller, input, generation))
+  tool('publishDraft', 'Publish an authorized session draft. For an unassigned session, choose an authorized publicationId. Optional social shares additionally require explicit consent for each configured outlet.', { sessionId: id, publicationId: id.optional(), slug: text.optional(), author: text.optional(), tags: text.optional(), excerpt: text.optional(), draftVersion: z.number().int().min(1).optional(), publishToLinkedIn: z.boolean().optional(), publishToTwitter: z.boolean().optional(), linkedInText: z.string().max(3000).optional(), tweetText: z.string().max(280).optional() }, 'publish', (input) => publishDraft(caller, input, generation))
   tool('runScout', 'Run content discovery for an authorized publication. If existing full-auto settings can publish, publish permission is also required.', { publicationId: id }, 'write', (input) => runScout(caller, input, generation))
   return server
 }

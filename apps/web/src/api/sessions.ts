@@ -4,6 +4,9 @@ import type { SessionStatus } from '@hotmetal/data-layer'
 import { getCmsClient } from '@hotmetal/shared'
 import { verifyPublicationOwnership } from '../middleware/ownership'
 import { computeChatToken } from '../lib/chat-token'
+import { createWritingSession } from '../bl/generation'
+import { createGenerationDependencies } from '../infrastructure/generation-dependencies'
+import { readTopicBody } from '../http/topics'
 
 const VALID_STATUSES: SessionStatus[] = ['active', 'completed', 'archived']
 
@@ -17,31 +20,27 @@ const sessions = new Hono<AppEnv>()
 sessions.post('/sessions', async (c) => {
   const userId = c.get('userId')
 
-  const body = await c.req.json<{
+  const body = await readTopicBody<{
     title?: string
     publicationId?: string
     ideaId?: string
     seedContext?: string
     styleId?: string
-  }>()
+  }>(c)
+  const session = await createWritingSession(
+    { userId, credentialKind: 'clerk' },
+    {
+      title: body.title,
+      publicationId: body.publicationId,
+      ideaId: body.ideaId,
+      seedContext: body.seedContext,
+      styleId: body.styleId,
+    },
+    createGenerationDependencies(c.env),
+  )
+  const { mcpConnectionId: _origin, ...view } = session
 
-  if (body.publicationId) {
-    const pub = await verifyPublicationOwnership(c, body.publicationId)
-    if (!pub) return c.json({ error: 'Publication not found' }, 404)
-  }
-
-  const sessionId = crypto.randomUUID()
-  const session = await c.env.DAL.createSession({
-    id: sessionId,
-    userId,
-    title: body.title,
-    publicationId: body.publicationId,
-    ideaId: body.ideaId,
-    seedContext: body.seedContext,
-    styleId: body.styleId,
-  })
-
-  return c.json(session, 201)
+  return c.json(view, 201)
 })
 
 /** List sessions for the authenticated user. */
@@ -50,7 +49,10 @@ sessions.get('/sessions', async (c) => {
   const status = c.req.query('status') || undefined
 
   if (status && !isValidStatus(status)) {
-    return c.json({ error: `Invalid status. Must be one of: ${VALID_STATUSES.join(', ')}` }, 400)
+    return c.json(
+      { error: `Invalid status. Must be one of: ${VALID_STATUSES.join(', ')}` },
+      400,
+    )
   }
 
   const result = await c.env.DAL.listSessions({
@@ -86,7 +88,10 @@ sessions.patch('/sessions/:id', async (c) => {
   }>()
 
   if (body.status !== undefined && !isValidStatus(body.status)) {
-    return c.json({ error: `Invalid status. Must be one of: ${VALID_STATUSES.join(', ')}` }, 400)
+    return c.json(
+      { error: `Invalid status. Must be one of: ${VALID_STATUSES.join(', ')}` },
+      400,
+    )
   }
 
   const updated = await c.env.DAL.updateSession(c.req.param('id'), {
@@ -109,7 +114,9 @@ sessions.get('/sessions/:id/post', async (c) => {
   }
 
   // The post lives in whichever CMS the session's publication uses.
-  const pub = session.publicationId ? await c.env.DAL.getPublicationById(session.publicationId) : null
+  const pub = session.publicationId
+    ? await c.env.DAL.getPublicationById(session.publicationId)
+    : null
   const cmsApi = await getCmsClient(pub, c.env.DAL, c.env)
   const post = await cmsApi.getPost(session.cmsPostId)
   return c.json({
@@ -128,7 +135,10 @@ sessions.get('/publications/:pubId/sessions', async (c) => {
 
   const status = c.req.query('status') || undefined
   if (status && !isValidStatus(status)) {
-    return c.json({ error: `Invalid status. Must be one of: ${VALID_STATUSES.join(', ')}` }, 400)
+    return c.json(
+      { error: `Invalid status. Must be one of: ${VALID_STATUSES.join(', ')}` },
+      400,
+    )
   }
 
   const result = await c.env.DAL.listSessions({

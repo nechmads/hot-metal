@@ -14,6 +14,7 @@ interface SessionRow {
 	current_draft_version: number
 	cms_post_id: string | null
 	publication_id: string | null
+	mcp_connection_id: string | null
 	idea_id: string | null
 	seed_context: string | null
 	featured_image_url: string | null
@@ -31,6 +32,7 @@ function mapRow(row: SessionRow): Session {
 		currentDraftVersion: row.current_draft_version,
 		cmsPostId: row.cms_post_id,
 		publicationId: row.publication_id,
+		mcpConnectionId: row.mcp_connection_id,
 		ideaId: row.idea_id,
 		seedContext: row.seed_context,
 		featuredImageUrl: row.featured_image_url,
@@ -44,11 +46,14 @@ export async function createSession(db: D1Database, data: CreateSessionInput): P
 	const now = Math.floor(Date.now() / 1000)
 	const title = data.title?.trim() || null
 
-	await db
+	const result = await db
 		.prepare(
 			`INSERT INTO sessions (id, user_id, title, status, current_draft_version,
-			 cms_post_id, publication_id, idea_id, seed_context, style_id, created_at, updated_at)
-			 VALUES (?, ?, ?, 'active', 0, ?, ?, ?, ?, ?, ?, ?)`
+			 cms_post_id, publication_id, idea_id, seed_context, style_id, mcp_connection_id, created_at, updated_at)
+			 SELECT ?, ?, ?, 'active', 0, ?, ?, ?, ?, ?, ?, ?, ?
+			 WHERE ? IS NULL OR EXISTS (
+			   SELECT 1 FROM mcp_connections WHERE id = ? AND user_id = ?
+			 )`
 		)
 		.bind(
 			data.id,
@@ -59,10 +64,18 @@ export async function createSession(db: D1Database, data: CreateSessionInput): P
 			data.ideaId ?? null,
 			data.seedContext ?? null,
 			data.styleId ?? null,
+			data.mcpConnectionId ?? null,
 			now,
-			now
+			now,
+			data.mcpConnectionId ?? null,
+			data.mcpConnectionId ?? null,
+			data.userId
 		)
 		.run()
+
+	if (result.meta.changes !== 1) {
+		throw new Error('MCP connection does not belong to the session owner')
+	}
 
 	return {
 		id: data.id,
@@ -72,6 +85,7 @@ export async function createSession(db: D1Database, data: CreateSessionInput): P
 		currentDraftVersion: 0,
 		cmsPostId: data.cmsPostId ?? null,
 		publicationId: data.publicationId ?? null,
+		mcpConnectionId: data.mcpConnectionId ?? null,
 		ideaId: data.ideaId ?? null,
 		seedContext: data.seedContext ?? null,
 		featuredImageUrl: null,
@@ -82,7 +96,8 @@ export async function createSession(db: D1Database, data: CreateSessionInput): P
 }
 
 export async function getSessionById(db: D1Database, id: string): Promise<Session | null> {
-	const row = await db
+	// Authorization must observe current publication attachment and immutable origin.
+	const row = await db.withSession('first-primary')
 		.prepare('SELECT * FROM sessions WHERE id = ?')
 		.bind(id)
 		.first<SessionRow>()

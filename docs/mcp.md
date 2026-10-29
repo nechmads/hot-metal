@@ -1,6 +1,6 @@
 # OAuth MCP connector
 
-Deployed and enabled on 2026-10-29 at `https://hotmetalapp.com/mcp` (`MCP_ENABLED=true`). Hosted discovery, OAuth startup and unauthenticated boundaries passed the checks recorded below. Signed-in Clerk consent, token issuance and consumer ChatGPT/Claude workflows remain unverified; deployed Workflow restart/recovery remains a release gate.
+Deployed and enabled on 2026-10-29 at `https://hotmetalapp.com/mcp` (`MCP_ENABLED=true`). Hosted discovery, OAuth startup and unauthenticated boundaries passed the checks recorded below. The user reported a successful Claude connection. A hosted conversational writing run through a consumer assistant and real model has not been independently exercised; deployed Workflow restart/recovery remains a release gate.
 
 The remote URL is `https://hotmetalapp.com/mcp`. Assistants use OAuth and Streamable HTTP. They do not receive account API keys. The existing [Agents REST API](API_GUIDE.md) remains available with `Bearer hm_*` authentication. Both adapters call the [same business layer](business-layer.md) directly.
 
@@ -12,7 +12,7 @@ An assistant with supported connector-management capabilities can configure the 
 
 ### Onboarding rollout — 2026-10-29
 
-Web version `5bb974fb-a312-44bf-8253-885a35504bf3` serves the Settings prompt and public skill. Documentation version `0cd702fb-39c9-4224-851b-1b0d0906b87c` links the skill from the API overview. Hosted checks verified `200 text/markdown; charset=utf-8`, no redirect/authentication, `nosniff`, a five-minute public cache, and a body identical to the reviewed source. The live app bundle contains the prompt and exact skill URL; health and MCP metadata remain 200. Desktop/mobile browser checks verified the copied payload and clipboard-denied manual-copy recovery. Workspace build/typecheck and all 269 web tests passed; independent code review and a skill behavior trial found no blocking issues.
+The earlier onboarding release, web version `5bb974fb-a312-44bf-8253-885a35504bf3`, served the Settings prompt and public skill. Documentation version `0cd702fb-39c9-4224-851b-1b0d0906b87c` links the skill from the API overview. Hosted checks verified `200 text/markdown; charset=utf-8`, no redirect/authentication, `nosniff`, a five-minute public cache, and a body identical to that release’s reviewed skill source. These checks do not verify the later conversational writer extension. The live app bundle contains the prompt and exact skill URL; health and MCP metadata remain 200. Desktop/mobile browser checks verified the copied payload and clipboard-denied manual-copy recovery. Workspace build/typecheck and all 269 web tests passed; independent code review and a skill behavior trial found no blocking issues.
 
 ## Connect and manage access
 
@@ -26,7 +26,7 @@ Settings → Assistant connections shows each connection, its permissions, publi
 | Write | `hotmetal:write` | Create authored drafts, edit writer-session drafts, manage topics/content settings, request generation and scouting |
 | Publish | `hotmetal:publish` | Publish drafts and authorize publishing-sensitive behavior; configured social outlets need their own consent |
 
-One action set applies across the grant. **All publications** includes every currently and subsequently owned publication. **Selected publications** never expands automatically. Ownership is checked again on every operation. Deleted selections never become all-publication access; a publicationless session is unavailable through MCP.
+One action set applies across the grant. **All publications** includes every currently and subsequently owned publication. **Selected publications** never expands automatically. Ownership is checked again on every operation. Deleted selections never become all-publication access; an unassigned session is accessible only to the MCP connection that created it. Its owner retains UI access; this grants no access to unrelated private sessions.
 
 Read exposes account ID/name/tier, not email. Styles are limited to prebuilt styles and those referenced by allowed publications; raw samples are excluded. Arbitrary custom style IDs, CMS linkage, credentials and account administration are unavailable.
 
@@ -36,9 +36,35 @@ LinkedIn and X are separate outlet choices (`linkedin`, `twitter`). Social conse
 
 Narrowing is allowed; expansion requires a new consent flow. Changes increment `policyVersion`, so old access tokens stop working until refreshed against the narrower grant. Refresh returns only currently permitted scopes and cannot widen access. Revocation first denies the D1 application grant, then attempts provider cleanup. `cleanupPending: true` means provider cleanup failed; application access is already denied. A write accepted by an external provider may still finish after revocation. Completed publications are not undone.
 
+## Collaborative writing with Hot Metal's AI writer
+
+The primary article-writing flow is a conversation with Hot Metal's existing AI writer. The assistant relays goals/questions and reads replies; Hot Metal's writer researches, creates and revises its own saved drafts. The conversation extension is deployed; its rollout evidence is recorded below. Local integration tests exercise the real writer runtime with a controlled model. A hosted consumer conversation using the production model remains to be tested.
+
+Start with `createWritingSession({"title":"Architecture article"})` to work before choosing a publication, or add an actual `publicationId` from `listPublications`. Optional `seedContext` supplies the brief. Optional `styleId` must be prebuilt for an unassigned MCP session; an assigned session may also use the current publication's configured custom style. The result contains `sessionId`, title, status, nullable publicationId, currentDraftVersion and timestamps.
+
+An unassigned MCP session is private to its originating connection, while remaining available to the owner in the UI. An account's other MCP connections, including a new connection after reconnecting, cannot inherit it. Assigned sessions follow current publication grants. Live account/action/connection checks apply to reads, queued execution and tools; origin metadata is never accepted as a user-supplied tool argument.
+
+```json
+{"sessionId":"returned-session-id","message":"What angle and outline would make this useful to a technical founder?","idempotencyKey":"article-angle-turn-1"}
+```
+
+Send that input to `sendWriterMessage`. It immediately returns `{turnId,sessionId,status,error,createdAt,updatedAt}`. Reuse the same key and message when recovering submission; a different message under the same key conflicts. Each subsequent question/revision uses a new key. Poll `getWriterConversation({"sessionId":"returned-session-id","turnId":"returned-turn-id","limit":50})` with bounded spacing. A response has:
+
+```json
+{"sessionId":"returned-session-id","messages":[{"id":"message-id","role":"assistant","text":"A useful angle would be…"}],"turns":[{"turnId":"returned-turn-id","sessionId":"returned-session-id","status":"completed","error":null,"createdAt":1793290000,"updatedAt":1793290001}],"nextCursor":null}
+```
+
+Messages expose only plain user/assistant text; a bounded message may include `truncated:true`. `limit` is 1–100 (default 50), `cursor` comes from `nextCursor`, and optional `turnId` retrieves a particular receipt for polling. `queued`/`running` are pending; `completed`, `failed`, `cancelled`, `interrupted` are terminal. A completed turn can be a discussion reply without any draft. An interrupted turn is not automatically repeated; inspect saved history/drafts before authorizing a new turn.
+
+After the writer replies, send a follow-up such as “Research primary sources, use the agreed outline, and save the article draft.” On completion call `listDrafts({"sessionId":"returned-session-id"})`: `{data:[{version,title,wordCount,isFinal,createdAt}]}`. Retrieve the actual returned version with `getDraftVersion`. For revisions, send another writer turn and inspect the new saved version. This works both with and without a publication. Direct `updateDraft` remains available for intentional direct edits; it is not the default conversational writing workflow.
+
+Delegated turns reuse WriterAgent's UI prompts, research/draft tools and persisted history through the installed Agents queue/saveMessages engine. They do not use the one-shot generation Workflow, and no additional Workflow is introduced. The actor stores idempotency receipts and retains origin authority per turn; model work and each tool recheck live authorization. Raw publishing is omitted from delegated writer tools.
+
+Publication is a separate `publishDraft` operation requiring publish permission. For an origin-owned unassigned session, supply an authorized `publicationId` when publishing; that becomes the session's publication. An assigned session cannot be moved to another publication. Optional social destinations still require their own consent. One-shot `generateDraft` remains publication-required and uses its existing job/status contract.
+
 ## Tool catalogue
 
-Tools use the exact names below. Read tools return structured data and text; operation failures return MCP `isError` with safe `{error, code}` text. Authentication failures use OAuth challenges. Token scopes can hide tools from discovery, but current BL policy remains authoritative when a tool is invoked.
+The catalogue contains 25 tools before scope-based discovery filtering. Tools use the exact names below. Read tools return structured data and text; operation failures return MCP `isError` with safe `{error, code}` text. Authentication failures use OAuth challenges. Token scopes can hide tools from discovery, but current BL policy remains authoritative when a tool is invoked.
 
 Common IDs are nonempty strings up to 200 characters. Most short text fields allow up to 5,000 characters. The runtime tool schemas are defined in `apps/web/src/mcp/server.ts`.
 
@@ -58,12 +84,16 @@ Common IDs are nonempty strings up to 200 characters. Most short text fields all
 | `listIdeas` | `publicationId` | `status`: new/reviewed/promoted/dismissed |
 | `getIdea` | `ideaId` | Authorizes the actual stored publication |
 | `listStyles` | none | Safe style projections |
+| `createWritingSession` | none | Optional `title` (500), `publicationId`, `seedContext` (100,000), `styleId`; returns a session handle |
+| `sendWriterMessage` | `sessionId`, `message`, `idempotencyKey` | Durable writer turn; message up to 100,000 characters, key up to 200 |
+| `getWriterConversation` | `sessionId` | Optional `turnId`, returned `cursor`, `limit` 1–100 (default 50); safe history/receipts |
+| `listDrafts` | `sessionId` | Writer-saved draft summaries; array wrapped under `data` |
 | `generateDraft` | `publicationId`, `title`, `instructions`, `idempotencyKey` | `styleId`, `autoPublish` boolean (default false); asynchronous |
 | `getGenerationJob` | `jobId` | Durable state and safe recovery error |
 | `getSession` | `sessionId` | Session status/draft summary |
 | `getDraftVersion` | `sessionId`, positive integer `version` | Saved draft content |
 | `updateDraft` | `sessionId`, `content` | `title`, positive integer `version`; does not mutate a CMS post |
-| `publishDraft` | `sessionId` | `slug` (required for a blog write), `author`, `tags`, `excerpt`, `draftVersion`, `publishToLinkedIn`, `publishToTwitter`, `linkedInText`, `tweetText` |
+| `publishDraft` | `sessionId` | `publicationId` for an unassigned session, `slug` (required for a blog write), `author`, `tags`, `excerpt`, `draftVersion`, `publishToLinkedIn`, `publishToTwitter`, `linkedInText`, `tweetText` |
 | `runScout` | `publicationId` | Uses stored automation configuration and retains the origin grant; completion webhooks are unsupported |
 
 Authored content fields: `title` (up to 500), `markdown` (up to 500,000), `slug`, `status` (`draft`/`published`), `author`, `subtitle`, `hook`, `excerpt`, comma-separated `tags`/`topics`, `featuredImage`, `ogImage`, `seoTitle`, `seoDescription`, `canonicalUrl`, `publishedAt`, and `citations` (up to 200 entries containing `url`, `title`, optional `publisher`, `accessedAt`, `excerpt`). Semantic URL/date/slug validation occurs in the BL. Draft update bodies are also subject to the WriterAgent's size limit; oversized content returns a payload-too-large error.
@@ -195,6 +225,22 @@ Enabled deployment output confirmed the pinned OAuth KV, limiter of 120 requests
 The hosted documentation overview returned 200 and contains the enabled MCP URL and explicit verification limits. All 269 web tests passed again after the asset-routing fix, and the remote migration list reports no pending migrations.
 
 The hosted browser check stopped at the sign-in entry page; no Clerk login or approval was completed. The smoke created test client/consent startup state only. It created no signed-in user grant or token and mutated no customer content. Actual Clerk sign-in/approval/cancellation, token/refresh/revoke behavior on the hosted service, consumer ChatGPT/Claude tool execution, and deployed generation disconnect/restart recovery remain unverified. The local Workerd suite covers those provider/policy contracts with fixture authentication, which is separate evidence.
+
+### Conversational writer rollout — 2026-10-29
+
+[PR #56](https://github.com/nechmads/hot-metal/pull/56) adds `createWritingSession`, `sendWriterMessage`, `getWriterConversation` and `listDrafts`, bringing the catalogue to 25 tools. It supports publication-assigned sessions and connection-private unassigned sessions. The updated hosted skill teaches this conversation flow and saved-version retrieval.
+
+Migration `0024_mcp_writer_sessions.sql` was applied before DAL and web deployment, after capturing D1 recovery bookmark `0000ba90-00000000-00005113-0e660100bdf99d30ec5b592eaa1f322c`. The remote migration list then reported no pending migrations.
+
+| Component | Deployed version |
+|---|---|
+| DAL | `1ef8806f-0ceb-4d3c-8a19-c289f93c1e4b` |
+| Web | `43cf8f9c-3bbd-48fa-8f0a-1518a218222a` (`MCP_ENABLED=true`) |
+| Public docs | `73144341-19a3-4e90-a196-00ad7ba05de7` |
+
+Hosted checks verified health 200, canonical protected-resource and authorization metadata 200 with S256, unauthenticated MCP 401 with the resource-metadata challenge, and consent HTML 200 with no redirect and the framing protections. The public skill returned 200 Markdown with bytes identical to the reviewed source. Both public API overview/reference returned 200 and include all four new tools.
+
+All 316 web tests across 19 files, the workspace build and typecheck passed. Nine Workerd conversation tests exercise actual MCP → BL → DAL/D1 → WriterAgent queue/history/draft tools with a controlled model, including assigned/unassigned replies, drafts and revisions, idempotency, revocation, real UI WebSocket overlap and a cold actor restart without replay. Independent review found no remaining actionable issues. These tests and hosted public probes do not establish a production-model writing conversation in Claude or ChatGPT. That consumer test remains pending; the user previously reported that Claude connected successfully.
 
 ### Consent document routing
 

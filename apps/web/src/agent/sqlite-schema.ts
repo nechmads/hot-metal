@@ -1,8 +1,16 @@
+import { initializeWriterTurns } from './mcp-writer-turns'
+
+export type AgentSql = <T = Record<string, string | number | boolean | null>>(
+  strings: TemplateStringsArray,
+  ...values: (string | number | boolean | null)[]
+) => T[]
+
 /**
  * Initialize agent-local SQLite tables for drafts and research notes.
  * Called via this.sql inside the Durable Object.
  */
-export function initAgentSqlite(sql: <T = Record<string, string | number | boolean | null>>(strings: TemplateStringsArray, ...values: (string | number | boolean | null)[]) => T[]) {
+export function initAgentSqlite(sql: AgentSql) {
+  initializeWriterTurns(sql)
   sql`CREATE TABLE IF NOT EXISTS drafts (
     id TEXT PRIMARY KEY,
     version INTEGER NOT NULL UNIQUE,
