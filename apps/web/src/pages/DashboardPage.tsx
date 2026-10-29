@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
 import { Link, useNavigate } from 'react-router'
-import { useUser } from '@clerk/clerk-react'
+import { useUser } from '@clerk/react'
 import { useValue } from '@legendapp/state/react'
 import {
   ArrowRightIcon,

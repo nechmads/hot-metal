@@ -342,3 +342,34 @@ revision model:
 `scripts/emdash-update-path-test.ts` checks the same ground one layer lower,
 straight against an instance with no dev stack — worth running after any change
 to `EmdashCmsClient`.
+
+
+## Clerk webhook receiver
+
+`POST https://hotmetalapp.com/webhooks/clerk` is separate from the Agents API.
+It uses Svix signatures rather than Clerk JWT or `hm_` authentication. The Web
+Postman collection includes a request template.
+
+Required headers: `Content-Type: application/json`, `svix-id` (message ID),
+`svix-timestamp` (Unix seconds), and `svix-signature` (signature of the exact raw
+request body). Sign with the existing Clerk webhook signing secret; do not
+reserialize the body after signing.
+
+```json
+{
+  "type": "waitlistEntry.created",
+  "data": { "email_address": "writer@example.com" }
+}
+```
+
+`type` must be a string and `data` an object. The handled waitlist event accepts
+optional `data.email_address` or `data.emailAddress`; other event types are
+acknowledged without triggering a notification. Svix 2 verifies the raw payload
+and returns no parsed value; the handler parses and validates JSON only after
+verification.
+
+Responses: `200 {"received":true}`; missing signature headers return
+`400 {"error":"Missing svix headers"}`; invalid signatures or malformed event
+bodies return `400 {"error":"Invalid signature"}`; missing server configuration
+returns `500 {"error":"Webhook not configured"}`. Notification delivery failure
+is logged and acknowledged with 200 to preserve the existing retry contract.

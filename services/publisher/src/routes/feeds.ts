@@ -14,25 +14,25 @@ function isValidSlug(slug: string): boolean {
 
 // ─── Public feed routes (no auth) ─────────────────────────────────
 
-feeds.get('/:slug/rss', (c) => {
+feeds.get('/:slug/rss', async (c) => {
   const slug = c.req.param('slug')
   if (!isValidSlug(slug)) return c.text('Not Found', 404)
   return serveFeed(c.env, slug, 'rss', 'partial', c.req.raw)
 })
 
-feeds.get('/:slug/rss/full', (c) => {
+feeds.get('/:slug/rss/full', async (c) => {
   const slug = c.req.param('slug')
   if (!isValidSlug(slug)) return c.text('Not Found', 404)
   return serveFeed(c.env, slug, 'rss', 'full', c.req.raw)
 })
 
-feeds.get('/:slug/atom', (c) => {
+feeds.get('/:slug/atom', async (c) => {
   const slug = c.req.param('slug')
   if (!isValidSlug(slug)) return c.text('Not Found', 404)
   return serveFeed(c.env, slug, 'atom', 'partial', c.req.raw)
 })
 
-feeds.get('/:slug/atom/full', (c) => {
+feeds.get('/:slug/atom/full', async (c) => {
   const slug = c.req.param('slug')
   if (!isValidSlug(slug)) return c.text('Not Found', 404)
   return serveFeed(c.env, slug, 'atom', 'full', c.req.raw)

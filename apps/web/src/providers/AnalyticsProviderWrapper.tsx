@@ -1,5 +1,5 @@
 import { useMemo } from "react";
-import { useUser } from "@clerk/clerk-react";
+import { useUser } from "@clerk/react";
 import { AnalyticsProvider, type AnalyticsUser } from "@hotmetal/analytics";
 
 const POSTHOG_KEY = import.meta.env.VITE_PUBLIC_POSTHOG_KEY as

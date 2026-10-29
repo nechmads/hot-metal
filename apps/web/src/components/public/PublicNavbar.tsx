@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link } from "react-router";
-import { useClerk } from "@clerk/clerk-react";
+import { useClerk } from "@clerk/react";
 import { ListIcon, XIcon } from "@phosphor-icons/react";
 
 /** Safe auth check that works outside ClerkProvider (e.g. during pre-render) */

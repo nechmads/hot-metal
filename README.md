@@ -7,7 +7,7 @@ A blogging platform built as a pnpm monorepo on Cloudflare Workers/Pages.
 ```
 apps/
   cms-admin/        SonicJS CMS (port 8787)
-  blog-frontend/    Astro 6 blog frontend (port 4321)
+  blog-frontend/    Astro 7 blog frontend (port 4321)
   web/              React SPA + API + WriterAgent DO (port 5173)
 
 services/
@@ -62,7 +62,7 @@ SonicJS-based CMS admin panel.
 
 ### apps/blog-frontend
 
-Astro 6 blog frontend. No secrets or custom vars needed.
+Astro 7 blog frontend. No secrets or custom vars needed.
 
 ### apps/web
 
@@ -158,3 +158,7 @@ Import from the `postman/` directory:
 Environments:
 - `Hot_Metal_Local.postman_environment.json` — Local dev URLs and keys
 - `Hot_Metal_Production.postman_environment.json` — Production URLs
+
+## Dependency upgrades
+
+The October 2026 package baseline, compatibility exceptions, and EmDash rollout procedure are documented in [docs/dependency-upgrades.md](docs/dependency-upgrades.md).

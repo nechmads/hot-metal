@@ -1,5 +1,5 @@
 import { generateText } from 'ai'
-import type { LanguageModelV3 } from '@ai-sdk/provider'
+import type { LanguageModelV4 } from '@ai-sdk/provider'
 import { logger } from '@hotmetal/shared'
 import type { DraftInput } from './index'
 import { PROOFREAD_RULES_PROMPT, type ProofreadResult } from '../../prompts/anti-ai-rules'
@@ -12,11 +12,11 @@ export type { ProofreadFinding, ProofreadResult } from '../../prompts/anti-ai-ru
  * Returns structured findings with specific issues and suggested fixes.
  * Returns a safe default on failure (non-blocking).
  */
-export async function proofreadDraft(model: LanguageModelV3, draft: DraftInput): Promise<ProofreadResult> {
+export async function proofreadDraft(model: LanguageModelV4, draft: DraftInput): Promise<ProofreadResult> {
   try {
     const result = await generateText({
       model,
-      system: PROOFREAD_RULES_PROMPT,
+      instructions: PROOFREAD_RULES_PROMPT,
       messages: [
         {
           role: 'user',

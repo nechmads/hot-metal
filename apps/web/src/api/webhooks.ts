@@ -13,6 +13,7 @@
  * 6. Set NOTIFICATION_EMAIL in wrangler.jsonc vars (not a secret)
  */
 
+import { z } from "zod";
 import { Hono } from "hono";
 import { Webhook } from "svix";
 import { Resend } from "resend";
@@ -24,7 +25,9 @@ const webhooks = new Hono<AppEnv>();
 webhooks.post("/clerk", async (c) => {
   const secret = c.env.CLERK_WEBHOOK_SECRET;
   if (!secret) {
-    logger("web").error("CLERK_WEBHOOK_SECRET not configured", { component: "webhooks" });
+    logger("web").error("CLERK_WEBHOOK_SECRET not configured", {
+      component: "webhooks",
+    });
     return c.json({ error: "Webhook not configured" }, 500);
   }
 
@@ -41,30 +44,48 @@ webhooks.post("/clerk", async (c) => {
   let payload: { type: string; data: Record<string, unknown> };
   try {
     const wh = new Webhook(secret);
-    payload = wh.verify(body, {
+    wh.verify(body, {
       "svix-id": svixId,
       "svix-timestamp": svixTimestamp,
       "svix-signature": svixSignature,
-    }) as typeof payload;
+    });
+    payload = z
+      .object({
+        type: z.string(),
+        data: z.record(z.string(), z.unknown()),
+      })
+      .parse(JSON.parse(body));
   } catch (err) {
-    logger("web").error("Webhook signature verification failed", { component: "webhooks", error: err instanceof Error ? err.message : String(err) });
+    logger("web").error("Webhook signature verification failed", {
+      component: "webhooks",
+      error: err instanceof Error ? err.message : String(err),
+    });
     return c.json({ error: "Invalid signature" }, 400);
   }
 
   if (payload.type === "waitlistEntry.created") {
     const email = (payload.data.email_address ?? payload.data.emailAddress) as
-      | string
-      | undefined;
-    logger("web").info("New waitlist entry", { component: "webhooks", email: email ?? "unknown", data: JSON.stringify(payload.data) });
+      string | undefined;
+    logger("web").info("New waitlist entry", {
+      component: "webhooks",
+      email: email ?? "unknown",
+      data: JSON.stringify(payload.data),
+    });
 
     try {
       await sendWaitlistNotification(c.env, email);
     } catch (err) {
-      logger("web").error("Failed to send waitlist notification email", { component: "webhooks", error: err instanceof Error ? err.message : String(err) });
+      logger("web").error("Failed to send waitlist notification email", {
+        component: "webhooks",
+        error: err instanceof Error ? err.message : String(err),
+      });
       // Don't return error to Clerk — we received the webhook successfully
     }
   } else {
-    logger("web").info("Unhandled webhook event type", { component: "webhooks", eventType: payload.type });
+    logger("web").info("Unhandled webhook event type", {
+      component: "webhooks",
+      eventType: payload.type,
+    });
   }
 
   return c.json({ received: true });
@@ -75,7 +96,10 @@ async function sendWaitlistNotification(
   email?: string,
 ): Promise<void> {
   if (!env.RESEND_API_KEY || !env.NOTIFICATION_EMAIL) {
-    logger("web").warn("RESEND_API_KEY or NOTIFICATION_EMAIL not configured, skipping email", { component: "webhooks" });
+    logger("web").warn(
+      "RESEND_API_KEY or NOTIFICATION_EMAIL not configured, skipping email",
+      { component: "webhooks" },
+    );
     return;
   }
 

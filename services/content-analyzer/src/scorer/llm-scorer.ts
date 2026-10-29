@@ -131,7 +131,7 @@ IMPORTANT: Keep all strings concise. Examples should be short quotes (under 100 
   const { object } = await generateObject({
     model: anthropic('claude-haiku-4-5-20251001'),
     schema: LlmResponseSchema,
-    system: systemPrompt,
+    instructions: systemPrompt,
     prompt: userPrompt,
     temperature: 0.1,
     providerOptions: {

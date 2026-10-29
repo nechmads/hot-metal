@@ -24,16 +24,16 @@
     "@sonicjs-cms/core": "^2.19.0"
   },
   "devDependencies": {
-    "@cloudflare/workers-types": "^4.20260613.1",
-    "@types/node": "^24.10.1",
-    "drizzle-kit": "^0.31.10",
-    "drizzle-orm": "^0.45.2",
-    "hono": "^4.12.25",
-    "tsx": "^4.21.0",
-    "typescript": "^5.9.3",
-    "vitest": "^4.1.8",
-    "wrangler": "^4.100.0",
-    "zod": "^4.4.3"
+    "@cloudflare/workers-types": "^5.20261029.1",
+    "@types/node": "^26.6.6",
+    "drizzle-kit": "^0.31.11",
+    "drizzle-orm": "^0.45.4",
+    "hono": "^4.13.14",
+    "tsx": "^4.23.15",
+    "typescript": "^7.0.2",
+    "vitest": "^5.0.5",
+    "wrangler": "^4.155.0",
+    "zod": "^4.6.7"
   },
   "engines": {
     "node": ">=18.0.0"

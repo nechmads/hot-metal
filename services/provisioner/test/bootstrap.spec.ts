@@ -52,7 +52,7 @@ describe('buildBootstrapStatements', () => {
 
 		try {
 			const identity = await getCoreMigrationIdentity()
-			expect(identity.emdashVersion).toBe('1.0.1')
+			expect(identity.emdashVersion).toBe('1.3.1')
 
 			// This internal import is intentional and test-only: production already
 			// couples to EmDash's private table schema, so the contract test must use
@@ -99,7 +99,7 @@ describe('buildBootstrapStatements', () => {
 		}
 	}, 30_000)
 
-	it('upgrades an EmDash 0.22 database to 1.0.1 before bootstrap', async () => {
+	it('upgrades an EmDash 0.22 database to 1.3.1 before bootstrap', async () => {
 		const directory = await mkdtemp(join(tmpdir(), 'hotmetal-emdash-upgrade-'))
 		const databasePath = join(directory, 'emdash.db')
 
@@ -146,7 +146,7 @@ describe('buildBootstrapStatements', () => {
 					.prepare('SELECT role FROM users WHERE email = ?')
 					.get('upgrade-contract@hotmetal.test') as { role: number } | undefined
 
-				expect(applied.name).toBe('089_auto_seed_completion')
+				expect(applied.name).toBe('091_redirect_artifacts')
 				expect(user?.role).toBe(50)
 				expect(result.scopes).toContain('content:write')
 			} finally {

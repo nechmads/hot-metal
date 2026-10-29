@@ -1,5 +1,5 @@
 import { generateText } from 'ai'
-import type { LanguageModelV3 } from '@ai-sdk/provider'
+import type { LanguageModelV4 } from '@ai-sdk/provider'
 import { logger } from '@hotmetal/shared'
 import type { DraftInput } from './index'
 
@@ -60,7 +60,7 @@ export interface OptimizeForLinkedInOptions {
  * Returns empty string on failure (non-blocking).
  */
 export async function optimizeForLinkedIn(
-  model: LanguageModelV3,
+  model: LanguageModelV4,
   draft: DraftInput,
   opts: OptimizeForLinkedInOptions = {},
 ): Promise<string> {
@@ -87,7 +87,7 @@ export async function optimizeForLinkedIn(
   try {
     const result = await generateText({
       model,
-      system: systemPrompt,
+      instructions: systemPrompt,
       messages: [{ role: 'user', content: userContent }],
     })
 

@@ -1,5 +1,5 @@
 import { useState, useCallback, useEffect } from 'react'
-import { useUser } from '@clerk/clerk-react'
+import { useUser } from '@clerk/react'
 import { RocketIcon, CheckCircleIcon } from '@phosphor-icons/react'
 import { toast } from 'sonner'
 import { Modal } from '@/components/modal/Modal'

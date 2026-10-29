@@ -32,7 +32,6 @@
 
     // Project Structure
     "rootDir": ".",
-    "baseUrl": ".",
     "paths": {
       "@/*": ["./src/*"]
     }

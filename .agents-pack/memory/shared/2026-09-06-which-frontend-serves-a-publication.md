@@ -1,7 +1,7 @@
 ---
 title: "Two blog frontends: which one serves a publication"
 kind: "fact"
-status: "active"
+status: "superseded"
 visibility: "shared"
 applies_to:
   - "apps/emdash-blog"
@@ -15,7 +15,7 @@ updated_at: "2026-09-06"
 created_by: "claude"
 verified_at: "2026-09-06"
 supersedes: []
-superseded_by: null
+superseded_by: "shared/2026-10-29-dependency-upgrade-contract.md"
 ---
 
 There are two near-identical blog frontends, and a change to templates usually

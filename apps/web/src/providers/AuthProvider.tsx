@@ -6,8 +6,8 @@
  * to guard routes that require a signed-in user.
  */
 
-import { ClerkProvider } from '@clerk/clerk-react'
-import { dark } from '@clerk/themes'
+import { ClerkProvider } from '@clerk/react'
+import { dark } from '@clerk/ui/themes'
 import { useSyncExternalStore, type ReactNode } from 'react'
 
 const CLERK_PUBLISHABLE_KEY = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY as string
@@ -81,7 +81,7 @@ const DARK_VARS = {
 
 function buildAppearance(isDark: boolean) {
   return {
-    baseTheme: isDark ? dark : undefined,
+    theme: isDark ? dark : undefined,
     variables: isDark ? DARK_VARS : LIGHT_VARS,
   }
 }

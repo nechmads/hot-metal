@@ -45,7 +45,7 @@ describe('BlogAdapter', () => {
 
       expect(prepared.outlet).toBe('blog')
       expect(prepared.content).toBe(post.content)
-      expect(prepared.externalUrl).toBe('https://blog.example.com/posts/test-post')
+      expect(prepared.externalUrl).toBe('https://blog.example.com/test-post')
     })
   })
 
@@ -78,7 +78,7 @@ describe('BlogAdapter', () => {
 
       expect(result.success).toBe(true)
       expect(result.outlet).toBe('blog')
-      expect(result.externalUrl).toBe('https://blog.example.com/posts/test-post')
+      expect(result.externalUrl).toBe('https://blog.example.com/test-post')
       expect(result.renditionStatus).toBe('published')
 
       // Verify CMS API calls

@@ -3,9 +3,9 @@
 // ---------------------------------------------------------------------------
 
 import type {
-  LanguageModelV3Middleware,
-  LanguageModelV3StreamPart,
-  LanguageModelV3Usage,
+  LanguageModelV4Middleware,
+  LanguageModelV4StreamPart,
+  LanguageModelV4Usage,
 } from '@ai-sdk/provider'
 import { reportLlmUsage } from './wilson'
 
@@ -42,9 +42,9 @@ export interface LlmTrackingContext {
  */
 export function createWilsonMiddleware(
   ctx: LlmTrackingContext,
-): LanguageModelV3Middleware {
+): LanguageModelV4Middleware {
   return {
-    specificationVersion: 'v3',
+    specificationVersion: 'v4',
 
     wrapGenerate: async ({ doGenerate, model }) => {
       const start = Date.now()
@@ -63,8 +63,8 @@ export function createWilsonMiddleware(
       // Pipe through a transform that intercepts the 'finish' chunk
       // to capture usage, then reports to Wilson.
       const transformStream = new TransformStream<
-        LanguageModelV3StreamPart,
-        LanguageModelV3StreamPart
+        LanguageModelV4StreamPart,
+        LanguageModelV4StreamPart
       >({
         transform(chunk, controller) {
           if (chunk.type === 'finish') {
@@ -90,7 +90,7 @@ export function createWilsonMiddleware(
 function reportUsageFromResult(
   provider: string,
   modelId: string,
-  usage: LanguageModelV3Usage,
+  usage: LanguageModelV4Usage,
   durationMs: number,
   ctx: LlmTrackingContext,
 ): void {

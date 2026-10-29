@@ -1,5 +1,5 @@
 import { generateText } from 'ai'
-import type { LanguageModelV3 } from '@ai-sdk/provider'
+import type { LanguageModelV4 } from '@ai-sdk/provider'
 import { logger } from '@hotmetal/shared'
 import type { DraftInput } from './index'
 
@@ -22,7 +22,7 @@ Do not include explanations or markdown. Just the JSON object.`
  * Generate SEO metadata (excerpt + tags) using Claude Haiku.
  * Returns empty strings on failure (non-blocking).
  */
-export async function createSeoMeta(model: LanguageModelV3, draft: DraftInput): Promise<SeoMetaResult> {
+export async function createSeoMeta(model: LanguageModelV4, draft: DraftInput): Promise<SeoMetaResult> {
   const contentPreview = draft.content.length > 4000
     ? draft.content.slice(0, 4000) + '\n\n[truncated]'
     : draft.content
@@ -30,7 +30,7 @@ export async function createSeoMeta(model: LanguageModelV3, draft: DraftInput): 
   try {
     const result = await generateText({
       model,
-      system: SEO_META_PROMPT,
+      instructions: SEO_META_PROMPT,
       messages: [
         {
           role: 'user',

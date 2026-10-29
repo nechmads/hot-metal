@@ -1,5 +1,5 @@
 import { generateText } from 'ai';
-import type { LanguageModelV3 } from '@ai-sdk/provider';
+import type { LanguageModelV4 } from '@ai-sdk/provider';
 import type { Idea } from '@hotmetal/data-layer';
 import { logger } from '@hotmetal/shared';
 import type { TopicSearchResults, FilteredStory } from '../types';
@@ -31,7 +31,7 @@ interface DedupeDecision {
 }
 
 export async function dedupeStories(
-	model: LanguageModelV3,
+	model: LanguageModelV4,
 	searchResults: TopicSearchResults[],
 	recentIdeas: Pick<Idea, 'id' | 'title' | 'angle'>[],
 ): Promise<FilteredStory[]> {
@@ -45,7 +45,7 @@ export async function dedupeStories(
 	try {
 		const result = await generateText({
 			model,
-			system: DEDUPE_SYSTEM_PROMPT,
+			instructions: DEDUPE_SYSTEM_PROMPT,
 			messages: [
 				{
 					role: 'user',

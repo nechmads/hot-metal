@@ -6,7 +6,8 @@
  * - Signed out: redirects to the sign-in page
  */
 
-import { SignedIn, SignedOut, RedirectToSignIn, useAuth, useClerk } from '@clerk/clerk-react'
+import { Show, RedirectToSignIn, useAuth, useClerk } from '@clerk/react'
+import { ClerkOfflineError } from '@clerk/react/errors'
 import { useCallback, useEffect, useState, type ReactNode } from 'react'
 import { setTokenProvider } from '@/lib/api'
 import { loadCurrentUser, clearUserStore } from '@/stores/user-store'
@@ -49,7 +50,8 @@ function SessionGuard() {
     try {
       const token = await getToken()
       if (!token) await signOut()
-    } catch {
+    } catch (error) {
+      if (error instanceof ClerkOfflineError) return
       await signOut()
     }
   }, [getToken, signOut])
@@ -68,13 +70,13 @@ function SessionGuard() {
 export function ProtectedRoute({ children }: { children: ReactNode }) {
   return (
     <>
-      <SignedIn>
+      <Show when="signed-in">
         <SessionGuard />
         <TokenSync>{children}</TokenSync>
-      </SignedIn>
-      <SignedOut>
+      </Show>
+      <Show when="signed-out">
         <RedirectToSignIn />
-      </SignedOut>
+      </Show>
     </>
   )
 }

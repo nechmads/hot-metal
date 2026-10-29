@@ -60,7 +60,7 @@ describe('LinkedInAdapter', () => {
       const post = createMockPost()
       const prepared = adapter.prepareRendition(post)
 
-      expect(prepared.metadata?.blogUrl).toBe('https://blog.example.com/posts/test-post')
+      expect(prepared.metadata?.blogUrl).toBe('https://blog.example.com/test-post')
     })
   })
 

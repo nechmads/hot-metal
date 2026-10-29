@@ -1,5 +1,5 @@
 import { generateText } from "ai";
-import type { LanguageModelV3 } from "@ai-sdk/provider";
+import type { LanguageModelV4 } from "@ai-sdk/provider";
 import { logger } from "@hotmetal/shared";
 import type { DraftInput } from "./index";
 
@@ -52,7 +52,7 @@ CONSTRAINTS
  * Uses a multi-step candidate generation, scoring, and refinement process.
  * Returns empty string on failure (non-blocking).
  */
-export async function createPostTitle(model: LanguageModelV3, draft: DraftInput): Promise<string> {
+export async function createPostTitle(model: LanguageModelV4, draft: DraftInput): Promise<string> {
   const contentPreview =
     draft.content.length > 4000
       ? draft.content.slice(0, 4000) + "\n\n[truncated]"
@@ -61,7 +61,7 @@ export async function createPostTitle(model: LanguageModelV3, draft: DraftInput)
   try {
     const result = await generateText({
       model,
-      system: TITLE_PROMPT,
+      instructions: TITLE_PROMPT,
       messages: [
         {
           role: "user",
