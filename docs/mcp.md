@@ -1,6 +1,6 @@
 # OAuth MCP connector
 
-Deployed and enabled on 2026-10-29 at `https://hotmetalapp.com/mcp` (`MCP_ENABLED=true`). Hosted discovery, OAuth startup and unauthenticated boundaries passed the checks recorded below. Signed-in Clerk consent, token issuance and consumer ChatGPT/Claude workflows remain unverified; deployed Workflow restart/recovery remains a release gate.
+Deployed and enabled on 2026-10-29 at `https://hotmetalapp.com/mcp` (`MCP_ENABLED=true`). Hosted discovery, OAuth startup and unauthenticated boundaries passed the checks recorded below. The user reported a successful Claude connection. A hosted conversational writing run through a consumer assistant and real model has not been independently exercised; deployed Workflow restart/recovery remains a release gate.
 
 The remote URL is `https://hotmetalapp.com/mcp`. Assistants use OAuth and Streamable HTTP. They do not receive account API keys. The existing [Agents REST API](API_GUIDE.md) remains available with `Bearer hm_*` authentication. Both adapters call the [same business layer](business-layer.md) directly.
 
@@ -38,7 +38,7 @@ Narrowing is allowed; expansion requires a new consent flow. Changes increment `
 
 ## Collaborative writing with Hot Metal's AI writer
 
-The primary article-writing flow is a conversation with Hot Metal's existing AI writer. The assistant relays goals/questions and reads replies; Hot Metal's writer researches, creates and revises its own saved drafts. The new conversation extension is documented here as implemented behavior; its hosted deployment/model/client verification is not implied by the earlier production startup evidence below.
+The primary article-writing flow is a conversation with Hot Metal's existing AI writer. The assistant relays goals/questions and reads replies; Hot Metal's writer researches, creates and revises its own saved drafts. The conversation extension is deployed; its rollout evidence is recorded below. Local integration tests exercise the real writer runtime with a controlled model. A hosted consumer conversation using the production model remains to be tested.
 
 Start with `createWritingSession({"title":"Architecture article"})` to work before choosing a publication, or add an actual `publicationId` from `listPublications`. Optional `seedContext` supplies the brief. Optional `styleId` must be prebuilt for an unassigned MCP session; an assigned session may also use the current publication's configured custom style. The result contains `sessionId`, title, status, nullable publicationId, currentDraftVersion and timestamps.
 
@@ -225,6 +225,22 @@ Enabled deployment output confirmed the pinned OAuth KV, limiter of 120 requests
 The hosted documentation overview returned 200 and contains the enabled MCP URL and explicit verification limits. All 269 web tests passed again after the asset-routing fix, and the remote migration list reports no pending migrations.
 
 The hosted browser check stopped at the sign-in entry page; no Clerk login or approval was completed. The smoke created test client/consent startup state only. It created no signed-in user grant or token and mutated no customer content. Actual Clerk sign-in/approval/cancellation, token/refresh/revoke behavior on the hosted service, consumer ChatGPT/Claude tool execution, and deployed generation disconnect/restart recovery remain unverified. The local Workerd suite covers those provider/policy contracts with fixture authentication, which is separate evidence.
+
+### Conversational writer rollout — 2026-10-29
+
+[PR #56](https://github.com/nechmads/hot-metal/pull/56) adds `createWritingSession`, `sendWriterMessage`, `getWriterConversation` and `listDrafts`, bringing the catalogue to 25 tools. It supports publication-assigned sessions and connection-private unassigned sessions. The updated hosted skill teaches this conversation flow and saved-version retrieval.
+
+Migration `0024_mcp_writer_sessions.sql` was applied before DAL and web deployment, after capturing D1 recovery bookmark `0000ba90-00000000-00005113-0e660100bdf99d30ec5b592eaa1f322c`. The remote migration list then reported no pending migrations.
+
+| Component | Deployed version |
+|---|---|
+| DAL | `1ef8806f-0ceb-4d3c-8a19-c289f93c1e4b` |
+| Web | `43cf8f9c-3bbd-48fa-8f0a-1518a218222a` (`MCP_ENABLED=true`) |
+| Public docs | `73144341-19a3-4e90-a196-00ad7ba05de7` |
+
+Hosted checks verified health 200, canonical protected-resource and authorization metadata 200 with S256, unauthenticated MCP 401 with the resource-metadata challenge, and consent HTML 200 with no redirect and the framing protections. The public skill returned 200 Markdown with bytes identical to the reviewed source. Both public API overview/reference returned 200 and include all four new tools.
+
+All 316 web tests across 19 files, the workspace build and typecheck passed. Nine Workerd conversation tests exercise actual MCP → BL → DAL/D1 → WriterAgent queue/history/draft tools with a controlled model, including assigned/unassigned replies, drafts and revisions, idempotency, revocation, real UI WebSocket overlap and a cold actor restart without replay. Independent review found no remaining actionable issues. These tests and hosted public probes do not establish a production-model writing conversation in Claude or ChatGPT. That consumer test remains pending; the user previously reported that Claude connected successfully.
 
 ### Consent document routing
 
