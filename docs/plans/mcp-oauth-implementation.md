@@ -280,3 +280,13 @@ Track authentication/consent failures, forbidden decisions, quota rejections, jo
 | Durable execution and cancellation | GenerationWorkflow + atomic D1 ledger; terminal replay/CAS, failed/unknown recovery and separate callback retry. No public cancellation tool | Implemented; deployed recovery gate pending |
 
 The approval dates below record explicit user choices; unresolved recommendations remain open. The user authorized implementation on 2026-10-29. Production configuration and deployment are separate release actions; the completed implementation defaults MCP off until operators configure, deploy and verify the release.
+
+## Production rollout — 2026-10-29
+
+User authorized merging and deploying the implementation for consumer testing.
+
+1. **in_progress** — Merge the reviewed implementation into main, preserving the disabled default.
+2. Pending — Capture D1 recovery evidence and apply only the additive MCP migration.
+3. Pending — Deploy DAL and scout, then configure stable OAuth KV/consent secret and deploy web disabled.
+4. Pending — Enable MCP, verify hosted discovery, challenges and consent boundaries, and deploy updated API documentation.
+5. Pending — Record exact deployed versions and verification limits; leave signed-in consumer tests explicit if they require human interaction.
