@@ -86,7 +86,7 @@ React SPA with Cloudflare Worker backend hosting all API routes and the WriterAg
 | var | `MCP_ENABLED` | `false` | OAuth MCP kill switch, including delegated BL work |
 | var | `MCP_PUBLIC_URL` / `MCP_ISSUER` | Canonical `/mcp` URL / root origin | Same-origin OAuth resource and issuer |
 | secret | `MCP_CONSENT_SECRET` | | Random signing secret, at least 32 characters |
-| binding | `OAUTH_KV` | Automatically provisioned KV | Provider state and short-lived consent requests |
+| binding | `OAUTH_KV` | Pinned production OAuth KV | Provider state and short-lived consent requests |
 | binding | `GENERATION_WORKFLOW` | `GenerationWorkflow` | Durable asynchronous generation and callbacks |
 | binding | `MCP_RATE_LIMITER` | 120/minute | Public OAuth/MCP request rate limiting |
 | binding | `IMAGE_BUCKET` | R2: `hotmetal-cms-bucket` | Image storage |

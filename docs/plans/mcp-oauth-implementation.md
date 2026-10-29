@@ -285,8 +285,8 @@ The approval dates below record explicit user choices; unresolved recommendation
 
 User authorized merging and deploying the implementation for consumer testing.
 
-1. **in_progress** — Merge the reviewed implementation into main, preserving the disabled default.
-2. Pending — Capture D1 recovery evidence and apply only the additive MCP migration.
-3. Pending — Deploy DAL and scout, then configure stable OAuth KV/consent secret and deploy web disabled.
+1. Complete — Implementation merged as PR #53 (`f22b0fa`), preserving the disabled default.
+2. Complete — D1 migration `0023_mcp_connections.sql` applied; recovery bookmark `0000ba63-00000000-00005113-e11d11bdfaa3f9e085815e07fec23252` captured beforehand.
+3. **in_progress** — DAL `9a27bdfa-a333-4825-bd35-908abb0ab9c2` and scout `135b1bd6-9994-42e4-ba40-41a24b812dea` deployed. Dedicated OAuth KV pinned and consent signing secret uploaded. Deploy web disabled next.
 4. Pending — Enable MCP, verify hosted discovery, challenges and consent boundaries, and deploy updated API documentation.
 5. Pending — Record exact deployed versions and verification limits; leave signed-in consumer tests explicit if they require human interaction.

@@ -30,14 +30,19 @@ export default {
         }),
       },
       ASSETS: {
-        fetch: async () =>
-          new Response('<!doctype html><title>Fixture consent shell</title>', {
+        fetch: async (assetRequest) => {
+          // Static assets canonicalize an explicit index.html URL to '/'.
+          if (new URL(new Request(assetRequest).url).pathname === '/index.html') {
+            return new Response(null, { status: 307, headers: { Location: '/' } })
+          }
+          return new Response('<!doctype html><title>Fixture consent shell</title>', {
             headers: {
               'Content-Type': 'text/html',
               'Cache-Control': 'public, max-age=3600',
               'X-Fixture-Asset': 'consent-shell',
             },
-          }),
+          })
+        },
         connect() {
           throw new Error('Fixture assets do not expose sockets')
         },

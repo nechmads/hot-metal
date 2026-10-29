@@ -143,7 +143,9 @@ export type OAuthRuntime = ReturnType<typeof createOAuthRuntime>
 export async function handleMcpRequest(request: Request, env: Env, context: ExecutionContext): Promise<Response | null> {
   const path = new URL(request.url).pathname
   if (path === '/connect/mcp') {
-    const response = await env.ASSETS.fetch(new Request(new URL('/index.html', request.url), request))
+    // Preserve the consent URL: explicit index.html requests canonicalize to '/'
+    // under Workers Assets HTML handling. The binding uses SPA fallback directly.
+    const response = await env.ASSETS.fetch(request)
     const headers = new Headers(response.headers)
     headers.set('Content-Security-Policy', "frame-ancestors 'none'; base-uri 'self'; object-src 'none'; form-action 'self'")
     headers.set('X-Frame-Options', 'DENY')

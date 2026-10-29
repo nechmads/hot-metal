@@ -135,19 +135,23 @@ The cohosted runtime pins `@cloudflare/workers-oauth-provider` **1.2.4**, `@mode
 | `MCP_PUBLIC_URL` | Canonical URL ending exactly `/mcp`; default `https://hotmetalapp.com/mcp` |
 | `MCP_ISSUER` | Same-origin root issuer; default `https://hotmetalapp.com` |
 | `MCP_CONSENT_SECRET` | Wrangler secret, random value at least 32 characters; signs account/request-bound consent proof |
-| `OAUTH_KV` | Provider token/client/grant state plus expiring consent transactions; declared without an ID for Wrangler automatic provisioning |
+| `OAUTH_KV` | Provider token/client/grant state plus expiring consent transactions; dedicated production namespace pinned in Wrangler configuration |
 | `MCP_RATE_LIMITER` | Configured Workers limiter, 120 requests per minute per IP/key; includes OAuth and MCP paths |
 | `GENERATION_WORKFLOW` | Workflow `hotmetal-generation`, exported class `GenerationWorkflow` |
 | `DAL`, `WRITER_AGENT`, publisher/scout bindings and keys | Existing service dependencies; generation/publishing reuse them |
 | `global_fetch_strictly_public` | Worker compatibility flag for provider client metadata fetching |
 
-Apply additive DAL migration `0023_mcp_connections.sql` before deploying consumers of its new RPC methods/tables. Back up according to normal D1 operations, apply migrations locally and then in the intended remote environment, deploy DAL and updated scout, configure the web secret/bindings, and deploy web with MCP disabled. Wrangler 4.155's configured KV binding supports automatic provisioning; confirm the resulting namespace/bindings in the actual deployment output. Do not substitute fake namespace IDs. Keep access to the namespace stable across deployments.
+Apply additive DAL migration `0023_mcp_connections.sql` before deploying consumers of its new RPC methods/tables. Back up according to normal D1 operations, apply migrations locally and then in the intended remote environment, deploy DAL and updated scout, configure the web secret/bindings, and deploy web with MCP disabled. Production pins the dedicated `hotmetal-mcp-oauth-production` namespace in Wrangler configuration. Confirm its binding in deployment output and preserve it across releases. Wrangler also supports automatic provisioning for new environments; do not substitute fake namespace IDs.
 
 For example, operators can run `pnpm --filter @hotmetal/data-layer db:migrate:local` during development and configure the web secret with `pnpm --filter @hotmetal/web exec wrangler secret put MCP_CONSENT_SECRET`. Production migration/deployment/enablement must follow the normal release authorization and environment selection. No secrets belong in source or Postman collections.
 
 After offline checks, enable in the intended environment and verify real-host discovery/challenges, sign-in, consent/cancel, authorization-code exchange, refresh, tool discovery, selected-publication isolation, read/write/publish/outlet denial, reconnect and revocation in **consumer ChatGPT and Claude**. Verify a disconnect/restart generation path and ambiguous-publish recovery with a test publication. Record actual client/version/plan restrictions. These live consumer and deployment gates remain pending; local Workerd provider/DAL/D1/KV and BL tests are not substitutes.
 
 To disable, set `MCP_ENABLED=false` and deploy that configuration. This blocks new authorization/token work, MCP resource access and origin-attributed queued generation/scout authorization. Keep the new authorization-aware worker/DAL implementation in place; rolling back to code that forgets delegated origins would defeat the deny boundary. Existing Clerk/API-key flows and independently scheduled work retain their own authentication.
+
+### Consent document routing
+
+The consent Worker passes the original `/connect/mcp` request to the `ASSETS` binding and applies framing/cache protections to its HTML response. The binding bypasses Worker routing and uses SPA fallback. Do not fetch `/index.html` explicitly: Cloudflare's default HTML handling redirects that URL to `/`, losing the consent route. Require hosted `200 text/html`, no Location header, `X-Frame-Options: DENY` and `frame-ancestors 'none'` before enablement.
 
 ## Verification and sources
 

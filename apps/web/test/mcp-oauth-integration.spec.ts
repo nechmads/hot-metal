@@ -371,6 +371,7 @@ describe('real Worker OAuth and MCP protocol', () => {
   it('serves the actual consent shell with final framing and cache protections', async () => {
     const response = await request('/connect/mcp?request=fixture')
     expect(response.status).toBe(200)
+    expect(response.headers.get('Location')).toBeNull()
     expect(response.headers.get('X-Fixture-Asset')).toBe('consent-shell')
     expect(await response.text()).toContain('Fixture consent shell')
     expect(response.headers.get('Content-Security-Policy')).toContain(

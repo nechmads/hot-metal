@@ -32,8 +32,8 @@
 
   // Durable generation continues independently of an MCP/HTTP connection.
   "workflows": [{ "name": "hotmetal-generation", "binding": "GENERATION_WORKFLOW", "class_name": "GenerationWorkflow" }],
-  // Wrangler provisions this namespace when deployed; local development uses local KV.
-  "kv_namespaces": [{ "binding": "OAUTH_KV" }],
+  // Dedicated production OAuth state; keep this namespace stable across deployments.
+  "kv_namespaces": [{ "binding": "OAUTH_KV", "id": "228b0faa3800468f930e374b08afc109" }],
   "ratelimits": [{ "name": "MCP_RATE_LIMITER", "namespace_id": "2026102901", "simple": { "limit": 120, "period": 60 } }],
 
   // SQLite migrations for agent-local state (drafts, research_notes)
