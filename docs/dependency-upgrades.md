@@ -102,3 +102,32 @@ Cloudflare's upload API requires base64, so the encoder now uses a zero-copy
 checks the exact binary payload, view offsets, MIME type, and completion JWT.
 Keep per-tenant rollout batches and stop on resource errors; never infer
 completion from a changed public page while metadata still names the old release.
+
+
+## Production release — October 29, 2026
+
+Tenant release: `emdash-1.3.1-hotmetal.1256e6e3111d`. Provisioner Worker version:
+`868213c2-3bad-4016-83fe-9001bef7fc6e`. The provisioner's default selects this same
+immutable release for new blogs.
+
+Upgraded and checked: `test-publication` (canary),
+`machine-learning-engineer-salary-in-2026`, `adi-substack-trialrun`, `workingdraft`,
+and `super-emdash`. Post contents and API-token hashes match the pre-upgrade
+baselines. Home, archive, feeds, sitemap, admin, 404, and existing article routes
+were checked. A real browser verified the hydrated admin sign-in screen and a
+Working Draft article without console warnings/errors.
+
+Recovery evidence is in the existing private `hotmetal-emdash-backups` bucket,
+under `fleet-upgrades/2026-10-29T12-22-00Z/<publication-id>/r2-manifest.json`; each
+manifest records the exact D1 Time Travel bookmark and prior release. All five
+tenant media buckets were empty at capture.
+
+Validation includes the workspace build/typecheck, 65 targeted tests, both
+real-HTTP CMS integration scripts, and two small live Anthropic checks for
+generation and streaming using the existing analyzer model. The rollout also
+required the native base64 memory fix above and the official lock-takeover
+recovery for one interrupted tenant migration.
+
+Deployment scope: the provisioner and five tenant workers. The wider application,
+legacy publication frontend, docs, and other service dependency changes are
+committed source updates awaiting their own deployment.

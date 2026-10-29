@@ -308,3 +308,17 @@ An upload can become live before a failed request records metadata: inspect the
 actual schema and tenant health, then retry the same immutable release with the
 original recovery references. Do not rerun bootstrap or rotate tokens to repair
 a rollout. Use single-tenant requests when investigating resource limits.
+
+
+### Recover an interrupted runtime migration
+
+An exhausted or cancelled provisioner invocation can leave an EmDash runtime
+migration lock behind. A later upload may succeed while the health check returns
+503. Read `emdash migrate --status --json` with the exact tenant database and
+paired build manifest. Confirm the prior invocation has stopped and that the lock
+and known-applied set are stable. On an `auto` site, use EmDash's atomic
+`--take-over-lock <reported-id> --expected-target-fingerprint <reviewed-fingerprint>`
+to apply the remaining forward migrations without a free-lock race. Then run
+`--check`, retry the same immutable fleet release, and recheck content and token
+hashes. Do not delete migration rows or rerun bootstrap. The October 29 recovery
+applied only `091_redirect_artifacts` on the affected tenant.

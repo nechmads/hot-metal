@@ -38,9 +38,19 @@ Cloudflare asset uploads require base64. Use native `node:buffer` conversion,
 not a per-byte string: the 8.6 MiB admin asset caused a confirmed live
 `exceededMemory` failure. The provisioner now has a 16 MiB upload contract test.
 
+An interrupted runtime migration may leave a held D1 lock. Use the paired
+CLI manifest and official fingerprint-guarded atomic lock takeover after
+confirming the old run has stopped; then check and retry the same release.
+
 Read actual production DAL metadata before inferring deployment from a PR body.
 The September 29 PR initially said deployment was pending, but October 29's live
 inventory proved five tenants had already reached EmDash 1.0.1.
+
+The October 29 fleet rollout completed on all five ready tenants at
+`emdash-1.3.1-hotmetal.1256e6e3111d`; posts and token hashes were preserved.
+The provisioner uses that release for new blogs. Other application/service
+dependency changes are source-only until separately deployed. Verify current
+metadata before relying on this dated release record.
 
 ## Evidence
 
