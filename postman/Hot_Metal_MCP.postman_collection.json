@@ -1,0 +1,1129 @@
+{
+  "info": {
+    "name": "Hot Metal \u2014 OAuth MCP and Assistant Connections",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "description": "Feature defaults disabled. OAuth discovery, registration, code+PKCE, refresh, MCP protocol and Clerk consent/list/narrow/revoke. docs/mcp.md is canonical. Set variables using your test environment; never export live tokens. Same-client grants remain independent. Mutation Origin is required. Internal scout request is trusted service-only. Live ChatGPT/Claude validation is a separate release gate."
+  },
+  "variable": [
+    {
+      "key": "WEB_BASE_URL",
+      "value": "https://hotmetalapp.com",
+      "type": "string"
+    },
+    {
+      "key": "MCP_ISSUER",
+      "value": "https://hotmetalapp.com",
+      "type": "string"
+    },
+    {
+      "key": "CLERK_JWT_TOKEN",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "oauthClientId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "authorizationCode",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "pkceVerifier",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "pkceChallenge",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "mcpAccessToken",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "mcpRefreshToken",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "id",
+      "value": "connection_or_consent_uuid",
+      "type": "string"
+    },
+    {
+      "key": "consentId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "formProof",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "publicationId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "jobId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "INTERNAL_API_KEY",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "userId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "encodedMcpOrigin",
+      "value": "",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "oauthDiscovery",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": "{{WEB_BASE_URL}}/.well-known/oauth-authorization-server",
+        "description": "Discover canonical issuer, endpoints, scopes and PKCE; feature must be enabled.\n\nSee docs/mcp.md and docs/mcp-openapi.json for complete field constraints and errors."
+      },
+      "response": [
+        {
+          "name": "200 success",
+          "originalRequest": {
+            "method": "GET",
+            "header": [],
+            "url": "{{WEB_BASE_URL}}/.well-known/oauth-authorization-server",
+            "description": "Discover canonical issuer, endpoints, scopes and PKCE; feature must be enabled.\n\nSee docs/mcp.md and docs/mcp-openapi.json for complete field constraints and errors."
+          },
+          "status": "OK",
+          "code": 200,
+          "header": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "body": "{\n  \"issuer\": \"https://hotmetalapp.com\",\n  \"authorization_endpoint\": \"https://hotmetalapp.com/oauth/authorize\",\n  \"token_endpoint\": \"https://hotmetalapp.com/oauth/token\",\n  \"registration_endpoint\": \"https://hotmetalapp.com/oauth/register\",\n  \"scopes_supported\": [\n    \"hotmetal:read\",\n    \"hotmetal:write\",\n    \"hotmetal:publish\"\n  ],\n  \"code_challenge_methods_supported\": [\n    \"S256\"\n  ]\n}"
+        }
+      ]
+    },
+    {
+      "name": "resourceDiscovery",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": "{{WEB_BASE_URL}}/.well-known/oauth-protected-resource/mcp",
+        "description": "Discover the MCP audience/resource and authorization server.\n\nSee docs/mcp.md and docs/mcp-openapi.json for complete field constraints and errors."
+      },
+      "response": [
+        {
+          "name": "200 success",
+          "originalRequest": {
+            "method": "GET",
+            "header": [],
+            "url": "{{WEB_BASE_URL}}/.well-known/oauth-protected-resource/mcp",
+            "description": "Discover the MCP audience/resource and authorization server.\n\nSee docs/mcp.md and docs/mcp-openapi.json for complete field constraints and errors."
+          },
+          "status": "OK",
+          "code": 200,
+          "header": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "body": "{\n  \"resource\": \"https://hotmetalapp.com/mcp\",\n  \"authorization_servers\": [\n    \"https://hotmetalapp.com\"\n  ],\n  \"resource_name\": \"Hot Metal\"\n}"
+        }
+      ]
+    },
+    {
+      "name": "registerOAuthClient",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{WEB_BASE_URL}}/oauth/register",
+        "description": "Provider dynamic registration. Published client metadata document URLs also supported; use exact registered redirects.\n\nSee docs/mcp.md and docs/mcp-openapi.json for complete field constraints and errors.",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"client_name\": \"Hot Metal test client\",\n  \"redirect_uris\": [\n    \"http://127.0.0.1:9876/callback\"\n  ],\n  \"grant_types\": [\n    \"authorization_code\",\n    \"refresh_token\"\n  ],\n  \"response_types\": [\n    \"code\"\n  ],\n  \"token_endpoint_auth_method\": \"none\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "response": [
+        {
+          "name": "201 success",
+          "originalRequest": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{WEB_BASE_URL}}/oauth/register",
+            "description": "Provider dynamic registration. Published client metadata document URLs also supported; use exact registered redirects.\n\nSee docs/mcp.md and docs/mcp-openapi.json for complete field constraints and errors.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"client_name\": \"Hot Metal test client\",\n  \"redirect_uris\": [\n    \"http://127.0.0.1:9876/callback\"\n  ],\n  \"grant_types\": [\n    \"authorization_code\",\n    \"refresh_token\"\n  ],\n  \"response_types\": [\n    \"code\"\n  ],\n  \"token_endpoint_auth_method\": \"none\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "status": "Created",
+          "code": 201,
+          "header": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "body": "{\n  \"client_id\": \"registered_client_id\",\n  \"client_name\": \"Hot Metal test client\",\n  \"redirect_uris\": [\n    \"http://127.0.0.1:9876/callback\"\n  ],\n  \"grant_types\": [\n    \"authorization_code\",\n    \"refresh_token\"\n  ],\n  \"response_types\": [\n    \"code\"\n  ],\n  \"token_endpoint_auth_method\": \"none\"\n}"
+        }
+      ]
+    },
+    {
+      "name": "authorizeOAuthClient",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": "{{WEB_BASE_URL}}/oauth/authorize?response_type=code&client_id={{oauthClientId}}&redirect_uri=http://127.0.0.1:9876/callback&resource={{MCP_ISSUER}}/mcp&scope=hotmetal:read%20hotmetal:write&state=random-client-bound-state&code_challenge={{pkceChallenge}}&code_challenge_method=S256",
+        "description": "Authorization code + mandatory PKCE S256. Redirects to Clerk-backed consent; not a JSON response.\n\nSee docs/mcp.md and docs/mcp-openapi.json for complete field constraints and errors. Keep the actual Set-Cookie response in the same cookie jar for approval/denial. The saved cookie is illustrative; never synthesize a transaction cookie."
+      },
+      "response": [
+        {
+          "name": "302 success",
+          "originalRequest": {
+            "method": "GET",
+            "header": [],
+            "url": "{{WEB_BASE_URL}}/oauth/authorize?response_type=code&client_id={{oauthClientId}}&redirect_uri=http://127.0.0.1:9876/callback&resource={{MCP_ISSUER}}/mcp&scope=hotmetal:read%20hotmetal:write&state=random-client-bound-state&code_challenge={{pkceChallenge}}&code_challenge_method=S256",
+            "description": "Authorization code + mandatory PKCE S256. Redirects to Clerk-backed consent; not a JSON response.\n\nSee docs/mcp.md and docs/mcp-openapi.json for complete field constraints and errors. Keep the actual Set-Cookie response in the same cookie jar for approval/denial. The saved cookie is illustrative; never synthesize a transaction cookie."
+          },
+          "status": "Found",
+          "code": 302,
+          "header": [
+            {
+              "key": "Location",
+              "value": "https://hotmetalapp.com/connect/mcp?request=consent_uuid"
+            },
+            {
+              "key": "Set-Cookie",
+              "value": "__Host-oauth-consent-0123456789abcdef=opaque-binding; Path=/; Secure; HttpOnly; SameSite=Lax"
+            }
+          ],
+          "body": ""
+        }
+      ]
+    },
+    {
+      "name": "exchangeOAuthToken",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/x-www-form-urlencoded"
+          }
+        ],
+        "url": "{{WEB_BASE_URL}}/oauth/token",
+        "description": "URL-encoded authorization code exchange or refresh (grant_type=refresh_token, refresh_token, client_id, resource, optional scope). Use negotiated client authentication. Access TTL 3600s, refresh 30days; narrowed live grant limits returned scopes.\n\nSee docs/mcp.md and docs/mcp-openapi.json for complete field constraints and errors.",
+        "body": {
+          "mode": "urlencoded",
+          "urlencoded": [
+            {
+              "key": "grant_type",
+              "value": "authorization_code",
+              "type": "text"
+            },
+            {
+              "key": "client_id",
+              "value": "{{oauthClientId}}",
+              "type": "text"
+            },
+            {
+              "key": "code",
+              "value": "{{authorizationCode}}",
+              "type": "text"
+            },
+            {
+              "key": "redirect_uri",
+              "value": "http://127.0.0.1:9876/callback",
+              "type": "text"
+            },
+            {
+              "key": "code_verifier",
+              "value": "{{pkceVerifier}}",
+              "type": "text"
+            },
+            {
+              "key": "resource",
+              "value": "{{MCP_ISSUER}}/mcp",
+              "type": "text"
+            }
+          ]
+        }
+      },
+      "response": [
+        {
+          "name": "200 success",
+          "originalRequest": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/x-www-form-urlencoded"
+              }
+            ],
+            "url": "{{WEB_BASE_URL}}/oauth/token",
+            "description": "URL-encoded authorization code exchange or refresh (grant_type=refresh_token, refresh_token, client_id, resource, optional scope). Use negotiated client authentication. Access TTL 3600s, refresh 30days; narrowed live grant limits returned scopes.\n\nSee docs/mcp.md and docs/mcp-openapi.json for complete field constraints and errors.",
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                {
+                  "key": "grant_type",
+                  "value": "authorization_code",
+                  "type": "text"
+                },
+                {
+                  "key": "client_id",
+                  "value": "{{oauthClientId}}",
+                  "type": "text"
+                },
+                {
+                  "key": "code",
+                  "value": "{{authorizationCode}}",
+                  "type": "text"
+                },
+                {
+                  "key": "redirect_uri",
+                  "value": "http://127.0.0.1:9876/callback",
+                  "type": "text"
+                },
+                {
+                  "key": "code_verifier",
+                  "value": "{{pkceVerifier}}",
+                  "type": "text"
+                },
+                {
+                  "key": "resource",
+                  "value": "{{MCP_ISSUER}}/mcp",
+                  "type": "text"
+                }
+              ]
+            }
+          },
+          "status": "OK",
+          "code": 200,
+          "header": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "body": "{\n  \"access_token\": \"opaque-access-token\",\n  \"token_type\": \"Bearer\",\n  \"expires_in\": 3600,\n  \"refresh_token\": \"opaque-refresh-token\",\n  \"scope\": \"hotmetal:read hotmetal:write\"\n}"
+        }
+      ]
+    },
+    {
+      "name": "refreshOAuthToken",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/x-www-form-urlencoded"
+          }
+        ],
+        "url": "{{WEB_BASE_URL}}/oauth/token",
+        "description": "URL-encoded authorization code exchange or refresh (grant_type=refresh_token, refresh_token, client_id, resource, optional scope). Use negotiated client authentication. Access TTL 3600s, refresh 30days; narrowed live grant limits returned scopes.\n\nSee docs/mcp.md and docs/mcp-openapi.json for complete field constraints and errors.",
+        "body": {
+          "mode": "urlencoded",
+          "urlencoded": [
+            {
+              "key": "grant_type",
+              "value": "refresh_token",
+              "type": "text"
+            },
+            {
+              "key": "client_id",
+              "value": "{{oauthClientId}}",
+              "type": "text"
+            },
+            {
+              "key": "refresh_token",
+              "value": "{{mcpRefreshToken}}",
+              "type": "text"
+            },
+            {
+              "key": "resource",
+              "value": "{{MCP_ISSUER}}/mcp",
+              "type": "text"
+            },
+            {
+              "key": "scope",
+              "value": "hotmetal:read",
+              "type": "text",
+              "disabled": true,
+              "description": "Optional narrower scope; enabling it cannot expand policy."
+            }
+          ]
+        }
+      },
+      "response": [
+        {
+          "name": "200 success",
+          "originalRequest": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/x-www-form-urlencoded"
+              }
+            ],
+            "url": "{{WEB_BASE_URL}}/oauth/token",
+            "description": "URL-encoded authorization code exchange or refresh (grant_type=refresh_token, refresh_token, client_id, resource, optional scope). Use negotiated client authentication. Access TTL 3600s, refresh 30days; narrowed live grant limits returned scopes.\n\nSee docs/mcp.md and docs/mcp-openapi.json for complete field constraints and errors.",
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                {
+                  "key": "grant_type",
+                  "value": "refresh_token",
+                  "type": "text"
+                },
+                {
+                  "key": "client_id",
+                  "value": "{{oauthClientId}}",
+                  "type": "text"
+                },
+                {
+                  "key": "refresh_token",
+                  "value": "{{mcpRefreshToken}}",
+                  "type": "text"
+                },
+                {
+                  "key": "resource",
+                  "value": "{{MCP_ISSUER}}/mcp",
+                  "type": "text"
+                },
+                {
+                  "key": "scope",
+                  "value": "hotmetal:read",
+                  "type": "text",
+                  "disabled": true,
+                  "description": "Optional narrower scope; enabling it cannot expand policy."
+                }
+              ]
+            }
+          },
+          "status": "OK",
+          "code": 200,
+          "header": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "body": "{\n  \"access_token\": \"opaque-new-access-token\",\n  \"token_type\": \"Bearer\",\n  \"expires_in\": 3600,\n  \"refresh_token\": \"opaque-rotated-refresh-token\",\n  \"scope\": \"hotmetal:read\"\n}"
+        }
+      ]
+    },
+    {
+      "name": "consentPage",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": "{{WEB_BASE_URL}}/connect/mcp?request={{consentId}}",
+        "description": "Browser consent UI. Protected by Clerk frontend flow; request expires after10minutes. Framing blocked. HTML response.\n\nSee docs/mcp.md and docs/mcp-openapi.json for complete field constraints and errors."
+      },
+      "response": [
+        {
+          "name": "200 success",
+          "originalRequest": {
+            "method": "GET",
+            "header": [],
+            "url": "{{WEB_BASE_URL}}/connect/mcp?request={{consentId}}",
+            "description": "Browser consent UI. Protected by Clerk frontend flow; request expires after10minutes. Framing blocked. HTML response.\n\nSee docs/mcp.md and docs/mcp-openapi.json for complete field constraints and errors."
+          },
+          "status": "OK",
+          "code": 200,
+          "header": [
+            {
+              "key": "Content-Type",
+              "value": "text/html"
+            }
+          ],
+          "body": "<!doctype html><html><body><div id=\"root\"></div></body></html>"
+        }
+      ]
+    },
+    {
+      "name": "callMcp",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json, text/event-stream"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer {{mcpAccessToken}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{WEB_BASE_URL}}/mcp",
+        "description": "Streamable HTTP JSON-RPC. OAuth resource must match canonical URL. Initialize then tools/list or tools/call; no REST envelope. Missing/invalid token receives OAuth WWW-Authenticate challenge.\n\nSee docs/mcp.md and docs/mcp-openapi.json for complete field constraints and errors.",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"jsonrpc\": \"2.0\",\n  \"id\": 1,\n  \"method\": \"tools/list\",\n  \"params\": {}\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "response": [
+        {
+          "name": "200 success",
+          "originalRequest": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json, text/event-stream"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{mcpAccessToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{WEB_BASE_URL}}/mcp",
+            "description": "Streamable HTTP JSON-RPC. OAuth resource must match canonical URL. Initialize then tools/list or tools/call; no REST envelope. Missing/invalid token receives OAuth WWW-Authenticate challenge.\n\nSee docs/mcp.md and docs/mcp-openapi.json for complete field constraints and errors.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"jsonrpc\": \"2.0\",\n  \"id\": 1,\n  \"method\": \"tools/list\",\n  \"params\": {}\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "status": "OK",
+          "code": 200,
+          "header": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "body": "{\n  \"jsonrpc\": \"2.0\",\n  \"id\": 1,\n  \"result\": {\n    \"tools\": []\n  }\n}"
+        }
+      ]
+    },
+    {
+      "name": "initializeMcp",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json, text/event-stream"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer {{mcpAccessToken}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{WEB_BASE_URL}}/mcp",
+        "description": "Streamable HTTP JSON-RPC. OAuth resource must match canonical URL. Initialize then tools/list or tools/call; no REST envelope. Missing/invalid token receives OAuth WWW-Authenticate challenge.\n\nSee docs/mcp.md and docs/mcp-openapi.json for complete field constraints and errors.",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"jsonrpc\": \"2.0\",\n  \"id\": 2,\n  \"method\": \"initialize\",\n  \"params\": {\n    \"protocolVersion\": \"2025-11-25\",\n    \"capabilities\": {},\n    \"clientInfo\": {\n      \"name\": \"Hot Metal test\",\n      \"version\": \"1.0\"\n    }\n  }\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "response": [
+        {
+          "name": "200 success",
+          "originalRequest": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json, text/event-stream"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{mcpAccessToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{WEB_BASE_URL}}/mcp",
+            "description": "Streamable HTTP JSON-RPC. OAuth resource must match canonical URL. Initialize then tools/list or tools/call; no REST envelope. Missing/invalid token receives OAuth WWW-Authenticate challenge.\n\nSee docs/mcp.md and docs/mcp-openapi.json for complete field constraints and errors.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"jsonrpc\": \"2.0\",\n  \"id\": 2,\n  \"method\": \"initialize\",\n  \"params\": {\n    \"protocolVersion\": \"2025-11-25\",\n    \"capabilities\": {},\n    \"clientInfo\": {\n      \"name\": \"Hot Metal test\",\n      \"version\": \"1.0\"\n    }\n  }\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "status": "OK",
+          "code": 200,
+          "header": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "body": "{\n  \"jsonrpc\": \"2.0\",\n  \"id\": 2,\n  \"result\": {\n    \"protocolVersion\": \"2025-11-25\",\n    \"capabilities\": {\n      \"tools\": {\n        \"listChanged\": true\n      }\n    },\n    \"serverInfo\": {\n      \"name\": \"hot-metal\",\n      \"version\": \"1.0.0\"\n    }\n  }\n}"
+        }
+      ]
+    },
+    {
+      "name": "generateMcpDraft",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json, text/event-stream"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer {{mcpAccessToken}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{WEB_BASE_URL}}/mcp",
+        "description": "Streamable HTTP JSON-RPC. OAuth resource must match canonical URL. Initialize then tools/list or tools/call; no REST envelope. Missing/invalid token receives OAuth WWW-Authenticate challenge.\n\nSee docs/mcp.md and docs/mcp-openapi.json for complete field constraints and errors.",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"jsonrpc\": \"2.0\",\n  \"id\": 2,\n  \"method\": \"tools/call\",\n  \"params\": {\n    \"name\": \"generateDraft\",\n    \"arguments\": {\n      \"publicationId\": \"{{publicationId}}\",\n      \"title\": \"Cloudflare architecture notes\",\n      \"instructions\": \"Explain the verified design and cite primary sources.\",\n      \"idempotencyKey\": \"draft-example-1\",\n      \"autoPublish\": false\n    }\n  }\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "response": [
+        {
+          "name": "200 success",
+          "originalRequest": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json, text/event-stream"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{mcpAccessToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{WEB_BASE_URL}}/mcp",
+            "description": "Streamable HTTP JSON-RPC. OAuth resource must match canonical URL. Initialize then tools/list or tools/call; no REST envelope. Missing/invalid token receives OAuth WWW-Authenticate challenge.\n\nSee docs/mcp.md and docs/mcp-openapi.json for complete field constraints and errors.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"jsonrpc\": \"2.0\",\n  \"id\": 2,\n  \"method\": \"tools/call\",\n  \"params\": {\n    \"name\": \"generateDraft\",\n    \"arguments\": {\n      \"publicationId\": \"{{publicationId}}\",\n      \"title\": \"Cloudflare architecture notes\",\n      \"instructions\": \"Explain the verified design and cite primary sources.\",\n      \"idempotencyKey\": \"draft-example-1\",\n      \"autoPublish\": false\n    }\n  }\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "status": "OK",
+          "code": 200,
+          "header": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "body": "{\n  \"jsonrpc\": \"2.0\",\n  \"id\": 2,\n  \"result\": {\n    \"content\": [\n      {\n        \"type\": \"text\",\n        \"text\": \"{\\\"jobId\\\": \\\"job_uuid\\\", \\\"sessionId\\\": \\\"job_uuid\\\", \\\"status\\\": \\\"queued\\\"}\"\n      }\n    ],\n    \"structuredContent\": {\n      \"jobId\": \"job_uuid\",\n      \"sessionId\": \"job_uuid\",\n      \"status\": \"queued\"\n    }\n  }\n}"
+        }
+      ]
+    },
+    {
+      "name": "pollMcpGeneration",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json, text/event-stream"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer {{mcpAccessToken}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{WEB_BASE_URL}}/mcp",
+        "description": "Streamable HTTP JSON-RPC. OAuth resource must match canonical URL. Initialize then tools/list or tools/call; no REST envelope. Missing/invalid token receives OAuth WWW-Authenticate challenge.\n\nSee docs/mcp.md and docs/mcp-openapi.json for complete field constraints and errors.",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"jsonrpc\": \"2.0\",\n  \"id\": 2,\n  \"method\": \"tools/call\",\n  \"params\": {\n    \"name\": \"getGenerationJob\",\n    \"arguments\": {\n      \"jobId\": \"{{jobId}}\"\n    }\n  }\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "response": [
+        {
+          "name": "200 success",
+          "originalRequest": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json, text/event-stream"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{mcpAccessToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{WEB_BASE_URL}}/mcp",
+            "description": "Streamable HTTP JSON-RPC. OAuth resource must match canonical URL. Initialize then tools/list or tools/call; no REST envelope. Missing/invalid token receives OAuth WWW-Authenticate challenge.\n\nSee docs/mcp.md and docs/mcp-openapi.json for complete field constraints and errors.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"jsonrpc\": \"2.0\",\n  \"id\": 2,\n  \"method\": \"tools/call\",\n  \"params\": {\n    \"name\": \"getGenerationJob\",\n    \"arguments\": {\n      \"jobId\": \"{{jobId}}\"\n    }\n  }\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "status": "OK",
+          "code": 200,
+          "header": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "body": "{\n  \"jsonrpc\": \"2.0\",\n  \"id\": 2,\n  \"result\": {\n    \"content\": [\n      {\n        \"type\": \"text\",\n        \"text\": \"{\\\"jobId\\\": \\\"job_uuid\\\", \\\"sessionId\\\": \\\"job_uuid\\\", \\\"status\\\": \\\"queued\\\", \\\"publicationId\\\": \\\"pub_uuid\\\", \\\"error\\\": null, \\\"createdAt\\\": 1793290000, \\\"updatedAt\\\": 1793290000}\"\n      }\n    ],\n    \"structuredContent\": {\n      \"jobId\": \"job_uuid\",\n      \"sessionId\": \"job_uuid\",\n      \"status\": \"queued\",\n      \"publicationId\": \"pub_uuid\",\n      \"error\": null,\n      \"createdAt\": 1793290000,\n      \"updatedAt\": 1793290000\n    }\n  }\n}"
+        }
+      ]
+    },
+    {
+      "name": "getMcpConsent",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{CLERK_JWT_TOKEN}}"
+          }
+        ],
+        "url": "{{WEB_BASE_URL}}/api/mcp/consent/{{id}}",
+        "description": "Clerk account-bound consent details and signed form proof. UUID request expires after10minutes. Response no-store.\n\nSee docs/mcp.md and docs/mcp-openapi.json for complete field constraints and errors."
+      },
+      "response": [
+        {
+          "name": "200 success",
+          "originalRequest": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{CLERK_JWT_TOKEN}}"
+              }
+            ],
+            "url": "{{WEB_BASE_URL}}/api/mcp/consent/{{id}}",
+            "description": "Clerk account-bound consent details and signed form proof. UUID request expires after10minutes. Response no-store.\n\nSee docs/mcp.md and docs/mcp-openapi.json for complete field constraints and errors."
+          },
+          "status": "OK",
+          "code": 200,
+          "header": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "body": "{\n  \"data\": {\n    \"clientName\": \"Claude\",\n    \"clientDomain\": \"claude.ai\",\n    \"redirectHost\": \"claude.ai\",\n    \"redirectIsLoopback\": false,\n    \"publications\": [\n      {\n        \"id\": \"pub_uuid\",\n        \"name\": \"Engineering Notes\",\n        \"slug\": \"engineering-notes\"\n      }\n    ],\n    \"formProof\": \"account-bound-signed-proof\"\n  }\n}"
+        }
+      ]
+    },
+    {
+      "name": "decideMcpConsent",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{CLERK_JWT_TOKEN}}"
+          },
+          {
+            "key": "Origin",
+            "value": "{{MCP_ISSUER}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{WEB_BASE_URL}}/api/mcp/consent/{{id}}",
+        "description": "Approve policy or deny. Origin must equal issuer. Deny requires only decision and formProof. Proof is account/request-bound. Approval validates current publication ownership. No raw tokens returned.\n\nSee docs/mcp.md and docs/mcp-openapi.json for complete field constraints and errors. REQUIRED: retain the actual HttpOnly transaction cookie from authorizeOAuthClient in the same cookie jar. A copied Clerk JWT, proof and Origin alone do not complete consent. Browser/P\u200b\u200bostman handles Cookie automatically.",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"decision\": \"approve\",\n  \"formProof\": \"{{formProof}}\",\n  \"actions\": [\n    \"read\",\n    \"write\"\n  ],\n  \"publicationMode\": \"selected\",\n  \"publicationIds\": [\n    \"{{publicationId}}\"\n  ],\n  \"outlets\": []\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "response": [
+        {
+          "name": "200 success",
+          "originalRequest": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{CLERK_JWT_TOKEN}}"
+              },
+              {
+                "key": "Origin",
+                "value": "{{MCP_ISSUER}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{WEB_BASE_URL}}/api/mcp/consent/{{id}}",
+            "description": "Approve policy or deny. Origin must equal issuer. Deny requires only decision and formProof. Proof is account/request-bound. Approval validates current publication ownership. No raw tokens returned.\n\nSee docs/mcp.md and docs/mcp-openapi.json for complete field constraints and errors. REQUIRED: retain the actual HttpOnly transaction cookie from authorizeOAuthClient in the same cookie jar. A copied Clerk JWT, proof and Origin alone do not complete consent. Browser/P\u200b\u200bostman handles Cookie automatically.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"decision\": \"approve\",\n  \"formProof\": \"{{formProof}}\",\n  \"actions\": [\n    \"read\",\n    \"write\"\n  ],\n  \"publicationMode\": \"selected\",\n  \"publicationIds\": [\n    \"{{publicationId}}\"\n  ],\n  \"outlets\": []\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "status": "OK",
+          "code": 200,
+          "header": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "body": "{\n  \"data\": {\n    \"redirectTo\": \"http://127.0.0.1:9876/callback?code=opaque-code&state=random-client-bound-state\"\n  }\n}"
+        }
+      ]
+    },
+    {
+      "name": "listMcpConnections",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{CLERK_JWT_TOKEN}}"
+          }
+        ],
+        "url": "{{WEB_BASE_URL}}/api/mcp/connections",
+        "description": "List safe connection DTOs, including independent same-client installations. Never returns user/client/providergrant references or tokens.\n\nSee docs/mcp.md and docs/mcp-openapi.json for complete field constraints and errors."
+      },
+      "response": [
+        {
+          "name": "200 success",
+          "originalRequest": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{CLERK_JWT_TOKEN}}"
+              }
+            ],
+            "url": "{{WEB_BASE_URL}}/api/mcp/connections",
+            "description": "List safe connection DTOs, including independent same-client installations. Never returns user/client/providergrant references or tokens.\n\nSee docs/mcp.md and docs/mcp-openapi.json for complete field constraints and errors."
+          },
+          "status": "OK",
+          "code": 200,
+          "header": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "body": "{\n  \"data\": [\n    {\n      \"id\": \"connection_uuid\",\n      \"label\": \"Claude\",\n      \"actions\": [\n        \"read\",\n        \"write\"\n      ],\n      \"publicationMode\": \"selected\",\n      \"publicationIds\": [\n        \"pub_uuid\"\n      ],\n      \"outlets\": [],\n      \"policyVersion\": 1,\n      \"state\": \"active\",\n      \"createdAt\": 1793290000,\n      \"updatedAt\": 1793290000,\n      \"revokedAt\": null,\n      \"lastUsedAt\": null\n    }\n  ]\n}"
+        }
+      ]
+    },
+    {
+      "name": "narrowMcpConnection",
+      "request": {
+        "method": "PATCH",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{CLERK_JWT_TOKEN}}"
+          },
+          {
+            "key": "Origin",
+            "value": "{{MCP_ISSUER}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{WEB_BASE_URL}}/api/mcp/connections/{{id}}",
+        "description": "Narrow only; expansion requires reconnect. expectedPolicyVersion CAS is required; stale/inactive returns409. Old access tokens need refresh after policyversion changes. Read action remains required; outlet consent requires publish.\n\nSee docs/mcp.md and docs/mcp-openapi.json for complete field constraints and errors.",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"expectedPolicyVersion\": 1,\n  \"actions\": [\n    \"read\"\n  ],\n  \"outlets\": []\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "response": [
+        {
+          "name": "200 success",
+          "originalRequest": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{CLERK_JWT_TOKEN}}"
+              },
+              {
+                "key": "Origin",
+                "value": "{{MCP_ISSUER}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{WEB_BASE_URL}}/api/mcp/connections/{{id}}",
+            "description": "Narrow only; expansion requires reconnect. expectedPolicyVersion CAS is required; stale/inactive returns409. Old access tokens need refresh after policyversion changes. Read action remains required; outlet consent requires publish.\n\nSee docs/mcp.md and docs/mcp-openapi.json for complete field constraints and errors.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"expectedPolicyVersion\": 1,\n  \"actions\": [\n    \"read\"\n  ],\n  \"outlets\": []\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "status": "OK",
+          "code": 200,
+          "header": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "body": "{\n  \"data\": {\n    \"id\": \"connection_uuid\",\n    \"label\": \"Claude\",\n    \"actions\": [\n      \"read\"\n    ],\n    \"publicationMode\": \"selected\",\n    \"publicationIds\": [\n      \"pub_uuid\"\n    ],\n    \"outlets\": [],\n    \"policyVersion\": 2,\n    \"state\": \"active\",\n    \"createdAt\": 1793290000,\n    \"updatedAt\": 1793290000,\n    \"revokedAt\": null,\n    \"lastUsedAt\": null\n  }\n}"
+        }
+      ]
+    },
+    {
+      "name": "revokeMcpConnection",
+      "request": {
+        "method": "DELETE",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{CLERK_JWT_TOKEN}}"
+          },
+          {
+            "key": "Origin",
+            "value": "{{MCP_ISSUER}}"
+          }
+        ],
+        "url": "{{WEB_BASE_URL}}/api/mcp/connections/{{id}}",
+        "description": "Application grant is revoked first; provider cleanup failure sets cleanupPending without restoring access. Repeated revocation is safe; other installations are unaffected.\n\nSee docs/mcp.md and docs/mcp-openapi.json for complete field constraints and errors."
+      },
+      "response": [
+        {
+          "name": "200 success",
+          "originalRequest": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{CLERK_JWT_TOKEN}}"
+              },
+              {
+                "key": "Origin",
+                "value": "{{MCP_ISSUER}}"
+              }
+            ],
+            "url": "{{WEB_BASE_URL}}/api/mcp/connections/{{id}}",
+            "description": "Application grant is revoked first; provider cleanup failure sets cleanupPending without restoring access. Repeated revocation is safe; other installations are unaffected.\n\nSee docs/mcp.md and docs/mcp-openapi.json for complete field constraints and errors."
+          },
+          "status": "OK",
+          "code": 200,
+          "header": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "body": "{\n  \"data\": {\n    \"revoked\": true,\n    \"cleanupPending\": false\n  }\n}"
+        }
+      ]
+    },
+    {
+      "name": "authorizeScoutOrigin",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "X-MCP-Origin",
+            "value": "{{encodedMcpOrigin}}"
+          },
+          {
+            "key": "X-Internal-Key",
+            "value": "{{INTERNAL_API_KEY}}"
+          },
+          {
+            "key": "X-User-Id",
+            "value": "{{userId}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{WEB_BASE_URL}}/internal/scout/authorize",
+        "description": "Service-binding only. Internal key + owner required; MCP jobs additionally pass URI-encoded JSON X-MCP-Origin references. Validates live grant and effective full-auto publish permission before queued work. Never send bearer tokens in origin.\n\nSee docs/mcp.md and docs/mcp-openapi.json for complete field constraints and errors.",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"publicationId\": \"{{publicationId}}\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "response": [
+        {
+          "name": "200 success",
+          "originalRequest": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "X-MCP-Origin",
+                "value": "{{encodedMcpOrigin}}"
+              },
+              {
+                "key": "X-Internal-Key",
+                "value": "{{INTERNAL_API_KEY}}"
+              },
+              {
+                "key": "X-User-Id",
+                "value": "{{userId}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{WEB_BASE_URL}}/internal/scout/authorize",
+            "description": "Service-binding only. Internal key + owner required; MCP jobs additionally pass URI-encoded JSON X-MCP-Origin references. Validates live grant and effective full-auto publish permission before queued work. Never send bearer tokens in origin.\n\nSee docs/mcp.md and docs/mcp-openapi.json for complete field constraints and errors.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"publicationId\": \"{{publicationId}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "status": "OK",
+          "code": 200,
+          "header": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "body": "{\n  \"authorized\": true,\n  \"autoPublishMode\": \"draft\"\n}"
+        }
+      ]
+    }
+  ]
+}

@@ -31,31 +31,6 @@ export function quotaExceededResponse(
 }
 
 /**
- * Check whether the publication has room for another topic.
- * Returns a 403 response if exceeded, or null if OK.
- */
-export async function checkTopicQuota(
-  c: Context<AppEnv>,
-  pubId: string,
-  userTier: string,
-) {
-  const limits = getTierLimits(userTier)
-  if (isUnlimited(limits.topicsPerPublication)) return null
-
-  const tierName = getTierDisplayName(userTier)
-  const current = await c.env.DAL.countTopicsByPublication(pubId)
-  if (current >= limits.topicsPerPublication) {
-    return quotaExceededResponse(
-      c,
-      `${tierName} plan allows up to ${limits.topicsPerPublication} topics per publication`,
-      limits.topicsPerPublication,
-      current,
-    )
-  }
-  return null
-}
-
-/**
  * Check whether the publication has room for another post this week.
  * Returns a 403 response if exceeded, or null if OK.
  */

@@ -3,7 +3,7 @@
   "name": "hotmetal-web",
   "main": "src/server.ts",
   "compatibility_date": "2026-02-05",
-  "compatibility_flags": ["nodejs_compat"],
+  "compatibility_flags": ["nodejs_compat", "global_fetch_strictly_public"],
   "observability": {
     "enabled": true,
   },
@@ -29,6 +29,12 @@
       },
     ],
   },
+
+  // Durable generation continues independently of an MCP/HTTP connection.
+  "workflows": [{ "name": "hotmetal-generation", "binding": "GENERATION_WORKFLOW", "class_name": "GenerationWorkflow" }],
+  // Wrangler provisions this namespace when deployed; local development uses local KV.
+  "kv_namespaces": [{ "binding": "OAUTH_KV" }],
+  "ratelimits": [{ "name": "MCP_RATE_LIMITER", "namespace_id": "2026102901", "simple": { "limit": 120, "period": 60 } }],
 
   // SQLite migrations for agent-local state (drafts, research_notes)
   "migrations": [
@@ -83,6 +89,9 @@
 
   // Environment variables (non-secret)
   "vars": {
+    "MCP_ENABLED": "false",
+    "MCP_PUBLIC_URL": "https://hotmetalapp.com/mcp",
+    "MCP_ISSUER": "https://hotmetalapp.com",
     "CF_CNAME_TARGET": "custom.hotmetalapp.com",
     "CMS_URL": "https://cms.hotmetalapp.com",
     "CONTENT_SCOUT_URL": "https://scout.hotmetalapp.com",
@@ -115,9 +124,16 @@
   // run_worker_first sends only matching paths to the Worker; everything else
   // is served from the static asset pipeline (or falls back to index.html).
   "assets": {
+    "binding": "ASSETS",
     "not_found_handling": "single-page-application",
     "run_worker_first": [
       "/api/*",
+      "/connect/mcp",
+      "/mcp",
+      "/mcp/*",
+      "/oauth/*",
+      "/.well-known/oauth-*",
+      "/.well-known/openid-configuration",
       "/admin/*",
       "/agents/*",
       "/agents-api/*",
@@ -129,6 +145,7 @@
   },
 
   // Secrets (set via `wrangler secret put`):
+  // MCP_CONSENT_SECRET — random signing secret of at least 32 characters; required to enable MCP
   // ANTHROPIC_API_KEY    — Claude API key for AI drafting, SEO, hooks
   // CMS_API_KEY          — authenticates requests to the CMS
   // SCOUT_API_KEY        — authenticates requests to content-scout

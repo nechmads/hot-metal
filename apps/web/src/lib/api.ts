@@ -657,3 +657,37 @@ export async function cancelSubscription(): Promise<{ success: boolean; message:
     method: 'POST',
   })
 }
+
+// Assistant connections use Clerk-authenticated management endpoints.
+export type McpConnectionInfo = Omit<import('@hotmetal/content-core').McpConnection, 'userId' | 'clientId' | 'grantId'>
+export interface McpConsentDetails {
+  clientName: string
+  clientDomain?: string
+  redirectHost: string
+  redirectIsLoopback: boolean
+  publications: Array<{ id: string; name: string; slug: string }>
+  formProof: string
+}
+export interface McpConsentDecision {
+  formProof: string
+  decision: 'approve' | 'deny'
+  actions: Array<'read' | 'write' | 'publish'>
+  publicationMode: 'all' | 'selected'
+  publicationIds: string[]
+  outlets: Array<'linkedin' | 'twitter'>
+}
+export async function fetchMcpConsent(id: string): Promise<McpConsentDetails> {
+  return (await request<{ data: McpConsentDetails }>(`/api/mcp/consent/${encodeURIComponent(id)}`)).data
+}
+export async function decideMcpConsent(id: string, input: McpConsentDecision): Promise<{ redirectTo: string }> {
+  return (await request<{ data: { redirectTo: string } }>(`/api/mcp/consent/${encodeURIComponent(id)}`, { method: 'POST', headers: JSON_HEADERS, body: JSON.stringify(input) })).data
+}
+export async function fetchMcpConnections(): Promise<McpConnectionInfo[]> {
+  return (await request<{ data: McpConnectionInfo[] }>('/api/mcp/connections')).data
+}
+export async function narrowMcpConnection(id: string, input: import('@hotmetal/content-core').NarrowMcpConnectionInput & { expectedPolicyVersion: number }): Promise<McpConnectionInfo> {
+  return (await request<{ data: McpConnectionInfo }>(`/api/mcp/connections/${encodeURIComponent(id)}`, { method: 'PATCH', headers: JSON_HEADERS, body: JSON.stringify(input) })).data
+}
+export async function revokeMcpConnection(id: string): Promise<{ revoked: boolean; cleanupPending: boolean }> {
+  return (await request<{ data: { revoked: boolean; cleanupPending: boolean } }>(`/api/mcp/connections/${encodeURIComponent(id)}`, { method: 'DELETE' })).data
+}

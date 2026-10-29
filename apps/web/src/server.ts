@@ -15,7 +15,10 @@
 
 import { routeAgentRequest } from 'agents'
 import { Hono } from 'hono'
-import { logger, flushLogs } from '@hotmetal/shared'
+import { handleMcpRequest } from './mcp/runtime'
+import mcpConnections from './api/mcp-connections'
+import scout from './api/scout'
+import { flushLogs } from '@hotmetal/shared'
 
 import { cors } from 'hono/cors'
 import { clerkAuth, type AuthVariables } from './middleware/clerk-auth'
@@ -24,7 +27,6 @@ import { internalAuth } from './middleware/internal-auth'
 import { adminAuth } from './middleware/admin-auth'
 import { apiKeyAuth } from './middleware/api-key-auth'
 import { errorHandler } from './middleware/error-handler'
-import { verifyPublicationOwnership } from './middleware/ownership'
 import { verifyChatToken } from './lib/chat-token'
 import sessions from './api/sessions'
 import publications from './api/publications'
@@ -53,6 +55,7 @@ import { openapiSpec } from './agents-api/v1/openapi-spec'
 
 // Re-export the WriterAgent DO class for wrangler registration
 export { WriterAgent } from './agent/writer-agent'
+export { GenerationWorkflow } from './jobs/generation'
 
 export type AppEnv = {
   Bindings: Env
@@ -126,6 +129,7 @@ app.route('/agents-api/v1', agentsApiV1)
 app.use('/api/*', clerkAuth, ensureUser)
 
 // ─── User-facing API routes ─────────────────────────────────────────
+app.route('/api', mcpConnections)
 app.route('/api', me)
 app.route('/api', sessions)
 app.route('/api', publications)
@@ -144,44 +148,17 @@ app.route('/api', comments)
 app.route('/api', billing)
 app.route('/api', images)
 
-// ─── Scout trigger (proxied to content-scout) ───────────────────────
-app.post('/api/publications/:pubId/scout', async (c) => {
-  const pub = await verifyPublicationOwnership(c, c.req.param('pubId'))
-  if (!pub) return c.json({ error: 'Publication not found' }, 404)
-
-  if (!c.env.SCOUT_API_KEY) {
-    return c.json({ error: 'Scout service not configured' }, 503)
-  }
-
-  let res: Response
-  try {
-    // Use service binding (works in dev:stack and production)
-    res = await c.env.CONTENT_SCOUT.fetch(new Request('https://scout/api/scout/run', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${c.env.SCOUT_API_KEY}`,
-      },
-      body: JSON.stringify({ publicationId: c.req.param('pubId') }),
-    }))
-  } catch (err) {
-    logger('web').error('Failed to reach content-scout service', { component: 'scout', error: err instanceof Error ? err.message : String(err) })
-    return c.json({ error: 'Content scout service is unreachable.' }, 503)
-  }
-
-  if (!res.ok) {
-    logger('web').error('Scout service error', { component: 'scout', status: res.status, body: await res.text() })
-    return c.json({ error: 'Content scout failed. Please try again later.' }, 502)
-  }
-
-  return new Response(res.body, { status: res.status, headers: res.headers })
-})
+// ─── Scout trigger (shared BL; dashboard response contract) ───────────
+app.route('/api', scout)
 
 // ─── Export ─────────────────────────────────────────────────────────
 
 export default {
   async fetch(request: Request, env: Env, ctx: ExecutionContext) {
     const url = new URL(request.url)
+
+    const mcpResponse = await handleMcpRequest(request, env, ctx)
+    if (mcpResponse) return mcpResponse
 
     // Agent WebSocket/HTTP routes — validate per-session chat token (not JWT)
     if (url.pathname.startsWith('/agents/')) {

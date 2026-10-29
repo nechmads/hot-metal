@@ -52,7 +52,8 @@ export const openapiSpec = {
 			get: {
 				operationId: 'getMe',
 				summary: 'Get current user',
-				description: 'Returns the authenticated user profile derived from the API key.',
+				description:
+					'Returns the authenticated user profile derived from the API key.',
 				tags: ['User'],
 				responses: {
 					200: {
@@ -78,7 +79,8 @@ export const openapiSpec = {
 			get: {
 				operationId: 'listPublications',
 				summary: 'List publications',
-				description: 'Returns all publications owned by the authenticated user.',
+				description:
+					'Returns all publications owned by the authenticated user.',
 				tags: ['Publications'],
 				responses: {
 					200: {
@@ -121,7 +123,10 @@ export const openapiSpec = {
 						autoPublishMode: { $ref: '#/components/schemas/AutoPublishMode' },
 						cadencePostsPerWeek: { type: 'integer', minimum: 1 },
 						scoutSchedule: { $ref: '#/components/schemas/ScoutSchedule' },
-						timezone: { type: 'string', description: 'IANA timezone (e.g. America/New_York)' },
+						timezone: {
+							type: 'string',
+							description: 'IANA timezone (e.g. America/New_York)',
+						},
 					},
 				}),
 				responses: {
@@ -131,7 +136,9 @@ export const openapiSpec = {
 							'application/json': {
 								schema: {
 									type: 'object',
-									properties: { data: { $ref: '#/components/schemas/Publication' } },
+									properties: {
+										data: { $ref: '#/components/schemas/Publication' },
+									},
 								},
 							},
 						},
@@ -158,7 +165,9 @@ export const openapiSpec = {
 								schema: {
 									type: 'object',
 									properties: {
-										data: { $ref: '#/components/schemas/PublicationWithTopics' },
+										data: {
+											$ref: '#/components/schemas/PublicationWithTopics',
+										},
 									},
 								},
 							},
@@ -186,13 +195,23 @@ export const openapiSpec = {
 							cadencePostsPerWeek: { type: 'integer', minimum: 1 },
 							scoutSchedule: { $ref: '#/components/schemas/ScoutSchedule' },
 							timezone: { type: 'string' },
-							scoutEnabled: { type: 'boolean', description: 'When false, automation is paused: the scout will not run on its schedule. The saved schedule is preserved and resumes when set back to true.' },
+							scoutEnabled: {
+								type: 'boolean',
+								description:
+									'When false, automation is paused: the scout will not run on its schedule. The saved schedule is preserved and resumes when set back to true.',
+							},
 							styleId: { type: ['string', 'null'] },
-							templateId: { type: 'string', enum: [...PUBLICATION_TEMPLATE_IDS] },
+							templateId: {
+								type: 'string',
+								enum: [...PUBLICATION_TEMPLATE_IDS],
+							},
 							feedFullEnabled: { type: 'boolean' },
 							feedPartialEnabled: { type: 'boolean' },
 							commentsEnabled: { type: 'boolean' },
-							commentsModeration: { type: 'string', enum: ['auto-approve', 'pre-approve'] },
+							commentsModeration: {
+								type: 'string',
+								enum: ['auto-approve', 'pre-approve'],
+							},
 						},
 					},
 					false,
@@ -204,7 +223,9 @@ export const openapiSpec = {
 							'application/json': {
 								schema: {
 									type: 'object',
-									properties: { data: { $ref: '#/components/schemas/Publication' } },
+									properties: {
+										data: { $ref: '#/components/schemas/Publication' },
+									},
 								},
 							},
 						},
@@ -226,7 +247,9 @@ export const openapiSpec = {
 							'application/json': {
 								schema: {
 									type: 'object',
-									properties: { data: { $ref: '#/components/schemas/DeletedResponse' } },
+									properties: {
+										data: { $ref: '#/components/schemas/DeletedResponse' },
+									},
 								},
 							},
 						},
@@ -251,7 +274,8 @@ export const openapiSpec = {
 						in: 'query',
 						required: false,
 						schema: { type: 'integer', minimum: 1, maximum: 100, default: 50 },
-						description: 'Posts per page (max 100 — both CMS backends cap there).',
+						description:
+							'Posts per page (max 100 — both CMS backends cap there).',
 					},
 					{
 						name: 'offset',
@@ -269,7 +293,10 @@ export const openapiSpec = {
 								schema: {
 									type: 'object',
 									properties: {
-										data: { type: 'array', items: { $ref: '#/components/schemas/Post' } },
+										data: {
+											type: 'array',
+											items: { $ref: '#/components/schemas/Post' },
+										},
 									},
 								},
 							},
@@ -283,10 +310,12 @@ export const openapiSpec = {
 				operationId: 'createPost',
 				summary: 'Create a post you wrote yourself',
 				description:
-					'Stores a post from content you already have, exactly as given — the counterpart to `generateDraft`, which asks the writer agent to research and write something new. Markdown is rendered to HTML on write, so the two never drift. Set `publishedAt` to backdate a post, which is how existing content is imported without the whole archive landing on today\'s date. Does not count against the weekly post quota, which meters writer-agent sessions.',
+					"Stores a post from content you already have, exactly as given — the counterpart to `generateDraft`, which asks the writer agent to research and write something new. Markdown is rendered to HTML on write, so the two never drift. Set `publishedAt` to backdate a post, which is how existing content is imported without the whole archive landing on today's date. Does not count against the weekly post quota, which meters writer-agent sessions.",
 				tags: ['Publications'],
 				parameters: [{ $ref: '#/components/parameters/PublicationId' }],
-				requestBody: jsonBody({ $ref: '#/components/schemas/CreatePostRequest' }),
+				requestBody: jsonBody({
+					$ref: '#/components/schemas/CreatePostRequest',
+				}),
 				responses: {
 					201: {
 						description: 'The created post',
@@ -301,8 +330,12 @@ export const openapiSpec = {
 					},
 					400: errorResponse('Validation error'),
 					404: errorResponse('Publication not found'),
-					409: errorResponse('Slug already taken, or the blog is still provisioning'),
-					502: errorResponse('The CMS rejected the request or is unavailable, or the publication has no CMS record yet'),
+					409: errorResponse(
+						'Slug already taken, or the blog is still provisioning',
+					),
+					502: errorResponse(
+						'The CMS rejected the request or is unavailable, or the publication has no CMS record yet',
+					),
 				},
 			},
 		},
@@ -318,7 +351,9 @@ export const openapiSpec = {
 					{ $ref: '#/components/parameters/PublicationId' },
 					{ $ref: '#/components/parameters/PostId' },
 				],
-				requestBody: jsonBody({ $ref: '#/components/schemas/UpdatePostRequest' }),
+				requestBody: jsonBody({
+					$ref: '#/components/schemas/UpdatePostRequest',
+				}),
 				responses: {
 					200: {
 						description: 'The updated post',
@@ -331,10 +366,16 @@ export const openapiSpec = {
 							},
 						},
 					},
-					400: errorResponse('Validation error, or no updatable fields supplied'),
+					400: errorResponse(
+						'Validation error, or no updatable fields supplied',
+					),
 					404: errorResponse('Publication or post not found'),
-					409: errorResponse('Slug already taken, or the blog is still provisioning'),
-					502: errorResponse('The CMS rejected the request or is unavailable, or the publication has no CMS record yet'),
+					409: errorResponse(
+						'Slug already taken, or the blog is still provisioning',
+					),
+					502: errorResponse(
+						'The CMS rejected the request or is unavailable, or the publication has no CMS record yet',
+					),
 				},
 			},
 		},
@@ -344,12 +385,13 @@ export const openapiSpec = {
 			get: {
 				operationId: 'listTopics',
 				summary: 'List topics',
-				description: 'Returns all topics for a publication.',
+				description:
+					'Lists all active and inactive topics for an owned publication, ordered by descending priority then creation time. No query parameters or request body. An empty publication returns { data: [] }. Requires the inherited Bearer hm_ API-key authentication.',
 				tags: ['Topics'],
 				parameters: [{ $ref: '#/components/parameters/PubId' }],
 				responses: {
 					200: {
-						description: 'Array of topics',
+						description: 'All topics, with Unix timestamps in seconds',
 						content: {
 							'application/json': {
 								schema: {
@@ -361,30 +403,52 @@ export const openapiSpec = {
 										},
 									},
 								},
+								examples: { empty: { value: { data: [] } } },
 							},
 						},
 					},
-					404: errorResponse('Publication not found'),
+					401: errorResponse('Missing, invalid or revoked Bearer hm_ API key'),
+					404: errorResponse(
+						'Publication not found or not owned: { error: "Publication not found", code: "NOT_FOUND" }',
+					),
 				},
 			},
 			post: {
 				operationId: 'createTopic',
 				summary: 'Create a topic',
-				description: 'Creates a topic under a publication. Subject to tier limits on topic count.',
+				description:
+					'Creates an active topic under an owned publication. Send an application/json object; arrays, null and primitives are rejected before resource lookup. name and description strings are trimmed. The current user tier is loaded server-side. Creation checks active-topic count: Creator allows 3; Growth and Enterprise have no topic-count limit. No query parameters. Success uses { data: topic }; missing/foreign publications return 404.',
 				tags: ['Topics'],
 				parameters: [{ $ref: '#/components/parameters/PubId' }],
-				requestBody: jsonBody({
-					type: 'object',
-					required: ['name'],
-					properties: {
-						name: { type: 'string', description: 'Topic name' },
-						description: { type: 'string' },
-						priority: { type: 'integer', enum: [1, 2, 3], default: 1, description: '1 = highest' },
-					},
-				}),
+				requestBody: {
+					...jsonBody({
+						type: 'object',
+						required: ['name'],
+						properties: {
+							name: {
+								type: 'string',
+								minLength: 1,
+								description: 'Required; must remain nonblank after trimming.',
+							},
+							description: {
+								type: ['string', 'null'],
+								description:
+									'Optional. Strings are trimmed; null/omitted is stored as null.',
+							},
+							priority: {
+								type: 'integer',
+								enum: [1, 2, 3],
+								default: 1,
+								description:
+									'1 = Normal, 2 = High, 3 = Urgent. Numeric strings and null are invalid.',
+							},
+						},
+					}),
+				},
 				responses: {
 					201: {
-						description: 'Topic created',
+						description:
+							'Topic created; isActive is true and timestamps are Unix seconds',
 						content: {
 							'application/json': {
 								schema: {
@@ -394,9 +458,30 @@ export const openapiSpec = {
 							},
 						},
 					},
-					400: errorResponse('Validation error (missing name, bad priority)'),
-					403: quotaErrorResponse,
-					404: errorResponse('Publication not found'),
+					400: errorResponse(
+						'INVALID_JSON for malformed/missing JSON; VALIDATION_ERROR for a non-object body, missing/blank name, wrong field types, or priority outside 1/2/3. Examples: { error: "Request body must be an object", code: "VALIDATION_ERROR" }; { error: "priority must be 1, 2, or 3", code: "VALIDATION_ERROR" }',
+					),
+					401: errorResponse('Missing, invalid or revoked Bearer hm_ API key'),
+					403: {
+						...quotaErrorResponse,
+						description:
+							'Active-topic creation quota exceeded. Returns error, code QUOTA_EXCEEDED, limit, current, and upgradeEmail. Legacy public wording says Free plan for the Creator tier.',
+						content: {
+							'application/json': {
+								schema: { $ref: '#/components/schemas/QuotaErrorResponse' },
+								example: {
+									error: 'Free plan allows up to 3 topics per publication',
+									code: 'QUOTA_EXCEEDED',
+									limit: 3,
+									current: 3,
+									upgradeEmail: 'hello@hotmetalapp.com',
+								},
+							},
+						},
+					},
+					404: errorResponse(
+						'Publication not found or not owned: { error: "Publication not found", code: "NOT_FOUND" }',
+					),
 				},
 			},
 		},
@@ -405,20 +490,36 @@ export const openapiSpec = {
 			patch: {
 				operationId: 'updateTopic',
 				summary: 'Update a topic',
+				description:
+					'Updates a topic after checking ownership of its actual parent publication. Send an application/json object; {} is a valid no-op, but an absent body or non-object JSON is invalid. No query parameters. Only supplied fields change; name is trimmed and null/omitted name is a no-op. description strings are preserved as supplied and null clears the description. Returns { data: topic }. A missing topic returns Topic not found; a missing/foreign parent returns Publication not found (both NOT_FOUND).',
 				tags: ['Topics'],
 				parameters: [{ $ref: '#/components/parameters/TopicId' }],
-				requestBody: jsonBody(
-					{
-						type: 'object',
-						properties: {
-							name: { type: 'string' },
-							description: { type: ['string', 'null'] },
-							priority: { type: 'integer', enum: [1, 2, 3] },
-							isActive: { type: 'boolean' },
+				requestBody: jsonBody({
+					type: 'object',
+					properties: {
+						name: {
+							type: ['string', 'null'],
+							description:
+								'Optional. Strings are trimmed; null/omitted preserves the name. An empty string is accepted.',
+						},
+						description: {
+							type: ['string', 'null'],
+							description:
+								'Optional. String is preserved; null clears it; omitted preserves it.',
+						},
+						priority: {
+							type: 'integer',
+							enum: [1, 2, 3],
+							description:
+								'Optional. 1 = Normal, 2 = High, 3 = Urgent. null and numeric strings are invalid.',
+						},
+						isActive: {
+							type: 'boolean',
+							description:
+								'Optional. Whether the topic is actively scouted. Strings/numbers/null are invalid.',
 						},
 					},
-					false,
-				),
+				}),
 				responses: {
 					200: {
 						description: 'Updated topic',
@@ -431,13 +532,20 @@ export const openapiSpec = {
 							},
 						},
 					},
-					400: errorResponse('Validation error'),
-					404: errorResponse('Topic not found'),
+					400: errorResponse(
+						'INVALID_JSON for malformed/missing JSON; VALIDATION_ERROR for non-object JSON or incorrectly typed fields/priority. Example: { error: "isActive must be a boolean", code: "VALIDATION_ERROR" }',
+					),
+					401: errorResponse('Missing, invalid or revoked Bearer hm_ API key'),
+					404: errorResponse(
+						'Topic or parent publication not found/not owned. Body: { error: "Topic not found" | "Publication not found", code: "NOT_FOUND" }',
+					),
 				},
 			},
 			delete: {
 				operationId: 'deleteTopic',
 				summary: 'Delete a topic',
+				description:
+					'Deletes a topic after verifying its actual parent publication belongs to the user. No query parameters or request body. Returns { data: { deleted: true } }. A missing topic returns Topic not found; a missing/foreign parent returns Publication not found (both NOT_FOUND).',
 				tags: ['Topics'],
 				parameters: [{ $ref: '#/components/parameters/TopicId' }],
 				responses: {
@@ -447,12 +555,18 @@ export const openapiSpec = {
 							'application/json': {
 								schema: {
 									type: 'object',
-									properties: { data: { $ref: '#/components/schemas/DeletedResponse' } },
+									properties: {
+										data: { $ref: '#/components/schemas/DeletedResponse' },
+									},
 								},
+								example: { data: { deleted: true } },
 							},
 						},
 					},
-					404: errorResponse('Topic not found'),
+					401: errorResponse('Missing, invalid or revoked Bearer hm_ API key'),
+					404: errorResponse(
+						'Topic or parent publication not found/not owned. Body: { error: "Topic not found" | "Publication not found", code: "NOT_FOUND" }',
+					),
 				},
 			},
 		},
@@ -462,7 +576,8 @@ export const openapiSpec = {
 			get: {
 				operationId: 'listIdeas',
 				summary: 'List ideas',
-				description: 'Returns ideas for a publication, optionally filtered by status.',
+				description:
+					'Returns ideas for a publication, optionally filtered by status.',
 				tags: ['Ideas'],
 				parameters: [
 					{ $ref: '#/components/parameters/PubId' },
@@ -561,14 +676,17 @@ export const openapiSpec = {
 				operationId: 'generateDraft',
 				summary: 'Generate a draft',
 				description:
-					'Instructs the AI writer agent to generate a draft for the publication. Without `webhookUrl` the call blocks until the draft is ready (synchronous). With `webhookUrl` the call returns 202 immediately and delivers the result via webhook (asynchronous).',
+					'Instructs the AI writer agent to generate a draft for the publication. Without `webhookUrl` the call blocks until the draft is ready (synchronous). With `webhookUrl` the call durably submits to a Workflow, returns 202 immediately and delivers the result via webhook. Supply idempotencyKey for safe retries; callback retries never repeat generation.',
 				tags: ['Drafts'],
 				parameters: [{ $ref: '#/components/parameters/PublicationId' }],
 				requestBody: jsonBody({
 					type: 'object',
 					required: ['title', 'instructions'],
 					properties: {
-						title: { type: 'string', description: 'Working title for the draft' },
+						title: {
+							type: 'string',
+							description: 'Working title for the draft',
+						},
 						instructions: {
 							type: 'string',
 							description: 'Detailed writing instructions for the AI agent',
@@ -581,7 +699,15 @@ export const openapiSpec = {
 						autoPublish: {
 							type: 'boolean',
 							default: false,
-							description: 'If true, publish the draft to CMS automatically on completion',
+							description:
+								'If true, publish the draft to CMS automatically on completion',
+						},
+						idempotencyKey: {
+							type: 'string',
+							minLength: 1,
+							maxLength: 200,
+							description:
+								'Optional asynchronous request key. Reuse with identical input to recover the same handle; different input returns 409. Omission creates a fresh key. Synchronous mode does not reserve it.',
 						},
 						webhookUrl: {
 							type: 'string',
@@ -606,7 +732,8 @@ export const openapiSpec = {
 						},
 					},
 					202: {
-						description: 'Generation started (asynchronous mode with webhookUrl)',
+						description:
+							'Generation started (asynchronous mode with webhookUrl)',
 						content: {
 							'application/json': {
 								schema: {
@@ -624,7 +751,9 @@ export const openapiSpec = {
 							},
 						},
 					},
-					400: errorResponse('Validation error (missing fields, bad webhook URL)'),
+					400: errorResponse(
+						'Validation error (missing fields, bad webhook URL)',
+					),
 					403: quotaErrorResponse,
 					404: errorResponse('Publication not found'),
 					500: errorResponse('Draft generation failed'),
@@ -637,7 +766,8 @@ export const openapiSpec = {
 			get: {
 				operationId: 'getSession',
 				summary: 'Get session status',
-				description: 'Returns session status and a summary of the current draft.',
+				description:
+					'Returns session status and a summary of the current draft.',
 				tags: ['Sessions'],
 				parameters: [{ $ref: '#/components/parameters/SessionId' }],
 				responses: {
@@ -647,7 +777,9 @@ export const openapiSpec = {
 							'application/json': {
 								schema: {
 									type: 'object',
-									properties: { data: { $ref: '#/components/schemas/Session' } },
+									properties: {
+										data: { $ref: '#/components/schemas/Session' },
+									},
 								},
 							},
 						},
@@ -704,21 +836,29 @@ export const openapiSpec = {
 					{
 						type: 'object',
 						properties: {
-							slug: { type: 'string', description: 'URL slug for the published post' },
+							slug: {
+								type: 'string',
+								description: 'URL slug for the published post',
+							},
 							author: { type: 'string', description: 'Author name override' },
 							tags: { type: 'string', description: 'Comma-separated tags' },
-							excerpt: { type: 'string', description: 'Custom excerpt / meta description' },
+							excerpt: {
+								type: 'string',
+								description: 'Custom excerpt / meta description',
+							},
 							draftVersion: {
 								type: 'integer',
 								minimum: 1,
-								description: 'Specific draft version to publish (defaults to latest)',
+								description:
+									'Specific draft version to publish (defaults to latest)',
 							},
 							publishToLinkedIn: { type: 'boolean', default: false },
 							publishToTwitter: { type: 'boolean', default: false },
 							tweetText: {
 								type: 'string',
 								maxLength: 256,
-								description: 'Custom tweet text (max ~256 chars to leave room for link)',
+								description:
+									'Custom tweet text (max ~256 chars to leave room for link)',
 							},
 							linkedInText: {
 								type: 'string',
@@ -736,7 +876,9 @@ export const openapiSpec = {
 							'application/json': {
 								schema: {
 									type: 'object',
-									properties: { data: { $ref: '#/components/schemas/PublishResult' } },
+									properties: {
+										data: { $ref: '#/components/schemas/PublishResult' },
+									},
 								},
 							},
 						},
@@ -755,7 +897,7 @@ export const openapiSpec = {
 				operationId: 'runScout',
 				summary: 'Trigger content scout',
 				description:
-					'Triggers the content scout to find new content ideas for the publication. Runs asynchronously. Optionally sends results to a webhook URL.',
+					'Triggers the content scout to find new content ideas for the publication. Runs asynchronously. Scout completion webhooks are unsupported; query ideas after submission.',
 				tags: ['Scout'],
 				parameters: [{ $ref: '#/components/parameters/PublicationId' }],
 				requestBody: jsonBody(
@@ -766,7 +908,7 @@ export const openapiSpec = {
 								type: 'string',
 								format: 'uri',
 								description:
-									'HTTPS URL to receive scout results. Must not point to private/internal addresses.',
+								'Legacy accepted/validated field; scout completion callbacks are unsupported. Omit it.',
 							},
 						},
 					},
@@ -782,7 +924,9 @@ export const openapiSpec = {
 									properties: {
 										data: {
 											type: 'object',
-											properties: { queued: { type: 'boolean', example: true } },
+											properties: {
+												queued: { type: 'boolean', example: true },
+											},
 										},
 									},
 								},
@@ -805,7 +949,8 @@ export const openapiSpec = {
 			apiKeyAuth: {
 				type: 'http',
 				scheme: 'bearer',
-				description: 'API key token starting with `hm_`. Get yours from the Hot Metal dashboard.',
+				description:
+					'API key token starting with `hm_`. Get yours from the Hot Metal dashboard.',
 			},
 		},
 
@@ -836,7 +981,8 @@ export const openapiSpec = {
 				in: 'path',
 				required: true,
 				schema: { type: 'string' },
-				description: 'CMS post ID (the `id` returned by listPosts / createPost)',
+				description:
+					'CMS post ID (the `id` returned by listPosts / createPost)',
 			},
 			SessionId: {
 				name: 'id',
@@ -862,7 +1008,8 @@ export const openapiSpec = {
 			TopicPriority: {
 				type: 'integer',
 				enum: [1, 2, 3],
-				description: '1 = highest priority, 3 = lowest',
+				description:
+					'1 = Normal, 2 = High, 3 = Urgent; lists order higher priority first',
 			},
 
 			// ── Composite types ──
@@ -906,7 +1053,10 @@ export const openapiSpec = {
 					id: { type: 'string' },
 					email: { type: 'string', format: 'email' },
 					name: { type: 'string' },
-					tier: { type: 'string', description: 'User plan tier (e.g. free, pro)' },
+					tier: {
+						type: 'string',
+						description: 'User plan tier (e.g. free, pro)',
+					},
 				},
 			},
 
@@ -924,8 +1074,16 @@ export const openapiSpec = {
 					cadencePostsPerWeek: { type: 'integer' },
 					scoutSchedule: { $ref: '#/components/schemas/ScoutSchedule' },
 					timezone: { type: 'string' },
-					nextScoutAt: { type: ['integer', 'null'], description: 'Unix timestamp of the next scheduled scout run; null when automation is paused' },
-					scoutEnabled: { type: 'boolean', description: 'Whether automated scouting is enabled. When false, the scout never runs on its schedule.' },
+					nextScoutAt: {
+						type: ['integer', 'null'],
+						description:
+							'Unix timestamp of the next scheduled scout run; null when automation is paused',
+					},
+					scoutEnabled: {
+						type: 'boolean',
+						description:
+							'Whether automated scouting is enabled. When false, the scout never runs on its schedule.',
+					},
 					cmsPublicationId: { type: ['string', 'null'], format: 'uuid' },
 					styleId: { type: ['string', 'null'], format: 'uuid' },
 					templateId: { type: 'string' },
@@ -937,7 +1095,10 @@ export const openapiSpec = {
 					feedFullEnabled: { type: 'boolean' },
 					feedPartialEnabled: { type: 'boolean' },
 					commentsEnabled: { type: 'boolean' },
-					commentsModeration: { type: 'string', enum: ['auto-approve', 'pre-approve'] },
+					commentsModeration: {
+						type: 'string',
+						enum: ['auto-approve', 'pre-approve'],
+					},
 					customDomain: { type: ['string', 'null'] },
 					metaDescription: { type: ['string', 'null'] },
 					createdAt: { type: 'integer', description: 'Unix timestamp' },
@@ -1019,7 +1180,7 @@ export const openapiSpec = {
 					updatedAt: { type: 'integer' },
 				},
 				description:
-					'Writing styles control the AI writer\'s tone and voice. Includes both user-created and prebuilt system styles.',
+					"Writing styles control the AI writer's tone and voice. Includes both user-created and prebuilt system styles.",
 			},
 
 			Post: {
@@ -1051,7 +1212,11 @@ export const openapiSpec = {
 				required: ['title', 'markdown'],
 				properties: {
 					title: { type: 'string', maxLength: 500, description: 'Post title.' },
-					markdown: { type: 'string', maxLength: 500000, description: 'Post body in Markdown. Rendered to HTML on write.' },
+					markdown: {
+						type: 'string',
+						maxLength: 500000,
+						description: 'Post body in Markdown. Rendered to HTML on write.',
+					},
 					slug: {
 						type: 'string',
 						description:
@@ -1061,7 +1226,8 @@ export const openapiSpec = {
 						type: 'string',
 						enum: ['draft', 'published'],
 						default: 'published',
-						description: 'Richer internal statuses belong to the drafting and scout flows.',
+						description:
+							'Richer internal statuses belong to the drafting and scout flows.',
 					},
 					publishedAt: {
 						type: 'string',
@@ -1069,27 +1235,47 @@ export const openapiSpec = {
 						description:
 							'ISO 8601 publish date. Defaults to now for a published post; ignored for a draft. Set it to preserve the original date when importing existing content.',
 					},
-					author: { type: 'string', description: "Defaults to the publication's default author." },
+					author: {
+						type: 'string',
+						description: "Defaults to the publication's default author.",
+					},
 					subtitle: { type: 'string', maxLength: 5000 },
 					hook: { type: 'string', maxLength: 5000 },
 					excerpt: { type: 'string', maxLength: 5000 },
-					tags: { type: 'string', maxLength: 5000, description: 'Comma-separated tags.' },
-					topics: { type: 'string', maxLength: 5000, description: 'Comma-separated topics.' },
+					tags: {
+						type: 'string',
+						maxLength: 5000,
+						description: 'Comma-separated tags.',
+					},
+					topics: {
+						type: 'string',
+						maxLength: 5000,
+						description: 'Comma-separated topics.',
+					},
 					featuredImage: { type: 'string', format: 'uri', maxLength: 5000 },
 					seoTitle: { type: 'string', maxLength: 5000 },
 					seoDescription: { type: 'string', maxLength: 5000 },
 					canonicalUrl: { type: 'string', format: 'uri', maxLength: 5000 },
 					ogImage: { type: 'string', format: 'uri', maxLength: 5000 },
-					citations: { type: 'array', maxItems: 200, items: { $ref: '#/components/schemas/Citation' } },
+					citations: {
+						type: 'array',
+						maxItems: 200,
+						items: { $ref: '#/components/schemas/Citation' },
+					},
 				},
 			},
 
 			UpdatePostRequest: {
 				type: 'object',
-				description: 'All fields optional — only what you send changes. At least one is required.',
+				description:
+					'All fields optional — only what you send changes. At least one is required.',
 				properties: {
 					title: { type: 'string', maxLength: 500 },
-					markdown: { type: 'string', maxLength: 500000, description: 'Replaces the body and re-renders the stored HTML.' },
+					markdown: {
+						type: 'string',
+						maxLength: 500000,
+						description: 'Replaces the body and re-renders the stored HTML.',
+					},
 					slug: { type: 'string' },
 					status: { type: 'string', enum: ['draft', 'published'] },
 					publishedAt: { type: 'string', format: 'date-time' },
@@ -1104,7 +1290,11 @@ export const openapiSpec = {
 					seoDescription: { type: 'string', maxLength: 5000 },
 					canonicalUrl: { type: 'string', format: 'uri', maxLength: 5000 },
 					ogImage: { type: 'string', format: 'uri', maxLength: 5000 },
-					citations: { type: 'array', maxItems: 200, items: { $ref: '#/components/schemas/Citation' } },
+					citations: {
+						type: 'array',
+						maxItems: 200,
+						items: { $ref: '#/components/schemas/Citation' },
+					},
 				},
 			},
 
@@ -1195,7 +1385,10 @@ export const openapiSpec = {
 				type: 'object',
 				required: ['error', 'code'],
 				properties: {
-					error: { type: 'string', description: 'Human-readable error message' },
+					error: {
+						type: 'string',
+						description: 'Human-readable error message',
+					},
 					code: {
 						type: 'string',
 						description: 'Machine-readable error code',
@@ -1221,7 +1414,10 @@ export const openapiSpec = {
 					{
 						type: 'object',
 						properties: {
-							limit: { type: 'integer', description: 'Maximum allowed by current plan' },
+							limit: {
+								type: 'integer',
+								description: 'Maximum allowed by current plan',
+							},
 							current: { type: 'integer', description: 'Current usage count' },
 							upgradeEmail: {
 								type: 'string',
@@ -1248,12 +1444,23 @@ export const openapiSpec = {
 				properties: {
 					event: {
 						type: 'string',
-						enum: ['draft.ready', 'draft.published', 'draft.failed', 'scout.completed'],
+						enum: [
+							'draft.ready',
+							'draft.published',
+							'draft.failed',
+							'scout.completed',
+						],
 					},
 					sessionId: { type: 'string', format: 'uuid' },
 					publicationId: { type: 'string', format: 'uuid' },
-					data: { type: 'object', description: 'Event-specific payload (draft content, etc.)' },
-					error: { type: 'string', description: 'Error message (only on failure events)' },
+					data: {
+						type: 'object',
+						description: 'Event-specific payload (draft content, etc.)',
+					},
+					error: {
+						type: 'string',
+						description: 'Error message (only on failure events)',
+					},
 					timestamp: { type: 'string', format: 'date-time' },
 				},
 			},

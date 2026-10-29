@@ -4,46 +4,65 @@
 import type { DataLayerApi } from '@hotmetal/data-layer'
 
 export interface NotificationsApi {
-  sendNewIdeasNotification(params: { userId: string; publicationName: string; ideasCount: number }): Promise<void>
-  sendDraftReadyNotification(params: { userId: string; publicationName: string; postTitle: string }): Promise<void>
-  sendPostPublishedNotification(params: { userId: string; publicationName: string; postTitle: string; postUrl: string }): Promise<void>
-  sendNewCommentNotification(params: { userId: string; publicationName: string; postSlug: string; commenterName: string; commentPreview: string; postUrl: string }): Promise<void>
+	sendNewIdeasNotification(params: { userId: string; publicationName: string; ideasCount: number }): Promise<void>
+	sendDraftReadyNotification(params: { userId: string; publicationName: string; postTitle: string }): Promise<void>
+	sendPostPublishedNotification(params: { userId: string; publicationName: string; postTitle: string; postUrl: string }): Promise<void>
+	sendNewCommentNotification(params: {
+		userId: string
+		publicationName: string
+		postSlug: string
+		commenterName: string
+		commentPreview: string
+		postUrl: string
+	}): Promise<void>
 }
 
 export interface ScoutEnv extends Omit<Env, 'DAL' | 'NOTIFICATIONS' | 'PUBLICATIONS_BASE_DOMAIN'> {
-  // Data Access Layer (overrides base Fetcher with typed RPC interface)
-  DAL: DataLayerApi
+	// Data Access Layer (overrides base Fetcher with typed RPC interface)
+	DAL: DataLayerApi
 
-  // Notifications service (overrides base Fetcher with typed RPC interface)
-  NOTIFICATIONS: NotificationsApi
+	// Notifications service (overrides base Fetcher with typed RPC interface)
+	NOTIFICATIONS: NotificationsApi
 
-  // Service binding to web worker (for auto-write pipeline)
-  WEB: Fetcher
+	// Service binding to web worker (for auto-write pipeline)
+	WEB: Fetcher
 
-  // Non-secret env vars
-  PUBLICATIONS_BASE_DOMAIN: string
+	// Non-secret env vars
+	PUBLICATIONS_BASE_DOMAIN: string
 
-  // Secrets (set via `wrangler secret put`)
-  API_KEY: string
-  ALEXANDER_API_KEY: string
-  ANTHROPIC_API_KEY: string
-  INTERNAL_API_KEY: string
+	// Secrets (set via `wrangler secret put`)
+	API_KEY: string
+	ALEXANDER_API_KEY: string
+	ANTHROPIC_API_KEY: string
+	INTERNAL_API_KEY: string
 
-  // Wilson LLM usage tracking (optional — tracking disabled if missing)
-  WILSON_API_URL?: string
-  WILSON_API_KEY?: string
+	// Wilson LLM usage tracking (optional — tracking disabled if missing)
+	WILSON_API_URL?: string
+	WILSON_API_KEY?: string
 
-  // Axiom logging (optional — structured logs sent to Axiom if both are set)
-  AXIOM_TOKEN?: string
-  AXIOM_DATASET?: string
+	// Axiom logging (optional — structured logs sent to Axiom if both are set)
+	AXIOM_TOKEN?: string
+	AXIOM_DATASET?: string
+}
+
+export interface McpScoutOrigin {
+	userId: string
+	credentialKind: 'mcp'
+	connectionId: string
+	clientId: string
+	grantId: string
+	scopes: string[]
+	policyVersion: number
 }
 
 export interface ScoutQueueMessage {
-  publicationId: string
-  triggeredBy: 'cron' | 'manual'
+	publicationId: string
+	triggeredBy: 'cron' | 'manual'
+	origin?: McpScoutOrigin
 }
 
 export interface ScoutWorkflowParams {
-  publicationId: string
-  triggeredBy: 'cron' | 'manual'
+	publicationId: string
+	triggeredBy: 'cron' | 'manual'
+	origin?: McpScoutOrigin
 }

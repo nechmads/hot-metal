@@ -9,15 +9,19 @@ order: 1
 
 The Hot Metal API gives you programmatic access to the platform. You can use it to build AI agent workflows, third-party integrations, and custom automation pipelines that create publications, generate drafts, publish posts, and more -- all without touching the dashboard.
 
+## OAuth MCP for assistants
+
+Hot Metal also implements a remote OAuth MCP connector at `https://hotmetalapp.com/mcp`, behind an enablement gate that defaults off. It grants selected publications or all current/future owned publications, separates read/write/publish, and asks separately for social outlets. API keys remain the authentication mechanism for the REST API below. Deployment and real consumer ChatGPT/Claude validation are separate release gates.
+
 ## Base URL
 
 All API endpoints are served under a single base URL:
 
 ```
-https://app.hotmetalapp.com/agents-api/v1
+https://hotmetalapp.com/agents-api/v1
 ```
 
-Every path in this documentation is relative to that base. For example, `GET /me` means `GET https://app.hotmetalapp.com/agents-api/v1/me`.
+Every path in this documentation is relative to that base. For example, `GET /me` means `GET https://hotmetalapp.com/agents-api/v1/me`.
 
 ## Authentication
 
@@ -117,7 +121,7 @@ Every error response includes a `code` field you can use for programmatic handli
 
 ## Webhooks
 
-Some endpoints accept an optional `webhookUrl` parameter to enable asynchronous processing. When you provide a webhook URL:
+Draft generation accepts an optional `webhookUrl` parameter to enable asynchronous processing. Scout completion callbacks are unsupported; its legacy accepted field does not deliver a callback. When you provide a webhook URL:
 
 1. The API returns `202 Accepted` immediately with a session ID.
 2. Processing happens in the background.
@@ -172,3 +176,5 @@ The API allows requests from all origins, so you can call it from browser-based 
 - **List endpoints** return arrays directly in `data` without pagination cursors. Results are ordered by creation time.
 - **Delete endpoints** return `{ "data": { "deleted": true } }` on success.
 - **Ownership** is enforced automatically. You can only access resources that belong to your account.
+
+Asynchronous draft generation runs in a durable Workflow. Provide `idempotencyKey` with `webhookUrl` to recover the same submission on retries; changing the command while reusing the key returns409. Callback retries do not regenerate the draft. Inspect any ambiguous publication outcome before retrying.

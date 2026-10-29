@@ -8,6 +8,8 @@
 > (served unauthenticated from `apps/web/src/agents-api/v1/openapi-spec.ts`).
 > Postman: `postman/Hot_Metal_Agents_API.postman_collection.json`.
 
+For consumer assistants, the separate [OAuth MCP connector](mcp.md) uses the same BL with publication grants. Its [HTTP/OpenAPI contract](mcp-openapi.json) and [Postman collection](../postman/Hot_Metal_MCP.postman_collection.json) cover consent, connection management and OAuth. MCP defaults disabled pending release checks.
+
 ## Basics
 
 | | |
@@ -29,7 +31,7 @@ Error codes: `VALIDATION_ERROR` (400), `NOT_FOUND` (404), `FORBIDDEN` (403),
 `upgradeEmail`), `INVALID_JSON` (400), `CMS_NOT_READY` (409),
 `CMS_UNAVAILABLE` (502), `CMS_ERROR` (502, the CMS is unreachable),
 `CMS_REQUEST_REJECTED` (500, the CMS refused the write — report it),
-`INTERNAL_ERROR` (500).
+`INTERNAL_ERROR` (500), `RATE_LIMITED` (429), `PAYLOAD_TOO_LARGE` (413), `SERVICE_UNAVAILABLE` (503), `BAD_GATEWAY` (502), `PUBLISH_UNKNOWN` (502). A `PUBLISH_UNKNOWN` outcome requires checking the publication before retrying.
 
 Requests without a valid `Bearer hm_` key get 401.
 
@@ -139,6 +141,116 @@ Posts created through `POST .../posts` are **not** metered. The weekly
 counts writer-agent sessions, because that is where the cost is. Text you supply
 yourself is free to store.
 
+## Topics
+
+Both topic HTTP surfaces now call the same business-layer operations. Ownership,
+current-tier quota checks, trimming/defaults, and semantic field validation are
+shared; each surface preserves its established response format. OAuth MCP now
+uses these same operations with live publication/action grants; see [the connector guide](mcp.md).
+
+| Surface | Base URL | Authentication |
+|---|---|---|
+| Public Agents API | `https://hotmetalapp.com/agents-api/v1` | `Authorization: Bearer hm_...` |
+| Dashboard HTTP API | `https://hotmetalapp.com/api` | `Authorization: Bearer <current Clerk JWT>` |
+
+Send `Accept: application/json`; POST/PATCH also send `Content-Type: application/json`.
+The following paths are relative to the chosen base. `pubId` is the publication UUID;
+`id` is the topic UUID. There are no query parameters on these endpoints.
+
+| Method | Path | Body | Success |
+|---|---|---|---|
+| GET | `/publications/{pubId}/topics` | None | 200, `{ "data": [topic, ...] }` on both surfaces |
+| POST | `/publications/{pubId}/topics` | JSON object with required `name` | 201, `{ "data": topic }` publicly; unwrapped `topic` in dashboard |
+| PATCH | `/topics/{id}` | JSON object; all fields optional; `{}` is valid | 200, `{ "data": topic }` publicly; unwrapped `topic` in dashboard |
+| DELETE | `/topics/{id}` | None | 200, `{ "data": { "deleted": true } }` publicly; `{ "deleted": true }` in dashboard |
+
+GET returns all active and inactive topics, ordered by descending priority then
+creation time; an empty publication returns `{ "data": [] }`. Topic results have
+`id`, `publicationId`, `name`, nullable `description`, `priority`, boolean `isActive`,
+and `createdAt`/`updatedAt` as Unix seconds. New topics start active.
+
+| Body field | POST | PATCH |
+|---|---|---|
+| `name` | Required string, trimmed and nonblank | Optional string, trimmed; empty string accepted; null/omitted is a no-op |
+| `description` | Optional string, trimmed; null/omitted is stored as null | Optional string, preserved as supplied; null clears it; omitted is a no-op |
+| `priority` | Optional integer 1/2/3, default 1 | Optional integer 1/2/3; omitted preserves it |
+| `isActive` | Not a create input; starts true | Optional boolean; omitted preserves it |
+
+Priority is 1 = Normal, 2 = High, 3 = Urgent. Numeric strings and null are not valid
+priorities. POST/PATCH reject incorrect field types with 400; in particular,
+`isActive: "false"` is not a boolean. Unknown fields are ignored.
+
+Example public API create, update and delete:
+
+```bash
+curl "https://hotmetalapp.com/agents-api/v1/publications/$PUB_ID/topics" \
+  -H "Authorization: Bearer $HM_API_KEY" -H 'Accept: application/json'
+
+curl -X POST "https://hotmetalapp.com/agents-api/v1/publications/$PUB_ID/topics" \
+  -H "Authorization: Bearer $HM_API_KEY" -H 'Content-Type: application/json' \
+  -d '{"name":"AI in Software Engineering","description":"Practical implications for developers.","priority":2}'
+
+curl -X PATCH "https://hotmetalapp.com/agents-api/v1/topics/$TOPIC_ID" \
+  -H "Authorization: Bearer $HM_API_KEY" -H 'Content-Type: application/json' \
+  -d '{"description":null,"priority":3,"isActive":false}'
+
+curl -X DELETE "https://hotmetalapp.com/agents-api/v1/topics/$TOPIC_ID" \
+  -H "Authorization: Bearer $HM_API_KEY" -H 'Accept: application/json'
+```
+
+Example POST response (dashboard returns the inner topic object):
+
+```json
+{
+  "data": {
+    "id": "c1d2e3f4-a5b6-4890-8def-1234567890ab",
+    "publicationId": "f47ac10b-58cc-4372-a567-0e02b2c3d479",
+    "name": "AI in Software Engineering",
+    "description": "Practical implications for developers.",
+    "priority": 2,
+    "isActive": true,
+    "createdAt": 1793264400,
+    "updatedAt": 1793264400
+  }
+}
+```
+
+Topic failure contracts:
+
+- **401:** missing, invalid or revoked credentials. Public requests need an `hm_`
+  key; dashboard requests need a current Clerk user JWT.
+- **400:** malformed/missing JSON uses public code `INVALID_JSON`; a non-object
+  body (`null`, array or primitive) uses `VALIDATION_ERROR` before resource lookup.
+  Invalid field types, blank/missing create name and priorities outside 1/2/3 also
+  use `VALIDATION_ERROR`. These payloads now return 400 instead of TypeErrors or
+  silently accepted incorrect values. Public example:
+  `{ "error": "isActive must be a boolean", "code": "VALIDATION_ERROR" }`.
+  Dashboard validation errors contain only `error`.
+- **404:** list/create return `Publication not found` when the publication is
+  missing or not owned. Update/delete return `Topic not found` for a missing
+  topic. A missing/foreign parent yields public `Publication not found`, but
+  dashboard `Topic not found`. Public failures include `code: "NOT_FOUND"`;
+  dashboard failures contain only `error`. A guessed ID does not grant access.
+- **403 on create:** quota checks use the current user's tier and active-topic
+  count. Creator permits 3; Growth/Enterprise have no topic-count cap. Existing
+  public wording says `Free plan`; dashboard wording says `Creator plan`.
+
+```json
+{
+  "error": "Free plan allows up to 3 topics per publication",
+  "code": "QUOTA_EXCEEDED",
+  "limit": 3,
+  "current": 3,
+  "upgradeEmail": "hello@hotmetalapp.com"
+}
+```
+
+Both quota responses carry those five fields. The dashboard changes only the
+message to `Creator plan allows up to 3 topics per publication`. Examples for
+both surfaces, including complete errors, are in the existing root Postman
+collections. The refactor preserves their different success envelopes and legacy
+message wording; consumers should use status/code instead of matching prose.
+
 ## Importing an existing archive
 
 Because `publishedAt` is settable, moving a blog into a Hot Metal publication is
@@ -178,7 +290,7 @@ EmDash instance — see `docs/emdash-integration-guide.md` for that split.
 | `POST` | `/sessions/{id}/publish` | Publish a generated draft (and optionally syndicate). |
 | `POST` | `/publications/{id}/scout/run` | Trigger the content scout now. |
 
-Full request/response schemas for all of these live in the OpenAPI document.
+Full request/response schemas for all of these live in the OpenAPI document. Scout completion webhooks are unsupported: its legacy `webhookUrl` field is accepted/validated but does not deliver results. Omit it; query ideas after submission.
 
 ## Templates
 
@@ -373,3 +485,21 @@ Responses: `200 {"received":true}`; missing signature headers return
 bodies return `400 {"error":"Invalid signature"}`; missing server configuration
 returns `500 {"error":"Webhook not configured"}`. Notification delivery failure
 is logged and acknowledged with 200 to preserve the existing retry contract.
+
+## Generation durability and idempotency
+
+`POST /publications/{id}/drafts/generate` accepts JSON `title` and `instructions` (required), optional `styleId`, `autoPublish` (default false), `webhookUrl`, and `idempotencyKey`. Without a webhook it remains synchronous and returns `{data:{sessionId,draft,status}}`. With a validated public HTTPS webhook it durably submits to `GenerationWorkflow` and preserves HTTP202 `{data:{sessionId,status:"generating"}}`. The session ID also identifies the persisted job. The existing `GET /sessions/{id}` and `GET /sessions/{id}/drafts/{version}` retrieve results; no new public REST job-status path is added.
+
+Supply a stable `idempotencyKey` (1–200 characters) when retrying asynchronous submissions. Same key and input recovers the original handle; different input with that key returns409 `CONFLICT`. If omitted, the REST adapter generates a fresh key; retrying without a key can create a new request. Synchronous generation does not use the durable reservation/idempotency mechanism. Callback delivery retries separately from generation and publishing.
+
+```bash
+curl -X POST "https://hotmetalapp.com/agents-api/v1/publications/$PUB_ID/drafts/generate" \
+  -H "Authorization: Bearer $HM_API_KEY" -H 'Content-Type: application/json' \
+  -d '{"title":"Shipping on Cloudflare","instructions":"Explain the architecture with sources.","autoPublish":false,"webhookUrl":"https://example.org/hooks/drafts","idempotencyKey":"cloudflare-draft-1"}'
+```
+
+Interrupted generation is observable as a failed job; ambiguous publication becomes `publish_unknown` and is never automatically repeated. Inspect saved drafts and the actual CMS before submitting new publication work. Blog success/social failure remains a partial outcome. Shared writer errors retain validation400, missingdraft404, oversizedbody413 and busy429 semantics. Invalid draft-version path values are rejected rather than partially parsed. For states and recovery see [MCP generation](mcp.md#durable-generation-and-recovery).
+
+## Assistant connection management (Clerk)
+
+These routes are separate from API-key `/agents-api/v1`. Full method/path, headers, fields, examples and errors are documented in [MCP HTTP endpoints](mcp.md#http-endpoints): consent GET/POST `/api/mcp/consent/{id}`, list `/api/mcp/connections`, PATCH/DELETE `/api/mcp/connections/{id}`, and service-only POST `/internal/scout/authorize`. Mutations require same-origin `Origin`; narrowing requires `expectedPolicyVersion` and never expands access. OAuth discovery/authorize/register/token and Streamable HTTP `/mcp` are described there too.

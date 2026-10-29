@@ -1,7 +1,7 @@
 {
   "info": {
     "name": "Hot Metal \u2014 Web",
-    "description": "# Hot Metal Web API\n\nThe Web service hosts the React SPA, all API routes, and the WriterAgent Durable Object. It provides a conversational AI writing interface, blog automation pipeline (publications, topics, content scouting, ideas), and CMS publishing.\n\n## Architecture\n\n- **REST API (Hono)** \u2014 Session, draft, publication, topic, idea, style, and activity management\n- **WebSocket (Agents SDK)** \u2014 Real-time AI conversation via Durable Objects\n- **Internal API** \u2014 Service-to-service routes for content-scout auto-write\n\nEach writing session is backed by its own Durable Object instance with embedded SQLite for drafts and conversation history.\n\n## Authentication\n\nAll `/api/*` endpoints require a Clerk JWT token via `Authorization: Bearer <token>` header.\n\nThe health endpoint is unauthenticated. WebSocket connections pass the token via query parameter.\n\n## Endpoints Overview\n\n### Sessions\n| Method | Path | Auth | Description |\n|--------|------|------|-------------|\n| POST | `/api/sessions` | JWT | Create a new writing session |\n| GET | `/api/sessions` | JWT | List sessions (filterable) |\n| GET | `/api/sessions/:id` | JWT | Get session details |\n| PATCH | `/api/sessions/:id` | JWT | Update session title or status |\n\n### Drafts\n| Method | Path | Auth | Description |\n|--------|------|------|-------------|\n| GET | `/api/sessions/:id/drafts` | JWT | List all draft versions |\n| GET | `/api/sessions/:id/drafts/:version` | JWT | Get a specific draft |\n\n### Chat\n| Method | Path | Auth | Description |\n|--------|------|------|-------------|\n| POST | `/api/sessions/:id/chat` | JWT | Send message, get full AI response (non-streaming) |\n\n### Publications\n| Method | Path | Auth | Description |\n|--------|------|------|-------------|\n| POST | `/api/publications` | JWT | Create a new publication |\n| GET | `/api/publications` | JWT | List publications (optionally filtered by userId) |\n| GET | `/api/publications/:id` | JWT | Get publication with its topics |\n| PATCH | `/api/publications/:id` | JWT | Update publication settings |\n| DELETE | `/api/publications/:id` | JWT | Delete a publication |\n\n### Topics\n| Method | Path | Auth | Description |\n|--------|------|------|-------------|\n| POST | `/api/publications/:pubId/topics` | JWT | Create a topic for a publication |\n| GET | `/api/publications/:pubId/topics` | JWT | List topics for a publication |\n| PATCH | `/api/topics/:id` | JWT | Update a topic |\n| DELETE | `/api/topics/:id` | JWT | Delete a topic |\n\n### Ideas\n| Method | Path | Auth | Description |\n|--------|------|------|-------------|\n| GET | `/api/publications/:pubId/ideas` | JWT | List ideas for a publication |\n| GET | `/api/ideas/:id` | JWT | Get idea detail |\n| PATCH | `/api/ideas/:id` | JWT | Update idea status |\n| POST | `/api/ideas/:id/promote` | JWT | Promote idea to a writing session |\n\n### Scout\n| Method | Path | Auth | Description |\n|--------|------|------|-------------|\n| POST | `/api/publications/:id/scout` | JWT | Trigger content scout for a publication |\n\n### Activity\n| Method | Path | Auth | Description |\n|--------|------|------|-------------|\n| GET | `/api/activity` | JWT | Get recent session activity |\n\n### WebSocket\n| URL | Description |\n|-----|-------------|\n| `ws://host/agents/writer-agent/:sessionId` | Connect to a writing session |\n\n### Health\n| Method | Path | Auth | Description |\n|--------|------|------|-------------|\n| GET | `/health` | None | Service health check |\n\n## Environment Variables\n\nThis collection uses variables from the Postman environment:\n- `WEB_BASE_URL` \u2014 Base URL of the web service (e.g. `http://localhost:5173`)\n- `CLERK_JWT_TOKEN` \u2014 Clerk JWT token for authentication\n\nSelect the **Hot Metal \u2014 Local Development** environment before sending requests.",
+    "description": "# Hot Metal Web API\n\nThe Web service hosts the React SPA, all API routes, and the WriterAgent Durable Object. It provides a conversational AI writing interface, blog automation pipeline (publications, topics, content scouting, ideas), and CMS publishing.\n\n## Architecture\n\n- **REST API (Hono)** \u2014 Session, draft, publication, topic, idea, style, and activity management\n- **WebSocket (Agents SDK)** \u2014 Real-time AI conversation via Durable Objects\n- **Internal API** \u2014 Service-to-service routes for content-scout auto-write\n\nEach writing session is backed by its own Durable Object instance with embedded SQLite for drafts and conversation history.\n\n## Authentication\n\nAll `/api/*` endpoints require a Clerk JWT token via `Authorization: Bearer <token>` header.\n\nThe health endpoint is unauthenticated. WebSocket connections pass the token via query parameter.\n\n## Endpoints Overview\n\n### Sessions\n| Method | Path | Auth | Description |\n|--------|------|------|-------------|\n| POST | `/api/sessions` | JWT | Create a new writing session |\n| GET | `/api/sessions` | JWT | List sessions (filterable) |\n| GET | `/api/sessions/:id` | JWT | Get session details |\n| PATCH | `/api/sessions/:id` | JWT | Update session title or status |\n\n### Drafts\n| Method | Path | Auth | Description |\n|--------|------|------|-------------|\n| GET | `/api/sessions/:id/drafts` | JWT | List all draft versions |\n| GET | `/api/sessions/:id/drafts/:version` | JWT | Get a specific draft |\n\n### Chat\n| Method | Path | Auth | Description |\n|--------|------|------|-------------|\n| POST | `/api/sessions/:id/chat` | JWT | Send message, get full AI response (non-streaming) |\n\n### Publications\n| Method | Path | Auth | Description |\n|--------|------|------|-------------|\n| POST | `/api/publications` | JWT | Create a new publication |\n| GET | `/api/publications` | JWT | List publications (optionally filtered by userId) |\n| GET | `/api/publications/:id` | JWT | Get publication with its topics |\n| PATCH | `/api/publications/:id` | JWT | Update publication settings |\n| DELETE | `/api/publications/:id` | JWT | Delete a publication |\n\n### Topics\n| Method | Path | Auth | Description |\n|--------|------|------|-------------|\n| POST | `/api/publications/:pubId/topics` | JWT | Create a topic for a publication |\n| GET | `/api/publications/:pubId/topics` | JWT | List topics for a publication |\n| PATCH | `/api/topics/:id` | JWT | Update a topic |\n| DELETE | `/api/topics/:id` | JWT | Delete a topic |\n\n### Ideas\n| Method | Path | Auth | Description |\n|--------|------|------|-------------|\n| GET | `/api/publications/:pubId/ideas` | JWT | List ideas for a publication |\n| GET | `/api/ideas/:id` | JWT | Get idea detail |\n| PATCH | `/api/ideas/:id` | JWT | Update idea status |\n| POST | `/api/ideas/:id/promote` | JWT | Promote idea to a writing session |\n\n### Scout\n| Method | Path | Auth | Description |\n|--------|------|------|-------------|\n| POST | `/api/publications/:id/scout` | JWT | Trigger content scout for a publication |\n\n### Activity\n| Method | Path | Auth | Description |\n|--------|------|------|-------------|\n| GET | `/api/activity` | JWT | Get recent session activity |\n\n### WebSocket\n| URL | Description |\n|-----|-------------|\n| `ws://host/agents/writer-agent/:sessionId` | Connect to a writing session |\n\n### Health\n| Method | Path | Auth | Description |\n|--------|------|------|-------------|\n| GET | `/health` | None | Service health check |\n\n## Environment Variables\n\nThis collection uses variables from the Postman environment:\n- `WEB_BASE_URL` \u2014 Base URL of the web service (e.g. `http://localhost:5173`)\n- `CLERK_JWT_TOKEN` \u2014 Clerk JWT token for authentication\n\nSelect the **Hot Metal \u2014 Local Development** environment before sending requests.\n\n## OAuth MCP and assistant connection management\n\nClerk-authenticated consent GET/POST /api/mcp/consent/{id}, GET /api/mcp/connections, PATCH/DELETE /api/mcp/connections/{id} and internal POST /internal/scout/authorize are fully documented with requests/responses in Hot_Metal_MCP.postman_collection.json and docs/mcp.md. Management mutations require Origin; consent additionally requires provider browser transaction cookie and signed form proof. MCP defaults disabled pending release verification.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "variable": [
@@ -1047,11 +1047,11 @@
     },
     {
       "name": "Topics",
-      "description": "Manage topics within a publication. Topics define the content areas that the content scout will search for ideas.\n\nEach topic belongs to a publication and has a priority level that influences how frequently the scout generates ideas for it.\n\n### Topic Object\n\n| Field | Type | Description |\n|-------|------|-------------|\n| `id` | string | UUID of the topic |\n| `publicationId` | string | UUID of the parent publication |\n| `name` | string | Topic name |\n| `description` | string \\| null | Detailed description of the topic focus |\n| `priority` | number | Priority level (higher = more frequent scouting) |\n| `isActive` | boolean | Whether the topic is actively scouted |\n| `createdAt` | number | Unix timestamp (seconds) |\n| `updatedAt` | number | Unix timestamp (seconds) |\n\nAll endpoints require `Authorization` authentication.",
+      "description": "Topic CRUD uses the shared business layer for ownership, current-tier quota checks, defaults and field validation. This refactor does not add MCP/OAuth support.\n\nAuthentication is inherited from the collection: `Authorization: Bearer {{CLERK_JWT_TOKEN}}` (a current Clerk user JWT, not an `hm_` key). Every request requires it. Send `Accept: application/json`; POST/PATCH also send `Content-Type: application/json`. No topic endpoint accepts query parameters.\n\n| Field | Type | Meaning |\n|---|---|---|\n| `id` | string UUID | Topic ID, not the publication ID. |\n| `publicationId` | string UUID | Actual parent publication. |\n| `name` | string | Topic name. |\n| `description` | string or null | Description; null means unset. |\n| `priority` | integer 1/2/3 | 1 = Normal, 2 = High, 3 = Urgent. |\n| `isActive` | boolean | Whether scouting uses the topic. |\n| `createdAt`, `updatedAt` | integer | Unix seconds. |\n\nPOST/PATCH require a JSON object. Malformed/missing JSON is 400; arrays, null and primitives are 400 before resource lookup. Incorrectly typed fields are validation failures with 400 (instead of TypeError500 or silently accepted values). Unknown fields are ignored.",
       "item": [
         {
           "name": "Create Topic",
-          "description": "Create a new topic for a publication.\n\n### Path Parameters\n\n| Parameter | Type | Required | Description |\n|-----------|--------|----------|-------------------------------|\n| `pubId` | string | **Yes** | UUID of the publication |\n\n### Request Body\n\n| Field | Type | Required | Description |\n|-------|------|----------|-------------|\n| `name` | string | **Yes** | Topic name |\n| `description` | string | No | Detailed description of the topic focus |\n| `priority` | number | No | Priority level (default: 1). Higher = more frequent scouting |\n\n### Response \u2014 Topic (201 Created)\n\n```json\n{\n  \"id\": \"c1d2e3f4-a5b6-7890-cdef-1234567890ab\",\n  \"publicationId\": \"f47ac10b-58cc-4372-a567-0e02b2c3d479\",\n  \"name\": \"AI in Software Engineering\",\n  \"description\": \"Focus on practical implications for working developers.\",\n  \"priority\": 2,\n  \"isActive\": true,\n  \"createdAt\": 1707350400,\n  \"updatedAt\": 1707350400\n}\n```\n\n### Possible Errors\n\n- `400` \u2014 Missing required fields\n- `401` \u2014 Missing or invalid API key\n- `404` \u2014 Publication not found",
+          "description": "Authentication: `Authorization: Bearer {{CLERK_JWT_TOKEN}}` (a current Clerk user JWT, not an `hm_` key), inherited from collection auth. Response Content-Type: application/json. No query parameters.\n\n`POST {{WEB_BASE_URL}}/api/publications/{{publicationId}}/topics`\n\nPath parameter: `publicationId` is the owned publication UUID.\n\n| Body field | Type | Required / default |\n|---|---|---|\n| `name` | string | Required; trimmed and must remain nonblank. |\n| `description` | string or null | Optional; strings trimmed; null/omitted is stored as null. |\n| `priority` | integer 1/2/3 | Optional; defaults to 1. Strings and null are invalid. |\n\nNew topics have `isActive: true`. Creation checks the current user's active-topic count: Creator limit 3; Growth/Enterprise unlimited.\n\nResponse: the unwrapped topic object.\n\nMissing/invalid credentials return 401. Missing or inaccessible resources return 404, not 403. POST creation quota failures return 403 with `error`, `code`, `limit`, `current`, and `upgradeEmail`. Other validation failures return 400 with `error` only; quota failures additionally include the quota fields.",
           "event": [
             {
               "listen": "test",
@@ -1071,13 +1071,24 @@
             "method": "POST",
             "header": [
               {
+                "key": "Accept",
+                "value": "application/json",
+                "description": "JSON response"
+              },
+              {
                 "key": "Content-Type",
-                "value": "application/json"
+                "value": "application/json",
+                "description": "Required JSON object body"
               }
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"name\": \"AI in Software Engineering\",\n  \"description\": \"Focus on practical implications for working developers.\",\n  \"priority\": 2\n}"
+              "raw": "{\n  \"name\": \"AI in Software Engineering\",\n  \"description\": \"Practical implications for working developers.\",\n  \"priority\": 2\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
             },
             "url": {
               "raw": "{{WEB_BASE_URL}}/api/publications/{{publicationId}}/topics",
@@ -1090,11 +1101,48 @@
                 "{{publicationId}}",
                 "topics"
               ]
-            }
+            },
+            "description": "Authentication: `Authorization: Bearer {{CLERK_JWT_TOKEN}}` (a current Clerk user JWT, not an `hm_` key), inherited from collection auth. Response Content-Type: application/json. No query parameters.\n\n`POST {{WEB_BASE_URL}}/api/publications/{{publicationId}}/topics`\n\nPath parameter: `publicationId` is the owned publication UUID.\n\n| Body field | Type | Required / default |\n|---|---|---|\n| `name` | string | Required; trimmed and must remain nonblank. |\n| `description` | string or null | Optional; strings trimmed; null/omitted is stored as null. |\n| `priority` | integer 1/2/3 | Optional; defaults to 1. Strings and null are invalid. |\n\nNew topics have `isActive: true`. Creation checks the current user's active-topic count: Creator limit 3; Growth/Enterprise unlimited.\n\nResponse: the unwrapped topic object.\n\nMissing/invalid credentials return 401. Missing or inaccessible resources return 404, not 403. POST creation quota failures return 403 with `error`, `code`, `limit`, `current`, and `upgradeEmail`. Other validation failures return 400 with `error` only; quota failures additionally include the quota fields."
           },
           "response": [
             {
               "name": "201 \u2014 Topic created",
+              "originalRequest": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json",
+                    "description": "JSON response"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json",
+                    "description": "Required JSON object body"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"name\": \"AI in Software Engineering\",\n  \"description\": \"Practical implications for working developers.\",\n  \"priority\": 2\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{WEB_BASE_URL}}/api/publications/{{publicationId}}/topics",
+                  "host": [
+                    "{{WEB_BASE_URL}}"
+                  ],
+                  "path": [
+                    "api",
+                    "publications",
+                    "{{publicationId}}",
+                    "topics"
+                  ]
+                }
+              },
               "status": "Created",
               "code": 201,
               "header": [
@@ -1103,10 +1151,47 @@
                   "value": "application/json"
                 }
               ],
-              "body": "{\n  \"id\": \"c1d2e3f4-a5b6-7890-cdef-1234567890ab\",\n  \"publicationId\": \"f47ac10b-58cc-4372-a567-0e02b2c3d479\",\n  \"name\": \"AI in Software Engineering\",\n  \"description\": \"Focus on practical implications for working developers.\",\n  \"priority\": 2,\n  \"isActive\": true,\n  \"createdAt\": 1707350400,\n  \"updatedAt\": 1707350400\n}"
+              "body": "{\n  \"id\": \"c1d2e3f4-a5b6-4890-8def-1234567890ab\",\n  \"publicationId\": \"f47ac10b-58cc-4372-a567-0e02b2c3d479\",\n  \"name\": \"AI in Software Engineering\",\n  \"description\": \"Practical implications for working developers.\",\n  \"priority\": 2,\n  \"isActive\": true,\n  \"createdAt\": 1793264400,\n  \"updatedAt\": 1793264400\n}",
+              "_postman_previewlanguage": "json"
             },
             {
               "name": "400 \u2014 Missing name",
+              "originalRequest": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json",
+                    "description": "JSON response"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json",
+                    "description": "Required JSON object body"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{WEB_BASE_URL}}/api/publications/{{publicationId}}/topics",
+                  "host": [
+                    "{{WEB_BASE_URL}}"
+                  ],
+                  "path": [
+                    "api",
+                    "publications",
+                    "{{publicationId}}",
+                    "topics"
+                  ]
+                }
+              },
               "status": "Bad Request",
               "code": 400,
               "header": [
@@ -1115,10 +1200,292 @@
                   "value": "application/json"
                 }
               ],
-              "body": "{\n  \"error\": \"name is required\"\n}"
+              "body": "{\n  \"error\": \"name is required\"\n}",
+              "_postman_previewlanguage": "json"
             },
             {
-              "name": "404 \u2014 Publication not found",
+              "name": "400 \u2014 Non-object JSON body",
+              "originalRequest": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json",
+                    "description": "JSON response"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json",
+                    "description": "Required JSON object body"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "[]",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{WEB_BASE_URL}}/api/publications/{{publicationId}}/topics",
+                  "host": [
+                    "{{WEB_BASE_URL}}"
+                  ],
+                  "path": [
+                    "api",
+                    "publications",
+                    "{{publicationId}}",
+                    "topics"
+                  ]
+                }
+              },
+              "status": "Bad Request",
+              "code": 400,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"error\": \"Request body must be an object\"\n}",
+              "_postman_previewlanguage": "json"
+            },
+            {
+              "name": "400 \u2014 Wrong field type",
+              "originalRequest": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json",
+                    "description": "JSON response"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json",
+                    "description": "Required JSON object body"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"name\": \"New topic\",\n  \"description\": 42\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{WEB_BASE_URL}}/api/publications/{{publicationId}}/topics",
+                  "host": [
+                    "{{WEB_BASE_URL}}"
+                  ],
+                  "path": [
+                    "api",
+                    "publications",
+                    "{{publicationId}}",
+                    "topics"
+                  ]
+                }
+              },
+              "status": "Bad Request",
+              "code": 400,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"error\": \"description must be a string\"\n}",
+              "_postman_previewlanguage": "json"
+            },
+            {
+              "name": "400 \u2014 Invalid priority",
+              "originalRequest": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json",
+                    "description": "JSON response"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json",
+                    "description": "Required JSON object body"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"name\": \"New topic\",\n  \"priority\": 4\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{WEB_BASE_URL}}/api/publications/{{publicationId}}/topics",
+                  "host": [
+                    "{{WEB_BASE_URL}}"
+                  ],
+                  "path": [
+                    "api",
+                    "publications",
+                    "{{publicationId}}",
+                    "topics"
+                  ]
+                }
+              },
+              "status": "Bad Request",
+              "code": 400,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"error\": \"priority must be 1, 2, or 3\"\n}",
+              "_postman_previewlanguage": "json"
+            },
+            {
+              "name": "400 \u2014 Malformed JSON",
+              "originalRequest": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json",
+                    "description": "JSON response"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json",
+                    "description": "Required JSON object body"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{WEB_BASE_URL}}/api/publications/{{publicationId}}/topics",
+                  "host": [
+                    "{{WEB_BASE_URL}}"
+                  ],
+                  "path": [
+                    "api",
+                    "publications",
+                    "{{publicationId}}",
+                    "topics"
+                  ]
+                }
+              },
+              "status": "Bad Request",
+              "code": 400,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"error\": \"Invalid JSON in request body\"\n}",
+              "_postman_previewlanguage": "json"
+            },
+            {
+              "name": "403 \u2014 Active-topic creation quota exceeded",
+              "originalRequest": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json",
+                    "description": "JSON response"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json",
+                    "description": "Required JSON object body"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"name\": \"AI in Software Engineering\",\n  \"description\": \"Practical implications for working developers.\",\n  \"priority\": 2\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{WEB_BASE_URL}}/api/publications/{{publicationId}}/topics",
+                  "host": [
+                    "{{WEB_BASE_URL}}"
+                  ],
+                  "path": [
+                    "api",
+                    "publications",
+                    "{{publicationId}}",
+                    "topics"
+                  ]
+                }
+              },
+              "status": "Forbidden",
+              "code": 403,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"error\": \"Creator plan allows up to 3 topics per publication\",\n  \"code\": \"QUOTA_EXCEEDED\",\n  \"limit\": 3,\n  \"current\": 3,\n  \"upgradeEmail\": \"hello@hotmetalapp.com\"\n}",
+              "_postman_previewlanguage": "json"
+            },
+            {
+              "name": "404 \u2014 Publication missing or not owned",
+              "originalRequest": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json",
+                    "description": "JSON response"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json",
+                    "description": "Required JSON object body"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"name\": \"AI in Software Engineering\",\n  \"description\": \"Practical implications for working developers.\",\n  \"priority\": 2\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{WEB_BASE_URL}}/api/publications/{{publicationId}}/topics",
+                  "host": [
+                    "{{WEB_BASE_URL}}"
+                  ],
+                  "path": [
+                    "api",
+                    "publications",
+                    "{{publicationId}}",
+                    "topics"
+                  ]
+                }
+              },
               "status": "Not Found",
               "code": 404,
               "header": [
@@ -1127,16 +1494,124 @@
                   "value": "application/json"
                 }
               ],
-              "body": "{\n  \"error\": \"Publication not found\"\n}"
+              "body": "{\n  \"error\": \"Publication not found\"\n}",
+              "_postman_previewlanguage": "json"
+            },
+            {
+              "name": "401 \u2014 Missing user token",
+              "originalRequest": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json",
+                    "description": "JSON response"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json",
+                    "description": "Required JSON object body"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"name\": \"AI in Software Engineering\",\n  \"description\": \"Practical implications for working developers.\",\n  \"priority\": 2\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{WEB_BASE_URL}}/api/publications/{{publicationId}}/topics",
+                  "host": [
+                    "{{WEB_BASE_URL}}"
+                  ],
+                  "path": [
+                    "api",
+                    "publications",
+                    "{{publicationId}}",
+                    "topics"
+                  ]
+                },
+                "auth": {
+                  "type": "noauth"
+                }
+              },
+              "status": "Unauthorized",
+              "code": 401,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"error\": \"Missing authentication token\"\n}",
+              "_postman_previewlanguage": "json"
+            },
+            {
+              "name": "500 \u2014 Internal failure is redacted",
+              "originalRequest": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json",
+                    "description": "JSON response"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json",
+                    "description": "Required JSON object body"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"name\": \"AI in Software Engineering\",\n  \"description\": \"Practical implications for working developers.\",\n  \"priority\": 2\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{WEB_BASE_URL}}/api/publications/{{publicationId}}/topics",
+                  "host": [
+                    "{{WEB_BASE_URL}}"
+                  ],
+                  "path": [
+                    "api",
+                    "publications",
+                    "{{publicationId}}",
+                    "topics"
+                  ]
+                }
+              },
+              "status": "Internal Server Error",
+              "code": 500,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"error\": \"Internal server error\"\n}",
+              "_postman_previewlanguage": "json"
             }
           ]
         },
         {
           "name": "List Topics for Publication",
-          "description": "List all topics for a publication.\n\n### Path Parameters\n\n| Parameter | Type | Required | Description |\n|-----------|--------|----------|-------------------------------|\n| `pubId` | string | **Yes** | UUID of the publication |\n\n### Response \u2014 Topic List\n\n```json\n{\n  \"data\": [\n    {\n      \"id\": \"c1d2e3f4-a5b6-7890-cdef-1234567890ab\",\n      \"publicationId\": \"f47ac10b-58cc-4372-a567-0e02b2c3d479\",\n      \"name\": \"AI in Software Engineering\",\n      \"description\": \"Focus on practical implications for working developers.\",\n      \"priority\": 2,\n      \"isActive\": true,\n      \"createdAt\": 1707350400,\n      \"updatedAt\": 1707350400\n    },\n    {\n      \"id\": \"d2e3f4a5-b6c7-8901-def0-234567890abc\",\n      \"publicationId\": \"f47ac10b-58cc-4372-a567-0e02b2c3d479\",\n      \"name\": \"Developer Tools & Productivity\",\n      \"description\": \"Reviews and analysis of tools that improve developer workflow.\",\n      \"priority\": 1,\n      \"isActive\": true,\n      \"createdAt\": 1707350400,\n      \"updatedAt\": 1707350400\n    }\n  ]\n}\n```\n\n### Possible Errors\n\n- `401` \u2014 Missing or invalid API key\n- `404` \u2014 Publication not found",
+          "description": "Authentication: `Authorization: Bearer {{CLERK_JWT_TOKEN}}` (a current Clerk user JWT, not an `hm_` key), inherited from collection auth. Response Content-Type: application/json. No query parameters.\n\n`GET {{WEB_BASE_URL}}/api/publications/{{publicationId}}/topics`\n\nPath parameter: `publicationId` is the owned publication UUID.\n\nNo request body. Returns all active and inactive topics ordered by priority descending, then creation ascending. Response: `{ \"data\": [...] }`, including `{ \"data\": [] }` for an empty publication.\n\nMissing/invalid credentials return 401. Missing or inaccessible resources return 404, not 403. POST creation quota failures return 403 with `error`, `code`, `limit`, `current`, and `upgradeEmail`. Other validation failures return 400 with `error` only; quota failures additionally include the quota fields.",
           "request": {
             "method": "GET",
-            "header": [],
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "description": "JSON response"
+              }
+            ],
             "url": {
               "raw": "{{WEB_BASE_URL}}/api/publications/{{publicationId}}/topics",
               "host": [
@@ -1148,11 +1623,34 @@
                 "{{publicationId}}",
                 "topics"
               ]
-            }
+            },
+            "description": "Authentication: `Authorization: Bearer {{CLERK_JWT_TOKEN}}` (a current Clerk user JWT, not an `hm_` key), inherited from collection auth. Response Content-Type: application/json. No query parameters.\n\n`GET {{WEB_BASE_URL}}/api/publications/{{publicationId}}/topics`\n\nPath parameter: `publicationId` is the owned publication UUID.\n\nNo request body. Returns all active and inactive topics ordered by priority descending, then creation ascending. Response: `{ \"data\": [...] }`, including `{ \"data\": [] }` for an empty publication.\n\nMissing/invalid credentials return 401. Missing or inaccessible resources return 404, not 403. POST creation quota failures return 403 with `error`, `code`, `limit`, `current`, and `upgradeEmail`. Other validation failures return 400 with `error` only; quota failures additionally include the quota fields."
           },
           "response": [
             {
               "name": "200 \u2014 Topics listed",
+              "originalRequest": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json",
+                    "description": "JSON response"
+                  }
+                ],
+                "url": {
+                  "raw": "{{WEB_BASE_URL}}/api/publications/{{publicationId}}/topics",
+                  "host": [
+                    "{{WEB_BASE_URL}}"
+                  ],
+                  "path": [
+                    "api",
+                    "publications",
+                    "{{publicationId}}",
+                    "topics"
+                  ]
+                }
+              },
               "status": "OK",
               "code": 200,
               "header": [
@@ -1161,10 +1659,33 @@
                   "value": "application/json"
                 }
               ],
-              "body": "{\n  \"data\": [\n    {\n      \"id\": \"c1d2e3f4-a5b6-7890-cdef-1234567890ab\",\n      \"publicationId\": \"f47ac10b-58cc-4372-a567-0e02b2c3d479\",\n      \"name\": \"AI in Software Engineering\",\n      \"description\": \"Focus on practical implications for working developers.\",\n      \"priority\": 2,\n      \"isActive\": true,\n      \"createdAt\": 1707350400,\n      \"updatedAt\": 1707350400\n    },\n    {\n      \"id\": \"d2e3f4a5-b6c7-8901-def0-234567890abc\",\n      \"publicationId\": \"f47ac10b-58cc-4372-a567-0e02b2c3d479\",\n      \"name\": \"Developer Tools & Productivity\",\n      \"description\": \"Reviews and analysis of tools that improve developer workflow.\",\n      \"priority\": 1,\n      \"isActive\": true,\n      \"createdAt\": 1707350400,\n      \"updatedAt\": 1707350400\n    }\n  ]\n}"
+              "body": "{\n  \"data\": [\n    {\n      \"id\": \"c1d2e3f4-a5b6-4890-8def-1234567890ab\",\n      \"publicationId\": \"f47ac10b-58cc-4372-a567-0e02b2c3d479\",\n      \"name\": \"AI in Software Engineering\",\n      \"description\": \"Practical implications for working developers.\",\n      \"priority\": 2,\n      \"isActive\": true,\n      \"createdAt\": 1793264400,\n      \"updatedAt\": 1793264400\n    }\n  ]\n}",
+              "_postman_previewlanguage": "json"
             },
             {
               "name": "200 \u2014 Empty list",
+              "originalRequest": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json",
+                    "description": "JSON response"
+                  }
+                ],
+                "url": {
+                  "raw": "{{WEB_BASE_URL}}/api/publications/{{publicationId}}/topics",
+                  "host": [
+                    "{{WEB_BASE_URL}}"
+                  ],
+                  "path": [
+                    "api",
+                    "publications",
+                    "{{publicationId}}",
+                    "topics"
+                  ]
+                }
+              },
               "status": "OK",
               "code": 200,
               "header": [
@@ -1173,24 +1694,144 @@
                   "value": "application/json"
                 }
               ],
-              "body": "{\n  \"data\": []\n}"
+              "body": "{\n  \"data\": []\n}",
+              "_postman_previewlanguage": "json"
+            },
+            {
+              "name": "404 \u2014 Publication missing or not owned",
+              "originalRequest": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json",
+                    "description": "JSON response"
+                  }
+                ],
+                "url": {
+                  "raw": "{{WEB_BASE_URL}}/api/publications/{{publicationId}}/topics",
+                  "host": [
+                    "{{WEB_BASE_URL}}"
+                  ],
+                  "path": [
+                    "api",
+                    "publications",
+                    "{{publicationId}}",
+                    "topics"
+                  ]
+                }
+              },
+              "status": "Not Found",
+              "code": 404,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"error\": \"Publication not found\"\n}",
+              "_postman_previewlanguage": "json"
+            },
+            {
+              "name": "401 \u2014 Missing user token",
+              "originalRequest": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json",
+                    "description": "JSON response"
+                  }
+                ],
+                "url": {
+                  "raw": "{{WEB_BASE_URL}}/api/publications/{{publicationId}}/topics",
+                  "host": [
+                    "{{WEB_BASE_URL}}"
+                  ],
+                  "path": [
+                    "api",
+                    "publications",
+                    "{{publicationId}}",
+                    "topics"
+                  ]
+                },
+                "auth": {
+                  "type": "noauth"
+                }
+              },
+              "status": "Unauthorized",
+              "code": 401,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"error\": \"Missing authentication token\"\n}",
+              "_postman_previewlanguage": "json"
+            },
+            {
+              "name": "500 \u2014 Internal failure is redacted",
+              "originalRequest": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json",
+                    "description": "JSON response"
+                  }
+                ],
+                "url": {
+                  "raw": "{{WEB_BASE_URL}}/api/publications/{{publicationId}}/topics",
+                  "host": [
+                    "{{WEB_BASE_URL}}"
+                  ],
+                  "path": [
+                    "api",
+                    "publications",
+                    "{{publicationId}}",
+                    "topics"
+                  ]
+                }
+              },
+              "status": "Internal Server Error",
+              "code": 500,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"error\": \"Internal server error\"\n}",
+              "_postman_previewlanguage": "json"
             }
           ]
         },
         {
           "name": "Update Topic",
-          "description": "Update a topic's configuration.\n\n### Path Parameters\n\n| Parameter | Type | Required | Description |\n|-----------|--------|----------|-------------------------------|\n| `id` | string | **Yes** | UUID of the topic to update |\n\n### Request Body\n\nAll fields are optional. Only include the fields you want to change.\n\n| Field | Type | Required | Description |\n|-------|------|----------|-------------|\n| `name` | string | No | Topic name |\n| `description` | string | No | Detailed description |\n| `priority` | number | No | Priority level |\n| `isActive` | boolean | No | Whether the topic is actively scouted |\n\n### Response \u2014 Updated Topic\n\nReturns the full topic object with updated fields and a new `updatedAt` timestamp.\n\n### Possible Errors\n\n- `400` \u2014 Invalid field values\n- `401` \u2014 Missing or invalid API key\n- `404` \u2014 Topic not found",
+          "description": "Authentication: `Authorization: Bearer {{CLERK_JWT_TOKEN}}` (a current Clerk user JWT, not an `hm_` key), inherited from collection auth. Response Content-Type: application/json. No query parameters.\n\n`PATCH {{WEB_BASE_URL}}/api/topics/{{topicId}}`\n\nPath parameter: `topicId` is the topic UUID; ownership is resolved through its actual parent publication.\n\n| Body field | Type | Behavior |\n|---|---|---|\n| `name` | string or null | Optional; strings trimmed (including empty string); null/omitted is a no-op. |\n| `description` | string or null | Optional; strings preserved as supplied; null clears it; omitted is a no-op. |\n| `priority` | integer 1/2/3 | Optional; null and numeric strings are invalid. |\n| `isActive` | boolean | Optional; strings, numbers and null are invalid. |\n\nAll fields are optional. Send `{}` for a no-op; do not omit the JSON body.\n\nResponse: the unwrapped updated topic.\n\nMissing/invalid credentials return 401. Missing or inaccessible resources return 404, not 403. POST creation quota failures return 403 with `error`, `code`, `limit`, `current`, and `upgradeEmail`. Other validation failures return 400 with `error` only; quota failures additionally include the quota fields.",
           "request": {
             "method": "PATCH",
             "header": [
               {
+                "key": "Accept",
+                "value": "application/json",
+                "description": "JSON response"
+              },
+              {
                 "key": "Content-Type",
-                "value": "application/json"
+                "value": "application/json",
+                "description": "Required JSON object body"
               }
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"priority\": 3,\n  \"description\": \"Updated focus on LLM-powered developer tools and their impact.\"\n}"
+              "raw": "{\n  \"name\": \"Developer Tools\",\n  \"description\": null,\n  \"priority\": 3,\n  \"isActive\": false\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
             },
             "url": {
               "raw": "{{WEB_BASE_URL}}/api/topics/{{topicId}}",
@@ -1202,11 +1843,47 @@
                 "topics",
                 "{{topicId}}"
               ]
-            }
+            },
+            "description": "Authentication: `Authorization: Bearer {{CLERK_JWT_TOKEN}}` (a current Clerk user JWT, not an `hm_` key), inherited from collection auth. Response Content-Type: application/json. No query parameters.\n\n`PATCH {{WEB_BASE_URL}}/api/topics/{{topicId}}`\n\nPath parameter: `topicId` is the topic UUID; ownership is resolved through its actual parent publication.\n\n| Body field | Type | Behavior |\n|---|---|---|\n| `name` | string or null | Optional; strings trimmed (including empty string); null/omitted is a no-op. |\n| `description` | string or null | Optional; strings preserved as supplied; null clears it; omitted is a no-op. |\n| `priority` | integer 1/2/3 | Optional; null and numeric strings are invalid. |\n| `isActive` | boolean | Optional; strings, numbers and null are invalid. |\n\nAll fields are optional. Send `{}` for a no-op; do not omit the JSON body.\n\nResponse: the unwrapped updated topic.\n\nMissing/invalid credentials return 401. Missing or inaccessible resources return 404, not 403. POST creation quota failures return 403 with `error`, `code`, `limit`, `current`, and `upgradeEmail`. Other validation failures return 400 with `error` only; quota failures additionally include the quota fields."
           },
           "response": [
             {
               "name": "200 \u2014 Topic updated",
+              "originalRequest": {
+                "method": "PATCH",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json",
+                    "description": "JSON response"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json",
+                    "description": "Required JSON object body"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"name\": \"Developer Tools\",\n  \"description\": null,\n  \"priority\": 3,\n  \"isActive\": false\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{WEB_BASE_URL}}/api/topics/{{topicId}}",
+                  "host": [
+                    "{{WEB_BASE_URL}}"
+                  ],
+                  "path": [
+                    "api",
+                    "topics",
+                    "{{topicId}}"
+                  ]
+                }
+              },
               "status": "OK",
               "code": 200,
               "header": [
@@ -1215,10 +1892,238 @@
                   "value": "application/json"
                 }
               ],
-              "body": "{\n  \"id\": \"c1d2e3f4-a5b6-7890-cdef-1234567890ab\",\n  \"publicationId\": \"f47ac10b-58cc-4372-a567-0e02b2c3d479\",\n  \"name\": \"AI in Software Engineering\",\n  \"description\": \"Updated focus on LLM-powered developer tools and their impact.\",\n  \"priority\": 3,\n  \"isActive\": true,\n  \"createdAt\": 1707350400,\n  \"updatedAt\": 1707436800\n}"
+              "body": "{\n  \"id\": \"c1d2e3f4-a5b6-4890-8def-1234567890ab\",\n  \"publicationId\": \"f47ac10b-58cc-4372-a567-0e02b2c3d479\",\n  \"name\": \"Developer Tools\",\n  \"description\": null,\n  \"priority\": 3,\n  \"isActive\": false,\n  \"createdAt\": 1793264400,\n  \"updatedAt\": 1793264700\n}",
+              "_postman_previewlanguage": "json"
             },
             {
-              "name": "404 \u2014 Topic not found",
+              "name": "400 \u2014 Wrong boolean type",
+              "originalRequest": {
+                "method": "PATCH",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json",
+                    "description": "JSON response"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json",
+                    "description": "Required JSON object body"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"isActive\": \"false\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{WEB_BASE_URL}}/api/topics/{{topicId}}",
+                  "host": [
+                    "{{WEB_BASE_URL}}"
+                  ],
+                  "path": [
+                    "api",
+                    "topics",
+                    "{{topicId}}"
+                  ]
+                }
+              },
+              "status": "Bad Request",
+              "code": 400,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"error\": \"isActive must be a boolean\"\n}",
+              "_postman_previewlanguage": "json"
+            },
+            {
+              "name": "400 \u2014 Invalid priority",
+              "originalRequest": {
+                "method": "PATCH",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json",
+                    "description": "JSON response"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json",
+                    "description": "Required JSON object body"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"name\": \"New topic\",\n  \"priority\": 4\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{WEB_BASE_URL}}/api/topics/{{topicId}}",
+                  "host": [
+                    "{{WEB_BASE_URL}}"
+                  ],
+                  "path": [
+                    "api",
+                    "topics",
+                    "{{topicId}}"
+                  ]
+                }
+              },
+              "status": "Bad Request",
+              "code": 400,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"error\": \"priority must be 1, 2, or 3\"\n}",
+              "_postman_previewlanguage": "json"
+            },
+            {
+              "name": "400 \u2014 Non-object JSON body",
+              "originalRequest": {
+                "method": "PATCH",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json",
+                    "description": "JSON response"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json",
+                    "description": "Required JSON object body"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "[]",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{WEB_BASE_URL}}/api/topics/{{topicId}}",
+                  "host": [
+                    "{{WEB_BASE_URL}}"
+                  ],
+                  "path": [
+                    "api",
+                    "topics",
+                    "{{topicId}}"
+                  ]
+                }
+              },
+              "status": "Bad Request",
+              "code": 400,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"error\": \"Request body must be an object\"\n}",
+              "_postman_previewlanguage": "json"
+            },
+            {
+              "name": "400 \u2014 Malformed or missing JSON",
+              "originalRequest": {
+                "method": "PATCH",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json",
+                    "description": "JSON response"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json",
+                    "description": "Required JSON object body"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{WEB_BASE_URL}}/api/topics/{{topicId}}",
+                  "host": [
+                    "{{WEB_BASE_URL}}"
+                  ],
+                  "path": [
+                    "api",
+                    "topics",
+                    "{{topicId}}"
+                  ]
+                }
+              },
+              "status": "Bad Request",
+              "code": 400,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"error\": \"Invalid JSON in request body\"\n}",
+              "_postman_previewlanguage": "json"
+            },
+            {
+              "name": "404 \u2014 Missing topic",
+              "originalRequest": {
+                "method": "PATCH",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json",
+                    "description": "JSON response"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json",
+                    "description": "Required JSON object body"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"name\": \"Developer Tools\",\n  \"description\": null,\n  \"priority\": 3,\n  \"isActive\": false\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{WEB_BASE_URL}}/api/topics/{{topicId}}",
+                  "host": [
+                    "{{WEB_BASE_URL}}"
+                  ],
+                  "path": [
+                    "api",
+                    "topics",
+                    "{{topicId}}"
+                  ]
+                }
+              },
               "status": "Not Found",
               "code": 404,
               "header": [
@@ -1227,16 +2132,170 @@
                   "value": "application/json"
                 }
               ],
-              "body": "{\n  \"error\": \"Topic not found\"\n}"
+              "body": "{\n  \"error\": \"Topic not found\"\n}",
+              "_postman_previewlanguage": "json"
+            },
+            {
+              "name": "404 \u2014 Parent publication missing or not owned",
+              "originalRequest": {
+                "method": "PATCH",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json",
+                    "description": "JSON response"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json",
+                    "description": "Required JSON object body"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"name\": \"Developer Tools\",\n  \"description\": null,\n  \"priority\": 3,\n  \"isActive\": false\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{WEB_BASE_URL}}/api/topics/{{topicId}}",
+                  "host": [
+                    "{{WEB_BASE_URL}}"
+                  ],
+                  "path": [
+                    "api",
+                    "topics",
+                    "{{topicId}}"
+                  ]
+                }
+              },
+              "status": "Not Found",
+              "code": 404,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"error\": \"Topic not found\"\n}",
+              "_postman_previewlanguage": "json"
+            },
+            {
+              "name": "401 \u2014 Missing user token",
+              "originalRequest": {
+                "method": "PATCH",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json",
+                    "description": "JSON response"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json",
+                    "description": "Required JSON object body"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"name\": \"Developer Tools\",\n  \"description\": null,\n  \"priority\": 3,\n  \"isActive\": false\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{WEB_BASE_URL}}/api/topics/{{topicId}}",
+                  "host": [
+                    "{{WEB_BASE_URL}}"
+                  ],
+                  "path": [
+                    "api",
+                    "topics",
+                    "{{topicId}}"
+                  ]
+                },
+                "auth": {
+                  "type": "noauth"
+                }
+              },
+              "status": "Unauthorized",
+              "code": 401,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"error\": \"Missing authentication token\"\n}",
+              "_postman_previewlanguage": "json"
+            },
+            {
+              "name": "500 \u2014 Internal failure is redacted",
+              "originalRequest": {
+                "method": "PATCH",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json",
+                    "description": "JSON response"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json",
+                    "description": "Required JSON object body"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"name\": \"Developer Tools\",\n  \"description\": null,\n  \"priority\": 3,\n  \"isActive\": false\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{WEB_BASE_URL}}/api/topics/{{topicId}}",
+                  "host": [
+                    "{{WEB_BASE_URL}}"
+                  ],
+                  "path": [
+                    "api",
+                    "topics",
+                    "{{topicId}}"
+                  ]
+                }
+              },
+              "status": "Internal Server Error",
+              "code": 500,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"error\": \"Internal server error\"\n}",
+              "_postman_previewlanguage": "json"
             }
           ]
         },
         {
           "name": "Delete Topic",
-          "description": "Delete a topic. Ideas associated with this topic are not deleted but will no longer be linked to an active topic.\n\n### Path Parameters\n\n| Parameter | Type | Required | Description |\n|-----------|--------|----------|-------------------------------|\n| `id` | string | **Yes** | UUID of the topic to delete |\n\n### Response \u2014 Deletion Confirmation\n\n```json\n{\n  \"deleted\": true\n}\n```\n\n### Possible Errors\n\n- `401` \u2014 Missing or invalid API key\n- `404` \u2014 Topic not found",
+          "description": "Authentication: `Authorization: Bearer {{CLERK_JWT_TOKEN}}` (a current Clerk user JWT, not an `hm_` key), inherited from collection auth. Response Content-Type: application/json. No query parameters.\n\n`DELETE {{WEB_BASE_URL}}/api/topics/{{topicId}}`\n\nPath parameter: `topicId` is the topic UUID; ownership is resolved through its actual parent publication.\n\nNo request body. Returns `{ \"deleted\": true }`.\n\nMissing/invalid credentials return 401. Missing or inaccessible resources return 404, not 403. POST creation quota failures return 403 with `error`, `code`, `limit`, `current`, and `upgradeEmail`. Other validation failures return 400 with `error` only; quota failures additionally include the quota fields.",
           "request": {
             "method": "DELETE",
-            "header": [],
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "description": "JSON response"
+              }
+            ],
             "url": {
               "raw": "{{WEB_BASE_URL}}/api/topics/{{topicId}}",
               "host": [
@@ -1247,11 +2306,33 @@
                 "topics",
                 "{{topicId}}"
               ]
-            }
+            },
+            "description": "Authentication: `Authorization: Bearer {{CLERK_JWT_TOKEN}}` (a current Clerk user JWT, not an `hm_` key), inherited from collection auth. Response Content-Type: application/json. No query parameters.\n\n`DELETE {{WEB_BASE_URL}}/api/topics/{{topicId}}`\n\nPath parameter: `topicId` is the topic UUID; ownership is resolved through its actual parent publication.\n\nNo request body. Returns `{ \"deleted\": true }`.\n\nMissing/invalid credentials return 401. Missing or inaccessible resources return 404, not 403. POST creation quota failures return 403 with `error`, `code`, `limit`, `current`, and `upgradeEmail`. Other validation failures return 400 with `error` only; quota failures additionally include the quota fields."
           },
           "response": [
             {
               "name": "200 \u2014 Topic deleted",
+              "originalRequest": {
+                "method": "DELETE",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json",
+                    "description": "JSON response"
+                  }
+                ],
+                "url": {
+                  "raw": "{{WEB_BASE_URL}}/api/topics/{{topicId}}",
+                  "host": [
+                    "{{WEB_BASE_URL}}"
+                  ],
+                  "path": [
+                    "api",
+                    "topics",
+                    "{{topicId}}"
+                  ]
+                }
+              },
               "status": "OK",
               "code": 200,
               "header": [
@@ -1260,10 +2341,32 @@
                   "value": "application/json"
                 }
               ],
-              "body": "{\n  \"deleted\": true\n}"
+              "body": "{\n  \"deleted\": true\n}",
+              "_postman_previewlanguage": "json"
             },
             {
-              "name": "404 \u2014 Topic not found",
+              "name": "404 \u2014 Missing topic",
+              "originalRequest": {
+                "method": "DELETE",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json",
+                    "description": "JSON response"
+                  }
+                ],
+                "url": {
+                  "raw": "{{WEB_BASE_URL}}/api/topics/{{topicId}}",
+                  "host": [
+                    "{{WEB_BASE_URL}}"
+                  ],
+                  "path": [
+                    "api",
+                    "topics",
+                    "{{topicId}}"
+                  ]
+                }
+              },
               "status": "Not Found",
               "code": 404,
               "header": [
@@ -1272,7 +2375,113 @@
                   "value": "application/json"
                 }
               ],
-              "body": "{\n  \"error\": \"Topic not found\"\n}"
+              "body": "{\n  \"error\": \"Topic not found\"\n}",
+              "_postman_previewlanguage": "json"
+            },
+            {
+              "name": "404 \u2014 Parent publication missing or not owned",
+              "originalRequest": {
+                "method": "DELETE",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json",
+                    "description": "JSON response"
+                  }
+                ],
+                "url": {
+                  "raw": "{{WEB_BASE_URL}}/api/topics/{{topicId}}",
+                  "host": [
+                    "{{WEB_BASE_URL}}"
+                  ],
+                  "path": [
+                    "api",
+                    "topics",
+                    "{{topicId}}"
+                  ]
+                }
+              },
+              "status": "Not Found",
+              "code": 404,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"error\": \"Topic not found\"\n}",
+              "_postman_previewlanguage": "json"
+            },
+            {
+              "name": "401 \u2014 Missing user token",
+              "originalRequest": {
+                "method": "DELETE",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json",
+                    "description": "JSON response"
+                  }
+                ],
+                "url": {
+                  "raw": "{{WEB_BASE_URL}}/api/topics/{{topicId}}",
+                  "host": [
+                    "{{WEB_BASE_URL}}"
+                  ],
+                  "path": [
+                    "api",
+                    "topics",
+                    "{{topicId}}"
+                  ]
+                },
+                "auth": {
+                  "type": "noauth"
+                }
+              },
+              "status": "Unauthorized",
+              "code": 401,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"error\": \"Missing authentication token\"\n}",
+              "_postman_previewlanguage": "json"
+            },
+            {
+              "name": "500 \u2014 Internal failure is redacted",
+              "originalRequest": {
+                "method": "DELETE",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json",
+                    "description": "JSON response"
+                  }
+                ],
+                "url": {
+                  "raw": "{{WEB_BASE_URL}}/api/topics/{{topicId}}",
+                  "host": [
+                    "{{WEB_BASE_URL}}"
+                  ],
+                  "path": [
+                    "api",
+                    "topics",
+                    "{{topicId}}"
+                  ]
+                }
+              },
+              "status": "Internal Server Error",
+              "code": 500,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"error\": \"Internal server error\"\n}",
+              "_postman_previewlanguage": "json"
             }
           ]
         }

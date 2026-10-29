@@ -1,22 +1,20 @@
 import { Hono } from 'hono'
 import type { AppEnv } from '../server'
+import { getMe } from '../bl/content'
+import { createContentDependencies } from '../infrastructure/content-dependencies'
 
 const me = new Hono<AppEnv>()
 
-/**
- * Return the authenticated user's profile.
- *
- * Data sources: userId/email/name come from the Clerk JWT (set by clerkAuth),
- * while tier comes from D1 (set by ensureUser). Clerk refreshes JWT claims
- * frequently, so this is effectively consistent. If database-only fields are
- * added in the future, this endpoint should fetch the full user record.
- */
 me.get('/me', async (c) => {
+  const profile = await getMe(
+    { userId: c.get('userId'), credentialKind: 'clerk' },
+    createContentDependencies(c.env, c.executionCtx),
+  )
+  // Clerk identity claims refresh independently of the stored account profile.
   return c.json({
-    id: c.get('userId'),
+    ...profile,
     email: c.get('userEmail'),
     name: c.get('userName'),
-    tier: c.get('userTier'),
   })
 })
 

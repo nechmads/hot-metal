@@ -56,3 +56,9 @@ Last updated: 2026-10-29
 - TypeScript 7 for TypeScript workspaces; Astro apps use TypeScript 6.0.3 because astro check rejects 7.0.
 - Legacy SonicJS remains at 2.19 pending a separate content migration.
 - See `docs/dependency-upgrades.md` for compatibility decisions and verification.
+
+## Business-layer boundary
+
+HTTP APIs and MCP must be thin protocol/authentication adapters calling the same business-layer operations directly. Authorization, quotas, semantic validation, defaults and orchestration belong in the BL; SQL and provider/runtime mechanics remain in DAL/infrastructure. Do not implement MCP as an HTTP wrapper around the existing REST API or create a second implementation of business rules.
+
+Implemented operations under `apps/web/src/bl/` cover topics, content/publications/posts/ideas/styles, sessions/drafts/generation/publishing/scout and connection policy. OAuth is cohosted in web using Cloudflare Provider 1.2.4, MCP SDK server 2.3.1 and Agents 0.31 `createMcpHandler`. D1 owns live grants and atomic durable job admission; KV owns provider state; `GenerationWorkflow` owns asynchronous execution. MCP enablement defaults off. See [business-layer documentation](docs/business-layer.md), [MCP setup/security/recovery](docs/mcp.md), and [remaining release gates](docs/plans/mcp-oauth-implementation.md).

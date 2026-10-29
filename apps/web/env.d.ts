@@ -1,5 +1,14 @@
 declare namespace Cloudflare {
 	interface Env {
+    ASSETS: Fetcher;
+    MCP_ENABLED?: string;
+    MCP_PUBLIC_URL?: string;
+    MCP_ISSUER?: string;
+    MCP_CONSENT_SECRET?: string;
+    OAUTH_KV: KVNamespace;
+    MCP_RATE_LIMITER: { limit(options: { key: string }): Promise<{ success: boolean }> };
+    GENERATION_WORKFLOW: Workflow<import('./src/jobs/generation').GenerationWorkflowParams>;
+
 		DAL: import('@hotmetal/data-layer').DataLayerApi;
 		// Content-scout service binding + HTTP fallback
 		CONTENT_SCOUT: Fetcher;

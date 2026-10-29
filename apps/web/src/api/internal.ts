@@ -1,168 +1,117 @@
-/**
- * Internal routes for service-to-service calls (content-scout auto-write).
- *
- * These endpoints mirror a subset of the /api/* routes but use
- * X-Internal-Key auth instead of Clerk JWT. The internalAuth middleware
- * is applied in server.ts before these routes are mounted.
- *
- * Needed for auto-write pipeline:
- * - POST /sessions — create session
- * - POST /sessions/:id/auto-write — autonomous write (returns draft directly)
- * - POST /sessions/:id/publish — publish draft to CMS
- *
- * Legacy (kept for backward compatibility):
- * - POST /sessions/:id/chat — send chat message
- * - GET /sessions/:id/drafts — list drafts (poll for completion)
- */
-
-import { getAgentByName } from 'agents'
-import { Hono } from 'hono'
-import { logger } from '@hotmetal/shared'
-import type { ContentfulStatusCode } from 'hono/utils/http-status'
+import { Hono, type Context } from 'hono'
 import type { AppEnv } from '../server'
-import type { WriterAgent } from '../agent/writer-agent'
-import { checkPostsPerWeekQuota } from '../lib/quota'
+import type { AuthenticatedCaller } from '../bl/caller'
+import { BusinessForbiddenError } from '../bl/errors'
+import {
+  createWritingSession,
+  autoWriteSession,
+  auxiliaryDraftOperation,
+  listDraftVersions,
+  publishDraft,
+  authorizeScoutExecution,
+  type PublishDraftCommand,
+} from '../bl/generation'
+import { createGenerationDependencies } from '../infrastructure/generation-dependencies'
+import { readTopicBody } from '../http/topics'
+import { errorHandler } from '../middleware/error-handler'
 
+/** Internal key authentication runs before this router; origin never comes from public tool input. */
+function internalCaller(c: Context<AppEnv>): AuthenticatedCaller {
+  const encoded = c.req.header('X-MCP-Origin')
+  if (!encoded) return { userId: c.get('userId'), credentialKind: 'clerk' }
+  try {
+    if (encoded.length > 8192) throw new Error('Origin too large')
+    const origin = JSON.parse(
+      decodeURIComponent(encoded),
+    ) as AuthenticatedCaller
+    if (origin.credentialKind !== 'mcp' || origin.userId !== c.get('userId'))
+      throw new Error('Invalid origin')
+    return origin
+  } catch {
+    throw new BusinessForbiddenError('Invalid originating MCP authorization')
+  }
+}
 const internal = new Hono<AppEnv>()
-
-/** Create a new writing session (used by content-scout auto-write). */
+internal.onError(errorHandler)
+internal.post('/scout/authorize', async (c) => {
+  const body = await readTopicBody<{ publicationId: string }>(c)
+  const pub = await authorizeScoutExecution(
+    internalCaller(c),
+    body.publicationId,
+    createGenerationDependencies(c.env),
+  )
+  return c.json({ authorized: true, autoPublishMode: pub.autoPublishMode })
+})
 internal.post('/sessions', async (c) => {
-  const userId = c.get('userId')
-
-  const body = await c.req.json<{
+  const body = await readTopicBody<{
     title?: string
     publicationId?: string
     ideaId?: string
     seedContext?: string
     styleId?: string
-  }>()
-
-  const sessionId = crypto.randomUUID()
-  const session = await c.env.DAL.createSession({
-    id: sessionId,
-    userId,
-    title: body.title,
-    publicationId: body.publicationId,
-    ideaId: body.ideaId,
-    seedContext: body.seedContext,
-    styleId: body.styleId,
-  })
-
-  return c.json(session, 201)
-})
-
-/** Send a chat message — proxied to agent DO. */
-internal.post('/sessions/:sessionId/chat', async (c) => {
-  const sessionId = c.req.param('sessionId')
-  const userId = c.get('userId')
-
-  const session = await c.env.DAL.getSessionById(sessionId)
-  if (!session || session.userId !== userId) return c.json({ error: 'Session not found' }, 404)
-
-  const agent = await getAgentByName<Env, WriterAgent>(c.env.WRITER_AGENT, sessionId)
-
-  const url = new URL(c.req.url)
-  url.pathname = '/chat'
-
-  const res = await agent.fetch(new Request(url.toString(), {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: c.req.raw.body,
-  }))
-
-  const data = await res.json()
-  return c.json(data, res.status as ContentfulStatusCode)
-})
-
-/** Autonomous auto-write — proxied to agent DO. Returns the draft directly. */
-internal.post('/sessions/:sessionId/auto-write', async (c) => {
-  const sessionId = c.req.param('sessionId')
-  const userId = c.get('userId')
-
-  const session = await c.env.DAL.getSessionById(sessionId)
-  if (!session || session.userId !== userId) return c.json({ error: 'Session not found' }, 404)
-
-  const agent = await getAgentByName<Env, WriterAgent>(c.env.WRITER_AGENT, sessionId)
-
-  const url = new URL(c.req.url)
-  url.pathname = '/auto-write'
-
-  const res = await agent.fetch(new Request(url.toString(), {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: c.req.raw.body,
-  }))
-
-  const data = await res.json()
-  return c.json(data, res.status as ContentfulStatusCode)
-})
-
-/** List drafts — proxied to agent DO (used for polling). */
-internal.get('/sessions/:sessionId/drafts', async (c) => {
-  const sessionId = c.req.param('sessionId')
-  const userId = c.get('userId')
-
-  const session = await c.env.DAL.getSessionById(sessionId)
-  if (!session || session.userId !== userId) return c.json({ error: 'Session not found' }, 404)
-
-  const agent = await getAgentByName<Env, WriterAgent>(c.env.WRITER_AGENT, sessionId)
-
-  const url = new URL(c.req.url)
-  url.pathname = '/drafts'
-
-  const res = await agent.fetch(new Request(url.toString(), { method: 'GET' }))
-  const data = await res.json()
-
-  return c.json(data, res.status as ContentfulStatusCode)
-})
-
-/** Publish draft to CMS — proxied to agent DO. */
-internal.post('/sessions/:sessionId/publish', async (c) => {
-  const sessionId = c.req.param('sessionId')
-  const userId = c.get('userId')
-
-  const session = await c.env.DAL.getSessionById(sessionId)
-  if (!session || session.userId !== userId) return c.json({ error: 'Session not found' }, 404)
-
-  // Quota check: only for new publishes, not updates
-  if (!session.cmsPostId && session.publicationId) {
-    const quotaError = await checkPostsPerWeekQuota(c, session.publicationId, c.get('userTier'))
-    if (quotaError) return quotaError
-  }
-
-  const agent = await getAgentByName<Env, WriterAgent>(c.env.WRITER_AGENT, sessionId)
-
-  const url = new URL(c.req.url)
-  url.pathname = '/publish'
-
-  const res = await agent.fetch(
-    new Request(url.toString(), {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: await c.req.text(),
-    }),
+  }>(c)
+  return c.json(
+    await createWritingSession(
+      internalCaller(c),
+      body,
+      createGenerationDependencies(c.env),
+    ),
+    201,
   )
-
-  const data = await res.json()
-
-  // If publish succeeded, update session status via DAL
-  if (res.ok && (data as { success?: boolean }).success) {
-    const result = data as { results?: { postId: string; publicationId: string }[] }
-    const first = result.results?.[0]
-    if (first) {
-      try {
-        await c.env.DAL.updateSession(sessionId, {
-          status: 'completed',
-          cmsPostId: first.postId,
-          publicationId: first.publicationId,
-        })
-      } catch (err) {
-        logger('web').error('Failed to update session after successful publish', { component: 'internal', sessionId, error: err instanceof Error ? err.message : String(err) })
-      }
-    }
-  }
-
-  return c.json(data, res.status as ContentfulStatusCode)
 })
-
+internal.post('/sessions/:sessionId/auto-write', async (c) => {
+  const body = await readTopicBody<{ message: string }>(c)
+  return c.json(
+    await autoWriteSession(
+      internalCaller(c),
+      c.req.param('sessionId'),
+      body.message,
+      createGenerationDependencies(c.env),
+    ),
+  )
+})
+internal.post('/sessions/:sessionId/chat', async (c) => {
+  const body = await readTopicBody<{ message: string }>(c)
+  return c.json(
+    await auxiliaryDraftOperation(
+      internalCaller(c),
+      c.req.param('sessionId'),
+      'chat',
+      body,
+      createGenerationDependencies(c.env),
+    ),
+  )
+})
+internal.get('/sessions/:sessionId/drafts', async (c) =>
+  c.json({
+    data: await listDraftVersions(
+      internalCaller(c),
+      c.req.param('sessionId'),
+      createGenerationDependencies(c.env),
+    ),
+  }),
+)
+internal.post('/sessions/:sessionId/publish', async (c) => {
+  const body = await readTopicBody<Omit<PublishDraftCommand, 'sessionId'>>(c)
+  const caller = internalCaller(c)
+  const deps = createGenerationDependencies(c.env)
+  if (caller.credentialKind === 'mcp') {
+    const session = await deps.sessions.getById(c.req.param('sessionId'))
+    if (!session?.publicationId)
+      throw new BusinessForbiddenError('Originating publication is unavailable')
+    const pub = await authorizeScoutExecution(
+      caller,
+      session.publicationId,
+      deps,
+    )
+    if (pub.autoPublishMode !== 'full-auto')
+      throw new BusinessForbiddenError('Scout publishing is no longer enabled')
+  }
+  const result = await publishDraft(
+    caller,
+    { ...body, sessionId: c.req.param('sessionId') },
+    deps,
+  )
+  return c.json({ success: result.success, results: result.results })
+})
 export default internal

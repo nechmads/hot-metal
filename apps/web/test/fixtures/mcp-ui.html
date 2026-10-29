@@ -1,0 +1,277 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="robots" content="noindex,nofollow" />
+    <title>Hot Metal assistant connection preview</title>
+  </head>
+  <body
+    style="
+      background: var(--color-bg-primary);
+      color: var(--color-text-primary);
+    "
+  >
+    <div
+      id="preview-controls"
+      style="
+        padding: 12px 16px;
+        border-bottom: 1px solid #8886;
+        font: 13px system-ui;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 12px;
+        align-items: center;
+      "
+    ></div>
+    <div id="root"></div>
+    <script type="module">
+      import React from 'react'
+      import { createRoot } from 'react-dom/client'
+      import { MemoryRouter } from 'react-router'
+      import { Toaster } from 'sonner'
+      import { McpConsentPage } from '/src/pages/McpConsentPage.tsx'
+      import { McpConnections } from '/src/components/settings/McpConnections.tsx'
+      import '/src/styles.css'
+
+      const query = new URLSearchParams(location.search)
+      const view = query.get('view') ?? 'consent'
+      const scenario = query.get('scenario') ?? 'normal'
+      document.documentElement.classList.toggle(
+        'dark',
+        query.get('theme') === 'dark',
+      )
+      const now = Math.floor(Date.now() / 1000)
+      const requestId = 'ce096f13-265e-42db-a378-6e57ec806459'
+      const publications =
+        scenario === 'empty'
+          ? []
+          : [
+              {
+                id: 'publication-a',
+                name: 'Looking Ahead',
+                slug: 'looking-ahead',
+              },
+              {
+                id: 'publication-b',
+                name:
+                  scenario === 'long'
+                    ? 'The publication with a deliberately long name about software, engineering and what comes next'
+                    : 'Engineering Notes',
+                slug: 'engineering-notes',
+              },
+            ]
+      let connections =
+        scenario === 'empty'
+          ? []
+          : [
+              {
+                id: 'connection-a',
+                label:
+                  scenario === 'long'
+                    ? 'An assistant connection with a deliberately long client label to verify mobile wrapping'
+                    : 'Claude',
+                actions: ['read', 'write', 'publish'],
+                publicationMode: 'all',
+                publicationIds: [],
+                outlets: ['linkedin', 'twitter'],
+                policyVersion: 1,
+                state: 'active',
+                createdAt: now - 86400,
+                updatedAt: now,
+                revokedAt: null,
+                lastUsedAt: now,
+              },
+              {
+                id: 'connection-b',
+                label: 'ChatGPT',
+                actions: ['read', 'write'],
+                publicationMode: 'selected',
+                publicationIds:
+                  scenario === 'missing-publication'
+                    ? ['publication-a', 'publication-deleted']
+                    : ['publication-a'],
+                outlets: [],
+                policyVersion: 1,
+                state: 'active',
+                createdAt: now - 172800,
+                updatedAt: now,
+                revokedAt: null,
+                lastUsedAt: null,
+              },
+              {
+                id: 'connection-c',
+                label: 'Earlier connection',
+                actions: ['read'],
+                publicationMode: 'selected',
+                publicationIds: ['publication-a'],
+                outlets: [],
+                policyVersion: 1,
+                state: 'revoked',
+                createdAt: now - 604800,
+                updatedAt: now,
+                revokedAt: now,
+                lastUsedAt: now - 86400,
+              },
+            ]
+      let conflictOnce = scenario === 'conflict'
+      const originalFetch = window.fetch.bind(window)
+      const json = (value, status = 200) =>
+        new Response(JSON.stringify(value), {
+          status,
+          headers: { 'Content-Type': 'application/json' },
+        })
+      window.__mcpPreviewRequests = []
+      window.fetch = async (input, init = {}) => {
+        const url = new URL(
+          typeof input === 'string' ? input : input.url,
+          location.origin,
+        )
+        if (!url.pathname.startsWith('/api/')) return originalFetch(input, init)
+        const method = init.method ?? 'GET'
+        const body = init.body ? JSON.parse(init.body) : null
+        window.__mcpPreviewRequests.push({ path: url.pathname, method, body })
+        await new Promise((resolve) =>
+          setTimeout(resolve, scenario === 'slow' ? 2000 : 120),
+        )
+        if (scenario === 'error')
+          return json(
+            {
+              error:
+                'This connection request expired. Start again from your assistant.',
+            },
+            400,
+          )
+        if (url.pathname === '/api/publications')
+          return json({ data: publications })
+        if (url.pathname.startsWith('/api/mcp/consent/')) {
+          if (method === 'GET')
+            return json({
+              data: {
+                clientName:
+                  scenario === 'long'
+                    ? 'An assistant with a deliberately long untrusted client name <script>must remain text<\/script>'
+                    : 'Claude',
+                ...(scenario !== 'unverified' && { clientDomain: 'claude.ai' }),
+                redirectHost:
+                  scenario === 'loopback' ? 'localhost:43210' : 'claude.ai',
+                redirectIsLoopback: scenario === 'loopback',
+                publications,
+                formProof: 'preview-only-proof',
+              },
+            })
+          const target = new URL(location.href)
+          target.searchParams.set(
+            'result',
+            body.decision === 'deny' ? 'canceled' : 'approved',
+          )
+          sessionStorage.setItem(
+            'mcp-preview-last-decision',
+            JSON.stringify(body),
+          )
+          return json({ data: { redirectTo: target.href } })
+        }
+        if (url.pathname === '/api/mcp/connections')
+          return json({ data: connections })
+        const id = url.pathname.split('/').at(-1)
+        const connection = connections.find((value) => value.id === id)
+        if (!connection) return json({ error: 'Connection not found' }, 404)
+        if (method === 'PATCH') {
+          if (conflictOnce) {
+            conflictOnce = false
+            connection.policyVersion++
+            return json(
+              { error: 'Connection changed; reload before editing' },
+              409,
+            )
+          }
+          Object.assign(connection, body, {
+            policyVersion: connection.policyVersion + 1,
+          })
+          delete connection.expectedPolicyVersion
+          return json({ data: connection })
+        }
+        if (method === 'DELETE') {
+          connection.state = 'revoked'
+          return json({
+            data: { revoked: true, cleanupPending: scenario === 'cleanup' },
+          })
+        }
+        return json({ error: 'Unsupported preview request' }, 400)
+      }
+
+      const controls = document.getElementById('preview-controls')
+      const label = document.createElement('span')
+      label.textContent = 'Private UI fixture · no account changes'
+      controls.append(label)
+      for (const [target, text] of [
+        ['consent', 'Consent'],
+        ['settings', 'Settings'],
+      ]) {
+        const link = document.createElement('a')
+        const url = new URL(location.href)
+        url.searchParams.set('view', target)
+        url.searchParams.delete('result')
+        link.href = url.href
+        link.textContent = text
+        link.style.textDecoration = 'underline'
+        controls.append(link)
+      }
+      const theme = document.createElement('button')
+      theme.textContent = 'Toggle theme'
+      theme.onclick = () => document.documentElement.classList.toggle('dark')
+      controls.append(theme)
+      const select = document.createElement('select')
+      select.setAttribute('aria-label', 'Preview scenario')
+      for (const value of [
+        'normal',
+        'empty',
+        'error',
+        'slow',
+        'long',
+        'unverified',
+        'loopback',
+        'conflict',
+        'missing-publication',
+        'cleanup',
+      ]) {
+        const option = document.createElement('option')
+        option.value = value
+        option.textContent = value
+        option.selected = value === scenario
+        select.append(option)
+      }
+      select.onchange = () => {
+        const url = new URL(location.href)
+        url.searchParams.set('scenario', select.value)
+        url.searchParams.delete('result')
+        location.href = url.href
+      }
+      controls.append(select)
+      if (query.has('result')) {
+        const result = document.createElement('strong')
+        result.textContent = `Preview flow ${query.get('result')}`
+        controls.append(result)
+      }
+      const h = React.createElement
+      const content =
+        view === 'settings'
+          ? h(
+              'div',
+              {
+                style: { maxWidth: '42rem', margin: '0 auto', padding: '24px' },
+              },
+              h(McpConnections),
+            )
+          : h(McpConsentPage)
+      createRoot(document.getElementById('root')).render(
+        h(
+          MemoryRouter,
+          { initialEntries: [`/connect/mcp?request=${requestId}`] },
+          content,
+          h(Toaster),
+        ),
+      )
+    </script>
+  </body>
+</html>

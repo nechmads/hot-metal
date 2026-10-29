@@ -5,6 +5,7 @@ import { useValue } from '@legendapp/state/react'
 import { LinkedinLogoIcon, XLogoIcon, LinkIcon, TrashIcon, PlugIcon, BellIcon, CreditCardIcon, KeyIcon } from '@phosphor-icons/react'
 import { getTierDisplayName } from '@hotmetal/shared'
 import { NotificationPreferences } from '@/components/settings/NotificationPreferences'
+import { McpConnections } from '@/components/settings/McpConnections'
 import { ApiKeys } from '@/components/settings/ApiKeys'
 import { Loader } from '@/components/loader/Loader'
 import { Modal } from '@/components/modal/Modal'
@@ -484,6 +485,7 @@ export function SettingsPage() {
             Create API keys for agents and integrations to access your account programmatically.
           </p>
         </div>
+        <McpConnections />
         <ApiKeys />
       </section>
 
