@@ -34,6 +34,10 @@ uses the v3 beta line. These are intentional exceptions, as is retained SonicJS
 D1 export rejects EmDash's FTS5 virtual tables. Capture supported Time Travel
 bookmarks and R2 recovery inventories instead of removing search tables.
 
+Cloudflare asset uploads require base64. Use native `node:buffer` conversion,
+not a per-byte string: the 8.6 MiB admin asset caused a confirmed live
+`exceededMemory` failure. The provisioner now has a 16 MiB upload contract test.
+
 Read actual production DAL metadata before inferring deployment from a PR body.
 The September 29 PR initially said deployment was pending, but October 29's live
 inventory proved five tenants had already reached EmDash 1.0.1.

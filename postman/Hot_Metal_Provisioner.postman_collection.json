@@ -19,7 +19,7 @@
 		},
 		{
 			"key": "bundleVersion",
-			"value": "emdash-1.0.1-hotmetal.566dbe5dddda",
+			"value": "emdash-1.3.1-hotmetal.1256e6e3111d",
 			"type": "string",
 			"description": "Immutable EmDash tenant-bundle release"
 		},
@@ -128,7 +128,7 @@
 							"status": "OK",
 							"code": 200,
 							"header": [{ "key": "Content-Type", "value": "application/json" }],
-							"body": "{\n  \"publicationId\": \"01JABCDEF\",\n  \"cmsProvider\": \"emdash\",\n  \"status\": \"ready\",\n  \"cmsBaseUrl\": \"https://my-blog.hotmetalapp.com\",\n  \"instanceMeta\": {\n    \"scriptName\": \"pub-01jabcdef\",\n    \"d1DatabaseId\": \"...\",\n    \"d1DatabaseName\": \"emdash-tenant-01jabcdef\",\n    \"r2BucketName\": \"emdash-media-01jabcdef\",\n    \"kvNamespaceId\": \"...\",\n    \"hostname\": \"my-blog.hotmetalapp.com\",\n    \"bundleVersion\": \"emdash-1.0.1-hotmetal.566dbe5dddda\",\n    \"emdashVersion\": \"1.0.1\",\n    \"migrationSetFingerprint\": \"sha256:...\",\n    \"lastMigrationVerifiedAt\": \"2026-09-29T09:31:00.000Z\",\n    \"provisionedAt\": \"2026-06-24T12:00:00.000Z\"\n  }\n}"
+							"body": "{\n  \"publicationId\": \"01JABCDEF\",\n  \"cmsProvider\": \"emdash\",\n  \"status\": \"ready\",\n  \"cmsBaseUrl\": \"https://my-blog.hotmetalapp.com\",\n  \"instanceMeta\": {\n    \"scriptName\": \"pub-01jabcdef\",\n    \"d1DatabaseId\": \"...\",\n    \"d1DatabaseName\": \"emdash-tenant-01jabcdef\",\n    \"r2BucketName\": \"emdash-media-01jabcdef\",\n    \"kvNamespaceId\": \"...\",\n    \"hostname\": \"my-blog.hotmetalapp.com\",\n    \"bundleVersion\": \"emdash-1.3.1-hotmetal.1256e6e3111d\",\n    \"emdashVersion\": \"1.3.1\",\n    \"migrationSetFingerprint\": \"sha256:...\",\n    \"lastMigrationVerifiedAt\": \"2026-09-29T09:31:00.000Z\",\n    \"provisionedAt\": \"2026-06-24T12:00:00.000Z\"\n  }\n}"
 						}
 					]
 				},
@@ -200,7 +200,7 @@
 							"status": "OK",
 							"code": 200,
 							"header": [{ "key": "Content-Type", "value": "application/json" }],
-							"body": "{\n  \"version\": \"emdash-1.0.1-hotmetal.566dbe5dddda\",\n  \"emdashVersion\": \"1.0.1\",\n  \"migrationSetFingerprint\": \"sha256:...\",\n  \"targeted\": 1,\n  \"planned\": [\n    {\n      \"publicationId\": \"01JABCDEF\",\n      \"slug\": \"my-blog\",\n      \"scriptName\": \"pub-01jabcdef\",\n      \"hostname\": \"my-blog.hotmetalapp.com\",\n      \"d1DatabaseId\": \"...\",\n      \"d1DatabaseName\": \"emdash-tenant-01jabcdef\",\n      \"r2BucketName\": \"emdash-media-01jabcdef\",\n      \"currentBundleVersion\": \"current\",\n      \"currentEmdashVersion\": null,\n      \"currentMigrationSetFingerprint\": null,\n      \"alreadyOnTarget\": false,\n      \"requiresMigrationBackup\": true\n    }\n  ],\n  \"failed\": [],\n  \"skipped\": []\n}"
+							"body": "{\n  \"version\": \"emdash-1.3.1-hotmetal.1256e6e3111d\",\n  \"emdashVersion\": \"1.3.1\",\n  \"migrationSetFingerprint\": \"sha256:...\",\n  \"targeted\": 1,\n  \"planned\": [\n    {\n      \"publicationId\": \"01JABCDEF\",\n      \"slug\": \"my-blog\",\n      \"scriptName\": \"pub-01jabcdef\",\n      \"hostname\": \"my-blog.hotmetalapp.com\",\n      \"d1DatabaseId\": \"...\",\n      \"d1DatabaseName\": \"emdash-tenant-01jabcdef\",\n      \"r2BucketName\": \"emdash-media-01jabcdef\",\n      \"currentBundleVersion\": \"current\",\n      \"currentEmdashVersion\": null,\n      \"currentMigrationSetFingerprint\": null,\n      \"alreadyOnTarget\": false,\n      \"requiresMigrationBackup\": true\n    }\n  ],\n  \"failed\": [],\n  \"skipped\": []\n}"
 						}
 					]
 				},
@@ -226,21 +226,21 @@
 							"status": "OK",
 							"code": 200,
 							"header": [{ "key": "Content-Type", "value": "application/json" }],
-							"body": "{\n  \"version\": \"emdash-1.0.1-hotmetal.566dbe5dddda\",\n  \"targeted\": 1,\n  \"upgraded\": [\n    { \"publicationId\": \"01JABCDEF\", \"scriptName\": \"pub-01jabcdef\", \"bootStatus\": 200, \"emdashVersion\": \"1.0.1\" }\n  ],\n  \"failed\": [],\n  \"skipped\": []\n}"
+							"body": "{\n  \"version\": \"emdash-1.3.1-hotmetal.1256e6e3111d\",\n  \"targeted\": 1,\n  \"upgraded\": [\n    { \"publicationId\": \"01JABCDEF\", \"scriptName\": \"pub-01jabcdef\", \"bootStatus\": 200, \"emdashVersion\": \"1.3.1\" }\n  ],\n  \"failed\": [],\n  \"skipped\": []\n}"
 						},
 						{
 							"name": "200 — Nothing to do",
 							"status": "OK",
 							"code": 200,
 							"header": [{ "key": "Content-Type", "value": "application/json" }],
-							"body": "{\n  \"version\": \"emdash-1.0.1-hotmetal.566dbe5dddda\",\n  \"targeted\": 0,\n  \"upgraded\": [],\n  \"failed\": [],\n  \"skipped\": [\n    { \"publicationId\": \"01JNOTREADY\", \"reason\": \"not ready (status=provisioning)\" }\n  ]\n}"
+							"body": "{\n  \"version\": \"emdash-1.3.1-hotmetal.1256e6e3111d\",\n  \"targeted\": 0,\n  \"upgraded\": [],\n  \"failed\": [],\n  \"skipped\": [\n    { \"publicationId\": \"01JNOTREADY\", \"reason\": \"not ready (status=provisioning)\" }\n  ]\n}"
 						},
 						{
 							"name": "207 — Partial",
 							"status": "Multi-Status",
 							"code": 207,
 							"header": [{ "key": "Content-Type", "value": "application/json" }],
-							"body": "{\n  \"version\": \"emdash-1.0.1-hotmetal.566dbe5dddda\",\n  \"targeted\": 2,\n  \"upgraded\": [\n    { \"publicationId\": \"01JABCDEF\", \"scriptName\": \"pub-01jabcdef\", \"bootStatus\": 200, \"emdashVersion\": \"1.0.1\" }\n  ],\n  \"failed\": [\n    { \"publicationId\": \"01JBROKEN\", \"stage\": \"metadata\", \"error\": \"cms_instance_meta missing or malformed — cannot reconstruct bindings\" }\n  ],\n  \"skipped\": []\n}"
+							"body": "{\n  \"version\": \"emdash-1.3.1-hotmetal.1256e6e3111d\",\n  \"targeted\": 2,\n  \"upgraded\": [\n    { \"publicationId\": \"01JABCDEF\", \"scriptName\": \"pub-01jabcdef\", \"bootStatus\": 200, \"emdashVersion\": \"1.3.1\" }\n  ],\n  \"failed\": [\n    { \"publicationId\": \"01JBROKEN\", \"stage\": \"metadata\", \"error\": \"cms_instance_meta missing or malformed — cannot reconstruct bindings\" }\n  ],\n  \"skipped\": []\n}"
 						},
 						{
 							"name": "400 — Bad selection",
@@ -254,7 +254,7 @@
 							"status": "Bad Gateway",
 							"code": 502,
 							"header": [{ "key": "Content-Type", "value": "application/json" }],
-							"body": "{\n  \"version\": \"emdash-1.0.1-hotmetal.566dbe5dddda\",\n  \"targeted\": 1,\n  \"upgraded\": [],\n  \"failed\": [\n    { \"publicationId\": \"01JABCDEF\", \"stage\": \"migration-health\", \"error\": \"tenant boot verification failed with 500\" }\n  ],\n  \"skipped\": []\n}"
+							"body": "{\n  \"version\": \"emdash-1.3.1-hotmetal.1256e6e3111d\",\n  \"targeted\": 1,\n  \"upgraded\": [],\n  \"failed\": [\n    { \"publicationId\": \"01JABCDEF\", \"stage\": \"migration-health\", \"error\": \"tenant boot verification failed with 500\" }\n  ],\n  \"skipped\": []\n}"
 						}
 					]
 				}

@@ -235,7 +235,7 @@ or `all:true`, plus an optional `version` that defaults to
 curl -X POST "$PROVISIONER_URL/api/fleet/upgrade/plan" \
   -H "Authorization: Bearer $PROVISIONER_API_KEY" \
   -H 'Content-Type: application/json' \
-  -d '{"all":true,"version":"emdash-1.0.1-hotmetal.566dbe5dddda"}'
+  -d '{"all":true,"version":"emdash-1.3.1-hotmetal.1256e6e3111d"}'
 ```
 
 The response includes target release/migration identity and a `planned[]` entry for
@@ -271,11 +271,11 @@ curl -X POST "$PROVISIONER_URL/api/fleet/upgrade" \
   -H 'Content-Type: application/json' \
   -d '{
     "publicationIds": ["01JABCDEF"],
-    "version": "emdash-1.0.1-hotmetal.566dbe5dddda",
+    "version": "emdash-1.3.1-hotmetal.1256e6e3111d",
     "migrationBackups": {
       "01JABCDEF": {
         "d1": "time-travel:2026-09-29T09:30:00Z",
-        "r2": "copy:r2://operations/hotmetal/01JABCDEF/pre-emdash-1.0.1-hotmetal.566dbe5dddda"
+        "r2": "copy:r2://operations/hotmetal/01JABCDEF/pre-emdash-1.3.1-hotmetal.1256e6e3111d"
       }
     }
   }'
@@ -285,7 +285,7 @@ Successful response:
 
 ```json
 {
-  "version": "emdash-1.0.1-hotmetal.566dbe5dddda",
+  "version": "emdash-1.3.1-hotmetal.1256e6e3111d",
   "targeted": 1,
   "upgraded": [
     {

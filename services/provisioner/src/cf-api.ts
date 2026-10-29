@@ -12,6 +12,8 @@
  * strings are confirmed.
  */
 
+import { Buffer } from 'node:buffer'
+
 const CF_API_BASE = 'https://api.cloudflare.com/client/v4'
 
 export class CfApiError extends Error {
@@ -346,7 +348,8 @@ function toHex(bytes: Uint8Array): string {
 }
 
 function base64Encode(bytes: Uint8Array): string {
-	let binary = ''
-	for (const b of bytes) binary += String.fromCharCode(b)
-	return btoa(binary)
+	// Avoid a per-byte string rope: the 8.6 MiB EmDash admin asset exhausted
+	// the Worker's memory while the release buffers were also resident. This
+	// view shares the original bytes and lets the native encoder allocate once.
+	return Buffer.from(bytes.buffer, bytes.byteOffset, bytes.byteLength).toString('base64')
 }

@@ -90,3 +90,15 @@ New publications must select the same released bundle through the provisioner.
 - [Clerk Core 3 migration](https://clerk.com/docs/guides/development/upgrading/upgrade-guides/core-3)
 - [Cloudflare Vitest migration](https://developers.cloudflare.com/workers/testing/vitest-integration/migration-guides/migrate-to-vitest-plugin/)
 - [Preact 11 TypeScript](https://preactjs.com/guide/v11/typescript/)
+
+
+## Large-asset rollout failure found during this upgrade
+
+The 1.3.1 admin includes an 8.6 MiB static asset. The provisioner's previous
+base64 encoder concatenated one character per byte while the complete release
+was resident. The live canary sequence exposed `exceededMemory` failures.
+Cloudflare's upload API requires base64, so the encoder now uses a zero-copy
+`node:buffer` view and native base64 conversion. A 16 MiB upload contract test
+checks the exact binary payload, view offsets, MIME type, and completion JWT.
+Keep per-tenant rollout batches and stop on resource errors; never infer
+completion from a changed public page while metadata still names the old release.

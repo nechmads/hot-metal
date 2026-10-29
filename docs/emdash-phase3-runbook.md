@@ -146,7 +146,7 @@ CLOUDFLARE_ACCOUNT_ID=<acct> pnpm --filter @hotmetal/provisioner release-bundle 
 #    metadata entries before continuing.
 curl -X POST "$PROVISIONER_URL/api/fleet/upgrade/plan" \
   -H "Authorization: Bearer $PROVISIONER_API_KEY" -H 'Content-Type: application/json' \
-  -d '{"all":true,"version":"emdash-1.0.1-hotmetal.566dbe5dddda"}'
+  -d '{"all":true,"version":"emdash-1.3.1-hotmetal.1256e6e3111d"}'
 
 # 3) If required by the plan, create D1/R2 recovery points for the canary and
 #    include both references in the mutating request.
@@ -154,7 +154,7 @@ curl -X POST "$PROVISIONER_URL/api/fleet/upgrade" \
   -H "Authorization: Bearer $PROVISIONER_API_KEY" -H 'Content-Type: application/json' \
   -d '{
     "publicationIds": ["<publication-id>"],
-    "version": "emdash-1.0.1-hotmetal.566dbe5dddda",
+    "version": "emdash-1.3.1-hotmetal.1256e6e3111d",
     "migrationBackups": {
       "<publication-id>": {
         "d1": "time-travel:<timestamp-or-bookmark>",
@@ -297,3 +297,14 @@ ID and prior immutable bundle; Time Travel recovery remains subject to the
 account's retention window. Never drop search tables to make an export work.
 For R2, copy every object and preserve an inventory; an empty bucket can be
 represented by a verified empty-inventory manifest in the private backup bucket.
+
+
+### Large assets and Worker memory
+
+The October 2026 release exposed an `exceededMemory` failure while uploading
+the 8.6 MiB admin asset. Keep base64 conversion native (`node:buffer`); a
+per-byte JavaScript string can consume far more memory than the raw asset.
+An upload can become live before a failed request records metadata: inspect the
+actual schema and tenant health, then retry the same immutable release with the
+original recovery references. Do not rerun bootstrap or rotate tokens to repair
+a rollout. Use single-tenant requests when investigating resource limits.
