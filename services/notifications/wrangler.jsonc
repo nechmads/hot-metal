@@ -27,6 +27,11 @@
       "zone_name": "hotmetalapp.com",
       "custom_domain": true,
     },
+    // Keep this service ahead of publications-web's *.hotmetalapp.com/* route.
+    {
+      "pattern": "notifications.hotmetalapp.com/*",
+      "zone_name": "hotmetalapp.com",
+    },
   ],
 
   // Non-secret environment variables

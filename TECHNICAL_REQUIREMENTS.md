@@ -16,7 +16,7 @@ Last updated: 2026-10-29
   - This is interactive and may invoke Wrangler setup prompts
 
 2. `apps/blog-frontend`
-- Framework: Astro 6
+- Framework: Astro 7
 - Cloudflare deployment: `@astrojs/cloudflare` adapter
 - Output mode: `server`
 

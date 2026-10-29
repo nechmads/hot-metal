@@ -25,7 +25,7 @@ Production domain: `hotmetalapp.com`
     [apps/publications-web] --- Astro 7 --- wildcard *.hotmetalapp.com
              |-- legacy SonicJS render
              `-- dispatches ready EmDash publications to per-tenant Workers
-    [apps/emdash-blog]      --- Astro 7 + EmDash 1.0.1 tenant bundle
+    [apps/emdash-blog]      --- Astro 7 + EmDash 1.3.1 tenant bundle
     [apps/blog-frontend]    --- Astro 7 --- static blog template
     [apps/docs]             --- Astro 7 --- MDX documentation
 ```
@@ -41,7 +41,7 @@ Production domain: `hotmetalapp.com`
 | `@hotmetal/web` | Vite + React 19 + Hono | 5173 | hotmetalapp.com | Main app: dashboard, editor, AI writing, analyzer |
 | `@hotmetal/publications-web` | Astro 7 + Cloudflare | 4322 | *.hotmetalapp.com | Multi-tenant publication frontends |
 | `@hotmetal/blog-frontend` | Astro 7 | 4321 | (template) | Blog template |
-| `@hotmetal/emdash-blog` | Astro 7 + EmDash 1.0.1 | 4321 | per-tenant `*.hotmetalapp.com` | Shared build deployed as one Workers-for-Platforms script per EmDash publication |
+| `@hotmetal/emdash-blog` | Astro 7 + EmDash 1.3.1 | 4321 | per-tenant `*.hotmetalapp.com` | Shared build deployed as one Workers-for-Platforms script per EmDash publication |
 | `@hotmetal/cms-admin` | SonicJS | 8788 | (internal) | Headless CMS, own D1 database |
 | `@hotmetal/docs` | Astro 7 + MDX | - | - | Documentation site |
 

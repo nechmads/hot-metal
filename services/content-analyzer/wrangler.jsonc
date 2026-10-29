@@ -56,6 +56,11 @@
       "zone_name": "hotmetalapp.com",
       "custom_domain": true,
     },
+    // Keep this service ahead of publications-web's *.hotmetalapp.com/* route.
+    {
+      "pattern": "content-analyzer.hotmetalapp.com/*",
+      "zone_name": "hotmetalapp.com",
+    },
   ],
   "vars": {
     "WEB_APP_URL": "https://hotmetalapp.com",

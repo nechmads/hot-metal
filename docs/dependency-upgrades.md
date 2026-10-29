@@ -128,6 +128,49 @@ generation and streaming using the existing analyzer model. The rollout also
 required the native base64 memory fix above and the official lock-takeover
 recovery for one interrupted tenant migration.
 
-Deployment scope: the provisioner and five tenant workers. The wider application,
-legacy publication frontend, docs, and other service dependency changes are
-committed source updates awaiting their own deployment.
+The initial rollout deployed the provisioner and five tenant workers. The
+remaining application and service updates were deployed after PR #51 merged,
+as recorded below.
+
+
+## Full application deployment — October 29, 2026
+
+PR #51 merged as `12e69bcafd12c453dafa3717154361b7d494b65a`. All existing
+production Workers below were verified through the Cloudflare API at 100%
+traffic. The five EmDash tenants continue to use the immutable release above.
+
+| Worker | Active version |
+| --- | --- |
+| `hotmetal-cms-admin` | `871d59cf-6d51-45c2-ac6a-db9eed810849` |
+| `hotmetal-data-layer` | `551aeb68-b11b-4adb-bd98-139928d0d0f7` |
+| `hotmetal-notifications` | `0c56ee1c-c1dd-410d-b85a-ff6278c3a792` |
+| `hotmetal-emdash-dispatch` | `b236db9f-9bc8-4703-ad80-7f0c7d02827d` |
+| `hotmetal-content-analyzer` | `90b5e3d4-6103-4cb5-b9ef-767b81f3838b` |
+| `hotmetal-publisher` | `71f0ab9f-1830-4455-a395-f76fe1da9324` |
+| `hotmetal-content-scout` | `6f5049a2-5ed7-40aa-9991-05901b3575d4` |
+| `hotmetal-publications-web` | `e3ebbb7a-fe85-4614-b94e-f285f41d0254` |
+| `hotmetal-web` | `ab2275e9-76fb-4988-9c37-4790d99a6739` |
+| `hotmetal-docs` | `932129ab-a2b2-4ac0-a00a-42177531b244` |
+| `hotmetal-provisioner` | `868213c2-3bad-4016-83fe-9001bef7fc6e` |
+
+The dashboard serves the newly built client bundle with the production Clerk,
+Paddle, and analytics configuration. All 24 HTTP smoke checks passed, including
+service health, expected API authentication failures, unsigned webhook rejection,
+legacy article/404 rendering, and docs. A real browser verified the Clerk sign-in
+screen, a legacy article, and the documentation site without console warnings or
+errors. These checks do not exercise an authenticated writing or payment flow.
+
+A deployment smoke check exposed missing specific routes for the analyzer and
+notifications hosts. The publication wildcard was returning blog 404 pages for
+those hosts, even though both custom domains existed. Their Wrangler configs now
+include explicit `content-analyzer.hotmetalapp.com/*` and
+`notifications.hotmetalapp.com/*` routes, matching the existing production route
+pattern for other services. Both services passed typechecks and deployment
+dry-run builds; the original public health probes now return their own JSON.
+See [Cloudflare route precedence](https://developers.cloudflare.com/workers/configuration/routing/routes/).
+
+No additional migration is required for the current blogs. Fresh EmDash CLI
+checks on all five databases report no pending/unknown migrations or retained
+locks; post and API-token hashes still match their pre-upgrade baselines. The
+shared data-layer database also has no pending migrations. Legacy SonicJS blogs
+remain on 2.19.0 and are not converted to EmDash by this package upgrade.
