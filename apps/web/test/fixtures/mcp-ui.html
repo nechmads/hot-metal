@@ -41,6 +41,34 @@
         'dark',
         query.get('theme') === 'dark',
       )
+      if (scenario === 'clipboard-denied') {
+        Object.defineProperty(navigator, 'clipboard', {
+          configurable: true,
+          value: {
+            writeText: async () => {
+              throw new DOMException(
+                'Fixture clipboard denied',
+                'NotAllowedError',
+              )
+            },
+          },
+        })
+      }
+      if (scenario !== 'clipboard-denied' && navigator.clipboard?.writeText) {
+        const writeText = navigator.clipboard.writeText.bind(
+          navigator.clipboard,
+        )
+        Object.defineProperty(navigator, 'clipboard', {
+          configurable: true,
+          value: {
+            writeText: async (value) => {
+              await writeText(value)
+              document.getElementById('preview-controls').dataset.lastCopy =
+                value
+            },
+          },
+        })
+      }
       const now = Math.floor(Date.now() / 1000)
       const requestId = 'ce096f13-265e-42db-a378-6e57ec806459'
       const publications =
@@ -234,6 +262,7 @@
         'conflict',
         'missing-publication',
         'cleanup',
+        'clipboard-denied',
       ]) {
         const option = document.createElement('option')
         option.value = value

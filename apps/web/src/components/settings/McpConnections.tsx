@@ -14,6 +14,8 @@ import type {
 } from '@hotmetal/content-core'
 import { Loader } from '@/components/loader/Loader'
 import { Modal } from '@/components/modal/Modal'
+import { McpAgentSetup } from './McpAgentSetup'
+import { MCP_SERVER_URL } from '@/lib/mcp-onboarding'
 import {
   fetchMcpConnections,
   fetchPublications,
@@ -23,7 +25,6 @@ import {
 } from '@/lib/api'
 import type { PublicationConfig } from '@/lib/types'
 
-const MCP_URL = 'https://hotmetalapp.com/mcp'
 const focus =
   'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-accent)]'
 const secondary = `min-h-11 rounded-lg border border-[var(--color-border-default)] px-3 py-2 text-sm font-medium text-[var(--color-text-primary)] transition-colors hover:bg-[var(--color-bg-card)] disabled:opacity-50 ${focus}`
@@ -223,7 +224,7 @@ export function McpConnections() {
 
   const copyUrl = async () => {
     try {
-      await navigator.clipboard.writeText(MCP_URL)
+      await navigator.clipboard.writeText(MCP_SERVER_URL)
       setCopied(true)
       if (copyTimer.current) clearTimeout(copyTimer.current)
       copyTimer.current = setTimeout(() => setCopied(false), 2500)
@@ -255,7 +256,7 @@ export function McpConnections() {
         </p>
         <div className="flex flex-wrap items-center justify-between gap-3">
           <code className="min-w-0 break-all text-sm text-[var(--color-text-primary)]">
-            {MCP_URL}
+            {MCP_SERVER_URL}
           </code>
           <button
             type="button"
@@ -276,6 +277,8 @@ export function McpConnections() {
           choose permissions.
         </p>
       </div>
+
+      <McpAgentSetup />
 
       {loading ? (
         <div
