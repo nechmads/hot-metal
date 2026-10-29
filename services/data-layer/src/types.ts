@@ -56,6 +56,8 @@ export interface Session {
 	currentDraftVersion: number
 	cmsPostId: string | null
 	publicationId: string | null
+	/** Immutable originating MCP connection; null for ordinary UI sessions. */
+	mcpConnectionId: string | null
 	ideaId: string | null
 	seedContext: string | null
 	featuredImageUrl: string | null
@@ -69,6 +71,8 @@ export interface CreateSessionInput {
 	userId: string
 	title?: string
 	publicationId?: string
+	/** Trusted application metadata, never a public request field. */
+	mcpConnectionId?: string
 	ideaId?: string
 	seedContext?: string
 	styleId?: string

@@ -19,6 +19,9 @@ export interface GenerationSession {
   title: string | null
   status: string
   publicationId: string | null
+  mcpConnectionId?: string | null
+  styleId?: string | null
+  seedContext?: string | null
   cmsPostId: string | null
   currentDraftVersion: number
   createdAt: number
@@ -111,6 +114,7 @@ export interface GenerationDependencies extends AuthorizationDependencies {
       seedContext?: string
       styleId?: string
       ideaId?: string
+      mcpConnectionId?: string
     }): Promise<GenerationSession>
     update(
       id: string,
@@ -130,6 +134,8 @@ export interface GenerationDependencies extends AuthorizationDependencies {
       id: string
       userId: string | null
       isPrebuilt: boolean
+      finalPrompt?: string | null
+      systemPrompt?: string | null
     } | null>
   }
   writer: {
@@ -295,7 +301,7 @@ async function publication(
   if (!pub) notFound('Publication not found')
   return pub
 }
-async function session(
+export async function authorizeWritingSession(
   caller: AuthenticatedCaller,
   id: string,
   action: 'read' | 'write' | 'publish',
@@ -306,7 +312,11 @@ async function session(
   if (!record || record.userId !== caller.userId) notFound('Session not found')
   if (record.publicationId)
     await authorizePublication(caller, record.publicationId, action, d)
-  else if (caller.credentialKind === 'mcp') notFound('Session not found')
+  else if (
+    caller.credentialKind === 'mcp' &&
+    (!record.mcpConnectionId || record.mcpConnectionId !== caller.connectionId)
+  )
+    notFound('Session not found')
   return record
 }
 async function quota(
@@ -373,19 +383,38 @@ export async function createWritingSession(
   },
   d: GenerationDependencies,
 ) {
+  const { connection } = await authorizeAction(caller, 'write', d)
+  const publicationId =
+    input.publicationId == null
+      ? undefined
+      : text(input.publicationId, 'publicationId', true, 200)
+  let pub: GenerationPublication | null = null
+  if (publicationId) pub = await publication(caller, publicationId, 'write', d)
+  const styleId = text(input.styleId, 'styleId', false, 200)
+  if (styleId) {
+    const style = await d.styles.getById(styleId)
+    if (!style || (!style.isPrebuilt && style.userId !== caller.userId))
+      notFound('Writing style not found')
+    if (connection && !style.isPrebuilt && pub?.styleId !== style.id)
+      throw new BusinessError(
+        'Writing style is outside the authorized publication context',
+        'FORBIDDEN',
+      )
+  }
+  // Only the verified connection can mark a new private session as its own.
+  // Recheck immediately before persistence, after asynchronous style lookups.
   await authorizeAction(caller, 'write', d)
-  if (input.publicationId)
-    await authorizePublication(caller, input.publicationId, 'write', d)
-  else if (caller.credentialKind === 'mcp')
-    throw new BusinessValidationError('publicationId is required')
+  if (publicationId)
+    await authorizePublication(caller, publicationId, 'write', d)
   return d.sessions.create({
     id: d.newId(),
     userId: caller.userId,
     title: text(input.title, 'title', false, 500),
-    publicationId: input.publicationId,
+    publicationId,
     ideaId: text(input.ideaId, 'ideaId', false, 500),
     seedContext: text(input.seedContext, 'seedContext'),
-    styleId: text(input.styleId, 'styleId', false, 500),
+    styleId,
+    ...(connection ? { mcpConnectionId: connection.id } : {}),
   })
 }
 export async function autoWriteSession(
@@ -394,7 +423,7 @@ export async function autoWriteSession(
   message: string,
   d: GenerationDependencies,
 ) {
-  await session(caller, id, 'write', d)
+  await authorizeWritingSession(caller, id, 'write', d)
   const result = await d.writer.autoWrite(id, text(message, 'message', true)!)
   if (!result.success || !result.draft)
     throw new GenerationFailure(
@@ -446,7 +475,7 @@ export async function getSession(
   id: string,
   d: GenerationDependencies,
 ) {
-  const value = await session(caller, id, 'read', d)
+  const value = await authorizeWritingSession(caller, id, 'read', d)
   let currentDraft: DraftSummary | null = null
   try {
     const drafts = await d.writer.listDrafts(id)
@@ -460,7 +489,7 @@ export async function getSession(
     status: value.status,
     publicationId: value.publicationId,
     cmsPostId: value.cmsPostId,
-    currentDraftVersion: value.currentDraftVersion,
+    currentDraftVersion: currentDraft?.version ?? value.currentDraftVersion,
     currentDraft,
     createdAt: value.createdAt,
     updatedAt: value.updatedAt,
@@ -471,7 +500,7 @@ export async function listDraftVersions(
   id: string,
   d: GenerationDependencies,
 ) {
-  await session(caller, id, 'read', d)
+  await authorizeWritingSession(caller, id, 'read', d)
   return d.writer.listDrafts(id)
 }
 export async function getDraftRecord(
@@ -482,7 +511,7 @@ export async function getDraftRecord(
 ) {
   if (!Number.isInteger(version) || version < 1)
     throw new BusinessValidationError('version must be a positive integer')
-  await session(caller, id, 'read', d)
+  await authorizeWritingSession(caller, id, 'read', d)
   const draft = await d.writer.getDraft(id, version)
   if (!draft) notFound(`Draft version ${version} not found`)
   return draft
@@ -509,7 +538,7 @@ export async function updateDraft(
   input: { content: string; title?: string; version?: number },
   d: GenerationDependencies,
 ) {
-  await session(caller, id, 'write', d)
+  await authorizeWritingSession(caller, id, 'write', d)
   text(input.content, 'content', true, 512 * 1024)
   if (input.title !== undefined && typeof input.title !== 'string')
     throw new BusinessValidationError('title must be a string')
@@ -528,7 +557,7 @@ export async function auxiliaryDraftOperation(
   input: unknown,
   d: GenerationDependencies,
 ) {
-  await session(caller, id, 'write', d)
+  await authorizeWritingSession(caller, id, 'write', d)
   if (caller.credentialKind === 'mcp' && operation === 'chat')
     throw new BusinessError(
       'Interactive writer chat is unavailable through MCP',
@@ -541,11 +570,20 @@ export async function publishDraft(
   input: PublishDraftCommand,
   d: GenerationDependencies,
 ) {
-  const record = await session(caller, input.sessionId, 'publish', d)
+  const record = await authorizeWritingSession(
+    caller,
+    input.sessionId,
+    'publish',
+    d,
+  )
   const pubId = input.publicationId ?? record.publicationId
   if (!pubId) throw new BusinessValidationError('No publication selected')
   const pub = await publication(caller, pubId, 'publish', d)
-  if (caller.credentialKind === 'mcp' && pubId !== record.publicationId)
+  if (
+    caller.credentialKind === 'mcp' &&
+    record.publicationId &&
+    pubId !== record.publicationId
+  )
     throw new BusinessError(
       'Cross-publication publishing is not allowed',
       'FORBIDDEN',

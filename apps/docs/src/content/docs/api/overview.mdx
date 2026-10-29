@@ -15,6 +15,12 @@ Hot Metal provides a deployed OAuth MCP connector at `https://hotmetalapp.com/mc
 
 Read the public [Use Hot Metal skill](https://hotmetalapp.com/skills/use-hotmetal/SKILL.md) for assistant connection instructions and the drafting/publishing workflow. Settings → Assistant connections provides a prompt you can copy to your assistant.
 
+## Collaborate with the AI writer through MCP
+
+For article work, ask Hot Metal's own writer questions and request drafts/revisions in the same conversation. Discover the runtime tools, create a session with `createWritingSession`, then send a question with `sendWriterMessage` (`sessionId`, `message`, `idempotencyKey`). Poll `getWriterConversation` for its reply, send the next turn, and inspect actual saved versions with `listDrafts` and `getDraftVersion`. A completed conversation reply can be a clarifying question without a draft.
+
+Publication ID is optional when starting. Unassigned sessions belong only to their originating MCP connection and their owner in the UI; assigned sessions use current publication grants. Writer turns cannot publish directly. Explicit `publishDraft` requires publish permission and may select an allowed publication for an unassigned session. One-shot `generateDraft` remains publication-required; the conversational flow is recommended for collaborative articles. Runtime discovery is authoritative; hosted verification of the new conversation flow is separate from the earlier OAuth startup checks.
+
 ## Base URL
 
 All API endpoints are served under a single base URL:

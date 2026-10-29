@@ -1023,7 +1023,7 @@
       "post": {
         "operationId": "callMcp",
         "summary": "callMcp",
-        "description": "Streamable HTTP JSON-RPC. OAuth resource must match canonical URL. Initialize then tools/list or tools/call; no REST envelope. Missing/invalid token receives OAuth WWW-Authenticate challenge.",
+        "description": "Streamable HTTP JSON-RPC. OAuth resource must match canonical URL. Initialize then tools/list or tools/call; no REST envelope. Missing/invalid token receives OAuth WWW-Authenticate challenge. Conversational tools createWritingSession/sendWriterMessage/getWriterConversation/listDrafts use the same endpoint; see x-mcp-tools for contracts. The full catalogue has 25 tools before scope filtering. publishDraft accepts optional publicationId only to select an authorized destination for an origin-owned unassigned session; assigned rehoming is forbidden.",
         "security": [
           {
             "mcp": []
@@ -2368,6 +2368,239 @@
           }
         ]
       }
+    },
+    "/api/sessions": {
+      "post": {
+        "operationId": "createDashboardWritingSession",
+        "summary": "Create a writing session, optionally assigned",
+        "description": "Existing Clerk route/body. Calls shared session BL; title/publicationId/ideaId/seedContext/styleId optional. Identity comes from Clerk, not body userId. Returns unwrapped Session; internal origin metadata omitted.",
+        "security": [
+          {
+            "clerk": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "title": {
+                    "type": "string",
+                    "maxLength": 500
+                  },
+                  "publicationId": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 200
+                  },
+                  "seedContext": {
+                    "type": "string",
+                    "maxLength": 100000
+                  },
+                  "styleId": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 200
+                  },
+                  "ideaId": {
+                    "type": "string",
+                    "description": "Existing optional idea context; user identity is derived from Clerk."
+                  }
+                }
+              },
+              "example": {
+                "title": "Architecture article"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Created session",
+            "content": {
+              "application/json": {
+                "example": {
+                  "id": "session_uuid",
+                  "userId": "user_owner",
+                  "title": "Architecture article",
+                  "status": "active",
+                  "currentDraftVersion": 0,
+                  "cmsPostId": null,
+                  "publicationId": null,
+                  "ideaId": null,
+                  "seedContext": null,
+                  "featuredImageUrl": null,
+                  "styleId": null,
+                  "createdAt": 1793290000,
+                  "updatedAt": 1793290000
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request",
+            "content": {
+              "application/json": {
+                "example": {
+                  "error": "Invalid request"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "example": {
+                  "error": "Unauthorized"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Publication or style not found",
+            "content": {
+              "application/json": {
+                "example": {
+                  "error": "Publication or style not found"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/sessions/{sessionId}/chat": {
+      "post": {
+        "operationId": "chatWithDashboardWriter",
+        "summary": "Send a non-streaming writer message",
+        "description": "Existing Clerk route and {text,finishReason,usage} response preserved. Shared BL uses the same persisted AI writer engine as MCP/streaming UI. No new public REST conversation/history endpoint is introduced.",
+        "security": [
+          {
+            "clerk": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "sessionId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "message": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 100000
+                  }
+                },
+                "required": [
+                  "message"
+                ]
+              },
+              "example": {
+                "message": "Suggest an outline before drafting."
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Writer reply and model completion metadata when available",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "text": {
+                      "type": "string"
+                    },
+                    "finishReason": {
+                      "type": "string"
+                    },
+                    "usage": {
+                      "type": "object"
+                    }
+                  },
+                  "required": [
+                    "text"
+                  ]
+                },
+                "example": {
+                  "text": "Who is the intended audience?",
+                  "finishReason": "stop",
+                  "usage": {
+                    "inputTokens": 120,
+                    "outputTokens": 40,
+                    "totalTokens": 160
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid message",
+            "content": {
+              "application/json": {
+                "example": {
+                  "error": "Invalid message"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "example": {
+                  "error": "Unauthorized"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Session not found",
+            "content": {
+              "application/json": {
+                "example": {
+                  "error": "Session not found"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Writer busy",
+            "content": {
+              "application/json": {
+                "example": {
+                  "error": "Writer busy"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Failed to generate response",
+            "content": {
+              "application/json": {
+                "example": {
+                  "error": "Failed to generate response"
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
@@ -2375,7 +2608,7 @@
       "clerk": {
         "type": "http",
         "scheme": "bearer",
-        "description": "Clerk JWT, management only; mutation Origin must equal issuer."
+        "description": "Clerk JWT. MCP connection-management mutations additionally require Origin equal to the issuer; existing dashboard session/chat routes retain their own authentication contract."
       },
       "mcp": {
         "type": "oauth2",
@@ -2477,7 +2710,324 @@
             ]
           }
         }
+      },
+      "WriterTurnReceipt": {
+        "type": "object",
+        "properties": {
+          "turnId": {
+            "type": "string"
+          },
+          "sessionId": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "queued",
+              "running",
+              "completed",
+              "failed",
+              "cancelled",
+              "interrupted"
+            ]
+          },
+          "error": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "createdAt": {
+            "type": "integer"
+          },
+          "updatedAt": {
+            "type": "integer"
+          }
+        },
+        "required": [
+          "turnId",
+          "sessionId",
+          "status",
+          "error",
+          "createdAt",
+          "updatedAt"
+        ]
+      },
+      "WriterConversationMessage": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "role": {
+            "type": "string",
+            "enum": [
+              "user",
+              "assistant"
+            ]
+          },
+          "text": {
+            "type": "string"
+          },
+          "truncated": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "id",
+          "role",
+          "text"
+        ]
+      },
+      "WriterConversation": {
+        "type": "object",
+        "properties": {
+          "sessionId": {
+            "type": "string"
+          },
+          "messages": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/WriterConversationMessage"
+            }
+          },
+          "turns": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/WriterTurnReceipt"
+            }
+          },
+          "nextCursor": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "sessionId",
+          "messages",
+          "turns",
+          "nextCursor"
+        ]
+      },
+      "WriterSession": {
+        "type": "object",
+        "properties": {
+          "sessionId": {
+            "type": "string"
+          },
+          "title": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "status": {
+            "type": "string"
+          },
+          "publicationId": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "currentDraftVersion": {
+            "type": "integer"
+          },
+          "createdAt": {
+            "type": "integer"
+          },
+          "updatedAt": {
+            "type": "integer"
+          }
+        },
+        "required": [
+          "sessionId",
+          "title",
+          "status",
+          "publicationId",
+          "currentDraftVersion",
+          "createdAt",
+          "updatedAt"
+        ]
+      },
+      "WriterDraftSummary": {
+        "type": "object",
+        "properties": {
+          "version": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "title": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "wordCount": {
+            "type": "integer"
+          },
+          "isFinal": {
+            "type": "boolean"
+          },
+          "createdAt": {
+            "type": "integer"
+          }
+        },
+        "required": [
+          "version",
+          "title",
+          "wordCount",
+          "isFinal",
+          "createdAt"
+        ]
+      },
+      "CreateWritingSessionInput": {
+        "type": "object",
+        "properties": {
+          "title": {
+            "type": "string",
+            "maxLength": 500
+          },
+          "publicationId": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 200
+          },
+          "seedContext": {
+            "type": "string",
+            "maxLength": 100000
+          },
+          "styleId": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 200
+          }
+        }
+      },
+      "SendWriterMessageInput": {
+        "type": "object",
+        "properties": {
+          "sessionId": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 200
+          },
+          "message": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100000
+          },
+          "idempotencyKey": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 200
+          }
+        },
+        "required": [
+          "sessionId",
+          "message",
+          "idempotencyKey"
+        ]
+      },
+      "GetWriterConversationInput": {
+        "type": "object",
+        "properties": {
+          "sessionId": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 200
+          },
+          "turnId": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 200
+          },
+          "cursor": {
+            "type": "string",
+            "maxLength": 15,
+            "description": "Use returned nextCursor; messages page independently of turnId receipt filter.",
+            "pattern": "^[0-9]{1,15}$"
+          },
+          "limit": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 100,
+            "default": 50
+          }
+        },
+        "required": [
+          "sessionId"
+        ]
       }
     }
-  }
+  },
+  "x-mcp-tools": [
+    {
+      "name": "createWritingSession",
+      "description": "Primary collaborative writer flow. publicationId optional; unassigned sessions accessible only to originating MCP connection and owner UI. Prebuilt styles only while unassigned. Assigned session uses current publication grant/style. No hosted conversation proof claimed by this schema.",
+      "inputSchema": {
+        "$ref": "#/components/schemas/CreateWritingSessionInput"
+      },
+      "outputSchema": {
+        "$ref": "#/components/schemas/WriterSession"
+      },
+      "scope": "hotmetal:write"
+    },
+    {
+      "name": "sendWriterMessage",
+      "description": "Durably queue a message through the same UI writer engine/history. Reuse same session/key/message for submission recovery. Conflict on different message under same key; interrupted turns never automatically replay. Delegated writer tools omit raw publishing.",
+      "inputSchema": {
+        "$ref": "#/components/schemas/SendWriterMessageInput"
+      },
+      "outputSchema": {
+        "$ref": "#/components/schemas/WriterTurnReceipt"
+      },
+      "scope": "hotmetal:write"
+    },
+    {
+      "name": "getWriterConversation",
+      "description": "Bounded safe user/assistant text; turnId filters receipts independently from message pagination. Completed turn may be discussion without saved draft.",
+      "inputSchema": {
+        "$ref": "#/components/schemas/GetWriterConversationInput"
+      },
+      "outputSchema": {
+        "$ref": "#/components/schemas/WriterConversation"
+      },
+      "scope": "hotmetal:read"
+    },
+    {
+      "name": "listDrafts",
+      "description": "Versioned drafts saved by Hot Metal writer; retrieve full content with getDraftVersion.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "sessionId": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 200
+          }
+        },
+        "required": [
+          "sessionId"
+        ]
+      },
+      "outputSchema": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/WriterDraftSummary"
+            }
+          }
+        },
+        "required": [
+          "data"
+        ]
+      },
+      "scope": "hotmetal:read"
+    }
+  ]
 }

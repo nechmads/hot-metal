@@ -1,7 +1,7 @@
 {
   "info": {
     "name": "Hot Metal \u2014 Agents API v1",
-    "description": "# Hot Metal Agents API v1\n\nThe public REST API for agents, scripts, and integrations: manage publications and topics, have the writer agent draft a post, publish it, or store a post you wrote yourself.\n\n## Auth\n\nEvery request needs `Authorization: Bearer hm_...`. Create a key in the Hot Metal dashboard and set the `apiKey` collection variable.\n\n## Envelopes\n\nSuccess is `{ \"data\": ... }`; failure is `{ \"error\": \"...\", \"code\": \"...\" }`.\n\n## Two ways to create a post\n\n`POST /publications/{id}/drafts/generate` asks the writer agent to research and write something new (metered by the weekly post quota). `POST /publications/{id}/posts` stores a post you already wrote, exactly as given, and accepts `publishedAt` so existing content keeps its original date (not metered).\n\nGenerated from `apps/web/src/agents-api/v1/openapi-spec.ts`; see `docs/API_GUIDE.md`.",
+    "description": "# Hot Metal Agents API v1\n\nThe public REST API for agents, scripts, and integrations: manage publications and topics, have the writer agent draft a post, publish it, or store a post you wrote yourself.\n\n## Auth\n\nEvery request needs `Authorization: Bearer hm_...`. Create a key in the Hot Metal dashboard and set the `apiKey` collection variable.\n\n## Envelopes\n\nSuccess is `{ \"data\": ... }`; failure is `{ \"error\": \"...\", \"code\": \"...\" }`.\n\n## Two ways to create a post\n\n`POST /publications/{id}/drafts/generate` asks the writer agent to research and write something new (metered by the weekly post quota). `POST /publications/{id}/posts` stores a post you already wrote, exactly as given, and accepts `publishedAt` so existing content keeps its original date (not metered).\n\nGenerated from `apps/web/src/agents-api/v1/openapi-spec.ts`; see `docs/API_GUIDE.md`.\n\nFor collaborative article conversations, use OAuth MCP createWritingSession/sendWriterMessage/getWriterConversation/listDrafts through /mcp, documented in docs/mcp.md and Hot_Metal_MCP.postman_collection.json. Those tools are not new API-key REST endpoints; existing one-shot generation stays publication-required.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "auth": {
@@ -2450,7 +2450,7 @@
                 "publish"
               ]
             },
-            "description": "Publishes the session draft to the CMS and optionally shares to LinkedIn and/or Twitter.",
+            "description": "Publishes the session draft to the CMS and optionally shares to LinkedIn and/or Twitter.\n\nOptional publicationId selects a destination for an unassigned session. MCP additionally requires originating-connection access and publish permission; assigned MCP sessions cannot rehome. Collaborative writer turns never publish directly.",
             "body": {
               "mode": "raw",
               "raw": "{\n  \"slug\": \"shipping-a-cms-migration\",\n  \"author\": \"Shahar Nechmad\",\n  \"tags\": \"engineering,migrations\",\n  \"excerpt\": \"Two CMSs, one weekend, and a lesson about publish dates.\",\n  \"draftVersion\": 1,\n  \"publishToLinkedIn\": false,\n  \"publishToTwitter\": false,\n  \"tweetText\": \"<tweetText>\",\n  \"linkedInText\": \"<linkedInText>\"\n}",

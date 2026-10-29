@@ -621,6 +621,19 @@ curl https://hotmetalapp.com/agents-api/v1/styles \
 
 ---
 
+## Conversational writer (MCP)
+
+These are OAuth MCP tools at `https://hotmetalapp.com/mcp`, not paths relative to the API-key REST base below. They reuse Hot Metal's AI writer, its conversation and saved drafts. The new conversation extension's hosted model/client verification is tracked separately from earlier OAuth startup checks.
+
+1. Call `createWritingSession({"title":"Architecture article"})`, optionally adding an actual `publicationId`, `seedContext` or allowed `styleId`. The result includes `sessionId`. Unassigned sessions permit prebuilt styles and are private to the origin MCP connection (with owner UI access); assigned sessions follow current publication grants and may also use their publication's configured style.
+2. Call `sendWriterMessage({"sessionId":"returned-id","message":"Suggest an angle and outline; ask questions before drafting.","idempotencyKey":"outline-turn-1"})`. The durable receipt contains turnId/sessionId, status, nullable error and timestamps.
+3. Poll `getWriterConversation({"sessionId":"returned-id","turnId":"returned-turn-id","limit":50})`. It returns messages `{id,role,text,truncated?}`, receipts and nextCursor. Follow returned cursors; turnId filters receipts independently of message pagination. Statuses are queued/running/completed/failed/cancelled/interrupted.
+4. After the reply, send a drafting request with a new key in the same session. Call `listDrafts({"sessionId":"returned-id"})` for `{data:[{version,title,wordCount,isFinal,createdAt}]}`; fetch full content with `getDraftVersion` using a returned version. Request later revisions through another writer message, then inspect the new version. A completed turn need not create a draft.
+
+Reuse identical session/key/message to recover submission, rather than starting a replacement conversation. Conflicting input fails; interrupted turns never automatically replay. Read replies and saved drafts before recovering failed/interrupted work. The actor's installed durable queue/history handles turns; no new Workflow is added. Raw publishing tools are excluded from delegated turns; publication uses explicit publishDraft with its normal permission/outlet checks. Unassigned publication requires selecting an authorized publicationId; assigned sessions cannot move publications.
+
+The existing Clerk dashboard routes remain POST `/api/sessions` (optional title/publicationId/ideaId/seedContext/styleId; unwrapped 201 Session) and POST `/api/sessions/{id}/chat` (`{message}` → `{text,finishReason,usage}`). They now share BL/the persisted writer engine. No new public REST conversation/history endpoint is added.
+
 ## Draft Generation
 
 ### POST /publications/:id/drafts/generate

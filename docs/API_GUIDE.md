@@ -498,8 +498,34 @@ curl -X POST "https://hotmetalapp.com/agents-api/v1/publications/$PUB_ID/drafts/
   -d '{"title":"Shipping on Cloudflare","instructions":"Explain the architecture with sources.","autoPublish":false,"webhookUrl":"https://example.org/hooks/drafts","idempotencyKey":"cloudflare-draft-1"}'
 ```
 
-Interrupted generation is observable as a failed job; ambiguous publication becomes `publish_unknown` and is never automatically repeated. Inspect saved drafts and the actual CMS before submitting new publication work. Blog success/social failure remains a partial outcome. Shared writer errors retain validation400, missingdraft404, oversizedbody413 and busy429 semantics. Invalid draft-version path values are rejected rather than partially parsed. For states and recovery see [MCP generation](mcp.md#durable-generation-and-recovery).
+Interrupted generation is observable as a failed job; ambiguous publication becomes `publish_unknown` and is never automatically repeated. Inspect saved drafts and the actual CMS before submitting new publication work. Blog success/social failure remains a partial outcome. Shared writer errors retain validation400, missingdraft404, oversizedbody413 and busy 429 semantics. Invalid draft-version path values are rejected rather than partially parsed. For states and recovery see [MCP generation](mcp.md#durable-generation-and-recovery).
 
 ## Assistant connection management (Clerk)
 
 These routes are separate from API-key `/agents-api/v1`. Full method/path, headers, fields, examples and errors are documented in [MCP HTTP endpoints](mcp.md#http-endpoints): consent GET/POST `/api/mcp/consent/{id}`, list `/api/mcp/connections`, PATCH/DELETE `/api/mcp/connections/{id}`, and service-only POST `/internal/scout/authorize`. Mutations require same-origin `Origin`; narrowing requires `expectedPolicyVersion` and never expands access. OAuth discovery/authorize/register/token and Streamable HTTP `/mcp` are described there too.
+
+## Conversational writing (MCP and dashboard HTTP)
+
+For collaborative articles, use Hot Metal's own AI writer through MCP: create a session, exchange messages, poll replies, then list/read the drafts it saves. This is the primary assistant workflow; one-shot `/drafts/generate` remains available for publication-assigned generation. The new conversation extension's hosted model/consumer verification is tracked separately from the earlier MCP startup release.
+
+MCP adds four tools over the existing `/mcp` endpoint, with OAuth authentication:
+
+| Tool | Input | Output |
+|---|---|---|
+| `createWritingSession` | Optional `title`, `publicationId`, `seedContext`, `styleId` | `{sessionId,title,status,publicationId,currentDraftVersion,createdAt,updatedAt}` |
+| `sendWriterMessage` | Required `sessionId`, `message` (1–100,000 characters), `idempotencyKey` (1–200) | `{turnId,sessionId,status,error,createdAt,updatedAt}` |
+| `getWriterConversation` | `sessionId`; optional `turnId`, returned `cursor`, `limit` 1–100 (default 50) | `{sessionId,messages:[{id,role,text,truncated?}],turns:[receipt],nextCursor}` |
+| `listDrafts` | `sessionId` | `{data:[{version,title,wordCount,isFinal,createdAt}]}` |
+
+Use `createWritingSession({"title":"Architecture article"})` without a publication, or add an actual allowed `publicationId`. Send a question/outline request with a stable turn key. Poll the receipt using `getWriterConversation`, then send a distinct drafting/revision message with a new key in the same session. `turnId` filters receipts; message pagination is independent. A completed reply may ask a clarifying question without saving a draft. Read `listDrafts` and `getDraftVersion` to inspect what Hot Metal's writer actually saved. Direct `updateDraft` remains available for explicitly requested manual edits; it is not the default substitute for writer collaboration.
+
+Turns are `queued`, `running`, `completed`, `failed`, `cancelled` or `interrupted`. Durability is provided by the session's installed Agents queue and persisted history/receipts, with no new Workflow. Reuse the same session/key/message when a submission response is lost; mismatched input conflicts. Failed/interrupted turns require checking conversation/drafts before a new turn, and interrupted turns never automatically replay.
+
+An unassigned session created through MCP is private to its origin connection and visible to its owner in the UI. Other MCP connections, including a replacement connection, cannot inherit it; unrelated private sessions remain inaccessible. Assigned sessions use live publication grants. Unassigned styles are prebuilt only; assigned sessions may also use the publication's configured custom style. Raw publishing is excluded from delegated writer turns. Explicit `publishDraft` can choose an authorized `publicationId` for an origin-owned unassigned session; an assigned session cannot rehome. Publishing/outlets retain separate consent checks.
+
+The dashboard HTTP routes retain their existing contracts and now call shared BL/the same writer engine:
+
+- `POST /api/sessions`: Clerk Bearer token, JSON object with optional `title` (up to 500), `publicationId`, `ideaId`, `seedContext` (up to 100,000), `styleId`; returns 201 with the unwrapped session. Identity comes from Clerk, never body `userId`. Empty `{}` creates an unassigned session. Internal MCP origin metadata is excluded.
+- `POST /api/sessions/{id}/chat`: Clerk Bearer token, JSON `{"message":"Suggest an outline before drafting."}`; returns 200 `{text,finishReason,usage}` (model metadata when available), through the same persisted writer engine.
+
+Both require `Content-Type: application/json`; missing/invalid credentials return 401, invalid input 400, inaccessible session/publication/style 404, writer busy 429, and upstream/model failures use the established safe errors. No new API-key REST conversation/history endpoint is added. Full MCP schemas and HTTP examples are in [the companion OpenAPI](mcp-openapi.json), [MCP Postman](../postman/Hot_Metal_MCP.postman_collection.json) and [Web Postman](../postman/Hot_Metal_Web.postman_collection.json).

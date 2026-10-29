@@ -11,6 +11,9 @@ vi.mock('../src/infrastructure/topic-dependencies', () => ({
 vi.mock('../src/infrastructure/generation-dependencies', () => ({
   createGenerationDependencies: () => ({}),
 }))
+vi.mock('../src/infrastructure/writer-conversation-dependencies', () => ({
+  createWriterConversationDependencies: () => ({}),
+}))
 vi.mock('@hotmetal/shared', async (importOriginal) => ({
   ...(await importOriginal<typeof import('@hotmetal/shared')>()),
   logger: () => ({ error: vi.fn(), warn: vi.fn(), info: vi.fn() }),
