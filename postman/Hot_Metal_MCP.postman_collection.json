@@ -2,7 +2,7 @@
   "info": {
     "name": "Hot Metal \u2014 OAuth MCP and Assistant Connections",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
-    "description": "Feature defaults disabled. OAuth discovery, registration, code+PKCE, refresh, MCP protocol and Clerk consent/list/narrow/revoke. docs/mcp.md is canonical. Set variables using your test environment; never export live tokens. Same-client grants remain independent. Mutation Origin is required. Internal scout request is trusted service-only. Live ChatGPT/Claude validation is a separate release gate."
+    "description": "Production MCP enabled on 2026-10-29; hosted public OAuth startup checks passed. No hosted signed-in grant/token or consumer workflow proof is claimed. OAuth discovery, registration, code+PKCE, refresh, MCP protocol and Clerk consent/list/narrow/revoke. docs/mcp.md is canonical. Set variables using your test environment; never export live tokens. Same-client grants remain independent. Mutation Origin is required. Internal scout request is trusted service-only. Live ChatGPT/Claude validation is a separate release gate."
   },
   "variable": [
     {

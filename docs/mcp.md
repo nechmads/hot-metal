@@ -1,12 +1,12 @@
 # OAuth MCP connector
 
-Implemented on 2026-10-29 in the web Worker. Public enablement defaults to **off** (`MCP_ENABLED=false`). This document describes the implementation and deployment requirements; it does not record a production deployment or completed consumer ChatGPT/Claude smoke test.
+Deployed and enabled on 2026-10-29 at `https://hotmetalapp.com/mcp` (`MCP_ENABLED=true`). Hosted discovery, OAuth startup and unauthenticated boundaries passed the checks recorded below. Signed-in Clerk consent, token issuance and consumer ChatGPT/Claude workflows remain unverified; deployed Workflow restart/recovery remains a release gate.
 
-The intended remote URL is `https://hotmetalapp.com/mcp`. Assistants use OAuth and Streamable HTTP. They do not receive account API keys. The existing [Agents REST API](API_GUIDE.md) remains available with `Bearer hm_*` authentication. Both adapters call the [same business layer](business-layer.md) directly.
+The remote URL is `https://hotmetalapp.com/mcp`. Assistants use OAuth and Streamable HTTP. They do not receive account API keys. The existing [Agents REST API](API_GUIDE.md) remains available with `Bearer hm_*` authentication. Both adapters call the [same business layer](business-layer.md) directly.
 
 ## Connect and manage access
 
-After operators enable the feature, add the MCP URL as a remote/custom connector in the assistant. Start its OAuth connection, sign in through Clerk, review the assistant identity and redirect host, select permissions and publications, and choose Allow. Keep the same browser cookie jar: authorization sets a Secure/HttpOnly provider transaction cookie that approval and cancellation require in addition to Clerk authentication, signed form proof and Origin. Copying only the request ID/proof to another browser is insufficient. Cancel returns an OAuth denial. The consent request expires after ten minutes; restart from the assistant if it expires. An account without publications can cancel, create a publication in Hot Metal first, or explicitly authorize all current and future publications.
+Add the MCP URL as a remote/custom connector in the assistant. Start its OAuth connection, sign in through Clerk, review the assistant identity and redirect host, select permissions and publications, and choose Allow. Keep the same browser cookie jar: authorization sets a Secure/HttpOnly provider transaction cookie that approval and cancellation require in addition to Clerk authentication, signed form proof and Origin. Copying only the request ID/proof to another browser is insufficient. Cancel returns an OAuth denial. The consent request expires after ten minutes; restart from the assistant if it expires. An account without publications can cancel, create a publication in Hot Metal first, or explicitly authorize all current and future publications.
 
 Settings → Assistant connections shows each connection, its permissions, publication access, and revocation controls. Separate authorizations remain independently revocable, including multiple installations using the same OAuth client ID. They do not replace each other's provider grants (`revokeExistingGrants: false`).
 
@@ -131,29 +131,70 @@ The cohosted runtime pins `@cloudflare/workers-oauth-provider` **1.2.4**, `@mode
 
 | Configuration | Requirement |
 |---|---|
-| `MCP_ENABLED` | String `true` to enable issuance/resource access and delegated BL work; default `false` |
+| `MCP_ENABLED` | Production is `true`; set `false` and deploy to disable issuance/resource access and delegated BL work |
 | `MCP_PUBLIC_URL` | Canonical URL ending exactly `/mcp`; default `https://hotmetalapp.com/mcp` |
 | `MCP_ISSUER` | Same-origin root issuer; default `https://hotmetalapp.com` |
 | `MCP_CONSENT_SECRET` | Wrangler secret, random value at least 32 characters; signs account/request-bound consent proof |
-| `OAUTH_KV` | Provider token/client/grant state plus expiring consent transactions; declared without an ID for Wrangler automatic provisioning |
+| `OAUTH_KV` | Provider token/client/grant state plus expiring consent transactions; dedicated production namespace pinned in Wrangler configuration |
 | `MCP_RATE_LIMITER` | Configured Workers limiter, 120 requests per minute per IP/key; includes OAuth and MCP paths |
 | `GENERATION_WORKFLOW` | Workflow `hotmetal-generation`, exported class `GenerationWorkflow` |
 | `DAL`, `WRITER_AGENT`, publisher/scout bindings and keys | Existing service dependencies; generation/publishing reuse them |
 | `global_fetch_strictly_public` | Worker compatibility flag for provider client metadata fetching |
 
-Apply additive DAL migration `0023_mcp_connections.sql` before deploying consumers of its new RPC methods/tables. Back up according to normal D1 operations, apply migrations locally and then in the intended remote environment, deploy DAL and updated scout, configure the web secret/bindings, and deploy web with MCP disabled. Wrangler 4.155's configured KV binding supports automatic provisioning; confirm the resulting namespace/bindings in the actual deployment output. Do not substitute fake namespace IDs. Keep access to the namespace stable across deployments.
+Apply additive DAL migration `0023_mcp_connections.sql` before deploying consumers of its new RPC methods/tables. Back up according to normal D1 operations, apply migrations locally and then in the intended remote environment, deploy DAL and updated scout, configure the web secret/bindings, and deploy web with MCP disabled. Production pins the dedicated `hotmetal-mcp-oauth-production` namespace in Wrangler configuration. Confirm its binding in deployment output and preserve it across releases. Wrangler also supports automatic provisioning for new environments; do not substitute fake namespace IDs.
 
 For example, operators can run `pnpm --filter @hotmetal/data-layer db:migrate:local` during development and configure the web secret with `pnpm --filter @hotmetal/web exec wrangler secret put MCP_CONSENT_SECRET`. Production migration/deployment/enablement must follow the normal release authorization and environment selection. No secrets belong in source or Postman collections.
 
-After offline checks, enable in the intended environment and verify real-host discovery/challenges, sign-in, consent/cancel, authorization-code exchange, refresh, tool discovery, selected-publication isolation, read/write/publish/outlet denial, reconnect and revocation in **consumer ChatGPT and Claude**. Verify a disconnect/restart generation path and ambiguous-publish recovery with a test publication. Record actual client/version/plan restrictions. These live consumer and deployment gates remain pending; local Workerd provider/DAL/D1/KV and BL tests are not substitutes.
+After offline checks, enable in the intended environment and verify real-host discovery/challenges, sign-in, consent/cancel, authorization-code exchange, refresh, tool discovery, selected-publication isolation, read/write/publish/outlet denial, reconnect and revocation in **consumer ChatGPT and Claude**. Verify a disconnect/restart generation path and ambiguous-publish recovery with a test publication. Record actual client/version/plan restrictions. Production deployment and public OAuth startup checks are complete. Signed-in consumer and deployed recovery gates remain pending; public startup checks and local Workerd provider/DAL/D1/KV tests are not substitutes.
 
 To disable, set `MCP_ENABLED=false` and deploy that configuration. This blocks new authorization/token work, MCP resource access and origin-attributed queued generation/scout authorization. Keep the new authorization-aware worker/DAL implementation in place; rolling back to code that forgets delegated origins would defeat the deny boundary. Existing Clerk/API-key flows and independently scheduled work retain their own authentication.
+
+### Production rollout evidence — 2026-10-29
+
+The implementation merged in [PR #53](https://github.com/nechmads/hot-metal/pull/53) as `f22b0fa`. Production migration `0023_mcp_connections.sql` was applied after capturing D1 recovery bookmark `0000ba63-00000000-00005113-e11d11bdfaa3f9e085815e07fec23252`.
+
+| Component | Deployed version / configuration |
+|---|---|
+| DAL | `9a27bdfa-a333-4825-bd35-908abb0ab9c2` |
+| Content scout | `135b1bd6-9994-42e4-ba40-41a24b812dea` |
+| Web disabled bootstrap | `5b77269a-b555-41d6-b56d-f8d7b594588c` |
+| Web enabled release | `d6e43049-6f7d-4449-8a88-9a5563681700` (`MCP_ENABLED=true`) |
+| Public docs | `c60d9321-d26b-466d-9a7a-71cde5176466`; hosted API overview returned 200 with enabled MCP URL |
+| OAuth KV | `hotmetal-mcp-oauth-production`, ID `228b0faa3800468f930e374b08afc109`, pinned in Wrangler configuration |
+| Consent signing secret | Configured in production; secret value is not recorded |
+
+Hosted bootstrap checks returned health 200; `/connect/mcp` returned 200 HTML with no Location header and the required CSP, framing and cache protections. MCP/resource metadata returned 503 while disabled. Unauthenticated Clerk and API-key routes returned 401. These bootstrap checks do not establish sign-in, token issuance or consumer tool execution.
+
+Enabled deployment output confirmed the pinned OAuth KV, limiter of 120 requests per 60 seconds and `hotmetal-generation` Workflow binding. Hosted checks on `https://hotmetalapp.com` then verified:
+
+| Check | Observed result |
+|---|---|
+| Health | 200 |
+| Authorization-server discovery | 200; root canonical issuer, `/oauth/token`, PKCE S256 advertised |
+| Protected-resource metadata | 200; canonical `https://hotmetalapp.com/mcp` resource |
+| Unauthenticated MCP | 401 with protected-resource metadata challenge |
+| Unauthenticated connection management | 401 |
+| Dynamic registration | 201 for a public test client |
+| S256 authorization start | 302 to same-origin `/connect/mcp?request=...`; Secure/HttpOnly/SameSite=Lax transaction cookie |
+| Actual consent document | 200 HTML, no Location header, X-Frame-Options and CSP protections |
+| Browser sign-in entry | `/connect/mcp` rendered the Clerk Google sign-in page with a return URL preserving `/connect/mcp`; no browser console errors or warnings |
+| Consent API without Clerk | 401 |
+| Unregistered redirect | 400 with no Location header |
+| Invalid authorization code | 400 |
+
+The hosted documentation overview returned 200 and contains the enabled MCP URL and explicit verification limits. All 269 web tests passed again after the asset-routing fix, and the remote migration list reports no pending migrations.
+
+The hosted browser check stopped at the sign-in entry page; no Clerk login or approval was completed. The smoke created test client/consent startup state only. It created no signed-in user grant or token and mutated no customer content. Actual Clerk sign-in/approval/cancellation, token/refresh/revoke behavior on the hosted service, consumer ChatGPT/Claude tool execution, and deployed generation disconnect/restart recovery remain unverified. The local Workerd suite covers those provider/policy contracts with fixture authentication, which is separate evidence.
+
+### Consent document routing
+
+The consent Worker passes the original `/connect/mcp` request to the `ASSETS` binding and applies framing/cache protections to its HTML response. The binding bypasses Worker routing and uses SPA fallback. Do not fetch `/index.html` explicitly: Cloudflare's default HTML handling redirects that URL to `/`, losing the consent route. Require hosted `200 text/html`, no Location header, `X-Frame-Options: DENY` and `frame-ancestors 'none'` before enablement. The release regression test reproduced the original 307 redirect (one failure among 13 focused tests); after preserving the original asset request, all 13 passed and the disabled production bootstrap returned the expected protected HTML.
 
 ## Verification and sources
 
 The provider lifecycle suite is `pnpm --filter @hotmetal/web exec vitest run test/mcp-oauth-integration.spec.ts`. It executes the published provider in Miniflare/Workerd with real local KV, D1, the DAL Worker and SDK handler, including all migrations and a real MCP topic mutation. Authentication uses fixtures and external services are mocked; Clerk sign-in and consumer clients are not verified by that suite. The harness uses inline bundled script rather than a generated scriptPath tempfile, and reconstructs the canonical URL/Host because Miniflare dispatch uses a loopback address. Preserve that distinction when maintaining issuer/audience tests.
 
-Local verification on 2026-10-29: web: 269 tests across 14 files, shared: 9 tests and scout: 2 tests passed. Root `pnpm build` and `pnpm typecheck` exited 0 after the dashboard scout extraction; frozen offline lockfile validation passed. Independent runtime/contract/artifact reviews found no remaining actionable findings. Design contract lint reported zero errors and six pre-existing orphaned-palette warnings. These results do not establish live deployment or consumer compatibility.
+Local verification on 2026-10-29: web: 269 tests across 14 files, shared: 9 tests and scout: 2 tests passed. Root `pnpm build` and `pnpm typecheck` exited 0 after the dashboard scout extraction; frozen offline lockfile validation passed. Independent runtime/contract/artifact reviews found no remaining actionable findings. Design contract lint reported zero errors and six orphaned palette-token warnings. These local results do not establish consumer compatibility; the production deployment/public-startup evidence is recorded separately above.
 
 Run `pnpm --filter @hotmetal/web test`, `pnpm --filter @hotmetal/web typecheck`, scout tests/typecheck, then root `pnpm typecheck` and `pnpm build`. Tests cover BL dependencies, HTTP contracts, live grants, actual SQLite admission/CAS, provider exchange/refresh and response adapters. Workflow restart behavior is tested at the persisted-operation boundary; deployed Cloudflare restart and real consumer behavior remain release checks.
 
