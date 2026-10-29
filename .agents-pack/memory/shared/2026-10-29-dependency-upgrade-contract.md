@@ -48,9 +48,16 @@ inventory proved five tenants had already reached EmDash 1.0.1.
 
 The October 29 fleet rollout completed on all five ready tenants at
 `emdash-1.3.1-hotmetal.1256e6e3111d`; posts and token hashes were preserved.
-The provisioner uses that release for new blogs. Other application/service
-dependency changes are source-only until separately deployed. Verify current
-metadata before relying on this dated release record.
+The provisioner uses that release for new blogs. PR #51 merged and the remaining
+application/service dependency updates were deployed on October 29; all 11
+production Worker versions were verified at 100% traffic. No further migration
+is needed for the five current EmDash blogs. Verify current metadata before
+relying on this dated release record.
+
+Cloudflare custom domains alone do not bypass the publication wildcard route.
+The analyzer and notifications configs now own specific hostname `/*` routes,
+matching the other production services; otherwise those hosts return blog 404s.
+Check public host routing as well as Worker deployment success.
 
 ## Evidence
 
