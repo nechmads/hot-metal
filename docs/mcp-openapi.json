@@ -1,0 +1,2483 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Hot Metal MCP and assistant connection HTTP API",
+    "version": "1.0.0",
+    "description": "Implementation contract; enablement defaults off. Consumer ChatGPT/Claude live release checks remain pending. Tool catalogue: docs/mcp.md."
+  },
+  "servers": [
+    {
+      "url": "https://hotmetalapp.com"
+    }
+  ],
+  "paths": {
+    "/.well-known/oauth-authorization-server": {
+      "get": {
+        "operationId": "oauthDiscovery",
+        "summary": "oauthDiscovery",
+        "description": "Discover canonical issuer, endpoints, scopes and PKCE; feature must be enabled.",
+        "security": [],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "example": {
+                  "issuer": "https://hotmetalapp.com",
+                  "authorization_endpoint": "https://hotmetalapp.com/oauth/authorize",
+                  "token_endpoint": "https://hotmetalapp.com/oauth/token",
+                  "registration_endpoint": "https://hotmetalapp.com/oauth/register",
+                  "scopes_supported": [
+                    "hotmetal:read",
+                    "hotmetal:write",
+                    "hotmetal:publish"
+                  ],
+                  "code_challenge_methods_supported": [
+                    "S256"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid input or provider OAuth error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    },
+                    "error_description": {
+                      "type": "string"
+                    }
+                  }
+                },
+                "example": {
+                  "error": "Request denied or temporarily unavailable"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Invalid credentials",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    },
+                    "error_description": {
+                      "type": "string"
+                    }
+                  }
+                },
+                "example": {
+                  "error": "Request denied or temporarily unavailable"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Origin/permission denied",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    },
+                    "error_description": {
+                      "type": "string"
+                    }
+                  }
+                },
+                "example": {
+                  "error": "Request denied or temporarily unavailable"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Rate limited; Retry-After: 60",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    },
+                    "error_description": {
+                      "type": "string"
+                    }
+                  }
+                },
+                "example": {
+                  "error": "Request denied or temporarily unavailable"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Disabled, unconfigured or temporary policy/runtime failure",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    },
+                    "error_description": {
+                      "type": "string"
+                    }
+                  }
+                },
+                "example": {
+                  "error": "Request denied or temporarily unavailable"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/.well-known/oauth-protected-resource/mcp": {
+      "get": {
+        "operationId": "resourceDiscovery",
+        "summary": "resourceDiscovery",
+        "description": "Discover the MCP audience/resource and authorization server.",
+        "security": [],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "example": {
+                  "resource": "https://hotmetalapp.com/mcp",
+                  "authorization_servers": [
+                    "https://hotmetalapp.com"
+                  ],
+                  "resource_name": "Hot Metal"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid input or provider OAuth error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    },
+                    "error_description": {
+                      "type": "string"
+                    }
+                  }
+                },
+                "example": {
+                  "error": "Request denied or temporarily unavailable"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Invalid credentials",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    },
+                    "error_description": {
+                      "type": "string"
+                    }
+                  }
+                },
+                "example": {
+                  "error": "Request denied or temporarily unavailable"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Origin/permission denied",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    },
+                    "error_description": {
+                      "type": "string"
+                    }
+                  }
+                },
+                "example": {
+                  "error": "Request denied or temporarily unavailable"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Rate limited; Retry-After: 60",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    },
+                    "error_description": {
+                      "type": "string"
+                    }
+                  }
+                },
+                "example": {
+                  "error": "Request denied or temporarily unavailable"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Disabled, unconfigured or temporary policy/runtime failure",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    },
+                    "error_description": {
+                      "type": "string"
+                    }
+                  }
+                },
+                "example": {
+                  "error": "Request denied or temporarily unavailable"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/oauth/register": {
+      "post": {
+        "operationId": "registerOAuthClient",
+        "summary": "registerOAuthClient",
+        "description": "Provider dynamic registration. Published client metadata document URLs also supported; use exact registered redirects.",
+        "security": [],
+        "responses": {
+          "201": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "example": {
+                  "client_id": "registered_client_id",
+                  "client_name": "Hot Metal test client",
+                  "redirect_uris": [
+                    "http://127.0.0.1:9876/callback"
+                  ],
+                  "grant_types": [
+                    "authorization_code",
+                    "refresh_token"
+                  ],
+                  "response_types": [
+                    "code"
+                  ],
+                  "token_endpoint_auth_method": "none"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid input or provider OAuth error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    },
+                    "error_description": {
+                      "type": "string"
+                    }
+                  }
+                },
+                "example": {
+                  "error": "Request denied or temporarily unavailable"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Invalid credentials",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    },
+                    "error_description": {
+                      "type": "string"
+                    }
+                  }
+                },
+                "example": {
+                  "error": "Request denied or temporarily unavailable"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Origin/permission denied",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    },
+                    "error_description": {
+                      "type": "string"
+                    }
+                  }
+                },
+                "example": {
+                  "error": "Request denied or temporarily unavailable"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Rate limited; Retry-After: 60",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    },
+                    "error_description": {
+                      "type": "string"
+                    }
+                  }
+                },
+                "example": {
+                  "error": "Request denied or temporarily unavailable"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Disabled, unconfigured or temporary policy/runtime failure",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    },
+                    "error_description": {
+                      "type": "string"
+                    }
+                  }
+                },
+                "example": {
+                  "error": "Request denied or temporarily unavailable"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "client_name": {
+                    "type": "string"
+                  },
+                  "redirect_uris": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "format": "uri"
+                    }
+                  },
+                  "grant_types": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
+                  },
+                  "response_types": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
+                  },
+                  "token_endpoint_auth_method": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "redirect_uris"
+                ]
+              },
+              "example": {
+                "client_name": "Hot Metal test client",
+                "redirect_uris": [
+                  "http://127.0.0.1:9876/callback"
+                ],
+                "grant_types": [
+                  "authorization_code",
+                  "refresh_token"
+                ],
+                "response_types": [
+                  "code"
+                ],
+                "token_endpoint_auth_method": "none"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/oauth/authorize": {
+      "get": {
+        "operationId": "authorizeOAuthClient",
+        "summary": "authorizeOAuthClient",
+        "description": "Authorization code + mandatory PKCE S256. Redirects to Clerk-backed consent; not a JSON response.",
+        "security": [],
+        "responses": {
+          "302": {
+            "description": "Empty redirect to browser consent; preserve Set-Cookie in the same cookie jar until consent completion.",
+            "headers": {
+              "Location": {
+                "required": true,
+                "schema": {
+                  "type": "string"
+                },
+                "example": "https://hotmetalapp.com/connect/mcp?request=consent_uuid"
+              },
+              "Set-Cookie": {
+                "schema": {
+                  "type": "string"
+                },
+                "description": "HttpOnly Secure SameSite=Lax provider transaction binding cookie; retain for POST consent."
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid input or provider OAuth error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    },
+                    "error_description": {
+                      "type": "string"
+                    }
+                  }
+                },
+                "example": {
+                  "error": "Request denied or temporarily unavailable"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Invalid credentials",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    },
+                    "error_description": {
+                      "type": "string"
+                    }
+                  }
+                },
+                "example": {
+                  "error": "Request denied or temporarily unavailable"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Origin/permission denied",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    },
+                    "error_description": {
+                      "type": "string"
+                    }
+                  }
+                },
+                "example": {
+                  "error": "Request denied or temporarily unavailable"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Rate limited; Retry-After: 60",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    },
+                    "error_description": {
+                      "type": "string"
+                    }
+                  }
+                },
+                "example": {
+                  "error": "Request denied or temporarily unavailable"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Disabled, unconfigured or temporary policy/runtime failure",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    },
+                    "error_description": {
+                      "type": "string"
+                    }
+                  }
+                },
+                "example": {
+                  "error": "Request denied or temporarily unavailable"
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "response_type",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "example": "code"
+          },
+          {
+            "name": "client_id",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "example": "{{oauthClientId}}"
+          },
+          {
+            "name": "redirect_uri",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "example": "http://127.0.0.1:9876/callback"
+          },
+          {
+            "name": "resource",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "example": "{{MCP_ISSUER}}/mcp"
+          },
+          {
+            "name": "scope",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "example": "hotmetal:read hotmetal:write"
+          },
+          {
+            "name": "state",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "example": "random-client-bound-state"
+          },
+          {
+            "name": "code_challenge",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "example": "{{pkceChallenge}}"
+          },
+          {
+            "name": "code_challenge_method",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "example": "S256"
+          }
+        ]
+      }
+    },
+    "/oauth/token": {
+      "post": {
+        "operationId": "exchangeOAuthToken",
+        "summary": "exchangeOAuthToken",
+        "description": "URL-encoded authorization code exchange or refresh (grant_type=refresh_token, refresh_token, client_id, resource, optional scope). Use negotiated client authentication. Access TTL 3600s, refresh 30days; narrowed live grant limits returned scopes.",
+        "security": [],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "example": {
+                  "access_token": "opaque-access-token",
+                  "token_type": "Bearer",
+                  "expires_in": 3600,
+                  "refresh_token": "opaque-refresh-token",
+                  "scope": "hotmetal:read hotmetal:write"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid input or provider OAuth error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    },
+                    "error_description": {
+                      "type": "string"
+                    }
+                  }
+                },
+                "example": {
+                  "error": "Request denied or temporarily unavailable"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Invalid credentials",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    },
+                    "error_description": {
+                      "type": "string"
+                    }
+                  }
+                },
+                "example": {
+                  "error": "Request denied or temporarily unavailable"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Origin/permission denied",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    },
+                    "error_description": {
+                      "type": "string"
+                    }
+                  }
+                },
+                "example": {
+                  "error": "Request denied or temporarily unavailable"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Rate limited; Retry-After: 60",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    },
+                    "error_description": {
+                      "type": "string"
+                    }
+                  }
+                },
+                "example": {
+                  "error": "Request denied or temporarily unavailable"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Disabled, unconfigured or temporary policy/runtime failure",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    },
+                    "error_description": {
+                      "type": "string"
+                    }
+                  }
+                },
+                "example": {
+                  "error": "Request denied or temporarily unavailable"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/x-www-form-urlencoded": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "grant_type": {
+                    "type": "string",
+                    "enum": [
+                      "authorization_code",
+                      "refresh_token"
+                    ]
+                  },
+                  "client_id": {
+                    "type": "string"
+                  },
+                  "code": {
+                    "type": "string"
+                  },
+                  "redirect_uri": {
+                    "type": "string"
+                  },
+                  "code_verifier": {
+                    "type": "string"
+                  },
+                  "resource": {
+                    "type": "string"
+                  },
+                  "refresh_token": {
+                    "type": "string",
+                    "description": "Provider refresh credential, required for refresh_token grant."
+                  },
+                  "scope": {
+                    "type": "string",
+                    "description": "Optional space-separated narrower scopes on refresh; cannot widen live grant."
+                  }
+                },
+                "required": [
+                  "grant_type",
+                  "client_id",
+                  "resource"
+                ],
+                "oneOf": [
+                  {
+                    "properties": {
+                      "grant_type": {
+                        "const": "authorization_code"
+                      }
+                    },
+                    "required": [
+                      "code",
+                      "redirect_uri",
+                      "code_verifier"
+                    ]
+                  },
+                  {
+                    "properties": {
+                      "grant_type": {
+                        "const": "refresh_token"
+                      }
+                    },
+                    "required": [
+                      "refresh_token"
+                    ]
+                  }
+                ]
+              },
+              "example": {
+                "grant_type": "authorization_code",
+                "client_id": "{{oauthClientId}}",
+                "code": "{{authorizationCode}}",
+                "redirect_uri": "http://127.0.0.1:9876/callback",
+                "code_verifier": "{{pkceVerifier}}",
+                "resource": "{{MCP_ISSUER}}/mcp"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/connect/mcp": {
+      "get": {
+        "operationId": "consentPage",
+        "summary": "consentPage",
+        "description": "Browser consent UI. Protected by Clerk frontend flow; request expires after10minutes. Framing blocked. HTML response.",
+        "security": [],
+        "responses": {
+          "200": {
+            "description": "HTML SPA document; Clerk-backed browser consent UI",
+            "content": {
+              "text/html": {
+                "schema": {
+                  "type": "string"
+                },
+                "example": "<!doctype html><html><body><div id=\"root\"></div></body></html>"
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid input or provider OAuth error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    },
+                    "error_description": {
+                      "type": "string"
+                    }
+                  }
+                },
+                "example": {
+                  "error": "Request denied or temporarily unavailable"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Invalid credentials",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    },
+                    "error_description": {
+                      "type": "string"
+                    }
+                  }
+                },
+                "example": {
+                  "error": "Request denied or temporarily unavailable"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Origin/permission denied",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    },
+                    "error_description": {
+                      "type": "string"
+                    }
+                  }
+                },
+                "example": {
+                  "error": "Request denied or temporarily unavailable"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Rate limited; Retry-After: 60",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    },
+                    "error_description": {
+                      "type": "string"
+                    }
+                  }
+                },
+                "example": {
+                  "error": "Request denied or temporarily unavailable"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Disabled, unconfigured or temporary policy/runtime failure",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    },
+                    "error_description": {
+                      "type": "string"
+                    }
+                  }
+                },
+                "example": {
+                  "error": "Request denied or temporarily unavailable"
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "request",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ]
+      }
+    },
+    "/mcp": {
+      "post": {
+        "operationId": "callMcp",
+        "summary": "callMcp",
+        "description": "Streamable HTTP JSON-RPC. OAuth resource must match canonical URL. Initialize then tools/list or tools/call; no REST envelope. Missing/invalid token receives OAuth WWW-Authenticate challenge.",
+        "security": [
+          {
+            "mcp": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "example": {
+                  "jsonrpc": "2.0",
+                  "id": 1,
+                  "result": {
+                    "tools": []
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid input or provider OAuth error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    },
+                    "error_description": {
+                      "type": "string"
+                    }
+                  }
+                },
+                "example": {
+                  "error": "Request denied or temporarily unavailable"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Invalid credentials",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    },
+                    "error_description": {
+                      "type": "string"
+                    }
+                  }
+                },
+                "example": {
+                  "error": "Request denied or temporarily unavailable"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Origin/permission denied",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    },
+                    "error_description": {
+                      "type": "string"
+                    }
+                  }
+                },
+                "example": {
+                  "error": "Request denied or temporarily unavailable"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Rate limited; Retry-After: 60",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    },
+                    "error_description": {
+                      "type": "string"
+                    }
+                  }
+                },
+                "example": {
+                  "error": "Request denied or temporarily unavailable"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Disabled, unconfigured or temporary policy/runtime failure",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    },
+                    "error_description": {
+                      "type": "string"
+                    }
+                  }
+                },
+                "example": {
+                  "error": "Request denied or temporarily unavailable"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "jsonrpc",
+                  "method"
+                ],
+                "properties": {
+                  "jsonrpc": {
+                    "type": "string",
+                    "const": "2.0"
+                  },
+                  "id": {
+                    "type": [
+                      "string",
+                      "integer"
+                    ]
+                  },
+                  "method": {
+                    "type": "string"
+                  },
+                  "params": {
+                    "type": "object"
+                  }
+                }
+              },
+              "example": {
+                "jsonrpc": "2.0",
+                "id": 1,
+                "method": "tools/list",
+                "params": {}
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/mcp/consent/{id}": {
+      "get": {
+        "operationId": "getMcpConsent",
+        "summary": "getMcpConsent",
+        "description": "Clerk account-bound consent details and signed form proof. UUID request expires after10minutes. Response no-store.",
+        "security": [
+          {
+            "clerk": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "example": {
+                  "data": {
+                    "clientName": "Claude",
+                    "clientDomain": "claude.ai",
+                    "redirectHost": "claude.ai",
+                    "redirectIsLoopback": false,
+                    "publications": [
+                      {
+                        "id": "pub_uuid",
+                        "name": "Engineering Notes",
+                        "slug": "engineering-notes"
+                      }
+                    ],
+                    "formProof": "account-bound-signed-proof"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid input or provider OAuth error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    },
+                    "error_description": {
+                      "type": "string"
+                    }
+                  }
+                },
+                "example": {
+                  "error": "Request denied or temporarily unavailable"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Invalid credentials",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    },
+                    "error_description": {
+                      "type": "string"
+                    }
+                  }
+                },
+                "example": {
+                  "error": "Request denied or temporarily unavailable"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Origin/permission denied",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    },
+                    "error_description": {
+                      "type": "string"
+                    }
+                  }
+                },
+                "example": {
+                  "error": "Request denied or temporarily unavailable"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Rate limited; Retry-After: 60",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    },
+                    "error_description": {
+                      "type": "string"
+                    }
+                  }
+                },
+                "example": {
+                  "error": "Request denied or temporarily unavailable"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Disabled, unconfigured or temporary policy/runtime failure",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    },
+                    "error_description": {
+                      "type": "string"
+                    }
+                  }
+                },
+                "example": {
+                  "error": "Request denied or temporarily unavailable"
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Opaque id from previous response."
+          }
+        ]
+      },
+      "post": {
+        "operationId": "decideMcpConsent",
+        "summary": "decideMcpConsent",
+        "description": "Approve policy or deny. Origin must equal issuer. Deny requires only decision and formProof. Proof is account/request-bound. Approval validates current publication ownership. No raw tokens returned. Approval AND denial also require the provider transaction binding cookie from GET /oauth/authorize. Use the same browser/Postman cookie jar; Clerk JWT, proof and Origin alone are insufficient.",
+        "security": [
+          {
+            "clerk": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "example": {
+                  "data": {
+                    "redirectTo": "http://127.0.0.1:9876/callback?code=opaque-code&state=random-client-bound-state"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid input or provider OAuth error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    },
+                    "error_description": {
+                      "type": "string"
+                    }
+                  }
+                },
+                "example": {
+                  "error": "Request denied or temporarily unavailable"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Invalid credentials",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    },
+                    "error_description": {
+                      "type": "string"
+                    }
+                  }
+                },
+                "example": {
+                  "error": "Request denied or temporarily unavailable"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Origin/permission denied",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    },
+                    "error_description": {
+                      "type": "string"
+                    }
+                  }
+                },
+                "example": {
+                  "error": "Request denied or temporarily unavailable"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Rate limited; Retry-After: 60",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    },
+                    "error_description": {
+                      "type": "string"
+                    }
+                  }
+                },
+                "example": {
+                  "error": "Request denied or temporarily unavailable"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Disabled, unconfigured or temporary policy/runtime failure",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    },
+                    "error_description": {
+                      "type": "string"
+                    }
+                  }
+                },
+                "example": {
+                  "error": "Request denied or temporarily unavailable"
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Opaque id from previous response."
+          },
+          {
+            "name": "Origin",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uri"
+            },
+            "description": "Must equal MCP_ISSUER origin.",
+            "example": "https://hotmetalapp.com"
+          },
+          {
+            "name": "Cookie",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Browser sends the HttpOnly provider transaction cookie set by /oauth/authorize. Keep same cookie jar; do not forge a cookie name/value."
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "decision": {
+                    "type": "string",
+                    "enum": [
+                      "approve",
+                      "deny"
+                    ]
+                  },
+                  "formProof": {
+                    "type": "string",
+                    "maxLength": 4096
+                  },
+                  "actions": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "enum": [
+                        "read",
+                        "write",
+                        "publish"
+                      ]
+                    },
+                    "minItems": 1,
+                    "description": "Must include read; publish is separate from write."
+                  },
+                  "publicationMode": {
+                    "type": "string",
+                    "enum": [
+                      "all",
+                      "selected"
+                    ]
+                  },
+                  "publicationIds": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    },
+                    "maxItems": 500,
+                    "description": "Empty for all; 1\u2013500 owned IDs for selected."
+                  },
+                  "outlets": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "enum": [
+                        "linkedin",
+                        "twitter"
+                      ]
+                    },
+                    "description": "Explicit configured social destinations; requires publish."
+                  }
+                },
+                "required": [
+                  "decision",
+                  "formProof"
+                ],
+                "allOf": [
+                  {
+                    "if": {
+                      "properties": {
+                        "decision": {
+                          "const": "approve"
+                        }
+                      }
+                    },
+                    "then": {
+                      "required": [
+                        "actions",
+                        "publicationMode",
+                        "publicationIds",
+                        "outlets"
+                      ]
+                    }
+                  }
+                ]
+              },
+              "example": {
+                "decision": "approve",
+                "formProof": "{{formProof}}",
+                "actions": [
+                  "read",
+                  "write"
+                ],
+                "publicationMode": "selected",
+                "publicationIds": [
+                  "{{publicationId}}"
+                ],
+                "outlets": []
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/mcp/connections": {
+      "get": {
+        "operationId": "listMcpConnections",
+        "summary": "listMcpConnections",
+        "description": "List safe connection DTOs, including independent same-client installations. Never returns user/client/providergrant references or tokens.",
+        "security": [
+          {
+            "clerk": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "example": {
+                  "data": [
+                    {
+                      "id": "connection_uuid",
+                      "label": "Claude",
+                      "actions": [
+                        "read",
+                        "write"
+                      ],
+                      "publicationMode": "selected",
+                      "publicationIds": [
+                        "pub_uuid"
+                      ],
+                      "outlets": [],
+                      "policyVersion": 1,
+                      "state": "active",
+                      "createdAt": 1793290000,
+                      "updatedAt": 1793290000,
+                      "revokedAt": null,
+                      "lastUsedAt": null
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid input or provider OAuth error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    },
+                    "error_description": {
+                      "type": "string"
+                    }
+                  }
+                },
+                "example": {
+                  "error": "Request denied or temporarily unavailable"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Invalid credentials",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    },
+                    "error_description": {
+                      "type": "string"
+                    }
+                  }
+                },
+                "example": {
+                  "error": "Request denied or temporarily unavailable"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Origin/permission denied",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    },
+                    "error_description": {
+                      "type": "string"
+                    }
+                  }
+                },
+                "example": {
+                  "error": "Request denied or temporarily unavailable"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Rate limited; Retry-After: 60",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    },
+                    "error_description": {
+                      "type": "string"
+                    }
+                  }
+                },
+                "example": {
+                  "error": "Request denied or temporarily unavailable"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Disabled, unconfigured or temporary policy/runtime failure",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    },
+                    "error_description": {
+                      "type": "string"
+                    }
+                  }
+                },
+                "example": {
+                  "error": "Request denied or temporarily unavailable"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/mcp/connections/{id}": {
+      "patch": {
+        "operationId": "narrowMcpConnection",
+        "summary": "narrowMcpConnection",
+        "description": "Narrow only; expansion requires reconnect. expectedPolicyVersion CAS is required; stale/inactive returns409. Old access tokens need refresh after policyversion changes. Read action remains required; outlet consent requires publish.",
+        "security": [
+          {
+            "clerk": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "example": {
+                  "data": {
+                    "id": "connection_uuid",
+                    "label": "Claude",
+                    "actions": [
+                      "read"
+                    ],
+                    "publicationMode": "selected",
+                    "publicationIds": [
+                      "pub_uuid"
+                    ],
+                    "outlets": [],
+                    "policyVersion": 2,
+                    "state": "active",
+                    "createdAt": 1793290000,
+                    "updatedAt": 1793290000,
+                    "revokedAt": null,
+                    "lastUsedAt": null
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid input or provider OAuth error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    },
+                    "error_description": {
+                      "type": "string"
+                    }
+                  }
+                },
+                "example": {
+                  "error": "Request denied or temporarily unavailable"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Invalid credentials",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    },
+                    "error_description": {
+                      "type": "string"
+                    }
+                  }
+                },
+                "example": {
+                  "error": "Request denied or temporarily unavailable"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Origin/permission denied",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    },
+                    "error_description": {
+                      "type": "string"
+                    }
+                  }
+                },
+                "example": {
+                  "error": "Request denied or temporarily unavailable"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Rate limited; Retry-After: 60",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    },
+                    "error_description": {
+                      "type": "string"
+                    }
+                  }
+                },
+                "example": {
+                  "error": "Request denied or temporarily unavailable"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Disabled, unconfigured or temporary policy/runtime failure",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    },
+                    "error_description": {
+                      "type": "string"
+                    }
+                  }
+                },
+                "example": {
+                  "error": "Request denied or temporarily unavailable"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Connection changed; reload before editing",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    },
+                    "error_description": {
+                      "type": "string"
+                    }
+                  }
+                },
+                "example": {
+                  "error": "Request denied or temporarily unavailable"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Connection is missing or belongs to another account.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    },
+                    "error_description": {
+                      "type": "string"
+                    }
+                  }
+                },
+                "example": {
+                  "error": "Request denied or temporarily unavailable"
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Opaque id from previous response."
+          },
+          {
+            "name": "Origin",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uri"
+            },
+            "description": "Must equal MCP_ISSUER origin.",
+            "example": "https://hotmetalapp.com"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "expectedPolicyVersion": {
+                    "type": "integer",
+                    "minimum": 1
+                  },
+                  "actions": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "enum": [
+                        "read",
+                        "write",
+                        "publish"
+                      ]
+                    },
+                    "minItems": 1,
+                    "description": "Must include read; publish is separate from write."
+                  },
+                  "publicationMode": {
+                    "type": "string",
+                    "enum": [
+                      "all",
+                      "selected"
+                    ]
+                  },
+                  "publicationIds": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    },
+                    "maxItems": 500,
+                    "description": "Empty for all; 1\u2013500 owned IDs for selected."
+                  },
+                  "outlets": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "enum": [
+                        "linkedin",
+                        "twitter"
+                      ]
+                    },
+                    "description": "Explicit configured social destinations; requires publish."
+                  }
+                },
+                "required": [
+                  "expectedPolicyVersion"
+                ]
+              },
+              "example": {
+                "expectedPolicyVersion": 1,
+                "actions": [
+                  "read"
+                ],
+                "outlets": []
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "operationId": "revokeMcpConnection",
+        "summary": "revokeMcpConnection",
+        "description": "Application grant is revoked first; provider cleanup failure sets cleanupPending without restoring access. Repeated revocation is safe; other installations are unaffected.",
+        "security": [
+          {
+            "clerk": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "example": {
+                  "data": {
+                    "revoked": true,
+                    "cleanupPending": false
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid input or provider OAuth error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    },
+                    "error_description": {
+                      "type": "string"
+                    }
+                  }
+                },
+                "example": {
+                  "error": "Request denied or temporarily unavailable"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Invalid credentials",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    },
+                    "error_description": {
+                      "type": "string"
+                    }
+                  }
+                },
+                "example": {
+                  "error": "Request denied or temporarily unavailable"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Origin/permission denied",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    },
+                    "error_description": {
+                      "type": "string"
+                    }
+                  }
+                },
+                "example": {
+                  "error": "Request denied or temporarily unavailable"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Rate limited; Retry-After: 60",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    },
+                    "error_description": {
+                      "type": "string"
+                    }
+                  }
+                },
+                "example": {
+                  "error": "Request denied or temporarily unavailable"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Disabled, unconfigured or temporary policy/runtime failure",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    },
+                    "error_description": {
+                      "type": "string"
+                    }
+                  }
+                },
+                "example": {
+                  "error": "Request denied or temporarily unavailable"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Connection is missing or belongs to another account.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    },
+                    "error_description": {
+                      "type": "string"
+                    }
+                  }
+                },
+                "example": {
+                  "error": "Request denied or temporarily unavailable"
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Opaque id from previous response."
+          },
+          {
+            "name": "Origin",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uri"
+            },
+            "description": "Must equal MCP_ISSUER origin.",
+            "example": "https://hotmetalapp.com"
+          }
+        ]
+      }
+    },
+    "/internal/scout/authorize": {
+      "post": {
+        "operationId": "authorizeScoutOrigin",
+        "summary": "authorizeScoutOrigin",
+        "description": "Service-binding only. Internal key + owner required; MCP jobs additionally pass URI-encoded JSON X-MCP-Origin references. Validates live grant and effective full-auto publish permission before queued work. Never send bearer tokens in origin.",
+        "security": [
+          {
+            "internal": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "example": {
+                  "authorized": true,
+                  "autoPublishMode": "draft"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid input or provider OAuth error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    },
+                    "error_description": {
+                      "type": "string"
+                    }
+                  }
+                },
+                "example": {
+                  "error": "Request denied or temporarily unavailable"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Invalid credentials",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    },
+                    "error_description": {
+                      "type": "string"
+                    }
+                  }
+                },
+                "example": {
+                  "error": "Request denied or temporarily unavailable"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Origin/permission denied",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    },
+                    "error_description": {
+                      "type": "string"
+                    }
+                  }
+                },
+                "example": {
+                  "error": "Request denied or temporarily unavailable"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Rate limited; Retry-After: 60",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    },
+                    "error_description": {
+                      "type": "string"
+                    }
+                  }
+                },
+                "example": {
+                  "error": "Request denied or temporarily unavailable"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Disabled, unconfigured or temporary policy/runtime failure",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    },
+                    "error_description": {
+                      "type": "string"
+                    }
+                  }
+                },
+                "example": {
+                  "error": "Request denied or temporarily unavailable"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "publicationId": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "publicationId"
+                ]
+              },
+              "example": {
+                "publicationId": "{{publicationId}}"
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "X-User-Id",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Authenticated owning account ID from trusted service."
+          },
+          {
+            "name": "X-MCP-Origin",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Required for MCP-origin work: URI-encoded JSON containing userId, credentialKind=mcp, connectionId, clientId, grantId, policyVersion and scopes. No bearer tokens; omission is only for independently trusted scheduled work."
+          }
+        ]
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "clerk": {
+        "type": "http",
+        "scheme": "bearer",
+        "description": "Clerk JWT, management only; mutation Origin must equal issuer."
+      },
+      "mcp": {
+        "type": "oauth2",
+        "flows": {
+          "authorizationCode": {
+            "authorizationUrl": "https://hotmetalapp.com/oauth/authorize",
+            "tokenUrl": "https://hotmetalapp.com/oauth/token",
+            "scopes": {
+              "hotmetal:read": "Read allowed content",
+              "hotmetal:write": "Prepare content",
+              "hotmetal:publish": "Publish allowed content"
+            }
+          }
+        }
+      },
+      "internal": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "X-Internal-Key",
+        "description": "Also requires X-User-Id; trusted service-binding callers only."
+      }
+    },
+    "schemas": {
+      "Connection": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "label": {
+            "type": "string"
+          },
+          "actions": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": [
+                "read",
+                "write",
+                "publish"
+              ]
+            },
+            "minItems": 1,
+            "description": "Must include read; publish is separate from write."
+          },
+          "publicationMode": {
+            "type": "string",
+            "enum": [
+              "all",
+              "selected"
+            ]
+          },
+          "publicationIds": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "maxItems": 500,
+            "description": "Empty for all; 1\u2013500 owned IDs for selected."
+          },
+          "outlets": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": [
+                "linkedin",
+                "twitter"
+              ]
+            },
+            "description": "Explicit configured social destinations; requires publish."
+          },
+          "policyVersion": {
+            "type": "integer"
+          },
+          "state": {
+            "type": "string",
+            "enum": [
+              "pending",
+              "active",
+              "revoked"
+            ]
+          },
+          "createdAt": {
+            "type": "integer"
+          },
+          "updatedAt": {
+            "type": "integer"
+          },
+          "revokedAt": {
+            "type": [
+              "integer",
+              "null"
+            ]
+          },
+          "lastUsedAt": {
+            "type": [
+              "integer",
+              "null"
+            ]
+          }
+        }
+      }
+    }
+  }
+}

@@ -1,38 +1,31 @@
 # Shared business layer
 
-The migration to shared business operations began on 2026-10-29. Topic CRUD is the first completed slice; OAuth MCP, connection grants and the other capabilities remain in the [implementation plan](plans/mcp-oauth-implementation.md).
-
-## Responsibilities
-
-Both dashboard HTTP (`/api`) and public Agents HTTP (`/agents-api/v1`) call the same topic functions in `apps/web/src/bl/topics.ts`. The future MCP adapter will call BL operations directly, without an HTTP hop or an internal account API key.
+The web Worker's dashboard HTTP, public Agents REST and OAuth MCP adapters call reusable operations under `apps/web/src/bl/` directly. MCP does not call REST or mint an account API key. The OAuth connector, permission model, tool catalogue and operational gates are documented in [mcp.md](mcp.md).
 
 | Owner | Responsibility |
 |---|---|
-| `src/api/topics.ts`, `src/agents-api/v1/topics.ts` | Authenticated caller construction, HTTP syntax/shape parsing, BL invocation, response envelope |
-| `src/http/topics.ts` | Shared HTTP wiring and surface-specific error mapping |
-| `src/bl/caller.ts`, `authorization.ts` | Trusted caller contract, current account lookup, actual publication ownership |
-| `src/bl/topics.ts` | Topic quota, semantic validation, defaults and persistence coordination |
-| `src/bl/errors.ts` | Transport-neutral typed failures; no HTTP status or MCP response |
-| `src/infrastructure/topic-dependencies.ts` | Adapt the existing DAL service binding and UUID generator to narrow BL dependencies |
-| `services/data-layer/src/domains/topics.ts` | SQL, mapping and persistence |
+| `src/api/*`, `src/agents-api/v1/*` | Verify transport credentials, parse HTTP shape, construct caller, preserve response envelopes/statuses |
+| `src/mcp/runtime.ts`, `server.ts` | OAuth/resource transport, tool schemas, verified caller and result/error serialization |
+| `src/bl/caller.ts`, `authorization.ts` | Identity contract, current account/tier, ownership, live grants, action/outlet authorization |
+| `src/bl/topics.ts` | Topic CRUD, defaults and tier quota |
+| `src/bl/content.ts` | Profile/style projections, publications/posts, ideas, authored content and CMS lifecycle orchestration |
+| `src/bl/generation.ts` | Sessions/drafts, generation admission, publishing, scout permissions and durable job state/recovery |
+| `src/bl/connections.ts` | Consent policy preparation, safe list, narrowing and revocation |
+| `src/bl/errors.ts` and typed operation errors | Transport-neutral failures; HTTP status mapping belongs in `src/http/business-errors.ts` |
+| `src/infrastructure/*-dependencies.ts` | Narrow ports backed by DAL, CMS clients, WriterAgent, publisher/scout, clocks and Workflow bindings |
+| `services/data-layer/src/domains/*` | SQL, authoritative policy reads, atomic grants/idempotency/quota/claim/CAS and mapping |
+| `src/jobs/generation.ts`, scout Queue/Workflow | Durable runtime mechanics; call operations with retained origin authority |
 
-The BL receives a verified caller, typed command and explicit dependencies. It must not import Hono, MCP SDKs, HTTP request/response objects, complete Worker environments or DAL binding types. Authentication remains in each protocol adapter; ownership and business rules are enforced inside the shared operation. Tests call the BL without constructing HTTP requests.
+BL functions take an authenticated caller, typed command and explicit dependencies. They do not import Hono, MCP SDKs, Request/Response, HTTP status values, a whole Worker Env or DAL service binding types. An architecture test enforces this boundary. Stateful WriterAgent/provider mechanics remain behind infrastructure ports; the extraction does not move every internal implementation into BL.
 
-## Current topic behavior
+Caller kinds are `clerk`, `api-key`, and `mcp`. All callers still need current ownership and valid accounts. MCP authority is the intersection of token scopes, exact user/client/grant/connection binding, matching current policy version, live actions/publication/outlet policy, and `MCP_ENABLED`. Missing policy wiring denies access. Authoritative D1 reads ensure that unexpired provider tokens do not bypass narrowing/revocation.
 
-- Both HTTP surfaces preserve their paths and successful response bodies. Dashboard create/update results are unwrapped; Agents results use `{ data }`. Both lists use `{ data }`.
-- The BL resolves the authenticated account and its current stored tier. It resolves a topic's parent publication from storage before update/delete authorization; supplied body user/tier/publication identifiers cannot replace those values.
-- Creation uses the existing tier limit, trims name/description, defaults priority to 1, and accepts priorities 1, 2 or 3. Update preserves the previous optional/empty-name/null-description behavior and does not trim description.
-- Quota failures preserve each HTTP surface's wording and quota metadata. Resource denial preserves its existing not-found envelope. DAL failures propagate to the established transport error boundary rather than becoming successful responses.
-- Malformed JSON and non-object bodies fail at the HTTP boundary before business lookup. Malformed field types produce 400 validation errors instead of accidental server errors or invalid persistence writes. See the [API guide](API_GUIDE.md#topics).
-- Topic creation still uses the existing count-then-create quota behavior; this extraction does not claim atomic concurrent quota enforcement. Durable job admission and quota concurrency are later plan work.
+Content operations resolve stored resource parents before authorization. Publication lists are scoped before pagination and safe projections omit unrelated account/style/provider data. MCP authored-post creation defaults to draft; all existing CMS post updates require publish permission. Writer-session `updateDraft` remains write-only. Publication lifecycle/recurring automation edits are excluded from MCP. Publication content settings use a field allowlist. REST defaults and envelopes remain defined by the [API guide](API_GUIDE.md).
 
-MCP identities are explicitly denied by the current BL authentication policy until a trusted live grant resolver is implemented. There is no OAuth endpoint, consent screen, MCP tool or public grant enforcement in this slice. Do not enable a tool by merely changing `credentialKind` to `clerk` or `api-key`.
+Generation submission atomically reserves an idempotency key/capacity and returns a persisted handle before work. The Workflow claims it once, rechecks origin authorization, and never reruns terminal successful generation. Interrupted external effects become observable failed/unknown states. Status reconciliation uses CAS and rereads concurrent success. Later explicit publishing reconciles the durable ledger without masking successful publication when ledger bookkeeping fails. Quota SQL excludes completed sessions from duplicate active-job accounting. Callback delivery retries in a separate Workflow step. Scout carries MCP origin through queued and internal requests; independently scheduled jobs retain their established authority.
 
-## Tests and verification
+Topic create retains the existing count-then-create quota behavior; only durable generation admission claims atomic quota concurrency. Authored posts do not consume AI generation capacity. CMS adapters preserve EmDash/SonicJS selection, Markdown/HTML conversion, provisioning failures, slug conflicts and feed hooks. Social publishing returns partial outcomes; ambiguous blog outcomes require inspection before retry.
 
-Run `pnpm --filter @hotmetal/web test` for direct BL policy tests, both HTTP contract suites, and a dependency-boundary guard over `src/bl`. The HTTP tests mount the real topic routers and real error boundaries with a fake DAL; unrelated Agents routes are isolated to avoid importing the Cloudflare runtime into Node tests.
+Overlapping publication/post/topic/idea/style/session/draft/generation/publishing adapters use these operations. Non-overlapping billing, API-key management, social account OAuth, comments, notifications, activity, image generation, domain provisioning and direct interactive dashboard chat remain in their existing modules. MCP has no generic chat tool because WriterAgent chat includes publish-capable tools.
 
-Run `pnpm --filter @hotmetal/web typecheck` for the owning workspace and the root `pnpm typecheck` / `pnpm build` for repository gates. The dedicated Vitest config uses Node and does not load the application's Vite/Cloudflare dev plugin. Worktree builds need the ignored `apps/web/.env` described in existing project guidance; never commit that file.
-
-Future capabilities should follow the same slice: characterize existing contracts, implement and directly test the BL, adapt all overlapping interfaces, remove obsolete duplicate rules, then review and verify. Only implemented capabilities belong in this document; planned grants, jobs and OAuth remain in the plan until delivered.
+Run `pnpm --filter @hotmetal/web test` for direct policy tests, real HTTP router contracts, architecture guards, SQLite lifecycle/admission tests and provider integration tests. Run owning workspace and root typecheck/build gates. A worktree build requires the ignored web `.env` described in project setup; never commit credentials. Passing local tests is separate from the pending deployed consumer smoke gate in [the implementation plan](plans/mcp-oauth-implementation.md).

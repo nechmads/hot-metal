@@ -1,6 +1,6 @@
 # OAuth MCP and shared business layer — implementation plan
 
-**Status:** Draft; architecture, launch clients, and initial action/publication permissions agreed. Open product and provider decisions are listed below. Implementation has started with the independently shippable BL/topic extraction; OAuth/provider/client proof gates remain pending.
+**Status:** Implementation present behind `MCP_ENABLED=false`; local policy/HTTP/SQLite and actual Workerd OAuth integration checks are implemented. Independent review, local tests, root build and root typecheck have passed. Production deployment, deployed Workflow recovery, and signed-in consumer ChatGPT/Claude smoke gates remain pending. Canonical implemented contracts and operations: [MCP](../mcp.md), [shared BL](../business-layer.md).
 **Updated:** 2026-10-29
 **Planning baseline:** `36dc118` (`origin/main` when this plan was written).
 **Related:** [API guide](../API_GUIDE.md), [system reference](../SYSTEM_REFERENCE.md), [authentication](../auth.md), [dependency baseline](../dependency-upgrades.md), [technical requirements](../../TECHNICAL_REQUIREMENTS.md).
@@ -23,9 +23,9 @@ Proposed first release: read content/context, create and update authored posts a
 
 ## 2. Current implementation and extraction map
 
-There is no Hot Metal platform MCP server or MCP OAuth grant system today. Clerk authenticates dashboard requests; the Agents API validates account-level `Bearer hm_*` keys. LinkedIn/X OAuth is a separate publishing integration.
+Baseline before this implementation: Clerk authenticated dashboard requests and the Agents API validated account-level `Bearer hm_*` keys. The implementation now adds cohosted OAuth MCP and live D1 grants, while preserving those authentication lanes. LinkedIn/X provider OAuth remains separate.
 
-| Existing owner | Evidence / behavior | Planned destination |
+| Existing owner | Evidence / behavior | Implemented destination / retained responsibility |
 |---|---|---|
 | `apps/web/src/server.ts` | Mounts Clerk `/api/*`, API-key `/agents-api/v1/*`, and WriterAgent routes | Keep transport routing and identity establishment here; add MCP routing |
 | `apps/web/src/agents-api/v1/{me,publications,topics,ideas,styles,drafts,scout}.ts` | Routes mix parsing with ownership, quotas, defaults, CMS writes, and generation/publishing coordination | Extract operation by operation; handlers become adapters |
@@ -102,7 +102,7 @@ Connection management requires the user's Clerk session and ownership; an MCP co
 9. Proposed v1 publishing covers only the authorized publication and its explicitly allowed configured outlets. Account-wide LinkedIn/X connections are not automatically covered by a publication grant; settle syndication consent before exposing those options.
 10. Handle permission changes during execution honestly: recheck before expensive work starts and immediately before irreversible publish effects. A write already accepted by an external provider may complete; revocation cannot undo it. Bound and document that race rather than claiming instantaneous cancellation.
 
-Open product choices remain in section 10. For planning, one action set applies across a connection's selected publications; a per-publication action matrix is not assumed.
+Final decisions and remaining proof gates are recorded in section 10. For planning, one action set applies across a connection's selected publications; a per-publication action matrix is not assumed.
 
 ## 5. Cloudflare and OAuth implementation direction
 
@@ -118,13 +118,13 @@ Cloudflare documents `OAuthAuthorizationServer` and `OAuthResourceServer`, Servi
 
 Preferred option to prove: cohost Cloudflare `OAuthAuthorizationServer`, `OAuthResourceServer`, MCP and the existing BL in `apps/web`, using Clerk to authenticate the person approving custom consent. Current published Cloudflare Provider 1.2.4 supports local token validation between cohosted roles; use `authorizationServer.validateToken(resource, token, env)` rather than a Service Binding for this initial topology. This avoids a separate authorization Worker and circular deployment dependencies. Add provider-owned `OAUTH_KV` and the required runtime flag for fetching published client metadata. [Supported topologies](https://github.com/cloudflare/workers-oauth-provider/blob/main/docs/resource-servers.md).
 
-Technical research verified the published 1.2.4 declarations. `completeAuthorization()` returns `{ redirectTo }`, not a provider grant ID. Generate an application connection ID before completion and bind it in encrypted properties; use the provider's verified `tokenExchangeCallback` grant/client/user/resource fields to associate the provider grant. Never parse opaque tokens. Its default reauthorization replaces older grants for the same user/client/resource: define connection replacement and failure recovery explicitly. Remembered OAuth consent does not cover Hot Metal's publication selection, so it cannot bypass custom consent. D1 policy denial must enforce application revocation independently of provider KV propagation. These are researched contracts, not yet runtime proofs. [Provider API](https://github.com/cloudflare/workers-oauth-provider/blob/main/docs/authorization-server.md).
+Technical research verified the published 1.2.4 declarations. `completeAuthorization()` returns `{ redirectTo }`, not a provider grant ID. Generate an application connection ID before completion and bind it in encrypted properties; use the provider's verified `tokenExchangeCallback` grant/client/user/resource fields to associate the provider grant. Never parse opaque tokens. Its default reauthorization replaces older grants for the same user/client/resource; this implementation explicitly disables replacement so separate installations remain independently revocable. Remembered OAuth consent does not cover Hot Metal's publication selection, so it cannot bypass custom consent. D1 policy denial must enforce application revocation independently of provider KV propagation. The implemented Workerd harness exercises code exchange, refresh/narrowing, replay and revocation; live-host/client behavior remains unproven. [Provider API](https://github.com/cloudflare/workers-oauth-provider/blob/main/docs/authorization-server.md).
 
 If later evidence requires separate Workers, record both RPC/binding directions and a staged bootstrap sequence before deployment. Share the same connection BL through a trusted boundary rather than duplicating policy.
 
 Credible alternative: Clerk issues OAuth tokens directly, with a Hot Metal consent/grant flow that is cryptographically bound to the provider grant/client. This can reduce authorization infrastructure if the required customization, scope/audience checks, refresh, revocation and client compatibility are supported. [Clerk OAuth](https://clerk.com/docs/guides/configure/auth-strategies/oauth/how-clerk-implements-oauth), [Clerk MCP](https://clerk.com/docs/guides/ai/mcp/build-mcp-server).
 
-Phase 0 chooses the simplest proven option, pins its versions and records exact ownership/topology here. Do not run two issuers, handwrite OAuth code/token crypto, introduce an internal account API-key bridge, or assume Cloudflare Access replaces consumer Clerk sign-in.
+Selected implementation: cohosted Cloudflare Provider 1.2.4 plus Clerk sign-in, SDK server 2.3.1 and Agents 0.31. Workerd integration tests exercise the published provider, real local KV, D1, DAL Worker, all migrations and the SDK MCP handler; authentication is fixture-provided and external services are mocked. Consumer client proof remains pending. Same-client installations use `revokeExistingGrants: false`, giving independent application/provider grants. No separate authorization Worker or circular binding bootstrap is needed. Do not run two issuers, handwrite OAuth code/token crypto, introduce an internal account API-key bridge, or assume Cloudflare Access replaces consumer Clerk sign-in.
 
 Both options must demonstrate authorization-code flow with PKCE S256, exact redirect validation, protected-resource and issuer discovery, correct `WWW-Authenticate` challenges, token audience/resource binding, scope checks, refresh behavior, replay protection, denial/cancel recovery, and revocation. Select client registration according to tested client capabilities (published client metadata/pre-registration or DCR as required); enforce explicit consent and appropriate registration limits. Follow the provider and [current MCP authorization specification](https://modelcontextprotocol.io/specification/2026-07-28/basic/authorization).
 
@@ -132,7 +132,7 @@ Proposed public tool URL: `https://hotmetalapp.com/mcp`. Configure web's `assets
 
 ## 6. Durable generation, retries and delegated execution
 
-Current Agents API generation blocks without `webhookUrl`; with it, a `waitUntil` branch returns 202 and delivers a callback. This is evidence of an existing interface, not proof that generation survives request/runtime termination.
+At the planning baseline, Agents API generation blocked without `webhookUrl` and used `waitUntil` for webhook mode. The implementation preserves those response contracts while replacing asynchronous execution with `GenerationWorkflow`, atomic D1 admission/claim/CAS and a separate retryable callback step. Deployed disconnect/restart proof remains a release gate.
 
 Extract generation submission/execution/status/result into BL operations. Reuse WriterAgent session/draft state and existing Workflows/Queues or supported durable Agent execution after a focused runtime spike. MCP submission returns a stable authenticated job/session handle promptly; separate tools retrieve progress, failure or the draft. Never keep an MCP request open for the entire generation or use transport session IDs as job authorization.
 
@@ -150,12 +150,12 @@ Each coding subtask gets a focused review and relevant verification before movin
 
 ### Phase 0 — characterize and prove boundaries
 
-- [ ] Capture existing public and overlapping dashboard API contracts: happy/error responses, defaults, envelopes, pagination, quotas, CMS provider differences, generation and partial publish behavior.
-- [ ] Inventory each operation's current owner and duplicate callers, including WriterAgent/tools, internal auto-write and scout callbacks. Separate runtime plumbing from business decisions.
-- [ ] Resolve section 10's release-critical product choices before encoding permission behavior.
+- [x] Capture existing public and overlapping dashboard API contracts: happy/error responses, defaults, envelopes, pagination, quotas, CMS provider differences, generation and partial publish behavior.
+- [x] Inventory each operation's current owner and duplicate callers, including WriterAgent/tools, internal auto-write and scout callbacks. Separate runtime plumbing from business decisions.
+- [x] Resolve section 10's release-critical product choices before encoding permission behavior.
 - [ ] Prove the current Cloudflare stateless handler, supported SDK pins, OAuth options, custom publication consent, fresh policy enforcement, and one protected read in both launch clients. Use a disposable test account/environment.
 - [ ] Prove durable generation submission/recovery and record the selected runtime mechanism; do not infer it from SDK availability.
-- [ ] Record chosen topology, provider package versions, both RPC/binding directions and staged bootstrap order where applicable, storage needs, consent/grant lifecycle, scope mapping, and test commands here.
+- [x] Record chosen topology, provider package versions, both RPC/binding directions and staged bootstrap order where applicable, storage needs, consent/grant lifecycle, scope mapping, and test commands here.
 
 **Exit:** known REST behavior, a tested technical path, resolved release policies, and no credential/consent/publication-binding gaps. Keep experimental code isolated; no production rollout in this phase.
 
@@ -170,45 +170,51 @@ Each coding subtask gets a focused review and relevant verification before movin
 
 **Exit:** both HTTP surfaces exercise the same topic rules; no remaining duplicate topic policy; existing consumers pass characterization tests.
 
-**Verified:** 52 unchanged HTTP contract cases characterized before extraction; 31 direct BL cases, 68 total HTTP cases (including deliberate malformed-input validation corrections), and 4 dependency-boundary checks now pass (103 total). Root `pnpm build` and `pnpm typecheck` exited 0. Independent code review found no actionable issues. Consumer artifacts and implemented BL documentation are updated. OAuth runtime/client proof and remaining content extraction remain unchecked below.
+**Verified:** 52 unchanged HTTP contract cases characterized before extraction; 31 direct BL cases, 68 total HTTP cases (including deliberate malformed-input validation corrections), and 4 dependency-boundary checks now pass (103 total). Root `pnpm build` and `pnpm typecheck` exited 0. Independent code review found no actionable issues. Consumer artifacts and implemented BL documentation are updated. These counts record the earlier foundation checkpoint. Subsequent implementation and current test commands are documented in [mcp.md](../mcp.md); live consumer proof remains unchecked.
 
 ### Phase 2 — extract the remaining content workflows
 
-- [ ] Migrate publication/post reads and writes, ideas, profile/style context, sessions/drafts, generation, scouting and publishing in focused substeps.
-- [ ] Route overlapping dashboard, WriterAgent/tool and internal entry points through the shared business decisions; infrastructure remains in existing services. Map each intentionally untouched non-overlapping route explicitly.
-- [ ] Preserve legacy/EmDash behavior, provisioning/feed hooks, authored-vs-generated quotas, webhook semantics, and partial results.
-- [ ] Implement the chosen durable submission/recovery and idempotency boundaries with origin authorization preserved.
-- [ ] Remove obsolete helpers/duplicate rules only after their callers migrate. Avoid unrelated billing, CMS, frontend or fleet refactors.
+**Implementation complete.** Provider/stateful runtime mechanics remain behind infrastructure ports. Non-overlapping routes are listed in [business-layer.md](../business-layer.md); no generic WriterAgent chat tool is exposed through MCP.
+
+- [x] Migrate publication/post reads and writes, ideas, profile/style context, sessions/drafts, generation, scouting and publishing in focused substeps.
+- [x] Route overlapping dashboard, WriterAgent/tool and internal entry points through the shared business decisions; infrastructure remains in existing services. Map each intentionally untouched non-overlapping route explicitly.
+- [x] Preserve legacy/EmDash behavior, provisioning/feed hooks, authored-vs-generated quotas, webhook semantics, and partial results.
+- [x] Implement the chosen durable submission/recovery and idempotency boundaries with origin authorization preserved.
+- [x] Remove obsolete helpers/duplicate rules only after their callers migrate. Avoid unrelated billing, CMS, frontend or fleet refactors.
 
 **Exit:** MCP-targeted operations have one BL implementation; every migrated REST adapter passes compatibility tests; no broad privilege workaround is needed for delegated work.
 
 ### Phase 3 — OAuth, grants and connection management
 
-- [ ] Add additive DAL migrations/RPC methods for connection policy and durable metadata; verify primary/authoritative read and concurrency behavior.
-- [ ] Integrate the selected maintained OAuth provider, Clerk sign-in and bound consent lifecycle, with public discovery/challenge endpoints.
-- [ ] Build consent with requested actions and selected/all-publication controls; escape untrusted client metadata; support denial, stale requests and no-publication recovery.
-- [ ] Add Clerk-authenticated connection list/detail/narrow/revoke operations through BL and a Settings UI. No raw provider tokens or internal fields in DTOs.
+**Implementation complete; live consumer exit gate pending.** Connection detail is carried by list DTOs, not a separate GET detail endpoint. Same-client grants remain independent. Workerd tests cover the provider lifecycle; external client and deployment checks remain release work.
+
+- [x] Add additive DAL migrations/RPC methods for connection policy and durable metadata; verify primary/authoritative read and concurrency behavior.
+- [x] Integrate the selected maintained OAuth provider, Clerk sign-in and bound consent lifecycle, with public discovery/challenge endpoints.
+- [x] Build consent with requested actions and selected/all-publication controls; escape untrusted client metadata; support denial, stale requests and no-publication recovery.
+- [x] Add Clerk-authenticated connection list/narrow/revoke operations through BL and a Settings UI. No raw provider tokens or internal fields in DTOs.
 - [ ] Verify policy/version changes, refresh, concurrent revoke/approve and partial provider failures before exposing write tools.
 
 **Exit:** both clients establish separate user-bound connections; selected-publication checks and token/application revocation cannot be bypassed.
 
 ### Phase 4 — thin MCP tools
 
-- [ ] Expose read tools for profile/context, publications/posts, topics/ideas/styles, sessions/draft versions and job progress as approved by consent policy.
-- [ ] Expose write tools for authored drafts, post/topic updates, generation submission and scouting through BL; use draft-safe defaults for MCP.
-- [ ] Add explicit publishing tools only after publishing/syndication policy is settled and enforced by BL. Return partial outcomes accurately.
-- [ ] Define useful bounded input/output schemas, descriptions and read-only/destructive/idempotency annotations based on actual effects. No generic arbitrary-HTTP tool or automatic exposure of every API operation.
-- [ ] Ensure tools only parse/map/call/format; no SQL, independent quotas/ownership rules, provider workflows, or calls to `/agents-api/v1`.
+**Implementation complete; consumer workflow verification pending.** See [the exact catalogue](../mcp.md#tool-catalogue). Every existing CMS post update requires publish permission; session draft editing has the separate write-only `updateDraft` tool.
+
+- [x] Expose read tools for profile/context, publications/posts, topics/ideas/styles, sessions/draft versions and job progress as approved by consent policy.
+- [x] Expose write tools for authored drafts, post/topic updates, generation submission and scouting through BL; use draft-safe defaults for MCP.
+- [x] Add explicit publishing tools only after publishing/syndication policy is settled and enforced by BL. Return partial outcomes accurately.
+- [x] Define useful bounded input/output schemas, descriptions and read-only/destructive/idempotency annotations based on actual effects. No generic arbitrary-HTTP tool or automatic exposure of every API operation.
+- [x] Ensure tools only parse/map/call/format; no SQL, independent quotas/ownership rules, provider workflows, or calls to `/agents-api/v1`.
 
 **Exit:** both assistants complete the supported content workflow through the shared BL, and blocked actions fail even when tools are invoked directly rather than hidden from discovery.
 
 ### Phase 5 — verification, documentation and rollout
 
-- [ ] Run the matrix in section 8; fix findings and repeat focused review until important issues are resolved.
-- [ ] Update `docs/API_GUIDE.md`, `docs/auth.md`, `docs/SYSTEM_REFERENCE.md`, affected public MDX guides, OpenAPI and root Postman collections in the implementation changes. Add an MCP/BL feature guide under the existing docs structure; document setup, scopes, revocation timing, jobs, errors and recovery.
-- [ ] For new connection-management HTTP endpoints, document every method/path, input, header, response/error and realistic example; maintain the root `postman/` artifacts required by repository instructions. Keep old API artifacts accurate rather than manufacturing contract changes.
-- [ ] Run relevant workspace tests, build and typecheck, then root `pnpm build` and `pnpm typecheck`; inspect fresh exit statuses and report pre-existing failures separately. Verify API collections/specs and documentation links.
-- [ ] Deploy additive DAL changes first. Follow the Phase 0 binding/bootstrap sequence: when bindings run both ways, stage web's disabled connection entrypoint, then the authorization Worker, then the final web resource-server binding. Use a feature gate for public MCP and new grant issuance; test authorized production test-account reads before mutations.
+- [ ] Complete the full matrix in section 8, including deployed runtime and real consumer checks. Local BL/HTTP/SQLite/Workerd policy/OAuth tests and independent review passed; deployed and consumer gates remain pending.
+- [x] Update `docs/API_GUIDE.md`, `docs/auth.md`, `docs/SYSTEM_REFERENCE.md`, affected public MDX guides, OpenAPI and root Postman collections in the implementation changes. Add an MCP/BL feature guide under the existing docs structure; document setup, scopes, revocation timing, jobs, errors and recovery.
+- [x] For new connection-management HTTP endpoints, document every method/path, input, header, response/error and realistic example; maintain the root `postman/` artifacts required by repository instructions. Keep old API artifacts accurate rather than manufacturing contract changes.
+- [x] Run relevant workspace tests, build and typecheck, then root `pnpm build` and `pnpm typecheck`; inspect fresh exit statuses and verify API collections/specs and documentation links. Verified 2026-10-29: web: 269 tests / 14 files, shared: 9, scout2; root build/typecheck exit 0, frozen offline lockfile validation passed. Documentation relative links, JSON artifacts, OpenAPI path parameters and matching Postman saved requests checked; independent artifact/scout review found no actionable findings. Design contract lint: zero errors, six pre-existing orphaned-palette warnings.
+- [ ] Deploy additive DAL changes first. Use the selected cohosted topology: deploy updated DAL and scout first, then web with provider KV/secret/rate limiter/Workflow bindings and MCP disabled. No separate authorization Worker is required. Use a feature gate for public MCP and new grant issuance; test authorized production test-account reads before mutations.
 - [ ] Verify real hostname routing, OAuth lifecycle, tool calls, reconnect and revocation in consumer ChatGPT and Claude. Record client/version/plan constraints actually tested; no directory listing/submission is assumed.
 
 **Exit:** release criteria pass, operational evidence is recorded, and a tested disable/recovery path exists.
@@ -260,7 +266,7 @@ A public MCP kill switch must prevent new consent/token grants and deny MCP BL c
 
 Track authentication/consent failures, forbidden decisions, quota rejections, job failure/recovery, upstream partial/unknown outcomes and latency. Recovery instructions must distinguish retrying a read, resuming a job, retrying callback delivery, reauthorizing a connection and reconciling an ambiguous publish. Revocation does not undo completed external publication.
 
-## 10. Decisions still required
+## 10. Decisions and remaining proof gates
 
 | Decision | Recommended starting position | Resolve by |
 |---|---|---|
@@ -268,9 +274,9 @@ Track authentication/consent failures, forbidden decisions, quota rejections, jo
 | All-publication meaning | Approved 2026-10-29: all current **and future** owned publications, stated in consent; selected mode never expands automatically | Resolved |
 | MCP v1 lifecycle scope | Approved 2026-10-29: defer publication creation/deletion; content operations only | Resolved |
 | Social syndication | Approved 2026-10-29: explicit outlet consent within publishing | Resolved |
-| Account-level context | Minimal profile/prebuilt or publication-required style context; broader custom-style access only with explicit consent | Phase 0 |
+| Account-level context | Minimal ID/name/tier; prebuilt and allowed-publication-referenced styles without samples | Implemented |
 | Recurring automation | Approved 2026-10-29: recurring-automation changes outside MCP v1 | Resolved for v1 |
-| OAuth provider/topology | Prove cohosted Cloudflare Provider 1.2.4 + Clerk sign-in against direct Clerk OAuth; choose based on consent binding and client evidence | Phase 0 technical spike |
-| Durable execution and cancellation | Reuse a proven existing job/workflow/Agent mechanism; specify recovery, checkpoints and irreversible-effect limits | Phase 0 technical spike |
+| OAuth provider/topology | Cohosted Cloudflare Provider 1.2.4 with Clerk consent; independent same-client grants | Implemented; consumer smoke pending |
+| Durable execution and cancellation | GenerationWorkflow + atomic D1 ledger; terminal replay/CAS, failed/unknown recovery and separate callback retry. No public cancellation tool | Implemented; deployed recovery gate pending |
 
-The approval dates below record explicit user choices; unresolved recommendations remain open. The user authorized implementation on 2026-10-29. Production configuration and deployment are separate release actions; the initial topic extraction does not enable MCP.
+The approval dates below record explicit user choices; unresolved recommendations remain open. The user authorized implementation on 2026-10-29. Production configuration and deployment are separate release actions; the completed implementation defaults MCP off until operators configure, deploy and verify the release.

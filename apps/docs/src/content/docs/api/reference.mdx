@@ -7,7 +7,7 @@ order: 2
 
 # Endpoint Reference
 
-This page documents every endpoint in the Hot Metal API. All paths are relative to the base URL `https://app.hotmetalapp.com/agents-api/v1`.
+This page documents every endpoint in the Hot Metal API. All paths are relative to the base URL `https://hotmetalapp.com/agents-api/v1`.
 
 ---
 
@@ -29,7 +29,7 @@ Returns the authenticated user's profile based on the API key.
 **Example request**
 
 ```bash
-curl https://app.hotmetalapp.com/agents-api/v1/me \
+curl https://hotmetalapp.com/agents-api/v1/me \
   -H "Authorization: Bearer hm_your_api_key"
 ```
 
@@ -61,7 +61,7 @@ Returns an array of publication objects in `data`.
 **Example request**
 
 ```bash
-curl https://app.hotmetalapp.com/agents-api/v1/publications \
+curl https://hotmetalapp.com/agents-api/v1/publications \
   -H "Authorization: Bearer hm_your_api_key"
 ```
 
@@ -98,7 +98,7 @@ Returns a single publication along with its topics array.
 **Example request**
 
 ```bash
-curl https://app.hotmetalapp.com/agents-api/v1/publications/b3f1a2c4-5d6e-7f8a-9b0c-1d2e3f4a5b6c \
+curl https://hotmetalapp.com/agents-api/v1/publications/b3f1a2c4-5d6e-7f8a-9b0c-1d2e3f4a5b6c \
   -H "Authorization: Bearer hm_your_api_key"
 ```
 
@@ -161,7 +161,7 @@ The `scoutSchedule` field accepts one of three formats:
 **Example request**
 
 ```bash
-curl -X POST https://app.hotmetalapp.com/agents-api/v1/publications \
+curl -X POST https://hotmetalapp.com/agents-api/v1/publications \
   -H "Authorization: Bearer hm_your_api_key" \
   -H "Content-Type: application/json" \
   -d '{
@@ -226,7 +226,7 @@ Updates a publication's settings. All fields are optional -- only include the fi
 **Example request**
 
 ```bash
-curl -X PATCH https://app.hotmetalapp.com/agents-api/v1/publications/b3f1a2c4-5d6e-7f8a-9b0c-1d2e3f4a5b6c \
+curl -X PATCH https://hotmetalapp.com/agents-api/v1/publications/b3f1a2c4-5d6e-7f8a-9b0c-1d2e3f4a5b6c \
   -H "Authorization: Bearer hm_your_api_key" \
   -H "Content-Type: application/json" \
   -d '{
@@ -263,7 +263,7 @@ Deletes a publication and all its associated data.
 **Example request**
 
 ```bash
-curl -X DELETE https://app.hotmetalapp.com/agents-api/v1/publications/b3f1a2c4-5d6e-7f8a-9b0c-1d2e3f4a5b6c \
+curl -X DELETE https://hotmetalapp.com/agents-api/v1/publications/b3f1a2c4-5d6e-7f8a-9b0c-1d2e3f4a5b6c \
   -H "Authorization: Bearer hm_your_api_key"
 ```
 
@@ -290,7 +290,7 @@ Returns up to 50 published posts for a publication from the CMS. Returns an empt
 **Example request**
 
 ```bash
-curl https://app.hotmetalapp.com/agents-api/v1/publications/b3f1a2c4-5d6e-7f8a-9b0c-1d2e3f4a5b6c/posts \
+curl https://hotmetalapp.com/agents-api/v1/publications/b3f1a2c4-5d6e-7f8a-9b0c-1d2e3f4a5b6c/posts \
   -H "Authorization: Bearer hm_your_api_key"
 ```
 
@@ -328,7 +328,7 @@ Returns all topics for a publication.
 **Example request**
 
 ```bash
-curl https://app.hotmetalapp.com/agents-api/v1/publications/b3f1a2c4-5d6e-7f8a-9b0c-1d2e3f4a5b6c/topics \
+curl https://hotmetalapp.com/agents-api/v1/publications/b3f1a2c4-5d6e-7f8a-9b0c-1d2e3f4a5b6c/topics \
   -H "Authorization: Bearer hm_your_api_key"
 ```
 
@@ -372,7 +372,7 @@ Creates a new topic under a publication. Subject to tier limits on topic count.
 **Example request**
 
 ```bash
-curl -X POST https://app.hotmetalapp.com/agents-api/v1/publications/b3f1a2c4-5d6e-7f8a-9b0c-1d2e3f4a5b6c/topics \
+curl -X POST https://hotmetalapp.com/agents-api/v1/publications/b3f1a2c4-5d6e-7f8a-9b0c-1d2e3f4a5b6c/topics \
   -H "Authorization: Bearer hm_your_api_key" \
   -H "Content-Type: application/json" \
   -d '{
@@ -421,7 +421,7 @@ Updates an existing topic. Ownership is verified through the topic's parent publ
 **Example request**
 
 ```bash
-curl -X PATCH https://app.hotmetalapp.com/agents-api/v1/topics/d4e5f6a7-8b9c-0d1e-2f3a-4b5c6d7e8f9a \
+curl -X PATCH https://hotmetalapp.com/agents-api/v1/topics/d4e5f6a7-8b9c-0d1e-2f3a-4b5c6d7e8f9a \
   -H "Authorization: Bearer hm_your_api_key" \
   -H "Content-Type: application/json" \
   -d '{
@@ -460,7 +460,7 @@ Deletes a topic. Ownership is verified through the topic's parent publication.
 **Example request**
 
 ```bash
-curl -X DELETE https://app.hotmetalapp.com/agents-api/v1/topics/d4e5f6a7-8b9c-0d1e-2f3a-4b5c6d7e8f9a \
+curl -X DELETE https://hotmetalapp.com/agents-api/v1/topics/d4e5f6a7-8b9c-0d1e-2f3a-4b5c6d7e8f9a \
   -H "Authorization: Bearer hm_your_api_key"
 ```
 
@@ -497,7 +497,7 @@ Returns ideas for a publication, optionally filtered by status.
 **Example request**
 
 ```bash
-curl "https://app.hotmetalapp.com/agents-api/v1/publications/b3f1a2c4-5d6e-7f8a-9b0c-1d2e3f4a5b6c/ideas?status=new" \
+curl "https://hotmetalapp.com/agents-api/v1/publications/b3f1a2c4-5d6e-7f8a-9b0c-1d2e3f4a5b6c/ideas?status=new" \
   -H "Authorization: Bearer hm_your_api_key"
 ```
 
@@ -543,7 +543,7 @@ Returns a single idea by ID.
 **Example request**
 
 ```bash
-curl https://app.hotmetalapp.com/agents-api/v1/ideas/a1b2c3d4-5e6f-7a8b-9c0d-1e2f3a4b5c6d \
+curl https://hotmetalapp.com/agents-api/v1/ideas/a1b2c3d4-5e6f-7a8b-9c0d-1e2f3a4b5c6d \
   -H "Authorization: Bearer hm_your_api_key"
 ```
 
@@ -586,7 +586,7 @@ Returns all writing styles available to you, including your custom styles and pr
 **Example request**
 
 ```bash
-curl https://app.hotmetalapp.com/agents-api/v1/styles \
+curl https://hotmetalapp.com/agents-api/v1/styles \
   -H "Authorization: Bearer hm_your_api_key"
 ```
 
@@ -644,12 +644,13 @@ Instructs the AI writer agent to generate a draft for the publication. This endp
 | `instructions` | string | Yes | Detailed writing instructions for the AI agent |
 | `styleId` | string | No | Writing style ID (from `GET /styles`) |
 | `autoPublish` | boolean | No | If `true`, publish to CMS automatically after generation. Defaults to `false`. |
-| `webhookUrl` | string | No | HTTPS URL to receive the result asynchronously |
+| `webhookUrl` | string | No | Public HTTPS URL to receive the result asynchronously through a durable Workflow |
+| `idempotencyKey` | string | No | 1–200 characters; with webhook mode, reuse with identical input to recover the same session. Different input returns409. Omission creates a new request key. |
 
 **Example request (synchronous)**
 
 ```bash
-curl -X POST https://app.hotmetalapp.com/agents-api/v1/publications/b3f1a2c4-5d6e-7f8a-9b0c-1d2e3f4a5b6c/drafts/generate \
+curl -X POST https://hotmetalapp.com/agents-api/v1/publications/b3f1a2c4-5d6e-7f8a-9b0c-1d2e3f4a5b6c/drafts/generate \
   -H "Authorization: Bearer hm_your_api_key" \
   -H "Content-Type: application/json" \
   -d '{
@@ -679,7 +680,7 @@ curl -X POST https://app.hotmetalapp.com/agents-api/v1/publications/b3f1a2c4-5d6
 **Example request (asynchronous)**
 
 ```bash
-curl -X POST https://app.hotmetalapp.com/agents-api/v1/publications/b3f1a2c4-5d6e-7f8a-9b0c-1d2e3f4a5b6c/drafts/generate \
+curl -X POST https://hotmetalapp.com/agents-api/v1/publications/b3f1a2c4-5d6e-7f8a-9b0c-1d2e3f4a5b6c/drafts/generate \
   -H "Authorization: Bearer hm_your_api_key" \
   -H "Content-Type: application/json" \
   -d '{
@@ -747,7 +748,7 @@ Returns the status of a writing session and a summary of the current draft.
 **Example request**
 
 ```bash
-curl https://app.hotmetalapp.com/agents-api/v1/sessions/e7f8a9b0-c1d2-3e4f-5a6b-7c8d9e0f1a2b \
+curl https://hotmetalapp.com/agents-api/v1/sessions/e7f8a9b0-c1d2-3e4f-5a6b-7c8d9e0f1a2b \
   -H "Authorization: Bearer hm_your_api_key"
 ```
 
@@ -800,7 +801,7 @@ Returns the full content of a specific draft version.
 **Example request**
 
 ```bash
-curl https://app.hotmetalapp.com/agents-api/v1/sessions/e7f8a9b0-c1d2-3e4f-5a6b-7c8d9e0f1a2b/drafts/1 \
+curl https://hotmetalapp.com/agents-api/v1/sessions/e7f8a9b0-c1d2-3e4f-5a6b-7c8d9e0f1a2b/drafts/1 \
   -H "Authorization: Bearer hm_your_api_key"
 ```
 
@@ -852,7 +853,7 @@ All fields are optional.
 **Example request**
 
 ```bash
-curl -X POST https://app.hotmetalapp.com/agents-api/v1/sessions/e7f8a9b0-c1d2-3e4f-5a6b-7c8d9e0f1a2b/publish \
+curl -X POST https://hotmetalapp.com/agents-api/v1/sessions/e7f8a9b0-c1d2-3e4f-5a6b-7c8d9e0f1a2b/publish \
   -H "Authorization: Bearer hm_your_api_key" \
   -H "Content-Type: application/json" \
   -d '{
@@ -917,17 +918,15 @@ The request body is optional. You can send an empty body or omit it entirely.
 
 | Field | Type | Required | Description |
 |-------|------|----------|-------------|
-| `webhookUrl` | string | No | HTTPS URL to receive scout results when the run completes |
+| `webhookUrl` | string | No | Legacy accepted/validated field; scout completion callbacks are unsupported. Omit it. |
 
 **Example request**
 
 ```bash
-curl -X POST https://app.hotmetalapp.com/agents-api/v1/publications/b3f1a2c4-5d6e-7f8a-9b0c-1d2e3f4a5b6c/scout/run \
+curl -X POST https://hotmetalapp.com/agents-api/v1/publications/b3f1a2c4-5d6e-7f8a-9b0c-1d2e3f4a5b6c/scout/run \
   -H "Authorization: Bearer hm_your_api_key" \
   -H "Content-Type: application/json" \
-  -d '{
-    "webhookUrl": "https://your-server.com/webhooks/scout"
-  }'
+  -d '{}'
 ```
 
 **Example response**
@@ -943,6 +942,6 @@ curl -X POST https://app.hotmetalapp.com/agents-api/v1/publications/b3f1a2c4-5d6
 You can also trigger a scout run without a webhook. New ideas will appear in `GET /publications/:id/ideas` once the run finishes:
 
 ```bash
-curl -X POST https://app.hotmetalapp.com/agents-api/v1/publications/b3f1a2c4-5d6e-7f8a-9b0c-1d2e3f4a5b6c/scout/run \
+curl -X POST https://hotmetalapp.com/agents-api/v1/publications/b3f1a2c4-5d6e-7f8a-9b0c-1d2e3f4a5b6c/scout/run \
   -H "Authorization: Bearer hm_your_api_key"
 ```

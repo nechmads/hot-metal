@@ -17,6 +17,10 @@ import * as notificationPreferences from './domains/notification-preferences'
 import * as comments from './domains/comments'
 import * as subscriptions from './domains/subscriptions'
 import * as userApiKeys from './domains/user-api-keys'
+import * as mcpConnections from './domains/mcp-connections'
+import * as mcpJobs from './domains/mcp-jobs'
+import type { McpConnection, CreateMcpConnectionInput, NarrowMcpConnectionInput } from '@hotmetal/content-core'
+import type { McpGenerationJob, ReserveMcpGenerationJobInput, GenerationJobState } from './domains/mcp-jobs'
 
 import type {
 	CreateUserInput,
@@ -80,6 +84,18 @@ import type {
  * which avoids TS2589 deep-instantiation errors.
  */
 export interface DataLayerApi {
+  // Application MCP policy and durable submissions (OAuth secrets stay provider-owned).
+  createMcpConnection(input: CreateMcpConnectionInput): Promise<McpConnection>
+  getMcpConnectionById(id: string): Promise<McpConnection | null>
+  listMcpConnectionsByUser(userId: string): Promise<McpConnection[]>
+  activateMcpConnection(id: string, userId: string, clientId: string, grantId: string): Promise<McpConnection | null>
+  narrowMcpConnection(id: string, userId: string, expectedPolicyVersion: number, input: NarrowMcpConnectionInput): Promise<McpConnection | null>
+  revokeMcpConnection(id: string, userId: string): Promise<boolean>
+  reserveMcpGenerationJob(input: ReserveMcpGenerationJobInput): Promise<{ job: McpGenerationJob; created: boolean }>
+  getMcpGenerationJob(id: string): Promise<McpGenerationJob | null>
+  updateMcpGenerationJob(id: string, input: { state: GenerationJobState; error?: string | null }): Promise<McpGenerationJob | null>
+  claimMcpGenerationJob(id: string): Promise<McpGenerationJob | null>
+
 	// Users
 	getUserById(id: string): Promise<User | null>
 	getUserByEmail(email: string): Promise<User | null>
@@ -208,6 +224,17 @@ export interface DataLayerApi {
 void ({} as DataLayer satisfies DataLayerApi)
 
 export class DataLayer extends WorkerEntrypoint<Env> {
+  createMcpConnection(input: CreateMcpConnectionInput) { return mcpConnections.createMcpConnection(this.env.DB, input) }
+  getMcpConnectionById(id: string) { return mcpConnections.getMcpConnectionById(this.env.DB, id) }
+  listMcpConnectionsByUser(userId: string) { return mcpConnections.listMcpConnectionsByUser(this.env.DB, userId) }
+  activateMcpConnection(id: string, userId: string, clientId: string, grantId: string) { return mcpConnections.activateMcpConnection(this.env.DB, id, userId, clientId, grantId) }
+  narrowMcpConnection(id: string, userId: string, expectedPolicyVersion: number, input: NarrowMcpConnectionInput) { return mcpConnections.narrowMcpConnection(this.env.DB, id, userId, expectedPolicyVersion, input) }
+  revokeMcpConnection(id: string, userId: string) { return mcpConnections.revokeMcpConnection(this.env.DB, id, userId) }
+  reserveMcpGenerationJob(input: ReserveMcpGenerationJobInput) { return mcpJobs.reserveMcpGenerationJob(this.env.DB, input) }
+  getMcpGenerationJob(id: string) { return mcpJobs.getMcpGenerationJob(this.env.DB, id) }
+  updateMcpGenerationJob(id: string, input: { state: GenerationJobState; error?: string | null }) { return mcpJobs.updateMcpGenerationJob(this.env.DB, id, input) }
+  claimMcpGenerationJob(id: string) { return mcpJobs.claimMcpGenerationJob(this.env.DB, id) }
+
 	// ─── Users ─────────────────────────────────────────────────────────
 	getUserById(id: string) { return users.getUserById(this.env.DB, id) }
 	getUserByEmail(email: string) { return users.getUserByEmail(this.env.DB, email) }

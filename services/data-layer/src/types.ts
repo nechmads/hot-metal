@@ -620,3 +620,7 @@ export interface PublicationTokenWithRawToken {
 	token: PublicationToken
 	rawToken: string
 }
+
+export type { McpAction, McpOutlet, McpPublicationMode, McpConnectionState, McpConnection, CreateMcpConnectionInput, NarrowMcpConnectionInput } from '@hotmetal/content-core'
+
+export type { McpGenerationJob, ReserveMcpGenerationJobInput, GenerationJobState } from './domains/mcp-jobs'

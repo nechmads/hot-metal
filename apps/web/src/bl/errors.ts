@@ -1,5 +1,5 @@
 export type BusinessErrorCode =
-  'NOT_FOUND' | 'FORBIDDEN' | 'VALIDATION_ERROR' | 'QUOTA_EXCEEDED'
+  'NOT_FOUND' | 'FORBIDDEN' | 'VALIDATION_ERROR' | 'QUOTA_EXCEEDED' | 'GENERATION_FAILED' | 'PUBLISH_FAILED' | 'PUBLISH_UNKNOWN' | 'RATE_LIMITED' | 'PAYLOAD_TOO_LARGE' | 'SERVICE_UNAVAILABLE' | 'BAD_GATEWAY' | 'CONFLICT'
 
 /** Business failures carry meaning; each transport owns its status/envelope mapping. */
 export class BusinessError extends Error {

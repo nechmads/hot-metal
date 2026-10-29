@@ -7,14 +7,19 @@ import { composeStylePrompt } from '../lib/writing'
 import { hasStructuredFields, type ToneGuideFields } from '../lib/tone-guide'
 import { checkCustomStyleQuota } from '../lib/quota'
 import type { AppEnv } from '../server'
+import { getStyle, listStyles } from '../bl/content'
+import { createContentDependencies } from '../infrastructure/content-dependencies'
 
 const styles = new Hono<AppEnv>()
 
 /** List all styles available to the authenticated user (own + prebuilt). */
 styles.get('/styles', async (c) => {
-  const userId = c.get('userId')
-  const result = await c.env.DAL.listWritingStylesByUser(userId)
-  return c.json({ data: result })
+  return c.json({
+    data: await listStyles(
+      { userId: c.get('userId'), credentialKind: 'clerk' },
+      createContentDependencies(c.env, c.executionCtx),
+    ),
+  })
 })
 
 /** Create a new writing style. */
@@ -183,15 +188,13 @@ styles.post('/styles/:id/duplicate', async (c) => {
 
 /** Get a single style by ID (own or prebuilt). */
 styles.get('/styles/:id', async (c) => {
-  const style = await c.env.DAL.getWritingStyleById(c.req.param('id'))
-  if (!style) return c.json({ error: 'Style not found' }, 404)
-
-  const userId = c.get('userId')
-  if (!style.isPrebuilt && style.userId !== userId) {
-    return c.json({ error: 'Style not found' }, 404)
-  }
-
-  return c.json(style)
+  return c.json(
+    await getStyle(
+      { userId: c.get('userId'), credentialKind: 'clerk' },
+      c.req.param('id'),
+      createContentDependencies(c.env, c.executionCtx),
+    ),
+  )
 })
 
 /** Update an existing style (own only, not prebuilt). */

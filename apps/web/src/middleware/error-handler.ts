@@ -1,7 +1,11 @@
 import type { ErrorHandler } from 'hono'
+import type { AppEnv } from '../server'
+import { businessErrorResponse } from '../http/business-errors'
 import { CmsApiError, logger } from '@hotmetal/shared'
 
-export const errorHandler: ErrorHandler = (err, c) => {
+export const errorHandler: ErrorHandler<AppEnv> = (err, c) => {
+  const businessResponse = businessErrorResponse(err, c, 'dashboard')
+  if (businessResponse) return businessResponse
   logger('web').error('Unhandled error', { component: 'error-handler', error: err.message, stack: err.stack })
 
   if (err instanceof CmsApiError) {

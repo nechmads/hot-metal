@@ -1,8 +1,10 @@
-# Authentication — Clerk Integration
+# Authentication — Clerk, API keys and OAuth MCP
 
 ## Overview
 
-Hot Metal uses [Clerk](https://clerk.com) for user authentication. The web backend (Cloudflare Worker) validates Clerk JWTs using JWKS, and the React frontend uses `@clerk/clerk-react` for the auth UI and session management.
+Hot Metal uses [Clerk](https://clerk.com) for dashboard identity and MCP consent. The Agents REST API uses account API keys; the MCP resource uses provider-issued OAuth access tokens bound to a live application connection. [MCP configuration, scopes and lifecycle](mcp.md) describe the complete connector contract.
+
+For dashboard authentication, Hot Metal uses Clerk. The web backend (Cloudflare Worker) validates Clerk JWTs using JWKS, and the React frontend uses `@clerk/clerk-react` for the auth UI and session management.
 
 ## Architecture
 
@@ -135,3 +137,13 @@ The script (`scripts/seed-dev-user.sh`):
 3. Inserts (or replaces) that user into the local D1 database via `wrangler d1 execute`
 
 Setup: copy `.dev.vars.example` to `.dev.vars` at the repo root and fill in your Clerk secret key.
+
+## OAuth MCP trust boundary
+
+`/mcp` and `/oauth/*` run before the dashboard router, through cohosted Cloudflare `OAuthAuthorizationServer`/`OAuthResourceServer`. Discovery is public when enabled; authorization requires PKCE S256 and exact provider-validated redirects. `/connect/mcp` presents Clerk-backed publication/action/outlet consent. Its API uses a signed account/request-bound form proof and same-origin mutation checks. Tokens last one hour; refresh credentials last 30 days under the provider's rotation lifecycle.
+
+D1 connection state is separate from provider KV. Tokens bind user, client, grant, connection and policy version. BL reloads live policy with authoritative reads, current ownership and token scope intersection. Narrowing invalidates old policy versions; refresh adopts narrower permissions. Revocation denies D1 authority first, with recoverable provider cleanup. Multiple grants for the same client remain independently revocable. All-publication access includes future owned publications; selected access never expands. Queued generation/scout retain origin references and recheck policy; no bearer token enters a job payload.
+
+`MCP_ENABLED=false` blocks consent/issuance, resource access and MCP-attributed BL work. Clerk/API-key flows and independently scheduled scout work retain their existing authentication. MCP does not authenticate as an API-key or Clerk caller. Raw internal `X-MCP-Origin` headers are accepted only behind internal key authentication and matching `X-User-Id`; public headers/tool arguments cannot create origin authority.
+
+Connection HTTP contracts and errors are in [mcp.md](mcp.md#http-endpoints), [OpenAPI](mcp-openapi.json), and the [Postman collection](../postman/Hot_Metal_MCP.postman_collection.json). Public enablement defaults off; deployment and real ChatGPT/Claude client verification remain release gates.

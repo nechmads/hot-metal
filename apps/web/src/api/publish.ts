@@ -1,322 +1,54 @@
-import { getAgentByName } from 'agents'
 import { Hono } from 'hono'
-import { logger } from '@hotmetal/shared'
-import type { ContentfulStatusCode } from 'hono/utils/http-status'
 import type { AppEnv } from '../server'
-import type { WriterAgent } from '../agent/writer-agent'
-import { checkPostsPerWeekQuota } from '../lib/quota'
-
-interface SocialShareResult {
-  platform: 'linkedin' | 'twitter'
-  success: boolean
-  error?: string
-}
-
-async function dispatchSocialShares(
-  env: Env,
-  opts: {
-    postId: string
-    userId: string
-    publicationId?: string
-    publishToLinkedIn: boolean
-    publishToTwitter: boolean
-    tweetText?: string
-    linkedInText?: string
-    linkedInPostType?: 'link' | 'text'
-  },
-): Promise<SocialShareResult[]> {
-  const results: Promise<SocialShareResult>[] = []
-
-  if (opts.publishToLinkedIn) {
-    results.push(
-      (async (): Promise<SocialShareResult> => {
-        try {
-          const res = await env.PUBLISHER.fetch(
-            new Request('https://publisher/publish/linkedin', {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-                'X-API-Key': env.PUBLISHER_API_KEY,
-              },
-              body: JSON.stringify({
-                postId: opts.postId,
-                userId: opts.userId,
-                publicationId: opts.publicationId,
-                linkedInText: opts.linkedInText || undefined,
-                shareType: opts.linkedInPostType === 'text' ? 'text' : 'article',
-              }),
-            }),
-          )
-          if (!res.ok) {
-            const errBody = await res.text().catch(() => '')
-            logger('web').error('LinkedIn publish failed', { component: 'publish', status: res.status, body: errBody })
-            return { platform: 'linkedin', success: false, error: 'Failed to share on LinkedIn' }
-          }
-          return { platform: 'linkedin', success: true }
-        } catch (err) {
-          logger('web').error('LinkedIn publish failed', { component: 'publish', error: err instanceof Error ? err.message : String(err) })
-          return { platform: 'linkedin', success: false, error: 'Failed to share on LinkedIn' }
-        }
-      })(),
-    )
-  }
-
-  if (opts.publishToTwitter) {
-    results.push(
-      (async (): Promise<SocialShareResult> => {
-        try {
-          const res = await env.PUBLISHER.fetch(
-            new Request('https://publisher/publish/twitter', {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-                'X-API-Key': env.PUBLISHER_API_KEY,
-              },
-              body: JSON.stringify({
-                postId: opts.postId,
-                userId: opts.userId,
-                tweetText: opts.tweetText || undefined,
-                publicationId: opts.publicationId,
-              }),
-            }),
-          )
-          if (!res.ok) {
-            const errBody = await res.text().catch(() => '')
-            logger('web').error('Twitter publish failed', { component: 'publish', status: res.status, body: errBody })
-            return { platform: 'twitter', success: false, error: 'Failed to post on X' }
-          }
-          return { platform: 'twitter', success: true }
-        } catch (err) {
-          logger('web').error('Twitter publish failed', { component: 'publish', error: err instanceof Error ? err.message : String(err) })
-          return { platform: 'twitter', success: false, error: 'Failed to post on X' }
-        }
-      })(),
-    )
-  }
-
-  return Promise.all(results)
-}
+import {
+  auxiliaryDraftOperation,
+  publishDraft,
+  type PublishDraftCommand,
+} from '../bl/generation'
+import { createGenerationDependencies } from '../infrastructure/generation-dependencies'
+import { readTopicBody } from '../http/topics'
+import { errorHandler } from '../middleware/error-handler'
 
 const publish = new Hono<AppEnv>()
-
-/** Generate SEO excerpt and tags for the current draft. */
-publish.post('/sessions/:sessionId/generate-seo', async (c) => {
-  const sessionId = c.req.param('sessionId')
-  const session = await c.env.DAL.getSessionById(sessionId)
-  if (!session) return c.json({ error: 'Session not found' }, 404)
-  if (session.userId !== c.get('userId')) {
-    return c.json({ error: 'Session not found' }, 404)
-  }
-
-  const agent = await getAgentByName<Env, WriterAgent>(c.env.WRITER_AGENT, sessionId)
-
-  const url = new URL(c.req.url)
-  url.pathname = '/generate-seo'
-
-  const res = await agent.fetch(new Request(url.toString(), { method: 'POST' }))
-  const data = await res.json()
-  return c.json(data, res.status as ContentfulStatusCode)
-})
-
-/** Generate a tweet for the current draft via AI. */
-publish.post('/sessions/:sessionId/generate-tweet', async (c) => {
-  const sessionId = c.req.param('sessionId')
-  const session = await c.env.DAL.getSessionById(sessionId)
-  if (!session) return c.json({ error: 'Session not found' }, 404)
-  if (session.userId !== c.get('userId')) {
-    return c.json({ error: 'Session not found' }, 404)
-  }
-
-  const agent = await getAgentByName<Env, WriterAgent>(c.env.WRITER_AGENT, sessionId)
-
-  const url = new URL(c.req.url)
-  url.pathname = '/generate-tweet'
-
-  const res = await agent.fetch(
-    new Request(url.toString(), {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: await c.req.text(),
-    }),
-  )
-  const data = await res.json()
-  return c.json(data, res.status as ContentfulStatusCode)
-})
-
-/** Generate/optimize a LinkedIn post for the current draft via AI. */
-publish.post('/sessions/:sessionId/generate-linkedin-post', async (c) => {
-  const sessionId = c.req.param('sessionId')
-  const session = await c.env.DAL.getSessionById(sessionId)
-  if (!session) return c.json({ error: 'Session not found' }, 404)
-  if (session.userId !== c.get('userId')) {
-    return c.json({ error: 'Session not found' }, 404)
-  }
-
-  const agent = await getAgentByName<Env, WriterAgent>(c.env.WRITER_AGENT, sessionId)
-
-  const url = new URL(c.req.url)
-  url.pathname = '/generate-linkedin-post'
-
-  const res = await agent.fetch(
-    new Request(url.toString(), {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: await c.req.text(),
-    }),
-  )
-  const data = await res.json()
-  return c.json(data, res.status as ContentfulStatusCode)
-})
-
-/** Publish the current draft to the CMS — proxied to agent DO. */
+publish.onError(errorHandler)
+for (const operation of [
+  'generate-seo',
+  'generate-tweet',
+  'generate-linkedin-post',
+] as const) {
+  publish.post(`/sessions/:sessionId/${operation}`, async (c) => {
+    const body =
+      operation === 'generate-seo'
+        ? undefined
+        : await readTopicBody<Record<string, unknown>>(c)
+    return c.json(
+      await auxiliaryDraftOperation(
+        { userId: c.get('userId'), credentialKind: 'clerk' },
+        c.req.param('sessionId'),
+        operation,
+        body,
+        createGenerationDependencies(c.env),
+      ),
+    )
+  })
+}
 publish.post('/sessions/:sessionId/publish', async (c) => {
-  const sessionId = c.req.param('sessionId')
-  const userId = c.get('userId')
-
-  const session = await c.env.DAL.getSessionById(sessionId)
-  if (!session) return c.json({ error: 'Session not found' }, 404)
-  if (session.userId !== userId) {
-    return c.json({ error: 'Session not found' }, 404)
-  }
-
-  // Parse body to extract social sharing flags before forwarding to agent
-  const body = await c.req.json<{ publishToLinkedIn?: boolean; publishToTwitter?: boolean; tweetText?: string; linkedInText?: string; linkedInPostType?: string; publicationId?: string; [key: string]: unknown }>()
-  const publishToLinkedIn = body.publishToLinkedIn ?? false
-  const publishToTwitter = body.publishToTwitter ?? false
-  const tweetText = typeof body.tweetText === 'string' ? body.tweetText : undefined
-  const linkedInText = typeof body.linkedInText === 'string' ? body.linkedInText : undefined
-  const linkedInPostType = body.linkedInPostType === 'text' ? 'text' as const : 'link' as const
-  const publicationId = typeof body.publicationId === 'string' ? body.publicationId : undefined
-
-  // Validate tweet length including the blog URL that will be appended (space + t.co 23-char link)
-  if (tweetText) {
-    const effectiveLength = tweetText.length + 1 + 23
-    if (effectiveLength > 280) {
-      return c.json({ error: 'Tweet text exceeds 280 characters (including link)' }, 400)
-    }
-  }
-
-  // Validate LinkedIn text length
-  if (linkedInText && linkedInText.length > 3000) {
-    return c.json({ error: 'LinkedIn post text exceeds 3000 characters' }, 400)
-  }
-
-  const socialOnly = !publicationId
-
-  // Server-side provisioning gate: never attempt a blog publish to an EmDash
-  // instance that isn't `ready` (getCmsClient would otherwise throw an opaque
-  // EmdashCmsClientUnavailableError). The UI also hides publish while provisioning,
-  // but this closes the hole for stale tabs / API / automation.
-  if (publicationId) {
-    const pub = await c.env.DAL.getPublicationById(publicationId)
-    if (pub && pub.cmsProvider === 'emdash' && pub.cmsProvisioningStatus !== 'ready') {
-      return c.json({ error: 'Your EmDash blog is still being set up. Please try again once provisioning completes.' }, 409)
-    }
-  }
-
-  // Social-only re-publish: skip blog publish, use existing cmsPostId
-  if (socialOnly) {
-    if (!publishToLinkedIn && !publishToTwitter) {
-      return c.json({ error: 'No destinations selected' }, 400)
-    }
-    const existingPostId = session.cmsPostId
-    if (!existingPostId) {
-      return c.json({ error: 'No published post to share. Publish to a publication first.' }, 400)
-    }
-
-    const socialResults = await dispatchSocialShares(c.env, {
-      postId: existingPostId,
-      userId,
-      publicationId: session.publicationId || undefined,
-      publishToLinkedIn,
-      publishToTwitter,
-      tweetText,
-      linkedInText,
-      linkedInPostType,
-    })
-
-    return c.json({ success: true, results: [], socialResults })
-  }
-
-  // Quota check: only for new publishes, not updates
-  if (!session.cmsPostId && publicationId) {
-    const quotaError = await checkPostsPerWeekQuota(c, publicationId, c.get('userTier'))
-    if (quotaError) return quotaError
-  }
-
-  const agent = await getAgentByName<Env, WriterAgent>(c.env.WRITER_AGENT, sessionId)
-
-  const url = new URL(c.req.url)
-  url.pathname = '/publish'
-
-  const agentBody = { ...body, publicationId }
-
-  const res = await agent.fetch(
-    new Request(url.toString(), {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(agentBody),
-    }),
+  const body = await readTopicBody<Omit<PublishDraftCommand, 'sessionId'>>(c)
+  const result = await publishDraft(
+    { userId: c.get('userId'), credentialKind: 'clerk' },
+    {
+      ...body,
+      sessionId: c.req.param('sessionId'),
+      socialOnly: !body.publicationId,
+    },
+    createGenerationDependencies(c.env),
   )
-
-  const data = await res.json()
-
-  // If publish succeeded, update session status via DAL
-  if (res.ok && (data as { success?: boolean }).success) {
-    const result = data as { results?: { postId: string; publicationId: string }[] }
-    const publishedResult = result.results?.[0]
-    if (publishedResult) {
-      try {
-        await c.env.DAL.updateSession(sessionId, {
-          status: 'completed',
-          cmsPostId: publishedResult.postId,
-          publicationId: publishedResult.publicationId,
-        })
-      } catch (err) {
-        logger('web').error('Failed to update session after successful publish', { component: 'publish', sessionId, error: err instanceof Error ? err.message : String(err) })
-      }
-
-      // Regenerate RSS/Atom feed (fire-and-forget — not user-facing)
-      c.executionCtx.waitUntil(
-        (async () => {
-          try {
-            const pub = await c.env.DAL.getPublicationById(publishedResult.publicationId)
-            if (!pub?.slug) return
-            const feedRes = await c.env.PUBLISHER.fetch(
-              new Request(`https://publisher/internal/feeds/regenerate/${pub.slug}`, {
-                method: 'POST',
-                headers: { 'X-API-Key': c.env.PUBLISHER_API_KEY },
-              }),
-            )
-            if (!feedRes.ok) {
-              const errBody = await feedRes.text().catch(() => '')
-              logger('web').error('Feed regeneration returned error', { component: 'publish', status: feedRes.status, slug: pub.slug, body: errBody })
-            }
-          } catch (err) {
-            logger('web').error('Feed regeneration failed', { component: 'publish', publicationId: publishedResult.publicationId, error: err instanceof Error ? err.message : String(err) })
-          }
-        })(),
-      )
-
-      // Social sharing — awaited so we can report results to the user
-      if (publishToLinkedIn || publishToTwitter) {
-        const socialResults = await dispatchSocialShares(c.env, {
-          postId: publishedResult.postId,
-          userId,
-          publicationId: publishedResult.publicationId,
-          publishToLinkedIn,
-          publishToTwitter,
-          tweetText,
-          linkedInText,
-          linkedInPostType,
-        })
-        const enriched = { ...(data as Record<string, unknown>), socialResults }
-        return c.json(enriched, res.status as ContentfulStatusCode)
-      }
-    }
-  }
-
-  return c.json(data, res.status as ContentfulStatusCode)
+  return c.json({
+    success: result.success,
+    results: result.results,
+    ...(result.socialResults.length
+      ? { socialResults: result.socialResults }
+      : {}),
+  })
 })
-
 export default publish

@@ -24,6 +24,7 @@ import { PublicationPage } from '@/pages/PublicationPage'
 import { PublicationHomePage } from '@/pages/PublicationHomePage'
 import { PublishedPostsPage } from '@/pages/PublishedPostsPage'
 import { StylesPage } from '@/pages/StylesPage'
+import { McpConsentPage } from '@/pages/McpConsentPage'
 import { SettingsPage } from '@/pages/SettingsPage'
 import { CommentsPage } from '@/pages/CommentsPage'
 
@@ -46,6 +47,8 @@ export default function App() {
         <Route path="/ai-agents/*" element={<AgentsPage />} />
         <Route path="/analyze" element={<AnalyzePage />} />
         <Route path="/analyze/reports/:reportId" element={<AnalyzeReportPage />} />
+
+        <Route path="/connect/mcp" element={<ProtectedRoute><McpConsentPage /></ProtectedRoute>} />
 
         {/* Protected routes — require Clerk auth */}
         <Route

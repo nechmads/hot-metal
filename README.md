@@ -83,6 +83,12 @@ React SPA with Cloudflare Worker backend hosting all API routes and the WriterAg
 | binding | `DAL` | Service: `hotmetal-data-layer` | Data Access Layer (sessions, publications, topics, ideas) |
 | binding | `WRITER_AGENT` | DO: `WriterAgent` | Durable Object for per-session AI agent state |
 | binding | `AI` | Workers AI | Image generation via Flux |
+| var | `MCP_ENABLED` | `false` | OAuth MCP kill switch, including delegated BL work |
+| var | `MCP_PUBLIC_URL` / `MCP_ISSUER` | Canonical `/mcp` URL / root origin | Same-origin OAuth resource and issuer |
+| secret | `MCP_CONSENT_SECRET` | | Random signing secret, at least 32 characters |
+| binding | `OAUTH_KV` | Automatically provisioned KV | Provider state and short-lived consent requests |
+| binding | `GENERATION_WORKFLOW` | `GenerationWorkflow` | Durable asynchronous generation and callbacks |
+| binding | `MCP_RATE_LIMITER` | 120/minute | Public OAuth/MCP request rate limiting |
 | binding | `IMAGE_BUCKET` | R2: `hotmetal-cms-bucket` | Image storage |
 
 ### services/content-scout
@@ -165,4 +171,4 @@ The October 2026 package baseline, compatibility exceptions, and EmDash rollout 
 
 ## MCP and business-layer plan
 
-The [OAuth MCP implementation plan](docs/plans/mcp-oauth-implementation.md) describes the proposed shared business layer, thin API/MCP adapters, publication grants, verification, and rollout. Topic CRUD now uses the [shared business layer](docs/business-layer.md); the remaining plan is in progress and MCP is not yet implemented.
+The [OAuth MCP connector](docs/mcp.md) and [shared business layer](docs/business-layer.md) are implemented behind `MCP_ENABLED=false`. Assistants use OAuth, selected or all current/future publications, separate read/write/publish permissions, explicit social outlets, and durable draft jobs. See the [implementation plan](docs/plans/mcp-oauth-implementation.md) for verification and release gates; deployment and live consumer ChatGPT/Claude smoke tests remain pending.

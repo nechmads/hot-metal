@@ -32,6 +32,16 @@ Production domain: `hotmetalapp.com`
 
 ---
 
+## Shared BL and OAuth MCP
+
+Dashboard Clerk HTTP, Agents API-key REST and OAuth MCP in `apps/web` call the same transport-neutral BL. DAL retains SQL and authoritative grants; infrastructure adapts CMS, WriterAgent, publisher and scout. See [business-layer.md](business-layer.md) and [mcp.md](mcp.md).
+
+The cohosted Cloudflare provider owns `/oauth/*` and issuer discovery; `/mcp` is a stateless Streamable HTTP resource. Clerk authenticates custom publication/action/outlet consent. Provider KV is `OAUTH_KV` (Wrangler automatic provisioning); D1 migration 0023 adds connections, selected-publication membership and durable generation jobs. `GENERATION_WORKFLOW` binds `GenerationWorkflow`; callbacks retry independently. Scout queue/workflow payloads carry MCP origin references and use authenticated `/internal/scout/authorize` to recheck live grants.
+
+MCP defaults disabled. Same-client authorizations are independent; all means current/future owned publications. Narrowing/revocation/kill-switch enforcement lives in BL as well as token/resource handling. Deployment configuration and real consumer ChatGPT/Claude smoke checks remain pending.
+
+---
+
 ## Workspaces
 
 ### Apps

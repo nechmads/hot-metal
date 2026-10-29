@@ -6,7 +6,7 @@
  */
 
 import { Hono } from 'hono'
-import { topicBusinessErrorResponse } from '../../http/topics'
+import { businessErrorResponse } from '../../http/business-errors'
 import type { AppEnv } from '../../server'
 import { ActionError, QuotaExceededError } from '../../actions/errors'
 import { UPGRADE_EMAIL, logger, CmsApiError } from '@hotmetal/shared'
@@ -32,7 +32,7 @@ agentsApiV1.route('/', scout)
 
 // ─── Error handler for action errors ────────────────────────────────
 agentsApiV1.onError((err, c) => {
-	const businessResponse = topicBusinessErrorResponse(err, c, 'agents')
+	const businessResponse = businessErrorResponse(err, c, 'agents')
 	if (businessResponse) return businessResponse
 
 	if (err instanceof QuotaExceededError) {

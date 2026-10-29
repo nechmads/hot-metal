@@ -38,3 +38,6 @@ export {
   DEFAULT_SCHEDULE,
   DEFAULT_TIMEZONE,
 } from './types'
+
+export type { McpAction, McpOutlet, McpPublicationMode, McpConnectionState, McpConnection, CreateMcpConnectionInput, NarrowMcpConnectionInput } from './mcp'
+export { MCP_ACTIONS, MCP_OUTLETS, MCP_SCOPES } from './mcp'

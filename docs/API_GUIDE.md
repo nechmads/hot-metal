@@ -8,6 +8,8 @@
 > (served unauthenticated from `apps/web/src/agents-api/v1/openapi-spec.ts`).
 > Postman: `postman/Hot_Metal_Agents_API.postman_collection.json`.
 
+For consumer assistants, the separate [OAuth MCP connector](mcp.md) uses the same BL with publication grants. Its [HTTP/OpenAPI contract](mcp-openapi.json) and [Postman collection](../postman/Hot_Metal_MCP.postman_collection.json) cover consent, connection management and OAuth. MCP defaults disabled pending release checks.
+
 ## Basics
 
 | | |
@@ -29,7 +31,7 @@ Error codes: `VALIDATION_ERROR` (400), `NOT_FOUND` (404), `FORBIDDEN` (403),
 `upgradeEmail`), `INVALID_JSON` (400), `CMS_NOT_READY` (409),
 `CMS_UNAVAILABLE` (502), `CMS_ERROR` (502, the CMS is unreachable),
 `CMS_REQUEST_REJECTED` (500, the CMS refused the write — report it),
-`INTERNAL_ERROR` (500).
+`INTERNAL_ERROR` (500), `RATE_LIMITED` (429), `PAYLOAD_TOO_LARGE` (413), `SERVICE_UNAVAILABLE` (503), `BAD_GATEWAY` (502), `PUBLISH_UNKNOWN` (502). A `PUBLISH_UNKNOWN` outcome requires checking the publication before retrying.
 
 Requests without a valid `Bearer hm_` key get 401.
 
@@ -143,8 +145,8 @@ yourself is free to store.
 
 Both topic HTTP surfaces now call the same business-layer operations. Ownership,
 current-tier quota checks, trimming/defaults, and semantic field validation are
-shared; each surface preserves its established response format. This change does
-not introduce MCP or OAuth access.
+shared; each surface preserves its established response format. OAuth MCP now
+uses these same operations with live publication/action grants; see [the connector guide](mcp.md).
 
 | Surface | Base URL | Authentication |
 |---|---|---|
@@ -288,7 +290,7 @@ EmDash instance — see `docs/emdash-integration-guide.md` for that split.
 | `POST` | `/sessions/{id}/publish` | Publish a generated draft (and optionally syndicate). |
 | `POST` | `/publications/{id}/scout/run` | Trigger the content scout now. |
 
-Full request/response schemas for all of these live in the OpenAPI document.
+Full request/response schemas for all of these live in the OpenAPI document. Scout completion webhooks are unsupported: its legacy `webhookUrl` field is accepted/validated but does not deliver results. Omit it; query ideas after submission.
 
 ## Templates
 
@@ -483,3 +485,21 @@ Responses: `200 {"received":true}`; missing signature headers return
 bodies return `400 {"error":"Invalid signature"}`; missing server configuration
 returns `500 {"error":"Webhook not configured"}`. Notification delivery failure
 is logged and acknowledged with 200 to preserve the existing retry contract.
+
+## Generation durability and idempotency
+
+`POST /publications/{id}/drafts/generate` accepts JSON `title` and `instructions` (required), optional `styleId`, `autoPublish` (default false), `webhookUrl`, and `idempotencyKey`. Without a webhook it remains synchronous and returns `{data:{sessionId,draft,status}}`. With a validated public HTTPS webhook it durably submits to `GenerationWorkflow` and preserves HTTP202 `{data:{sessionId,status:"generating"}}`. The session ID also identifies the persisted job. The existing `GET /sessions/{id}` and `GET /sessions/{id}/drafts/{version}` retrieve results; no new public REST job-status path is added.
+
+Supply a stable `idempotencyKey` (1–200 characters) when retrying asynchronous submissions. Same key and input recovers the original handle; different input with that key returns409 `CONFLICT`. If omitted, the REST adapter generates a fresh key; retrying without a key can create a new request. Synchronous generation does not use the durable reservation/idempotency mechanism. Callback delivery retries separately from generation and publishing.
+
+```bash
+curl -X POST "https://hotmetalapp.com/agents-api/v1/publications/$PUB_ID/drafts/generate" \
+  -H "Authorization: Bearer $HM_API_KEY" -H 'Content-Type: application/json' \
+  -d '{"title":"Shipping on Cloudflare","instructions":"Explain the architecture with sources.","autoPublish":false,"webhookUrl":"https://example.org/hooks/drafts","idempotencyKey":"cloudflare-draft-1"}'
+```
+
+Interrupted generation is observable as a failed job; ambiguous publication becomes `publish_unknown` and is never automatically repeated. Inspect saved drafts and the actual CMS before submitting new publication work. Blog success/social failure remains a partial outcome. Shared writer errors retain validation400, missingdraft404, oversizedbody413 and busy429 semantics. Invalid draft-version path values are rejected rather than partially parsed. For states and recovery see [MCP generation](mcp.md#durable-generation-and-recovery).
+
+## Assistant connection management (Clerk)
+
+These routes are separate from API-key `/agents-api/v1`. Full method/path, headers, fields, examples and errors are documented in [MCP HTTP endpoints](mcp.md#http-endpoints): consent GET/POST `/api/mcp/consent/{id}`, list `/api/mcp/connections`, PATCH/DELETE `/api/mcp/connections/{id}`, and service-only POST `/internal/scout/authorize`. Mutations require same-origin `Origin`; narrowing requires `expectedPolicyVersion` and never expands access. OAuth discovery/authorize/register/token and Streamable HTTP `/mcp` are described there too.

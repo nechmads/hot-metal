@@ -1,47 +1,54 @@
 import { Hono } from 'hono'
 import type { ScoutEnv, ScoutQueueMessage } from './env'
 import { ScoutWorkflow } from './workflow'
+import { parseScoutOrigin } from './authorization'
 import { computeNextRun, logger, flushLogs } from '@hotmetal/shared'
 
 const app = new Hono<{ Bindings: ScoutEnv }>()
 
 // Flush Axiom logs after each request
 app.use('*', async (c, next) => {
-  await next()
-  c.executionCtx.waitUntil(flushLogs())
+	await next()
+	c.executionCtx.waitUntil(flushLogs())
 })
 
 // API key auth middleware for manual trigger routes
 app.use('/api/*', async (c, next) => {
-  const authHeader = c.req.header('Authorization')
-  const expected = c.env.API_KEY
-  if (!expected || !authHeader || authHeader !== `Bearer ${expected}`) {
-    return c.json({ error: 'Unauthorized' }, 401)
-  }
-  return next()
+	const authHeader = c.req.header('Authorization')
+	const expected = c.env.API_KEY
+	if (!expected || !authHeader || authHeader !== `Bearer ${expected}`) {
+		return c.json({ error: 'Unauthorized' }, 401)
+	}
+	return next()
 })
 
 // Manual trigger: run scout for a single publication (no next_scout_at change)
 app.post('/api/scout/run', async (c) => {
-  const { publicationId } = await c.req.json<{ publicationId: string }>()
-  if (!publicationId) return c.json({ error: 'publicationId is required' }, 400)
+	const { publicationId, origin: rawOrigin } = await c.req.json<{ publicationId: string; origin?: unknown }>()
+	let origin
+	try {
+		origin = parseScoutOrigin(rawOrigin)
+	} catch {
+		return c.json({ error: 'Invalid MCP origin' }, 400)
+	}
+	if (!publicationId) return c.json({ error: 'publicationId is required' }, 400)
 
-  await c.env.SCOUT_QUEUE.send({ publicationId, triggeredBy: 'manual' })
-  return c.json({ queued: true, publicationId })
+	await c.env.SCOUT_QUEUE.send({ publicationId, triggeredBy: 'manual', ...(origin ? { origin } : {}) })
+	return c.json({ queued: true, publicationId })
 })
 
 // Manual trigger: run scout for all publications (no next_scout_at change)
 app.post('/api/scout/run-all', async (c) => {
-  const count = await enqueueAllPublications(c.env)
-  return c.json({ queued: true, count })
+	const count = await enqueueAllPublications(c.env)
+	return c.json({ queued: true, count })
 })
 
 // Admin: list ideas for a publication (ordered by created_at DESC)
 app.get('/api/ideas/:publicationId', async (c) => {
-  const publicationId = c.req.param('publicationId')
-  const status = c.req.query('status') as import('@hotmetal/content-core').IdeaStatus | undefined
-  const ideas = await c.env.DAL.listIdeasByPublication(publicationId, status ? { status } : undefined)
-  return c.json({ data: ideas, count: ideas.length })
+	const publicationId = c.req.param('publicationId')
+	const status = c.req.query('status') as import('@hotmetal/content-core').IdeaStatus | undefined
+	const ideas = await c.env.DAL.listIdeasByPublication(publicationId, status ? { status } : undefined)
+	return c.json({ data: ideas, count: ideas.length })
 })
 
 // Health check (no auth required)
@@ -49,71 +56,73 @@ app.get('/health', (c) => c.json({ status: 'ok', service: 'content-scout' }))
 
 // TODO: Remove after debugging auth issue
 app.get('/debug/auth', (c) => {
-  const apiKey = c.env.API_KEY
-  const authHeader = c.req.header('Authorization')
-  const expected = `Bearer ${apiKey}`
-  return c.json({
-    apiKeySet: !!apiKey,
-    apiKeyLength: apiKey?.length ?? 0,
-    authHeaderPresent: !!authHeader,
-    authHeaderLength: authHeader?.length ?? 0,
-    expectedLength: expected.length,
-    match: authHeader === expected,
-  })
+	const apiKey = c.env.API_KEY
+	const authHeader = c.req.header('Authorization')
+	const expected = `Bearer ${apiKey}`
+	return c.json({
+		apiKeySet: !!apiKey,
+		apiKeyLength: apiKey?.length ?? 0,
+		authHeaderPresent: !!authHeader,
+		authHeaderLength: authHeader?.length ?? 0,
+		expectedLength: expected.length,
+		match: authHeader === expected,
+	})
 })
 
 export { ScoutWorkflow }
 
 export default {
-  fetch: app.fetch,
+	fetch: app.fetch,
 
-  // Hourly cron — enqueue publications whose next_scout_at has passed
-  async scheduled(_event: ScheduledEvent, env: ScoutEnv, ctx: ExecutionContext) {
-    const log = logger('content-scout')
-    log.info('Scout cron tick started', { component: 'cron' })
-    ctx.waitUntil((async () => {
-      try {
-        await backfillNullSchedules(env)
-        const count = await enqueueDuePublications(env)
-        log.info(`Scout cron tick complete`, { component: 'cron', publicationsEnqueued: count })
-      } catch (err) {
-        log.error('Scout cron tick failed', {
-          component: 'cron',
-          error: err instanceof Error ? err.message : String(err),
-        })
-      } finally {
-        await flushLogs()
-      }
-    })())
-  },
+	// Hourly cron — enqueue publications whose next_scout_at has passed
+	async scheduled(_event: ScheduledEvent, env: ScoutEnv, ctx: ExecutionContext) {
+		const log = logger('content-scout')
+		log.info('Scout cron tick started', { component: 'cron' })
+		ctx.waitUntil(
+			(async () => {
+				try {
+					await backfillNullSchedules(env)
+					const count = await enqueueDuePublications(env)
+					log.info(`Scout cron tick complete`, { component: 'cron', publicationsEnqueued: count })
+				} catch (err) {
+					log.error('Scout cron tick failed', {
+						component: 'cron',
+						error: err instanceof Error ? err.message : String(err),
+					})
+				} finally {
+					await flushLogs()
+				}
+			})(),
+		)
+	},
 
-  // Queue consumer — start a workflow per publication
-  async queue(batch: MessageBatch<ScoutQueueMessage>, env: ScoutEnv) {
-    const log = logger('content-scout')
-    log.info(`Processing batch of ${batch.messages.length} message(s)`, { component: 'queue' })
-    for (const message of batch.messages) {
-      const { publicationId, triggeredBy } = message.body
+	// Queue consumer — start a workflow per publication
+	async queue(batch: MessageBatch<ScoutQueueMessage>, env: ScoutEnv) {
+		const log = logger('content-scout')
+		log.info(`Processing batch of ${batch.messages.length} message(s)`, { component: 'queue' })
+		for (const message of batch.messages) {
+			const { publicationId, triggeredBy, origin } = message.body
 
-      try {
-        const workflowId = `scout-${publicationId}-${crypto.randomUUID()}`
-        log.info(`Starting workflow ${workflowId}`, { component: 'queue', publicationId, triggeredBy })
-        await env.SCOUT_WORKFLOW.create({
-          id: workflowId,
-          params: { publicationId, triggeredBy },
-        })
-        message.ack()
-      } catch (err) {
-        log.error(`Failed to start workflow for publication ${publicationId}`, {
-          component: 'queue',
-          publicationId,
-          error: err instanceof Error ? err.message : String(err),
-        })
-        message.retry()
-      }
-    }
+			try {
+				const workflowId = `scout-${publicationId}-${crypto.randomUUID()}`
+				log.info(`Starting workflow ${workflowId}`, { component: 'queue', publicationId, triggeredBy })
+				await env.SCOUT_WORKFLOW.create({
+					id: workflowId,
+					params: { publicationId, triggeredBy, ...(origin ? { origin } : {}) },
+				})
+				message.ack()
+			} catch (err) {
+				log.error(`Failed to start workflow for publication ${publicationId}`, {
+					component: 'queue',
+					publicationId,
+					error: err instanceof Error ? err.message : String(err),
+				})
+				message.retry()
+			}
+		}
 
-    await flushLogs()
-  },
+		await flushLogs()
+	},
 }
 
 const QUEUE_BATCH_SIZE = 100
@@ -122,24 +131,24 @@ const QUEUE_BATCH_SIZE = 100
  * Backfill next_scout_at for publications that have NULL (e.g. after migration).
  */
 async function backfillNullSchedules(env: ScoutEnv): Promise<void> {
-  const pubs = await env.DAL.getPublicationsWithNullSchedule()
-  if (pubs.length === 0) return
+	const pubs = await env.DAL.getPublicationsWithNullSchedule()
+	if (pubs.length === 0) return
 
-  const log = logger('content-scout')
-  log.info(`Found ${pubs.length} publication(s) with NULL next_scout_at`, { component: 'backfill', count: pubs.length })
+	const log = logger('content-scout')
+	log.info(`Found ${pubs.length} publication(s) with NULL next_scout_at`, { component: 'backfill', count: pubs.length })
 
-  for (const pub of pubs) {
-    const nextRun = computeNextRun(pub.scoutSchedule, pub.timezone)
-    log.info('Backfilling publication schedule', {
-      component: 'backfill',
-      publicationId: pub.id,
-      schedule: pub.scoutSchedule,
-      timezone: pub.timezone,
-      nextRun: new Date(nextRun * 1000).toISOString(),
-    })
+	for (const pub of pubs) {
+		const nextRun = computeNextRun(pub.scoutSchedule, pub.timezone)
+		log.info('Backfilling publication schedule', {
+			component: 'backfill',
+			publicationId: pub.id,
+			schedule: pub.scoutSchedule,
+			timezone: pub.timezone,
+			nextRun: new Date(nextRun * 1000).toISOString(),
+		})
 
-    await env.DAL.updatePublicationNextScoutAt(pub.id, nextRun)
-  }
+		await env.DAL.updatePublicationNextScoutAt(pub.id, nextRun)
+	}
 }
 
 /**
@@ -149,35 +158,35 @@ async function backfillNullSchedules(env: ScoutEnv): Promise<void> {
  * crash window where a pub could be advanced but not enqueued.
  */
 async function enqueueDuePublications(env: ScoutEnv): Promise<number> {
-  const log = logger('content-scout')
-  const now = Math.floor(Date.now() / 1000)
-  log.info('Checking for due publications', { component: 'enqueue', now: new Date(now * 1000).toISOString() })
+	const log = logger('content-scout')
+	const now = Math.floor(Date.now() / 1000)
+	log.info('Checking for due publications', { component: 'enqueue', now: new Date(now * 1000).toISOString() })
 
-  const pubs = await env.DAL.getDuePublications(now)
-  if (pubs.length === 0) {
-    log.info('No publications due', { component: 'enqueue' })
-    return 0
-  }
+	const pubs = await env.DAL.getDuePublications(now)
+	if (pubs.length === 0) {
+		log.info('No publications due', { component: 'enqueue' })
+		return 0
+	}
 
-  log.info(`Found ${pubs.length} due publication(s)`, { component: 'enqueue', count: pubs.length })
+	log.info(`Found ${pubs.length} due publication(s)`, { component: 'enqueue', count: pubs.length })
 
-  for (const pub of pubs) {
-    const nextRun = computeNextRun(pub.scoutSchedule, pub.timezone)
+	for (const pub of pubs) {
+		const nextRun = computeNextRun(pub.scoutSchedule, pub.timezone)
 
-    log.info('Advancing next_scout_at and enqueuing publication', {
-      component: 'enqueue',
-      publicationId: pub.id,
-      nextScoutAt: new Date(nextRun * 1000).toISOString(),
-    })
+		log.info('Advancing next_scout_at and enqueuing publication', {
+			component: 'enqueue',
+			publicationId: pub.id,
+			nextScoutAt: new Date(nextRun * 1000).toISOString(),
+		})
 
-    // Optimistic update BEFORE enqueue to prevent double-enqueue
-    await env.DAL.updatePublicationNextScoutAt(pub.id, nextRun)
+		// Optimistic update BEFORE enqueue to prevent double-enqueue
+		await env.DAL.updatePublicationNextScoutAt(pub.id, nextRun)
 
-    // Enqueue immediately after update
-    await env.SCOUT_QUEUE.send({ publicationId: pub.id, triggeredBy: 'cron' })
-  }
+		// Enqueue immediately after update
+		await env.SCOUT_QUEUE.send({ publicationId: pub.id, triggeredBy: 'cron' })
+	}
 
-  return pubs.length
+	return pubs.length
 }
 
 /**
@@ -185,15 +194,13 @@ async function enqueueDuePublications(env: ScoutEnv): Promise<number> {
  * Does NOT modify next_scout_at.
  */
 async function enqueueAllPublications(env: ScoutEnv): Promise<number> {
-  const pubIds = await env.DAL.getAllPublicationIds()
-  if (pubIds.length === 0) return 0
+	const pubIds = await env.DAL.getAllPublicationIds()
+	if (pubIds.length === 0) return 0
 
-  for (let i = 0; i < pubIds.length; i += QUEUE_BATCH_SIZE) {
-    const batch = pubIds.slice(i, i + QUEUE_BATCH_SIZE)
-    await env.SCOUT_QUEUE.sendBatch(
-      batch.map((id) => ({ body: { publicationId: id, triggeredBy: 'manual' as const } })),
-    )
-  }
+	for (let i = 0; i < pubIds.length; i += QUEUE_BATCH_SIZE) {
+		const batch = pubIds.slice(i, i + QUEUE_BATCH_SIZE)
+		await env.SCOUT_QUEUE.sendBatch(batch.map((id) => ({ body: { publicationId: id, triggeredBy: 'manual' as const } })))
+	}
 
-  return pubIds.length
+	return pubIds.length
 }

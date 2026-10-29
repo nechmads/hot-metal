@@ -86,7 +86,9 @@ function isPrivateIPv6(hostname: string): boolean {
   if (lower === '::1') return true
 
   // IPv4-mapped IPv6 (::ffff:x.x.x.x) — extract and check the IPv4 part
-  const v4MappedMatch = lower.match(/^::ffff:(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})$/)
+  const v4MappedMatch = lower.match(
+    /^::ffff:(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})$/,
+  )
   if (v4MappedMatch) {
     return isPrivateIPv4(v4MappedMatch[1])
   }
@@ -112,7 +114,9 @@ export function validateWebhookUrl(url: string): void {
   }
 
   if (url.length > MAX_URL_LENGTH) {
-    throw new Error(`Webhook URL exceeds maximum length of ${MAX_URL_LENGTH} characters`)
+    throw new Error(
+      `Webhook URL exceeds maximum length of ${MAX_URL_LENGTH} characters`,
+    )
   }
 
   let parsed: URL
@@ -134,7 +138,9 @@ export function validateWebhookUrl(url: string): void {
 
   for (const suffix of BLOCKED_HOSTNAME_SUFFIXES) {
     if (hostname.endsWith(suffix)) {
-      throw new Error(`Webhook URL must not point to an internal hostname (${suffix})`)
+      throw new Error(
+        `Webhook URL must not point to an internal hostname (${suffix})`,
+      )
     }
   }
 
@@ -181,14 +187,15 @@ async function sign(body: string, secret: string): Promise<string> {
  *
  * - Signs the JSON body with HMAC-SHA256 (`X-HotMetal-Signature` header).
  * - Retries up to 3 times on non-2xx responses or network errors
- *   with backoff delays of 5 s, 30 s, 120 s.
- * - Logs errors via structured logger but **never throws** — webhook delivery
- *   must not crash the calling operation.
+ *   with backoff delays of 1 s and 3 s.
+ * - Logs exhausted delivery; callers can opt into throwing so durable runtimes retry
+ *   delivery independently of the operation that produced the webhook.
  */
 export async function deliverWebhook(
   webhookUrl: string,
   payload: WebhookPayload,
   signingSecret: string,
+  options: { throwOnExhaustion?: boolean } = {},
 ): Promise<void> {
   try {
     const body = JSON.stringify(payload)
@@ -197,20 +204,26 @@ export async function deliverWebhook(
     for (let attempt = 0; attempt < MAX_ATTEMPTS; attempt++) {
       try {
         const controller = new AbortController()
-        const timeoutId = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS)
+        const timeoutId = setTimeout(
+          () => controller.abort(),
+          REQUEST_TIMEOUT_MS,
+        )
 
-        const response = await fetch(webhookUrl, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'User-Agent': 'HotMetal-Webhook/1.0',
-            'X-HotMetal-Signature': signature,
-          },
-          body,
-          signal: controller.signal,
-        })
-
-        clearTimeout(timeoutId)
+        let response: Response
+        try {
+          response = await fetch(webhookUrl, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'User-Agent': 'HotMetal-Webhook/1.0',
+              'X-HotMetal-Signature': signature,
+            },
+            body,
+            signal: controller.signal,
+          })
+        } finally {
+          clearTimeout(timeoutId)
+        }
 
         if (response.ok) {
           return
@@ -236,7 +249,9 @@ export async function deliverWebhook(
 
       // Wait before retrying (skip delay after last attempt)
       if (attempt < MAX_ATTEMPTS - 1) {
-        await new Promise((resolve) => setTimeout(resolve, RETRY_DELAYS_MS[attempt]))
+        await new Promise((resolve) =>
+          setTimeout(resolve, RETRY_DELAYS_MS[attempt]),
+        )
       }
     }
 
@@ -245,8 +260,11 @@ export async function deliverWebhook(
       maxAttempts: MAX_ATTEMPTS,
       url: webhookUrl,
     })
+    if (options.throwOnExhaustion)
+      throw new Error('Webhook delivery exhausted all attempts')
   } catch (err) {
-    // Catch-all: signing failures or unexpected errors must not propagate
+    if (options.throwOnExhaustion) throw err
+    // Legacy best-effort callers log signing or unexpected failures.
     logger('shared').error('Webhook delivery unexpected error', {
       operation: 'deliverWebhook',
       error: err instanceof Error ? err : new Error(String(err)),

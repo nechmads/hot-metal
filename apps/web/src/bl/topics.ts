@@ -3,7 +3,8 @@ import { getTierLimits, isUnlimited } from '@hotmetal/shared'
 import type { AuthenticatedCaller } from './caller'
 import {
   requireAuthenticatedUser,
-  requireOwnedPublication,
+  authorizePublication,
+  authorizeAction,
   type AuthorizationDependencies,
 } from './authorization'
 import {
@@ -71,10 +72,10 @@ export async function listTopics(
   publicationId: string,
   dependencies: TopicDependencies,
 ): Promise<Topic[]> {
-  const user = await requireAuthenticatedUser(caller, dependencies)
-  const publication = await requireOwnedPublication(
-    user.id,
+  const publication = await authorizePublication(
+    caller,
     publicationId,
+    'read',
     dependencies,
   )
   return dependencies.topics.listByPublication(publication.id)
@@ -86,9 +87,10 @@ export async function createTopic(
   dependencies: TopicDependencies,
 ): Promise<Topic> {
   const user = await requireAuthenticatedUser(caller, dependencies)
-  const publication = await requireOwnedPublication(
-    user.id,
+  const publication = await authorizePublication(
+    caller,
     command.publicationId,
+    'write',
     dependencies,
   )
   const limit = getTierLimits(user.tier).topicsPerPublication
@@ -118,10 +120,15 @@ export async function updateTopic(
   command: UpdateTopicCommand,
   dependencies: TopicDependencies,
 ): Promise<Topic | null> {
-  const user = await requireAuthenticatedUser(caller, dependencies)
+  await authorizeAction(caller, 'write', dependencies)
   const existing = await dependencies.topics.getById(topicId)
   if (!existing) throw new ResourceNotFoundError('topic')
-  await requireOwnedPublication(user.id, existing.publicationId, dependencies)
+  await authorizePublication(
+    caller,
+    existing.publicationId,
+    'write',
+    dependencies,
+  )
 
   validatePriority(command.priority)
   const name = optionalText(command.name, 'name')
@@ -149,9 +156,14 @@ export async function deleteTopic(
   topicId: string,
   dependencies: TopicDependencies,
 ): Promise<void> {
-  const user = await requireAuthenticatedUser(caller, dependencies)
+  await authorizeAction(caller, 'write', dependencies)
   const existing = await dependencies.topics.getById(topicId)
   if (!existing) throw new ResourceNotFoundError('topic')
-  await requireOwnedPublication(user.id, existing.publicationId, dependencies)
+  await authorizePublication(
+    caller,
+    existing.publicationId,
+    'write',
+    dependencies,
+  )
   await dependencies.topics.delete(existing.id)
 }

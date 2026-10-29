@@ -2220,10 +2220,10 @@
                 "generate"
               ]
             },
-            "description": "Instructs the AI writer agent to generate a draft for the publication. Without `webhookUrl` the call blocks until the draft is ready (synchronous). With `webhookUrl` the call returns 202 immediately and delivers the result via webhook (asynchronous).",
+            "description": "Instructs the AI writer agent to generate a draft for the publication. Without `webhookUrl` the call blocks until the draft is ready (synchronous). With `webhookUrl` the call returns 202 immediately and delivers the result via webhook (asynchronous).\n\nWebhook mode durably submits via Workflow. Optional idempotencyKey (1\u2013200characters) recovers the same session for identical input; changed input returns409. Without it, retries create fresh reservations. Callback retries never repeat generation. Synchronous mode remains blocking and does not reserve the key.",
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"title\": \"What I learned shipping a CMS migration\",\n  \"instructions\": \"Cover the trade-offs and cite primary sources.\",\n  \"styleId\": \"{{publicationId}}\",\n  \"autoPublish\": false,\n  \"webhookUrl\": \"https://example.com\"\n}",
+              "raw": "{\n  \"title\": \"What I learned shipping a CMS migration\",\n  \"instructions\": \"Cover the trade-offs and cite primary sources.\",\n  \"styleId\": \"{{publicationId}}\",\n  \"autoPublish\": false,\n  \"webhookUrl\": \"https://example.com\",\n  \"idempotencyKey\": \"draft-example-1\"\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -2556,10 +2556,10 @@
                 "run"
               ]
             },
-            "description": "Triggers the content scout to find new content ideas for the publication. Runs asynchronously. Optionally sends results to a webhook URL.",
+            "description": "Queue content scouting for the authorized publication. The optional legacy webhookUrl field is accepted/validated but completion callbacks are unsupported; omit it and query ideas after submission.",
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"webhookUrl\": \"https://example.com\"\n}",
+              "raw": "{}",
               "options": {
                 "raw": {
                   "language": "json"
