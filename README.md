@@ -162,3 +162,7 @@ Environments:
 ## Dependency upgrades
 
 The October 2026 package baseline, compatibility exceptions, and EmDash rollout procedure are documented in [docs/dependency-upgrades.md](docs/dependency-upgrades.md).
+
+## MCP and business-layer plan
+
+The [OAuth MCP implementation plan](docs/plans/mcp-oauth-implementation.md) describes the proposed shared business layer, thin API/MCP adapters, publication grants, verification, and rollout. It is a draft; MCP is not implemented.
