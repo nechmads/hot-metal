@@ -1,3 +1,5 @@
+> Historical reference: superseded on 2026-10-29. Astro 7.4.4 includes the upstream workerd stream adaptation, and the local Astro 6 patch has been removed. See [dependency upgrades](dependency-upgrades.md).
+
 # Astro SSR on Workers renders `[object Object]` — the `isNode` patch
 
 **Status:** patched via `patches/astro@6.4.6.patch` (pnpm `patchedDependencies`).

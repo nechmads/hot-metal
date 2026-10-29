@@ -109,7 +109,7 @@ CLOUDFLARE_ACCOUNT_ID=<acct> pnpm --filter @hotmetal/provisioner release-bundle 
 # 2) Read the fleet plan. Resolve metadata failures and choose one canary.
 curl -X POST "$PROVISIONER_URL/api/fleet/upgrade/plan" \
   -H "Authorization: Bearer $API_KEY" -H 'Content-Type: application/json' \
-  -d '{"all":true,"version":"emdash-1.0.1-hotmetal.566dbe5dddda"}'
+  -d '{"all":true,"version":"emdash-1.3.1-hotmetal.1256e6e3111d"}'
 
 # 3) Create the canary's D1 + R2 recovery points when the plan requires them,
 #    then record their references in the mutating request.
@@ -117,7 +117,7 @@ curl -X POST "$PROVISIONER_URL/api/fleet/upgrade" \
   -H "Authorization: Bearer $API_KEY" -H 'Content-Type: application/json' \
   -d '{
     "publicationIds": ["<publication-id>"],
-    "version": "emdash-1.0.1-hotmetal.566dbe5dddda",
+    "version": "emdash-1.3.1-hotmetal.1256e6e3111d",
     "migrationBackups": {
       "<publication-id>": {
         "d1": "time-travel:<timestamp-or-bookmark>",

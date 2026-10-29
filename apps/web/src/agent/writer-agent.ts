@@ -6,13 +6,14 @@ import {
   createUIMessageStreamResponse,
   generateText,
   streamText,
-  stepCountIs,
+  toUIMessageStream,
+  isStepCount,
   wrapLanguageModel,
-  type StreamTextOnFinishCallback,
+  type GenerateTextOnEndCallback,
   type ToolSet,
 } from "ai";
-import type { LanguageModelV3 } from "@ai-sdk/provider";
-import type { Connection, WSMessage } from "partyserver";
+import type { LanguageModelV4 } from "@ai-sdk/provider";
+import type { Connection, WSMessage } from "agents";
 import {
   type WriterAgentState,
   type WritingPhase,
@@ -105,7 +106,7 @@ export class WriterAgent extends AIChatAgent<Env, WriterAgentState> {
     modelId: string,
     featureName: string,
     trigger: "user" | "scout" = "user",
-  ): Promise<LanguageModelV3> {
+  ): Promise<LanguageModelV4> {
     const userTier = await this.getUserTier();
     return wrapLanguageModel({
       model: anthropic(modelId),
@@ -213,7 +214,7 @@ export class WriterAgent extends AIChatAgent<Env, WriterAgentState> {
   }
 
   async onChatMessage(
-    onFinish: StreamTextOnFinishCallback<ToolSet>,
+    onFinish: GenerateTextOnEndCallback<ToolSet>,
     options?: { abortSignal?: AbortSignal },
   ) {
     let systemPrompt: string;
@@ -241,20 +242,18 @@ export class WriterAgent extends AIChatAgent<Env, WriterAgentState> {
         try {
           const result = streamText({
             model,
-            system: systemPrompt,
+            instructions: systemPrompt,
             messages: await convertToModelMessages(cleaned),
             tools,
-            stopWhen: stepCountIs(20),
+            stopWhen: isStepCount(20),
             abortSignal: options?.abortSignal,
-            onFinish: async (event) => {
+            onEnd: async (event) => {
               this.setState({
                 ...this.state,
                 isGenerating: false,
                 lastError: null,
               });
-              await (
-                onFinish as unknown as StreamTextOnFinishCallback<typeof tools>
-              )(event);
+              await onFinish(event);
             },
             onError: (error) => {
               logger("web").error("onChatMessage stream error", { component: "writer-agent", error: error instanceof Error ? error.message : String(error) });
@@ -267,7 +266,7 @@ export class WriterAgent extends AIChatAgent<Env, WriterAgentState> {
             },
           });
 
-          writer.merge(result.toUIMessageStream());
+          writer.merge(toUIMessageStream({ stream: result.stream, tools }));
         } catch (error) {
           logger("web").error("onChatMessage stream execute failed", { component: "writer-agent", error: error instanceof Error ? error.message : String(error) });
           this.setState({
@@ -420,10 +419,10 @@ export class WriterAgent extends AIChatAgent<Env, WriterAgentState> {
       const modelMessages = await convertToModelMessages(currentMessages);
       const result = await generateText({
         model: chatModel,
-        system: systemPrompt,
+        instructions: systemPrompt,
         messages: modelMessages,
         tools,
-        stopWhen: stepCountIs(20),
+        stopWhen: isStepCount(20),
       });
 
       this.setState({ ...this.state, isGenerating: false });
@@ -498,10 +497,10 @@ export class WriterAgent extends AIChatAgent<Env, WriterAgentState> {
       const autoWriteModel = await this.trackedModel("claude-sonnet-5", "auto_write", "scout");
       const result = await generateText({
         model: autoWriteModel,
-        system: systemPrompt,
+        instructions: systemPrompt,
         messages: [{ role: "user", content: instruction }],
         tools,
-        stopWhen: stepCountIs(30),
+        stopWhen: isStepCount(30),
         abortSignal: abortController.signal,
       });
 

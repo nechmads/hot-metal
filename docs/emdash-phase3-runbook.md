@@ -146,7 +146,7 @@ CLOUDFLARE_ACCOUNT_ID=<acct> pnpm --filter @hotmetal/provisioner release-bundle 
 #    metadata entries before continuing.
 curl -X POST "$PROVISIONER_URL/api/fleet/upgrade/plan" \
   -H "Authorization: Bearer $PROVISIONER_API_KEY" -H 'Content-Type: application/json' \
-  -d '{"all":true,"version":"emdash-1.0.1-hotmetal.566dbe5dddda"}'
+  -d '{"all":true,"version":"emdash-1.3.1-hotmetal.1256e6e3111d"}'
 
 # 3) If required by the plan, create D1/R2 recovery points for the canary and
 #    include both references in the mutating request.
@@ -154,7 +154,7 @@ curl -X POST "$PROVISIONER_URL/api/fleet/upgrade" \
   -H "Authorization: Bearer $PROVISIONER_API_KEY" -H 'Content-Type: application/json' \
   -d '{
     "publicationIds": ["<publication-id>"],
-    "version": "emdash-1.0.1-hotmetal.566dbe5dddda",
+    "version": "emdash-1.3.1-hotmetal.1256e6e3111d",
     "migrationBackups": {
       "<publication-id>": {
         "d1": "time-travel:<timestamp-or-bookmark>",
@@ -182,13 +182,13 @@ the matching pre-migration D1 recovery point. Restore the R2 snapshot as well if
 state changed. Do not delete or edit EmDash migration-history rows and do not invent a
 down migration; EmDash migrations are forward-only.
 
-> **You need `API_KEY`, and it is write-only.** It exists as a `wrangler secret`
-> on the provisioner and as `PROVISIONER_API_KEY` on `apps/web`; neither can be
-> read back, and it is in no local file. Whoever runs a rollout must already
-> hold it (or rotate it on *both* workers together — rotating only one breaks
-> publication creation). Everything upstream of the call — build, `release-bundle`
-> — needs only `CF_API_TOKEN` from `services/provisioner/.dev.vars`, so a release
-> can be staged by someone who cannot perform the rollout.
+> **Rollout authentication.** The provisioner's `API_KEY` must match
+> `PROVISIONER_API_KEY` on `apps/web`. Deployed Worker secrets are write-only;
+> an operator must obtain the existing value through the deployment environment's
+> secret source. Do not assume a fresh worktree contains it, print it, or commit
+> it. If rotation is needed, rotate both workers together. Building and publishing
+> a release use `CF_API_TOKEN`; calling the fleet endpoints additionally needs
+> `API_KEY`.
 
 > **Scale note.** The batch is sequential and synchronous (matches `/api/teardown`).
 > That is fine up to a few dozen tenants; the per-request CPU/subrequest budget — each
@@ -262,3 +262,63 @@ curl -s -H "Authorization: Bearer $CF_API_TOKEN" \
 Delete only resources you can match to a specific dead publication id (script
 `pub-<id>` + `emdash-tenant/media/session-<id>`). Re-confirm the live instance(s)
 survive afterward.
+
+
+## October 2026 upgrade checks
+
+The tenant app now pins EmDash 1.3.1 and uses Astro 7.4.4. Before changing a tenant,
+inspect the exact build manifest with the installed CLI:
+
+```bash
+# From apps/emdash-blog. Credentials come from CLOUDFLARE_API_TOKEN.
+pnpm exec emdash migrate --status --json --d1 <tenant-database-uuid> \
+  --account-id <account-id>
+```
+
+Fail the rollout if the report names an unexpected target or unknown applied
+migrations. Back up each target's D1 and R2 first. For migrations that exceed
+Workers request limits, apply them with the same installed CLI and build manifest
+before deploying, supplying the reviewed `--expected-target-fingerprint` for a
+noninteractive apply. Recheck with `--check`; do not substitute a global CLI or
+another build's migration manifest. Small pending migrations can still use the
+fleet endpoint's boot-and-verify path. See [EmDash's current migration guide](https://docs.emdashcms.com/deployment/core-migrations/).
+
+The September 29 upgrade to 1.0.1 was deployed: the production inventory on
+October 29 found five ready tenants already on that release. Its PR's original
+pre-deployment note is not evidence of current production state.
+
+
+### Recovery points for databases with FTS5
+
+D1 SQL export rejects databases containing virtual tables, including EmDash's
+FTS5 search indexes. Use `wrangler d1 time-travel info <database-id> --json` to
+capture a recovery bookmark before migration. Record it with the exact database
+ID and prior immutable bundle; Time Travel recovery remains subject to the
+account's retention window. Never drop search tables to make an export work.
+For R2, copy every object and preserve an inventory; an empty bucket can be
+represented by a verified empty-inventory manifest in the private backup bucket.
+
+
+### Large assets and Worker memory
+
+The October 2026 release exposed an `exceededMemory` failure while uploading
+the 8.6 MiB admin asset. Keep base64 conversion native (`node:buffer`); a
+per-byte JavaScript string can consume far more memory than the raw asset.
+An upload can become live before a failed request records metadata: inspect the
+actual schema and tenant health, then retry the same immutable release with the
+original recovery references. Do not rerun bootstrap or rotate tokens to repair
+a rollout. Use single-tenant requests when investigating resource limits.
+
+
+### Recover an interrupted runtime migration
+
+An exhausted or cancelled provisioner invocation can leave an EmDash runtime
+migration lock behind. A later upload may succeed while the health check returns
+503. Read `emdash migrate --status --json` with the exact tenant database and
+paired build manifest. Confirm the prior invocation has stopped and that the lock
+and known-applied set are stable. On an `auto` site, use EmDash's atomic
+`--take-over-lock <reported-id> --expected-target-fingerprint <reviewed-fingerprint>`
+to apply the remaining forward migrations without a free-lock race. Then run
+`--check`, retry the same immutable fleet release, and recheck content and token
+hashes. Do not delete migration rows or rerun bootstrap. The October 29 recovery
+applied only `091_redirect_artifacts` on the affected tenant.

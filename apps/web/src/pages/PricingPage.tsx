@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router";
-import { useUser } from "@clerk/clerk-react";
+import { useUser } from "@clerk/react";
 import { CheckCircleIcon } from "@phosphor-icons/react";
 import { toast } from "sonner";
 import { PublicNavbar } from "@/components/public/PublicNavbar";

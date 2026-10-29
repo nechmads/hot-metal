@@ -7,7 +7,7 @@ interface __BaseEnv_Env {
 	DISPATCH_NAMESPACE: "hotmetal-emdash";
 	PUBLICATIONS_BASE_DOMAIN: "hotmetalapp.com";
 	ZONE_NAME: "hotmetalapp.com";
-	EMDASH_BUNDLE_VERSION: "emdash-1.0.1-hotmetal.566dbe5dddda";
+	EMDASH_BUNDLE_VERSION: "emdash-1.3.1-hotmetal.1256e6e3111d";
 	AXIOM_DATASET: "hotmetal-prod";
 	TURNSTILE_SITE_KEY: "0x4AAAAAACk8MjvpV7HFhXQ9";
 	DAL: Service /* entrypoint DataLayer from hotmetal-data-layer */;

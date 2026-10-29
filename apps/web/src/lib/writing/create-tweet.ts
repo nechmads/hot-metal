@@ -1,5 +1,5 @@
 import { generateText } from 'ai'
-import type { LanguageModelV3 } from '@ai-sdk/provider'
+import type { LanguageModelV4 } from '@ai-sdk/provider'
 import { logger } from '@hotmetal/shared'
 import type { DraftInput } from './index'
 
@@ -27,7 +27,7 @@ Return ONLY the tweet text. No labels, no quotes, no explanation.`
  * Leaves room for a t.co link (23 chars) — effective max is 257 chars.
  * Returns empty string on failure (non-blocking).
  */
-export async function createTweet(model: LanguageModelV3, draft: DraftInput, hook?: string): Promise<string> {
+export async function createTweet(model: LanguageModelV4, draft: DraftInput, hook?: string): Promise<string> {
   const contentPreview = draft.content.length > 3000
     ? draft.content.slice(0, 3000) + '\n\n[truncated]'
     : draft.content
@@ -41,7 +41,7 @@ export async function createTweet(model: LanguageModelV3, draft: DraftInput, hoo
   try {
     const result = await generateText({
       model,
-      system: TWEET_PROMPT,
+      instructions: TWEET_PROMPT,
       messages: [{ role: 'user', content: userContent }],
     })
 

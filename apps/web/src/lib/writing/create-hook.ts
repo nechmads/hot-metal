@@ -1,5 +1,5 @@
 import { generateText } from "ai";
-import type { LanguageModelV3 } from "@ai-sdk/provider";
+import type { LanguageModelV4 } from "@ai-sdk/provider";
 import { logger } from "@hotmetal/shared";
 import type { DraftInput } from "./index";
 
@@ -55,7 +55,7 @@ Given the blog post below, do the following:
  * Uses a multi-step scoring and polishing process for high-quality output.
  * Returns empty string on failure (non-blocking).
  */
-export async function createHook(model: LanguageModelV3, draft: DraftInput): Promise<string> {
+export async function createHook(model: LanguageModelV4, draft: DraftInput): Promise<string> {
   const contentPreview =
     draft.content.length > 4000
       ? draft.content.slice(0, 4000) + "\n\n[truncated]"
@@ -64,7 +64,7 @@ export async function createHook(model: LanguageModelV3, draft: DraftInput): Pro
   try {
     const result = await generateText({
       model,
-      system: HOOK_PROMPT,
+      instructions: HOOK_PROMPT,
       messages: [
         {
           role: "user",

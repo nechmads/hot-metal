@@ -14,14 +14,15 @@
     "deploy": "astro build && wrangler deploy"
   },
   "dependencies": {
-    "@astrojs/mdx": "^6.0.3",
-    "astro": "^6.4.6",
-    "wrangler": "^4.100.0"
+    "@astrojs/mdx": "^8.1.2",
+    "astro": "^7.4.4",
+    "wrangler": "^4.155.0"
   },
   "devDependencies": {
-    "@astrojs/check": "^0.9.9",
-    "@cloudflare/workers-types": "^4.20260613.1",
-    "@tailwindcss/vite": "^4.3.1",
-    "tailwindcss": "^4.3.1"
+    "@astrojs/check": "^0.9.12",
+    "@cloudflare/workers-types": "^5.20261029.1",
+    "@tailwindcss/vite": "^4.3.3",
+    "tailwindcss": "^4.3.3",
+    "typescript": "~6.0.3"
   }
 }

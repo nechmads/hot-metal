@@ -1,11 +1,11 @@
 import { generateText } from 'ai';
-import type { LanguageModelV3 } from '@ai-sdk/provider';
+import type { LanguageModelV4 } from '@ai-sdk/provider';
 import type { Publication, Topic } from '@hotmetal/data-layer';
 import { logger } from '@hotmetal/shared';
 import type { FilteredStory, IdeaBrief } from '../types';
 
 export async function generateIdeas(
-	model: LanguageModelV3,
+	model: LanguageModelV4,
 	publication: Publication,
 	filteredStories: FilteredStory[],
 	topics: Topic[],
@@ -13,7 +13,7 @@ export async function generateIdeas(
 	try {
 		const result = await generateText({
 			model,
-			system: buildIdeaSystemPrompt(publication),
+			instructions: buildIdeaSystemPrompt(publication),
 			messages: [
 				{
 					role: 'user',
