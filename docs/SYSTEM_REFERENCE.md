@@ -166,6 +166,8 @@ CMS endpoints: `GET/POST /posts`, `GET/PUT /posts/:id`, `GET/POST /publications`
 | `GET /public-api/reports/:id` | Analysis report (no auth) |
 | `* /internal/*` | Service-to-service (API key auth) |
 
+For migrated topic operations, dashboard and Agents HTTP adapters call the same transport-neutral BL under `apps/web/src/bl/`. Ownership, current-tier quota checks and semantic validation are shared; DAL persistence remains behind Service Bindings. Other capabilities are not yet migrated. See [shared business-layer documentation](business-layer.md).
+
 ### apps/web — Agents API (Hono, auth via `Bearer hm_*` API key)
 
 Public REST surface at `/agents-api/v1`, mounted separately from the Clerk-authed

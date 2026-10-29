@@ -9,7 +9,8 @@
     "build": "vite build && tsx --tsconfig tsconfig.prerender.json scripts/prerender.tsx",
     "deploy": "vite build && tsx --tsconfig tsconfig.prerender.json scripts/prerender.tsx && wrangler deploy",
     "typecheck": "tsc --noEmit",
-    "types": "wrangler types env.d.ts --include-runtime false"
+    "types": "wrangler types env.d.ts --include-runtime false",
+    "test": "vitest run"
   },
   "devDependencies": {
     "@cloudflare/vite-plugin": "1.66.0",
@@ -22,6 +23,7 @@
     "tsx": "^4.23.15",
     "typescript": "^7.0.2",
     "vite": "^8.3.5",
+    "vitest": "~5.0.5",
     "wrangler": "4.155.0"
   },
   "dependencies": {

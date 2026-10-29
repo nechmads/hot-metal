@@ -1,6 +1,6 @@
 # OAuth MCP and shared business layer — implementation plan
 
-**Status:** Draft; architecture, publication selection, and launch clients agreed. Open product and provider decisions are listed below. No implementation has started.
+**Status:** Draft; architecture, launch clients, and initial action/publication permissions agreed. Open product and provider decisions are listed below. Implementation has started with the independently shippable BL/topic extraction; OAuth/provider/client proof gates remain pending.
 **Updated:** 2026-10-29
 **Planning baseline:** `36dc118` (`origin/main` when this plan was written).
 **Related:** [API guide](../API_GUIDE.md), [system reference](../SYSTEM_REFERENCE.md), [authentication](../auth.md), [dependency baseline](../dependency-upgrades.md), [technical requirements](../../TECHNICAL_REQUIREMENTS.md).
@@ -19,7 +19,7 @@ Confirmed decisions:
 - Follow current Cloudflare MCP guidance and the exact installed SDK compatibility requirements.
 - Preserve existing REST paths, authentication, response envelopes, status codes, and documented behavior during extraction. Intentional contract changes must be explicit and documented.
 
-Proposed first release: read content/context, create and update authored posts and topics, generate drafts, retrieve generation progress/results, trigger scouting, and optionally publish. Separate publishing permission is a recommendation, not yet a user-approved decision. Publication creation/deletion, account administration, and arbitrary social-account management are proposed exclusions from MCP v1; existing REST support remains.
+Proposed first release: read content/context, create and update authored posts and topics, generate drafts, retrieve generation progress/results, trigger scouting, and optionally publish. The user approved separate read/write/publish permissions on 2026-10-29, all-publication access including future owned publications, deferring publication creation/deletion and recurring-automation changes from MCP v1, and explicit outlet consent for social publishing. Existing REST support remains. Account administration is outside this content-focused release.
 
 ## 2. Current implementation and extraction map
 
@@ -116,7 +116,11 @@ Cloudflare documents `OAuthAuthorizationServer` and `OAuthResourceServer`, Servi
 
 ### Provider/topology decision gate
 
-Preferred option to prove: Cloudflare Workers OAuth Provider handles MCP OAuth; existing Clerk authenticates the person approving Hot Metal's custom publication consent. Propose a dedicated authorization Worker (for example `services/mcp-auth`) with provider-owned storage and a Service Binding from web's MCP resource server. Keep the MCP tools and BL in web. Any authorization Worker must use the same connection BL/policy through a trusted boundary, not duplicate it. If it calls a web Worker RPC entrypoint for connection operations while web calls the authorization Worker for token validation, record both binding directions in Phase 0. Bootstrap by deploying web's trusted connection entrypoint with MCP disabled and without the not-yet-existing authorization binding, deploy the authorization Worker bound to that entrypoint, then deploy web with its authorization binding. Validate the entrypoint's trusted caller boundary; it must not expose user-selected identities or system privileges over public HTTP. A proven topology without reverse RPC is an alternative, not a reason to duplicate BL policy.
+Preferred option to prove: cohost Cloudflare `OAuthAuthorizationServer`, `OAuthResourceServer`, MCP and the existing BL in `apps/web`, using Clerk to authenticate the person approving custom consent. Current published Cloudflare Provider 1.2.4 supports local token validation between cohosted roles; use `authorizationServer.validateToken(resource, token, env)` rather than a Service Binding for this initial topology. This avoids a separate authorization Worker and circular deployment dependencies. Add provider-owned `OAUTH_KV` and the required runtime flag for fetching published client metadata. [Supported topologies](https://github.com/cloudflare/workers-oauth-provider/blob/main/docs/resource-servers.md).
+
+Technical research verified the published 1.2.4 declarations. `completeAuthorization()` returns `{ redirectTo }`, not a provider grant ID. Generate an application connection ID before completion and bind it in encrypted properties; use the provider's verified `tokenExchangeCallback` grant/client/user/resource fields to associate the provider grant. Never parse opaque tokens. Its default reauthorization replaces older grants for the same user/client/resource: define connection replacement and failure recovery explicitly. Remembered OAuth consent does not cover Hot Metal's publication selection, so it cannot bypass custom consent. D1 policy denial must enforce application revocation independently of provider KV propagation. These are researched contracts, not yet runtime proofs. [Provider API](https://github.com/cloudflare/workers-oauth-provider/blob/main/docs/authorization-server.md).
+
+If later evidence requires separate Workers, record both RPC/binding directions and a staged bootstrap sequence before deployment. Share the same connection BL through a trusted boundary rather than duplicating policy.
 
 Credible alternative: Clerk issues OAuth tokens directly, with a Hot Metal consent/grant flow that is cryptographically bound to the provider grant/client. This can reduce authorization infrastructure if the required customization, scope/audience checks, refresh, revocation and client compatibility are supported. [Clerk OAuth](https://clerk.com/docs/guides/configure/auth-strategies/oauth/how-clerk-implements-oauth), [Clerk MCP](https://clerk.com/docs/guides/ai/mcp/build-mcp-server).
 
@@ -157,12 +161,16 @@ Each coding subtask gets a focused review and relevant verification before movin
 
 ### Phase 1 — BL foundation and one complete capability
 
-- [ ] Add trusted caller contracts, transport-neutral results/errors, dependency wiring and centralized authorization entry points.
-- [ ] Extract topic operations as the first vertical slice: ownership, quotas, priority validation/defaults and persistence coordination.
-- [ ] Migrate both Agents API and overlapping dashboard topic handlers to those operations, preserving each HTTP contract.
-- [ ] Add direct BL tests (no Hono/MCP), route contract tests, and architecture checks preventing transport imports in BL. Add meaningful test scripts to the owning workspace.
+**Status: completed (2026-10-29).** Topic HTTP characterization, shared BL operations, both adapters and focused review are complete. This foundation work is independent of unresolved OAuth proof gates; no public MCP is enabled by it.
+
+- [x] Add trusted caller contracts, transport-neutral results/errors, dependency wiring and centralized authorization entry points.
+- [x] Extract topic operations as the first vertical slice: ownership, quotas, priority validation/defaults and persistence coordination.
+- [x] Migrate both Agents API and overlapping dashboard topic handlers to those operations, preserving each HTTP contract.
+- [x] Add direct BL tests (no Hono/MCP), route contract tests, and architecture checks preventing transport imports in BL. Add meaningful test scripts to the owning workspace.
 
 **Exit:** both HTTP surfaces exercise the same topic rules; no remaining duplicate topic policy; existing consumers pass characterization tests.
+
+**Verified:** 52 unchanged HTTP contract cases characterized before extraction; 31 direct BL cases, 68 total HTTP cases (including deliberate malformed-input validation corrections), and 4 dependency-boundary checks now pass (103 total). Root `pnpm build` and `pnpm typecheck` exited 0. Independent code review found no actionable issues. Consumer artifacts and implemented BL documentation are updated. OAuth runtime/client proof and remaining content extraction remain unchecked below.
 
 ### Phase 2 — extract the remaining content workflows
 
@@ -256,13 +264,13 @@ Track authentication/consent failures, forbidden decisions, quota rejections, jo
 
 | Decision | Recommended starting position | Resolve by |
 |---|---|---|
-| Publishing grant | Separate explicit `publish` permission, optionally granted at connection; write alone prepares drafts | Phase 0, before consent/tool contracts |
-| All-publication meaning | All current **and future** owned publications, with that wording visible in consent; selected mode never expands automatically | Phase 0 |
-| MCP v1 lifecycle scope | Defer publication creation/deletion and account administration; content operations only | Phase 0 |
-| Social syndication | Separate explicit outlet consent within publishing; selected publication does not imply every account-wide connection | Phase 0 |
+| Publishing grant | Approved 2026-10-29: separate read/write/publish permissions; write alone prepares drafts | Resolved |
+| All-publication meaning | Approved 2026-10-29: all current **and future** owned publications, stated in consent; selected mode never expands automatically | Resolved |
+| MCP v1 lifecycle scope | Approved 2026-10-29: defer publication creation/deletion; content operations only | Resolved |
+| Social syndication | Approved 2026-10-29: explicit outlet consent within publishing | Resolved |
 | Account-level context | Minimal profile/prebuilt or publication-required style context; broader custom-style access only with explicit consent | Phase 0 |
-| Recurring automation | Define whether an MCP-created schedule remains dependent on its connection; defer changes that cannot preserve attribution safely | Before exposing automation settings |
-| OAuth provider/topology | Prove Cloudflare Provider + Clerk sign-in against direct Clerk OAuth; choose based on consent binding and client evidence | Phase 0 technical spike |
+| Recurring automation | Approved 2026-10-29: recurring-automation changes outside MCP v1 | Resolved for v1 |
+| OAuth provider/topology | Prove cohosted Cloudflare Provider 1.2.4 + Clerk sign-in against direct Clerk OAuth; choose based on consent binding and client evidence | Phase 0 technical spike |
 | Durable execution and cancellation | Reuse a proven existing job/workflow/Agent mechanism; specify recovery, checkpoints and irreversible-effect limits | Phase 0 technical spike |
 
-Do not mark these recommendations approved by implication. This plan authorizes planning, not production configuration or deployment.
+The approval dates below record explicit user choices; unresolved recommendations remain open. The user authorized implementation on 2026-10-29. Production configuration and deployment are separate release actions; the initial topic extraction does not enable MCP.

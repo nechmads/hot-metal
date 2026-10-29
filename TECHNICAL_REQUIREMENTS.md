@@ -56,3 +56,9 @@ Last updated: 2026-10-29
 - TypeScript 7 for TypeScript workspaces; Astro apps use TypeScript 6.0.3 because astro check rejects 7.0.
 - Legacy SonicJS remains at 2.19 pending a separate content migration.
 - See `docs/dependency-upgrades.md` for compatibility decisions and verification.
+
+## Business-layer boundary
+
+HTTP APIs and MCP must be thin protocol/authentication adapters calling the same business-layer operations directly. Authorization, quotas, semantic validation, defaults and orchestration belong in the BL; SQL and provider/runtime mechanics remain in DAL/infrastructure. Do not implement MCP as an HTTP wrapper around the existing REST API or create a second implementation of business rules.
+
+The first migrated capability is topic CRUD under `apps/web/src/bl/`. See [shared business-layer documentation](docs/business-layer.md) for the implemented boundary and [MCP implementation plan](docs/plans/mcp-oauth-implementation.md) for remaining work.

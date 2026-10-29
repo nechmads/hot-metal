@@ -165,4 +165,4 @@ The October 2026 package baseline, compatibility exceptions, and EmDash rollout 
 
 ## MCP and business-layer plan
 
-The [OAuth MCP implementation plan](docs/plans/mcp-oauth-implementation.md) describes the proposed shared business layer, thin API/MCP adapters, publication grants, verification, and rollout. It is a draft; MCP is not implemented.
+The [OAuth MCP implementation plan](docs/plans/mcp-oauth-implementation.md) describes the proposed shared business layer, thin API/MCP adapters, publication grants, verification, and rollout. Topic CRUD now uses the [shared business layer](docs/business-layer.md); the remaining plan is in progress and MCP is not yet implemented.

@@ -139,6 +139,116 @@ Posts created through `POST .../posts` are **not** metered. The weekly
 counts writer-agent sessions, because that is where the cost is. Text you supply
 yourself is free to store.
 
+## Topics
+
+Both topic HTTP surfaces now call the same business-layer operations. Ownership,
+current-tier quota checks, trimming/defaults, and semantic field validation are
+shared; each surface preserves its established response format. This change does
+not introduce MCP or OAuth access.
+
+| Surface | Base URL | Authentication |
+|---|---|---|
+| Public Agents API | `https://hotmetalapp.com/agents-api/v1` | `Authorization: Bearer hm_...` |
+| Dashboard HTTP API | `https://hotmetalapp.com/api` | `Authorization: Bearer <current Clerk JWT>` |
+
+Send `Accept: application/json`; POST/PATCH also send `Content-Type: application/json`.
+The following paths are relative to the chosen base. `pubId` is the publication UUID;
+`id` is the topic UUID. There are no query parameters on these endpoints.
+
+| Method | Path | Body | Success |
+|---|---|---|---|
+| GET | `/publications/{pubId}/topics` | None | 200, `{ "data": [topic, ...] }` on both surfaces |
+| POST | `/publications/{pubId}/topics` | JSON object with required `name` | 201, `{ "data": topic }` publicly; unwrapped `topic` in dashboard |
+| PATCH | `/topics/{id}` | JSON object; all fields optional; `{}` is valid | 200, `{ "data": topic }` publicly; unwrapped `topic` in dashboard |
+| DELETE | `/topics/{id}` | None | 200, `{ "data": { "deleted": true } }` publicly; `{ "deleted": true }` in dashboard |
+
+GET returns all active and inactive topics, ordered by descending priority then
+creation time; an empty publication returns `{ "data": [] }`. Topic results have
+`id`, `publicationId`, `name`, nullable `description`, `priority`, boolean `isActive`,
+and `createdAt`/`updatedAt` as Unix seconds. New topics start active.
+
+| Body field | POST | PATCH |
+|---|---|---|
+| `name` | Required string, trimmed and nonblank | Optional string, trimmed; empty string accepted; null/omitted is a no-op |
+| `description` | Optional string, trimmed; null/omitted is stored as null | Optional string, preserved as supplied; null clears it; omitted is a no-op |
+| `priority` | Optional integer 1/2/3, default 1 | Optional integer 1/2/3; omitted preserves it |
+| `isActive` | Not a create input; starts true | Optional boolean; omitted preserves it |
+
+Priority is 1 = Normal, 2 = High, 3 = Urgent. Numeric strings and null are not valid
+priorities. POST/PATCH reject incorrect field types with 400; in particular,
+`isActive: "false"` is not a boolean. Unknown fields are ignored.
+
+Example public API create, update and delete:
+
+```bash
+curl "https://hotmetalapp.com/agents-api/v1/publications/$PUB_ID/topics" \
+  -H "Authorization: Bearer $HM_API_KEY" -H 'Accept: application/json'
+
+curl -X POST "https://hotmetalapp.com/agents-api/v1/publications/$PUB_ID/topics" \
+  -H "Authorization: Bearer $HM_API_KEY" -H 'Content-Type: application/json' \
+  -d '{"name":"AI in Software Engineering","description":"Practical implications for developers.","priority":2}'
+
+curl -X PATCH "https://hotmetalapp.com/agents-api/v1/topics/$TOPIC_ID" \
+  -H "Authorization: Bearer $HM_API_KEY" -H 'Content-Type: application/json' \
+  -d '{"description":null,"priority":3,"isActive":false}'
+
+curl -X DELETE "https://hotmetalapp.com/agents-api/v1/topics/$TOPIC_ID" \
+  -H "Authorization: Bearer $HM_API_KEY" -H 'Accept: application/json'
+```
+
+Example POST response (dashboard returns the inner topic object):
+
+```json
+{
+  "data": {
+    "id": "c1d2e3f4-a5b6-4890-8def-1234567890ab",
+    "publicationId": "f47ac10b-58cc-4372-a567-0e02b2c3d479",
+    "name": "AI in Software Engineering",
+    "description": "Practical implications for developers.",
+    "priority": 2,
+    "isActive": true,
+    "createdAt": 1793264400,
+    "updatedAt": 1793264400
+  }
+}
+```
+
+Topic failure contracts:
+
+- **401:** missing, invalid or revoked credentials. Public requests need an `hm_`
+  key; dashboard requests need a current Clerk user JWT.
+- **400:** malformed/missing JSON uses public code `INVALID_JSON`; a non-object
+  body (`null`, array or primitive) uses `VALIDATION_ERROR` before resource lookup.
+  Invalid field types, blank/missing create name and priorities outside 1/2/3 also
+  use `VALIDATION_ERROR`. These payloads now return 400 instead of TypeErrors or
+  silently accepted incorrect values. Public example:
+  `{ "error": "isActive must be a boolean", "code": "VALIDATION_ERROR" }`.
+  Dashboard validation errors contain only `error`.
+- **404:** list/create return `Publication not found` when the publication is
+  missing or not owned. Update/delete return `Topic not found` for a missing
+  topic. A missing/foreign parent yields public `Publication not found`, but
+  dashboard `Topic not found`. Public failures include `code: "NOT_FOUND"`;
+  dashboard failures contain only `error`. A guessed ID does not grant access.
+- **403 on create:** quota checks use the current user's tier and active-topic
+  count. Creator permits 3; Growth/Enterprise have no topic-count cap. Existing
+  public wording says `Free plan`; dashboard wording says `Creator plan`.
+
+```json
+{
+  "error": "Free plan allows up to 3 topics per publication",
+  "code": "QUOTA_EXCEEDED",
+  "limit": 3,
+  "current": 3,
+  "upgradeEmail": "hello@hotmetalapp.com"
+}
+```
+
+Both quota responses carry those five fields. The dashboard changes only the
+message to `Creator plan allows up to 3 topics per publication`. Examples for
+both surfaces, including complete errors, are in the existing root Postman
+collections. The refactor preserves their different success envelopes and legacy
+message wording; consumers should use status/code instead of matching prose.
+
 ## Importing an existing archive
 
 Because `publishedAt` is settable, moving a blog into a Hot Metal publication is

@@ -344,59 +344,65 @@ export const openapiSpec = {
 			get: {
 				operationId: 'listTopics',
 				summary: 'List topics',
-				description: 'Returns all topics for a publication.',
+				description: 'Lists all active and inactive topics for an owned publication, ordered by descending priority then creation time. No query parameters or request body. An empty publication returns { data: [] }. Requires the inherited Bearer hm_ API-key authentication.',
 				tags: ['Topics'],
 				parameters: [{ $ref: '#/components/parameters/PubId' }],
 				responses: {
 					200: {
-						description: 'Array of topics',
+						description: 'All topics, with Unix timestamps in seconds',
 						content: {
 							'application/json': {
 								schema: {
 									type: 'object',
-									properties: {
-										data: {
-											type: 'array',
-											items: { $ref: '#/components/schemas/Topic' },
-										},
-									},
+									properties: { data: { type: 'array', items: { $ref: '#/components/schemas/Topic' } } },
 								},
+								examples: { empty: { value: { data: [] } } },
 							},
 						},
 					},
-					404: errorResponse('Publication not found'),
+					401: errorResponse('Missing, invalid or revoked Bearer hm_ API key'),
+					404: errorResponse('Publication not found or not owned: { error: "Publication not found", code: "NOT_FOUND" }'),
 				},
 			},
 			post: {
 				operationId: 'createTopic',
 				summary: 'Create a topic',
-				description: 'Creates a topic under a publication. Subject to tier limits on topic count.',
+				description: 'Creates an active topic under an owned publication. Send an application/json object; arrays, null and primitives are rejected before resource lookup. name and description strings are trimmed. The current user tier is loaded server-side. Creation checks active-topic count: Creator allows 3; Growth and Enterprise have no topic-count limit. No query parameters. Success uses { data: topic }; missing/foreign publications return 404.',
 				tags: ['Topics'],
 				parameters: [{ $ref: '#/components/parameters/PubId' }],
-				requestBody: jsonBody({
-					type: 'object',
-					required: ['name'],
-					properties: {
-						name: { type: 'string', description: 'Topic name' },
-						description: { type: 'string' },
-						priority: { type: 'integer', enum: [1, 2, 3], default: 1, description: '1 = highest' },
-					},
-				}),
+				requestBody: {
+					...jsonBody({
+						type: 'object',
+						required: ['name'],
+						properties: {
+							name: { type: 'string', minLength: 1, description: 'Required; must remain nonblank after trimming.' },
+							description: { type: ['string', 'null'], description: 'Optional. Strings are trimmed; null/omitted is stored as null.' },
+							priority: { type: 'integer', enum: [1, 2, 3], default: 1, description: '1 = Normal, 2 = High, 3 = Urgent. Numeric strings and null are invalid.' },
+						},
+					}),
+				},
 				responses: {
 					201: {
-						description: 'Topic created',
+						description: 'Topic created; isActive is true and timestamps are Unix seconds',
 						content: {
 							'application/json': {
-								schema: {
-									type: 'object',
-									properties: { data: { $ref: '#/components/schemas/Topic' } },
-								},
+								schema: { type: 'object', properties: { data: { $ref: '#/components/schemas/Topic' } } },
 							},
 						},
 					},
-					400: errorResponse('Validation error (missing name, bad priority)'),
-					403: quotaErrorResponse,
-					404: errorResponse('Publication not found'),
+					400: errorResponse('INVALID_JSON for malformed/missing JSON; VALIDATION_ERROR for a non-object body, missing/blank name, wrong field types, or priority outside 1/2/3. Examples: { error: "Request body must be an object", code: "VALIDATION_ERROR" }; { error: "priority must be 1, 2, or 3", code: "VALIDATION_ERROR" }'),
+					401: errorResponse('Missing, invalid or revoked Bearer hm_ API key'),
+					403: {
+						...quotaErrorResponse,
+						description: 'Active-topic creation quota exceeded. Returns error, code QUOTA_EXCEEDED, limit, current, and upgradeEmail. Legacy public wording says Free plan for the Creator tier.',
+						content: {
+							'application/json': {
+								schema: { $ref: '#/components/schemas/QuotaErrorResponse' },
+								example: { error: 'Free plan allows up to 3 topics per publication', code: 'QUOTA_EXCEEDED', limit: 3, current: 3, upgradeEmail: 'hello@hotmetalapp.com' },
+							},
+						},
+					},
+					404: errorResponse('Publication not found or not owned: { error: "Publication not found", code: "NOT_FOUND" }'),
 				},
 			},
 		},
@@ -405,39 +411,36 @@ export const openapiSpec = {
 			patch: {
 				operationId: 'updateTopic',
 				summary: 'Update a topic',
+				description: 'Updates a topic after checking ownership of its actual parent publication. Send an application/json object; {} is a valid no-op, but an absent body or non-object JSON is invalid. No query parameters. Only supplied fields change; name is trimmed and null/omitted name is a no-op. description strings are preserved as supplied and null clears the description. Returns { data: topic }. A missing topic returns Topic not found; a missing/foreign parent returns Publication not found (both NOT_FOUND).',
 				tags: ['Topics'],
 				parameters: [{ $ref: '#/components/parameters/TopicId' }],
-				requestBody: jsonBody(
-					{
-						type: 'object',
-						properties: {
-							name: { type: 'string' },
-							description: { type: ['string', 'null'] },
-							priority: { type: 'integer', enum: [1, 2, 3] },
-							isActive: { type: 'boolean' },
-						},
+				requestBody: jsonBody({
+					type: 'object',
+					properties: {
+						name: { type: ['string', 'null'], description: 'Optional. Strings are trimmed; null/omitted preserves the name. An empty string is accepted.' },
+						description: { type: ['string', 'null'], description: 'Optional. String is preserved; null clears it; omitted preserves it.' },
+						priority: { type: 'integer', enum: [1, 2, 3], description: 'Optional. 1 = Normal, 2 = High, 3 = Urgent. null and numeric strings are invalid.' },
+						isActive: { type: 'boolean', description: 'Optional. Whether the topic is actively scouted. Strings/numbers/null are invalid.' },
 					},
-					false,
-				),
+				}),
 				responses: {
 					200: {
 						description: 'Updated topic',
 						content: {
 							'application/json': {
-								schema: {
-									type: 'object',
-									properties: { data: { $ref: '#/components/schemas/Topic' } },
-								},
+								schema: { type: 'object', properties: { data: { $ref: '#/components/schemas/Topic' } } },
 							},
 						},
 					},
-					400: errorResponse('Validation error'),
-					404: errorResponse('Topic not found'),
+					400: errorResponse('INVALID_JSON for malformed/missing JSON; VALIDATION_ERROR for non-object JSON or incorrectly typed fields/priority. Example: { error: "isActive must be a boolean", code: "VALIDATION_ERROR" }'),
+					401: errorResponse('Missing, invalid or revoked Bearer hm_ API key'),
+					404: errorResponse('Topic or parent publication not found/not owned. Body: { error: "Topic not found" | "Publication not found", code: "NOT_FOUND" }'),
 				},
 			},
 			delete: {
 				operationId: 'deleteTopic',
 				summary: 'Delete a topic',
+				description: 'Deletes a topic after verifying its actual parent publication belongs to the user. No query parameters or request body. Returns { data: { deleted: true } }. A missing topic returns Topic not found; a missing/foreign parent returns Publication not found (both NOT_FOUND).',
 				tags: ['Topics'],
 				parameters: [{ $ref: '#/components/parameters/TopicId' }],
 				responses: {
@@ -445,14 +448,13 @@ export const openapiSpec = {
 						description: 'Deleted',
 						content: {
 							'application/json': {
-								schema: {
-									type: 'object',
-									properties: { data: { $ref: '#/components/schemas/DeletedResponse' } },
-								},
+								schema: { type: 'object', properties: { data: { $ref: '#/components/schemas/DeletedResponse' } } },
+								example: { data: { deleted: true } },
 							},
 						},
 					},
-					404: errorResponse('Topic not found'),
+					401: errorResponse('Missing, invalid or revoked Bearer hm_ API key'),
+					404: errorResponse('Topic or parent publication not found/not owned. Body: { error: "Topic not found" | "Publication not found", code: "NOT_FOUND" }'),
 				},
 			},
 		},
@@ -862,7 +864,7 @@ export const openapiSpec = {
 			TopicPriority: {
 				type: 'integer',
 				enum: [1, 2, 3],
-				description: '1 = highest priority, 3 = lowest',
+				description: '1 = Normal, 2 = High, 3 = Urgent; lists order higher priority first',
 			},
 
 			// ── Composite types ──
