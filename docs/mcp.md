@@ -4,6 +4,12 @@ Deployed and enabled on 2026-10-29 at `https://hotmetalapp.com/mcp` (`MCP_ENABLE
 
 The remote URL is `https://hotmetalapp.com/mcp`. Assistants use OAuth and Streamable HTTP. They do not receive account API keys. The existing [Agents REST API](API_GUIDE.md) remains available with `Bearer hm_*` authentication. Both adapters call the [same business layer](business-layer.md) directly.
 
+## Teach an assistant to connect
+
+Settings → Assistant connections provides a copyable prompt that points an assistant to the MCP URL and the hosted [Use Hot Metal skill](https://hotmetalapp.com/skills/use-hotmetal/SKILL.md). The skill is a public product artifact served from `apps/web/public/skills/use-hotmetal/SKILL.md`; it explains Hot Metal, connection setup, publication permissions, tool discovery, drafting/publishing and recovery. It is separate from repository development skills.
+
+An assistant with supported connector-management capabilities can configure the remote OAuth connector. Other assistants guide the user through their client's connection flow. Reading the skill alone does not establish a connection. Successful `getMe` and `listPublications` calls provide a read-only connection check; generated or published content is unnecessary for onboarding. Tool discovery remains authoritative, and neither the prompt nor the skill promises background execution or automatic installation.
+
 ## Connect and manage access
 
 Add the MCP URL as a remote/custom connector in the assistant. Start its OAuth connection, sign in through Clerk, review the assistant identity and redirect host, select permissions and publications, and choose Allow. Keep the same browser cookie jar: authorization sets a Secure/HttpOnly provider transaction cookie that approval and cancellation require in addition to Clerk authentication, signed form proof and Origin. Copying only the request ID/proof to another browser is insufficient. Cancel returns an OAuth denial. The consent request expires after ten minutes; restart from the assistant if it expires. An account without publications can cancel, create a publication in Hot Metal first, or explicitly authorize all current and future publications.
