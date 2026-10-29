@@ -1,6 +1,6 @@
 # OAuth MCP and shared business layer — implementation plan
 
-**Status:** Implementation present behind `MCP_ENABLED=false`; local policy/HTTP/SQLite and actual Workerd OAuth integration checks are implemented. Independent review, local tests, root build and root typecheck have passed. Production deployment, deployed Workflow recovery, and signed-in consumer ChatGPT/Claude smoke gates remain pending. Canonical implemented contracts and operations: [MCP](../mcp.md), [shared BL](../business-layer.md).
+**Status:** Deployed and enabled in production on 2026-10-29. Local policy/HTTP/SQLite/Workerd OAuth checks, independent review, root build/typecheck, and hosted public OAuth startup checks passed. Signed-in Clerk/token flows, consumer ChatGPT/Claude workflows and deployed Workflow disconnect/restart recovery remain verification gates. Canonical contracts/evidence: [MCP](../mcp.md), [shared BL](../business-layer.md).
 **Updated:** 2026-10-29
 **Planning baseline:** `36dc118` (`origin/main` when this plan was written).
 **Related:** [API guide](../API_GUIDE.md), [system reference](../SYSTEM_REFERENCE.md), [authentication](../auth.md), [dependency baseline](../dependency-upgrades.md), [technical requirements](../../TECHNICAL_REQUIREMENTS.md).
@@ -186,7 +186,7 @@ Each coding subtask gets a focused review and relevant verification before movin
 
 ### Phase 3 — OAuth, grants and connection management
 
-**Implementation complete; live consumer exit gate pending.** Connection detail is carried by list DTOs, not a separate GET detail endpoint. Same-client grants remain independent. Workerd tests cover the provider lifecycle; external client and deployment checks remain release work.
+**Implementation complete; live consumer exit gate pending.** Connection detail is carried by list DTOs, not a separate GET detail endpoint. Same-client grants remain independent. Workerd tests cover the provider lifecycle; production public startup is verified below; signed-in external client checks remain release work.
 
 - [x] Add additive DAL migrations/RPC methods for connection policy and durable metadata; verify primary/authoritative read and concurrency behavior.
 - [x] Integrate the selected maintained OAuth provider, Clerk sign-in and bound consent lifecycle, with public discovery/challenge endpoints.
@@ -210,11 +210,12 @@ Each coding subtask gets a focused review and relevant verification before movin
 
 ### Phase 5 — verification, documentation and rollout
 
-- [ ] Complete the full matrix in section 8, including deployed runtime and real consumer checks. Local BL/HTTP/SQLite/Workerd policy/OAuth tests and independent review passed; deployed and consumer gates remain pending.
+- [ ] Complete the full matrix in section 8, including deployed runtime and real consumer checks. Local BL/HTTP/SQLite/Workerd policy/OAuth tests and independent review passed; deployed Workflow recovery and signed-in consumer gates remain pending.
 - [x] Update `docs/API_GUIDE.md`, `docs/auth.md`, `docs/SYSTEM_REFERENCE.md`, affected public MDX guides, OpenAPI and root Postman collections in the implementation changes. Add an MCP/BL feature guide under the existing docs structure; document setup, scopes, revocation timing, jobs, errors and recovery.
 - [x] For new connection-management HTTP endpoints, document every method/path, input, header, response/error and realistic example; maintain the root `postman/` artifacts required by repository instructions. Keep old API artifacts accurate rather than manufacturing contract changes.
-- [x] Run relevant workspace tests, build and typecheck, then root `pnpm build` and `pnpm typecheck`; inspect fresh exit statuses and verify API collections/specs and documentation links. Verified 2026-10-29: web: 269 tests / 14 files, shared: 9, scout2; root build/typecheck exit 0, frozen offline lockfile validation passed. Documentation relative links, JSON artifacts, OpenAPI path parameters and matching Postman saved requests checked; independent artifact/scout review found no actionable findings. Design contract lint: zero errors, six pre-existing orphaned-palette warnings.
-- [ ] Deploy additive DAL changes first. Use the selected cohosted topology: deploy updated DAL and scout first, then web with provider KV/secret/rate limiter/Workflow bindings and MCP disabled. No separate authorization Worker is required. Use a feature gate for public MCP and new grant issuance; test authorized production test-account reads before mutations.
+- [x] Run relevant workspace tests, build and typecheck, then root `pnpm build` and `pnpm typecheck`; inspect fresh exit statuses and verify API collections/specs and documentation links. Verified 2026-10-29: web: 269 tests / 14 files, shared: 9, scout: 2; root build/typecheck exit 0, frozen offline lockfile validation passed. Documentation relative links, JSON artifacts, OpenAPI path parameters and matching Postman saved requests checked; independent artifact/scout review found no actionable findings. Design contract lint: zero errors, six orphaned palette-token warnings.
+- [x] Deploy additive DAL, updated scout and web in the selected cohosted topology; verify disabled bootstrap, then enable MCP with pinned KV/secret/rate limiter/Workflow bindings. Hosted public startup checks are recorded below.
+- [ ] Verify signed-in production test-account reads before customer mutations; hosted public startup does not establish user-grant/token or consumer tool proof.
 - [ ] Verify real hostname routing, OAuth lifecycle, tool calls, reconnect and revocation in consumer ChatGPT and Claude. Record client/version/plan constraints actually tested; no directory listing/submission is assumed.
 
 **Exit:** release criteria pass, operational evidence is recorded, and a tested disable/recovery path exists.
@@ -279,7 +280,7 @@ Track authentication/consent failures, forbidden decisions, quota rejections, jo
 | OAuth provider/topology | Cohosted Cloudflare Provider 1.2.4 with Clerk consent; independent same-client grants | Implemented; consumer smoke pending |
 | Durable execution and cancellation | GenerationWorkflow + atomic D1 ledger; terminal replay/CAS, failed/unknown recovery and separate callback retry. No public cancellation tool | Implemented; deployed recovery gate pending |
 
-The approval dates below record explicit user choices; unresolved recommendations remain open. The user authorized implementation on 2026-10-29. Production configuration and deployment are separate release actions; the completed implementation defaults MCP off until operators configure, deploy and verify the release.
+The approval dates below record explicit user choices; unresolved recommendations remain open. The user authorized implementation on 2026-10-29. Production configuration and deployment are separate release actions; the initial implementation merged disabled; the authorized production rollout below subsequently enabled MCP.
 
 ## Production rollout — 2026-10-29
 
@@ -287,6 +288,7 @@ User authorized merging and deploying the implementation for consumer testing.
 
 1. Complete — Implementation merged as PR #53 (`f22b0fa`), preserving the disabled default.
 2. Complete — D1 migration `0023_mcp_connections.sql` applied; recovery bookmark `0000ba63-00000000-00005113-e11d11bdfaa3f9e085815e07fec23252` captured beforehand.
-3. **in_progress** — DAL `9a27bdfa-a333-4825-bd35-908abb0ab9c2` and scout `135b1bd6-9994-42e4-ba40-41a24b812dea` deployed. Dedicated OAuth KV pinned and consent signing secret uploaded. Deploy web disabled next.
-4. Pending — Enable MCP, verify hosted discovery, challenges and consent boundaries, and deploy updated API documentation.
-5. Pending — Record exact deployed versions and verification limits; leave signed-in consumer tests explicit if they require human interaction.
+3. Complete — DAL `9a27bdfa-a333-4825-bd35-908abb0ab9c2`, scout `135b1bd6-9994-42e4-ba40-41a24b812dea`, and web disabled bootstrap `5b77269a-b555-41d6-b56d-f8d7b594588c` deployed. Dedicated OAuth KV `228b0faa3800468f930e374b08afc109` pinned and consent signing secret configured. Hosted health, protected consent HTML, disabled MCP/metadata 503 and unauthenticated REST 401 checks passed.
+4. Complete — Web enabled as `d6e43049-6f7d-4449-8a88-9a5563681700`. Hosted discovery/resource metadata 200, MCP challenge 401, management 401, public registration 201, S256 authorization 302 with secure transaction cookie, consent HTML 200/protections, unauthenticated consent 401, bad redirect 400/no Location and invalid code 400 passed. Updated docs deployment is tracked separately below. The hosted browser also rendered Clerk Google sign-in with the consent return URL preserved and no console errors/warnings; login/approval was not completed. No signed-in grant/token or customer-content mutation was performed.
+5. Complete — Exact versions and verification limits recorded in [production evidence](../mcp.md#production-rollout-evidence--2026-10-29). Signed-in Clerk/token, consumer ChatGPT/Claude and deployed generation recovery gates remain pending.
+6. Complete — Documentation worker `c60d9321-d26b-466d-9a7a-71cde5176466` deployed; hosted API overview returned 200 with the enabled MCP URL and verification limits. All 269 web tests passed again after the asset-routing fix; remote migration list is empty.

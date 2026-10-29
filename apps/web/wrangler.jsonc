@@ -89,7 +89,7 @@
 
   // Environment variables (non-secret)
   "vars": {
-    "MCP_ENABLED": "false",
+    "MCP_ENABLED": "true",
     "MCP_PUBLIC_URL": "https://hotmetalapp.com/mcp",
     "MCP_ISSUER": "https://hotmetalapp.com",
     "CF_CNAME_TARGET": "custom.hotmetalapp.com",

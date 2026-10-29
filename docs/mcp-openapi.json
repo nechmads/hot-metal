@@ -3,7 +3,7 @@
   "info": {
     "title": "Hot Metal MCP and assistant connection HTTP API",
     "version": "1.0.0",
-    "description": "Implementation contract; enablement defaults off. Consumer ChatGPT/Claude live release checks remain pending. Tool catalogue: docs/mcp.md."
+    "description": "Production MCP enabled 2026-10-29; hosted discovery/OAuth startup and unauthenticated boundary checks passed. Signed-in Clerk/token and consumer ChatGPT/Claude workflows remain unverified. Tool catalogue: docs/mcp.md."
   },
   "servers": [
     {

@@ -8,7 +8,7 @@
 > (served unauthenticated from `apps/web/src/agents-api/v1/openapi-spec.ts`).
 > Postman: `postman/Hot_Metal_Agents_API.postman_collection.json`.
 
-For consumer assistants, the separate [OAuth MCP connector](mcp.md) uses the same BL with publication grants. Its [HTTP/OpenAPI contract](mcp-openapi.json) and [Postman collection](../postman/Hot_Metal_MCP.postman_collection.json) cover consent, connection management and OAuth. MCP defaults disabled pending release checks.
+For consumer assistants, the separate [OAuth MCP connector](mcp.md) uses the same BL with publication grants. Its [HTTP/OpenAPI contract](mcp-openapi.json) and [Postman collection](../postman/Hot_Metal_MCP.postman_collection.json) cover consent, connection management and OAuth. Production MCP is enabled; hosted discovery/OAuth startup checks passed, while signed-in consumer and deployed generation recovery checks remain pending.
 
 ## Basics
 

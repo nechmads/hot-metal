@@ -171,4 +171,4 @@ The October 2026 package baseline, compatibility exceptions, and EmDash rollout 
 
 ## MCP and business-layer plan
 
-The [OAuth MCP connector](docs/mcp.md) and [shared business layer](docs/business-layer.md) are implemented behind `MCP_ENABLED=false`. Assistants use OAuth, selected or all current/future publications, separate read/write/publish permissions, explicit social outlets, and durable draft jobs. See the [implementation plan](docs/plans/mcp-oauth-implementation.md) for verification and release gates; deployment and live consumer ChatGPT/Claude smoke tests remain pending.
+The [OAuth MCP connector](docs/mcp.md) is deployed and enabled at `https://hotmetalapp.com/mcp`, using the [shared business layer](docs/business-layer.md). Assistants use OAuth, selected or all current/future publications, separate read/write/publish permissions, explicit social outlets, and durable draft jobs. See the [implementation plan](docs/plans/mcp-oauth-implementation.md) for verification and release gates; hosted discovery/OAuth startup checks passed; signed-in consumer ChatGPT/Claude and deployed Workflow recovery checks remain pending.
