@@ -1061,10 +1061,15 @@
         },
         {
           "name": "Delete Publication",
-          "description": "Delete a publication and all its associated topics and ideas.\n\n### Path Parameters\n\n| Parameter | Type | Required | Description |\n|-----------|--------|----------|-------------------------------|\n| `id` | string | **Yes** | UUID of the publication to delete |\n\n### Response \u2014 Deletion Confirmation\n\n```json\n{\n  \"deleted\": true\n}\n```\n\n### Possible Errors\n\n- `401` \u2014 Missing or invalid API key\n- `404` \u2014 Publication not found",
+          "description": "Delete the owned publication and cascade its topics and ideas, preserving writing sessions and drafts. Session links to the publication and its ideas are cleared in one atomic database batch; database failure rolls back these link changes. Dedicated EmDash infrastructure is torn down first (outside that batch).\n\nAuthentication: inherited `Authorization: Bearer {{CLERK_JWT_TOKEN}}` (current Clerk JWT).\nPath parameter: `publicationId` \u2014 required publication UUID, e.g. `f308c944-ef73-4193-9785-a2e63c1a7e64`.\nNo query parameters or request body. Send `Accept: application/json`; all responses are JSON.\n\n200: `{ \"deleted\": true }` (deleted is a boolean).\n401: `{ \"error\": \"Missing authentication token\" }` or `{ \"error\": \"Invalid or expired token\" }`.\n404: `{ \"error\": \"Publication not found\" }` (missing/not owned).\n502: `{ \"error\": \"Failed to tear down the EmDash instance. Publication not deleted \u2014 please try again.\" }` (retryable teardown failure).\n500: `{ \"error\": \"Internal server error\" }` (database or other internal failure).\nError responses contain an error string. The dashboard displays errors in its confirmation dialog and permits retry.",
           "request": {
             "method": "DELETE",
-            "header": [],
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
             "url": {
               "raw": "{{WEB_BASE_URL}}/api/publications/{{publicationId}}",
               "host": [
@@ -1101,6 +1106,42 @@
                 }
               ],
               "body": "{\n  \"error\": \"Publication not found\"\n}"
+            },
+            {
+              "name": "401 \u2014 Missing authentication token",
+              "status": "Unauthorized",
+              "code": 401,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"error\": \"Missing authentication token\"\n}"
+            },
+            {
+              "name": "502 \u2014 Failed to tear down the EmDash instance. Publication not deleted \u2014 please try again.",
+              "status": "Bad Gateway",
+              "code": 502,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"error\": \"Failed to tear down the EmDash instance. Publication not deleted \u2014 please try again.\"\n}"
+            },
+            {
+              "name": "500 \u2014 Internal server error",
+              "status": "Internal Server Error",
+              "code": 500,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"error\": \"Internal server error\"\n}"
             }
           ]
         }

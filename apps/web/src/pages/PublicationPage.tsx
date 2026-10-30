@@ -102,6 +102,7 @@ export function PublicationPage() {
   // Delete confirmation
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
   const [deleting, setDeleting] = useState(false)
+  const [deleteError, setDeleteError] = useState<string | null>(null)
   const [topicToDelete, setTopicToDelete] = useState<string | null>(null)
 
   // Quota / upgrade
@@ -366,12 +367,14 @@ export function PublicationPage() {
   const handleDelete = async () => {
     if (!id || deleting) return
     setDeleting(true)
+    setDeleteError(null)
     try {
       await deletePublication(id)
       AnalyticsManager.track(AnalyticsEvent.PublicationDeleted, { publicationId: id })
       navigate('/publications')
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to delete')
+      setDeleteError(err instanceof Error ? err.message : 'Failed to delete publication. Please try again.')
+    } finally {
       setDeleting(false)
     }
   }
@@ -842,7 +845,10 @@ export function PublicationPage() {
         </p>
         <button
           type="button"
-          onClick={() => setShowDeleteConfirm(true)}
+          onClick={() => {
+            setDeleteError(null)
+            setShowDeleteConfirm(true)
+          }}
           className="mt-3 rounded-lg border border-red-300 px-4 py-2 text-sm font-medium text-red-700 transition-colors hover:bg-red-50"
         >
           Delete Publication
@@ -959,15 +965,24 @@ export function PublicationPage() {
       />
 
       {/* Delete Publication Confirmation */}
-      <Modal isOpen={showDeleteConfirm} onClose={() => setShowDeleteConfirm(false)}>
+      <Modal
+        isOpen={showDeleteConfirm}
+        onClose={() => { if (!deleting) setShowDeleteConfirm(false) }}
+      >
         <div className="space-y-4 p-5">
           <h3 className="text-lg font-semibold">Delete Publication</h3>
           <p className="text-sm text-[var(--color-text-muted)]">
             Are you sure you want to delete <strong>{publication.name}</strong>? This will remove all its topics and ideas. This cannot be undone.
           </p>
+          {deleteError && (
+            <div role="alert" className="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700 dark:border-red-800 dark:bg-red-950 dark:text-red-300">
+              {deleteError}
+            </div>
+          )}
           <div className="flex justify-end gap-2">
             <button
               type="button"
+              disabled={deleting}
               onClick={() => setShowDeleteConfirm(false)}
               className="rounded-lg border border-[var(--color-border-default)] px-4 py-2 text-sm font-medium transition-colors hover:bg-[var(--color-bg-card)]"
             >
