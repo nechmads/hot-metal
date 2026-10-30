@@ -50,6 +50,22 @@ Writing sessions are preserved; their links to the deleted publication and its
 ideas are cleared atomically by the DAL. Dedicated EmDash instances are torn down
 before their publication is deleted; teardown failures keep the publication.
 
+### Ideas Page (`/ideas`)
+
+The **Bulk actions** dropdown appears only with the **All** status filter.
+The publication selector sets the operation's scope: **All Publications** or the
+selected publication. Confirmation names that scope before submitting.
+
+- **Dismiss all ideas** changes only New and Reviewed ideas to Dismissed.
+  Promoted and already dismissed ideas are unchanged.
+- **Delete all ideas** permanently deletes every idea in scope, including
+  promoted and dismissed ideas. Writing sessions and drafts remain; session
+  references to deleted ideas are cleared in the same atomic DAL batch.
+
+Controls and modal dismissal are blocked while the operation runs. Failures
+remain in the confirmation dialog for retry; success reloads ideas, refreshes
+the sidebar badge, and reports the number of affected ideas.
+
 ## Streaming Chat
 
 Chat uses the Cloudflare Agents SDK's WebSocket protocol for real-time streaming:
@@ -90,6 +106,7 @@ When the agent uses tools (research, web search, saving drafts, etc.), the chat 
 | `fetchPublications()` | `GET /api/publications` | List publications |
 | `createPublication(data)` | `POST /api/publications` | Create publication |
 | `fetchTopics(pubId)` | `GET /api/publications/:id/topics` | List topics |
+| `bulkIdeaAction(action, publicationId?)` | `POST /api/ideas/bulk` | Dismiss actionable ideas or delete all ideas in scope |
 | `fetchIdeas(pubId)` | `GET /api/publications/:id/ideas` | List ideas |
 | `triggerScout(pubId)` | `POST /api/publications/:id/scout` | Trigger content scout |
 

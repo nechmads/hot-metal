@@ -2,6 +2,7 @@ import { Hono, type Context } from 'hono'
 import type { AppEnv } from '../server'
 import {
   getIdea,
+  bulkIdeaAction,
   listIdeas,
   countIdeas,
   countNewIdeas,
@@ -30,6 +31,11 @@ ideas.get('/ideas/recent', async (c) => {
       deps,
     ),
   })
+})
+ideas.post('/ideas/bulk', async (c) => {
+  const body: unknown = await c.req.json()
+  const { caller, deps } = context(c)
+  return c.json(await bulkIdeaAction(caller, body, deps))
 })
 ideas.get('/ideas/:id', async (c) => {
   const { caller, deps } = context(c)

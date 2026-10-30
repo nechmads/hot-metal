@@ -209,3 +209,27 @@ export async function getRecentIdeasByPublication(
 		.all<IdeaRow>()
 	return (result.results ?? []).map(mapRow)
 }
+
+/** Dismiss only actionable ideas; promoted sessions retain their status. */
+export async function dismissIdeasByPublications(db: D1Database, publicationIds: string[]): Promise<number> {
+	if (publicationIds.length === 0) return 0
+	const result = await db.prepare(
+		`UPDATE ideas SET status = 'dismissed', updated_at = ?
+		 WHERE publication_id IN (SELECT value FROM json_each(?)) AND status IN ('new', 'reviewed')`
+	).bind(Math.floor(Date.now() / 1000), JSON.stringify(publicationIds)).run()
+	return result.meta.changes ?? 0
+}
+
+/** Preserve writing sessions and atomically remove their references before deleting ideas. */
+export async function deleteIdeasByPublications(db: D1Database, publicationIds: string[]): Promise<number> {
+	if (publicationIds.length === 0) return 0
+	// JSON keeps the bind count fixed even when the user owns many publications.
+	const scope = JSON.stringify(publicationIds)
+	const results = await db.batch([
+		db.prepare(`UPDATE sessions SET idea_id = NULL WHERE idea_id IN (
+			SELECT id FROM ideas WHERE publication_id IN (SELECT value FROM json_each(?))
+		)`).bind(scope),
+		db.prepare('DELETE FROM ideas WHERE publication_id IN (SELECT value FROM json_each(?))').bind(scope),
+	])
+	return results[1].meta.changes ?? 0
+}

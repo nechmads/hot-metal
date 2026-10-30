@@ -143,6 +143,8 @@ export interface ContentDependencies extends AuthorizationDependencies {
     countByPublication(id: string): Promise<number>
     recentByPublications(ids: string[], limit: number): Promise<Idea[]>
     updateStatus(id: string, status: IdeaStatus): Promise<Idea | null>
+    dismissByPublications(ids: string[]): Promise<number>
+    deleteByPublications(ids: string[]): Promise<number>
     promote(id: string, sessionId: string): Promise<Idea | null>
   }
   styles: { listByUser(userId: string): Promise<ContentStyle[]> }
@@ -361,6 +363,30 @@ export async function recentIdeas(
     Math.min(Math.max(limit > 0 ? limit : 8, 1), 50),
   )
 }
+/** Resolve and authorize the complete scope before a single atomic mutation. */
+export async function bulkIdeaAction(
+  caller: AuthenticatedCaller,
+  input: unknown,
+  deps: ContentDependencies,
+): Promise<{ affected: number }> {
+  const body = requireObjectBody(input)
+  if (body.action !== 'dismiss' && body.action !== 'delete')
+    throw new BusinessValidationError('action must be dismiss or delete')
+  const publicationId = body.publicationId === undefined
+    ? undefined
+    : requiredString(body.publicationId, 'publicationId')
+  await authorizeAction(caller, 'write', deps)
+  const ids = publicationId !== undefined
+    ? [(await publicationFor(caller, publicationId, 'write', deps)).id]
+    : (await accessiblePublications(caller, deps)).map((pub) => pub.id)
+  // Check every publication before mutating any, including live delegated grants.
+  for (const id of ids) await publicationFor(caller, id, 'write', deps)
+  const affected = body.action === 'dismiss'
+    ? await deps.ideas.dismissByPublications(ids)
+    : await deps.ideas.deleteByPublications(ids)
+  return { affected }
+}
+
 export async function updateIdeaStatus(
   caller: AuthenticatedCaller,
   input: { ideaId: string; status?: string },

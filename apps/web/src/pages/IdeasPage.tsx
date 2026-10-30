@@ -1,9 +1,12 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router'
-import { FunnelIcon, LightbulbIcon, ArrowRightIcon } from '@phosphor-icons/react'
+import { FunnelIcon, LightbulbIcon, ArrowRightIcon, CaretDownIcon, TrashIcon, XCircleIcon } from '@phosphor-icons/react'
 import { useValue } from '@legendapp/state/react'
+import { toast } from 'sonner'
+import * as DropdownMenu from '@radix-ui/react-dropdown-menu'
+import { Modal } from '@/components/modal/Modal'
 import { Loader } from '@/components/loader/Loader'
-import { fetchPublications, fetchIdeas, updateIdeaStatus } from '@/lib/api'
+import { fetchPublications, fetchIdeas, updateIdeaStatus, bulkIdeaAction } from '@/lib/api'
 import type { PublicationConfig, Idea, IdeaStatus } from '@/lib/types'
 import { IDEA_STATUS_COLORS } from '@/lib/constants'
 import { formatRelativeTime } from '@/lib/format'
@@ -27,6 +30,28 @@ export function IdeasPage() {
   const [loading, setLoading] = useState(true)
   const [loadingIdeas, setLoadingIdeas] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [bulkAction, setBulkAction] = useState<'dismiss' | 'delete' | null>(null)
+  const [bulkBusy, setBulkBusy] = useState(false)
+  const [bulkError, setBulkError] = useState<string | null>(null)
+  const bulkInFlight = useRef(false)
+  const loadRequestId = useRef(0)
+  const bulkTriggerRef = useRef<HTMLButtonElement>(null)
+  const bulkCancelRef = useRef<HTMLButtonElement>(null)
+  const allFilterRef = useRef<HTMLButtonElement>(null)
+  const hadBulkAction = useRef(false)
+
+  useEffect(() => {
+    if (bulkAction) {
+      hadBulkAction.current = true
+      if (bulkBusy || bulkError) bulkCancelRef.current?.focus()
+    } else if (!bulkBusy && hadBulkAction.current) {
+      hadBulkAction.current = false
+      const trigger = bulkTriggerRef.current
+      // Deleting the last idea disables the trigger; return to the All filter.
+      const target = trigger?.disabled ? allFilterRef.current : trigger
+      target?.focus()
+    }
+  }, [bulkAction, bulkBusy, bulkError])
 
   const newIdeasCount = useValue(scoutStore$.newIdeasCount)
   const pollingPubId = useValue(scoutStore$.pollingPubId)
@@ -55,6 +80,7 @@ export function IdeasPage() {
   // Load ideas when publication or filter changes
   const loadIdeas = useCallback(async () => {
     if (publications.length === 0) return
+    const requestId = ++loadRequestId.current
     setLoadingIdeas(true)
     try {
       setError(null)
@@ -64,15 +90,15 @@ export function IdeasPage() {
           publications.map((pub) => fetchIdeas(pub.id, status).catch(() => [] as Idea[]))
         )
         const merged = results.flat().sort((a, b) => b.createdAt - a.createdAt)
-        setIdeas(merged)
+        if (requestId === loadRequestId.current) setIdeas(merged)
       } else {
         const data = await fetchIdeas(selectedPubId, status)
-        setIdeas(data)
+        if (requestId === loadRequestId.current) setIdeas(data)
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to load ideas')
+      if (requestId === loadRequestId.current) setError(err instanceof Error ? err.message : 'Failed to load ideas')
     } finally {
-      setLoadingIdeas(false)
+      if (requestId === loadRequestId.current) setLoadingIdeas(false)
     }
   }, [selectedPubId, statusFilter, publications])
 
@@ -101,6 +127,35 @@ export function IdeasPage() {
       AnalyticsManager.track(AnalyticsEvent.IdeaDismissed, { publicationId: dismissedIdea?.publicationId ?? selectedPubId })
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to dismiss idea')
+    }
+  }
+
+  const scopeLabel = selectedPubId === 'all'
+    ? 'all publications'
+    : publications.find((pub) => pub.id === selectedPubId)?.name ?? 'this publication'
+
+  const closeBulkAction = () => {
+    if (bulkInFlight.current) return
+    setBulkAction(null)
+    setBulkError(null)
+  }
+
+  const handleBulkAction = async () => {
+    if (!bulkAction || bulkInFlight.current) return
+    bulkInFlight.current = true
+    setBulkBusy(true)
+    setBulkError(null)
+    try {
+      const { affected } = await bulkIdeaAction(bulkAction, selectedPubId === 'all' ? undefined : selectedPubId)
+      toast.success(`${affected} idea${affected === 1 ? '' : 's'} ${bulkAction === 'delete' ? 'deleted' : 'dismissed'} from ${scopeLabel}`)
+      await loadIdeas()
+      refreshNewIdeasCount()
+      setBulkAction(null)
+    } catch (err) {
+      setBulkError(err instanceof Error ? err.message : 'Failed to update ideas. Please try again.')
+    } finally {
+      bulkInFlight.current = false
+      setBulkBusy(false)
     }
   }
 
@@ -144,6 +199,8 @@ export function IdeasPage() {
         <h2 className="text-xl font-bold">Ideas</h2>
 
         <select
+          aria-label="Filter by publication"
+          disabled={bulkAction !== null}
           value={selectedPubId}
           onChange={(e) => setSelectedPubId(e.target.value)}
           className="rounded-lg border border-[var(--color-border-default)] bg-[var(--color-bg-primary)] px-3 py-1.5 text-sm focus:border-[var(--color-accent)] focus:outline-none focus:ring-1 focus:ring-[var(--color-accent)]"
@@ -158,25 +215,97 @@ export function IdeasPage() {
       </div>
 
       {/* Status filter */}
-      <div className="mb-4 flex items-center gap-2">
-        <FunnelIcon size={16} className="text-[var(--color-text-muted)]" />
-        <div className="flex gap-1">
-          {STATUS_FILTERS.map((f) => (
-            <button
-              key={f.value}
-              type="button"
-              onClick={() => { setStatusFilter(f.value); AnalyticsManager.track(AnalyticsEvent.IdeasFiltered, { publicationId: selectedPubId, filter: f.value }) }}
-              className={`rounded-full px-3 py-1 text-xs font-medium transition-colors ${
-                statusFilter === f.value
-                  ? 'bg-[var(--color-accent)] text-white'
-                  : 'text-[var(--color-text-muted)] hover:bg-[var(--color-bg-card)]'
-              }`}
-            >
-              {f.label}
-            </button>
-          ))}
+      <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+        <div className="flex flex-wrap items-center gap-2">
+          <FunnelIcon size={16} className="text-[var(--color-text-muted)]" />
+          <div className="flex flex-wrap gap-1">
+            {STATUS_FILTERS.map((f) => (
+              <button
+                key={f.value}
+                ref={f.value === 'all' ? allFilterRef : undefined}
+                type="button"
+                disabled={bulkAction !== null}
+                aria-pressed={statusFilter === f.value}
+                onClick={() => { setStatusFilter(f.value); AnalyticsManager.track(AnalyticsEvent.IdeasFiltered, { publicationId: selectedPubId, filter: f.value }) }}
+                className={`rounded-full px-3 py-1 text-xs font-medium transition-colors ${
+                  statusFilter === f.value
+                    ? 'bg-[var(--color-accent)] text-white'
+                    : 'text-[var(--color-text-muted)] hover:bg-[var(--color-bg-card)]'
+                }`}
+              >
+                {f.label}
+              </button>
+            ))}
+          </div>
         </div>
+        {statusFilter === 'all' && (
+          <DropdownMenu.Root>
+            <DropdownMenu.Trigger asChild>
+              <button
+                ref={bulkTriggerRef}
+                type="button"
+                disabled={loadingIdeas || ideas.length === 0 || bulkBusy}
+                className="inline-flex items-center gap-2 rounded-lg border border-[var(--color-border-default)] bg-[var(--color-bg-primary)] px-3 py-1.5 text-sm font-medium transition-colors hover:bg-[var(--color-bg-card)] disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                Bulk actions
+                <CaretDownIcon size={14} />
+              </button>
+            </DropdownMenu.Trigger>
+            <DropdownMenu.Portal>
+              <DropdownMenu.Content
+                align="end"
+                sideOffset={6}
+                onCloseAutoFocus={(event) => {
+                  if (bulkAction) {
+                    event.preventDefault()
+                    bulkCancelRef.current?.focus()
+                  }
+                }}
+                className="z-50 min-w-48 rounded-lg border border-[var(--color-border-default)] bg-[var(--color-bg-primary)] p-1 shadow-lg"
+              >
+                <DropdownMenu.Item
+                  disabled={!ideas.some((idea) => idea.status === 'new' || idea.status === 'reviewed')}
+                  onSelect={() => { setBulkError(null); setBulkAction('dismiss') }}
+                  className="flex cursor-pointer items-center gap-2 rounded-md px-3 py-2 text-sm outline-none data-[highlighted]:bg-[var(--color-bg-card)] data-[disabled]:pointer-events-none data-[disabled]:opacity-50"
+                >
+                  <XCircleIcon size={16} />
+                  Dismiss all ideas
+                </DropdownMenu.Item>
+                <DropdownMenu.Item
+                  onSelect={() => { setBulkError(null); setBulkAction('delete') }}
+                  className="flex cursor-pointer items-center gap-2 rounded-md px-3 py-2 text-sm text-red-600 outline-none data-[highlighted]:bg-red-50"
+                >
+                  <TrashIcon size={16} />
+                  Delete all ideas
+                </DropdownMenu.Item>
+              </DropdownMenu.Content>
+            </DropdownMenu.Portal>
+          </DropdownMenu.Root>
+        )}
       </div>
+
+      <Modal isOpen={bulkAction !== null} onClose={closeBulkAction}>
+        <div role="alertdialog" aria-modal="true" aria-labelledby="bulk-ideas-title" aria-describedby="bulk-ideas-description" aria-busy={bulkBusy} className="p-6">
+          <h3 id="bulk-ideas-title" className="pr-6 text-lg font-semibold">
+            {bulkAction === 'delete' ? 'Delete all ideas?' : 'Dismiss all ideas?'}
+          </h3>
+          <p id="bulk-ideas-description" className="mt-3 text-sm text-[var(--color-text-muted)]">
+            {bulkAction === 'delete'
+              ? `Permanently delete every idea from ${scopeLabel}, including promoted and dismissed ideas. Writing sessions and drafts will be kept. This cannot be undone.`
+              : `Dismiss all New and Reviewed ideas from ${scopeLabel}. Promoted and already dismissed ideas will stay as they are.`}
+          </p>
+          {bulkError && <p role="alert" className="mt-3 text-sm text-red-600">{bulkError}</p>}
+          <div className="mt-6 flex justify-end gap-3">
+            <button ref={bulkCancelRef} type="button" onClick={closeBulkAction} aria-disabled={bulkBusy} className="rounded-lg border border-[var(--color-border-default)] px-4 py-2 text-sm font-medium aria-disabled:opacity-50">
+              Cancel
+            </button>
+            <button type="button" onClick={handleBulkAction} disabled={bulkBusy} className="inline-flex items-center gap-2 rounded-lg bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-700 disabled:opacity-50">
+              {bulkBusy && <Loader size={16} />}
+              {bulkBusy ? (bulkAction === 'delete' ? 'Deleting…' : 'Dismissing…') : (bulkAction === 'delete' ? 'Delete all ideas' : 'Dismiss all ideas')}
+            </button>
+          </div>
+        </div>
+      </Modal>
 
       {error && (
         <div className="mb-4 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">
@@ -238,6 +367,7 @@ export function IdeasPage() {
                 {idea.status !== 'dismissed' && idea.status !== 'promoted' && (
                   <button
                     type="button"
+                    disabled={bulkAction !== null}
                     onClick={(e) => handleDismiss(idea.id, e)}
                     className="rounded-md px-2 py-1 text-xs text-[var(--color-text-muted)] opacity-0 transition-all hover:bg-red-50 hover:text-red-500 group-hover:opacity-100 group-focus-within:opacity-100 max-sm:opacity-100"
                   >

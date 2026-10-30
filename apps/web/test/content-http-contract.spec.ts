@@ -177,6 +177,50 @@ describe.each(surfaces)('$name content HTTP contracts', (surface) => {
     )
   })
   if (!surface.wrapped) {
+    it.each(['dismiss', 'delete'])('bulk %s uses only the selected publication', async (action) => {
+      const response = await request('/ideas/bulk', 'POST', { action, publicationId: 'pub' })
+      expect(response.status).toBe(200)
+      expect(await response.json()).toEqual({ affected: action === 'dismiss' ? 2 : 4 })
+      const operation = action === 'dismiss' ? f.deps.ideas.dismissByPublications : f.deps.ideas.deleteByPublications
+      expect(operation).toHaveBeenCalledExactlyOnceWith(['pub'])
+    })
+    it('bulk deletion without a publication selects all owned publications', async () => {
+      const response = await request('/ideas/bulk', 'POST', { action: 'delete' })
+      expect(response.status).toBe(200)
+      expect(f.deps.ideas.deleteByPublications).toHaveBeenCalledExactlyOnceWith(['pub', 'other'])
+    })
+    it.each([{}, null, [], { action: 'publish' }, { action: 'delete', publicationId: null }, { action: 'delete', publicationId: '' }, { action: 'delete', publicationId: 12 }])(
+      'rejects invalid bulk bodies without writes: %j', async (body) => {
+        const response = await request('/ideas/bulk', 'POST', body)
+        expect(response.status).toBe(400)
+        expect(f.deps.ideas.dismissByPublications).not.toHaveBeenCalled()
+        expect(f.deps.ideas.deleteByPublications).not.toHaveBeenCalled()
+      },
+    )
+    it('rejects malformed bulk JSON', async () => {
+      const response = await request('/ideas/bulk', 'POST', '{')
+      expect(response.status).toBe(400)
+      expect(f.deps.ideas.deleteByPublications).not.toHaveBeenCalled()
+    })
+    it('rejects foreign publication IDs without writes', async () => {
+      f.deps.publications.getById.mockResolvedValue({ ...publication, userId: 'foreign-owner' })
+      const response = await request('/ideas/bulk', 'POST', { action: 'delete', publicationId: 'pub' })
+      expect(response.status).toBe(404)
+      expect(f.deps.ideas.deleteByPublications).not.toHaveBeenCalled()
+    })
+    it('checks every publication before any writes', async () => {
+      const original = f.deps.publications.getById.getMockImplementation()!
+      f.deps.publications.getById.mockImplementation(async (id) => id === 'other' ? null : original(id))
+      const response = await request('/ideas/bulk', 'POST', { action: 'delete' })
+      expect(response.status).toBe(404)
+      expect(f.deps.ideas.deleteByPublications).not.toHaveBeenCalled()
+    })
+    it('hides bulk datastore errors', async () => {
+      f.deps.ideas.deleteByPublications.mockRejectedValue(new Error('private database details'))
+      const response = await request('/ideas/bulk', 'POST', { action: 'delete' })
+      expect(response.status).toBe(500)
+      expect(await response.json()).toEqual({ error: 'Internal server error' })
+    })
     it('reads prebuilt and owned styles without exposing inaccessible styles', async () => {
       for (const styleId of ['prebuilt', 'required-style', 'unrelated-style']) {
         const response = await request(`/styles/${styleId}`)

@@ -140,6 +140,8 @@ export interface DataLayerApi {
 	createIdeas(items: CreateIdeaInput[]): Promise<number>
 	getIdeaById(id: string): Promise<Idea | null>
 	listIdeasByPublication(pubId: string, filters?: ListIdeasFilters): Promise<Idea[]>
+	dismissIdeasByPublications(publicationIds: string[]): Promise<number>
+	deleteIdeasByPublications(publicationIds: string[]): Promise<number>
 	updateIdeaStatus(id: string, status: IdeaStatus): Promise<Idea | null>
 	promoteIdea(id: string, sessionId: string): Promise<Idea | null>
 	countIdeasByPublication(pubId: string): Promise<number>
@@ -279,6 +281,8 @@ export class DataLayer extends WorkerEntrypoint<Env> {
 	createIdeas(items: CreateIdeaInput[]) { return ideas.createIdeas(this.env.DB, items) }
 	getIdeaById(id: string) { return ideas.getIdeaById(this.env.DB, id) }
 	listIdeasByPublication(pubId: string, filters?: ListIdeasFilters) { return ideas.listIdeasByPublication(this.env.DB, pubId, filters) }
+	dismissIdeasByPublications(publicationIds: string[]) { return ideas.dismissIdeasByPublications(this.env.DB, publicationIds) }
+	deleteIdeasByPublications(publicationIds: string[]) { return ideas.deleteIdeasByPublications(this.env.DB, publicationIds) }
 	updateIdeaStatus(id: string, status: IdeaStatus) { return ideas.updateIdeaStatus(this.env.DB, id, status) }
 	promoteIdea(id: string, sessionId: string) { return ideas.promoteIdea(this.env.DB, id, sessionId) }
 	countIdeasByPublication(pubId: string) { return ideas.countIdeasByPublication(this.env.DB, pubId) }

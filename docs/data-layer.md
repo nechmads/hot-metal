@@ -139,3 +139,16 @@ pnpm dev
 ```
 
 The DAL must be running for any service that uses Service Bindings to it. Start it before writer-agent, content-scout, or publisher.
+
+
+### Bulk idea cleanup
+
+`dismissIdeasByPublications(ids)` updates New/Reviewed ideas and returns the row
+count. `deleteIdeasByPublications(ids)` clears `sessions.idea_id` for ideas in
+scope, then deletes all matching ideas in one D1 batch and returns the deleted
+idea count. Both accept a complete, authorized publication-ID list from the BL;
+empty scope is a no-op. JSON-bound ID lists keep the SQL bind count fixed.
+Writing sessions and publication links survive; any batch failure rolls back
+session detachment and deletion. Regression tests in
+`apps/web/test/ideas-bulk-dal.spec.ts` execute the real migrations with foreign
+keys enabled, including moved/detached sessions and forced rollback.
