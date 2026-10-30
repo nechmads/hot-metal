@@ -2827,6 +2827,306 @@
               "body": "{\n  \"error\": \"Idea not found\"\n}"
             }
           ]
+        },
+        {
+          "name": "Dismiss Actionable Ideas in a Publication",
+          "description": "action (required): \"dismiss\" or \"delete\". publicationId (optional): nonempty string identifying an owned publication. Omit publicationId to target all owned publications; null/empty/non-string values are rejected. No query/path parameters. Dismiss changes New/Reviewed ideas only; delete permanently removes all statuses, preserving sessions and drafts. Returns affected (number of idea rows changed/deleted), including 0 for no matches. Scope is authorized before any writes. Database mutation is atomic; no automatic retry. Dashboard-only Clerk auth; unavailable through API keys or MCP.",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{CLERK_JWT_TOKEN}}",
+                "description": "Required Clerk JWT for the authenticated publication owner."
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "description": "JSON object body."
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"action\": \"dismiss\",\n  \"publicationId\": \"{{publicationId}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{WEB_BASE_URL}}/api/ideas/bulk",
+              "host": [
+                "{{WEB_BASE_URL}}"
+              ],
+              "path": [
+                "api",
+                "ideas",
+                "bulk"
+              ]
+            },
+            "description": "action (required): \"dismiss\" or \"delete\". publicationId (optional): nonempty string identifying an owned publication. Omit publicationId to target all owned publications; null/empty/non-string values are rejected. No query/path parameters. Dismiss changes New/Reviewed ideas only; delete permanently removes all statuses, preserving sessions and drafts. Returns affected (number of idea rows changed/deleted), including 0 for no matches. Scope is authorized before any writes. Database mutation is atomic; no automatic retry. Dashboard-only Clerk auth; unavailable through API keys or MCP."
+          },
+          "response": [
+            {
+              "name": "200 \u2014 OK",
+              "status": "OK",
+              "code": 200,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"affected\": 12\n}"
+            },
+            {
+              "name": "200 \u2014 OK (no matches)",
+              "status": "OK",
+              "code": 200,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"affected\": 0\n}"
+            },
+            {
+              "name": "400 \u2014 Bad Request",
+              "status": "Bad Request",
+              "code": 400,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"error\": \"action must be dismiss or delete\"\n}"
+            },
+            {
+              "name": "400 \u2014 Bad Request",
+              "status": "Bad Request",
+              "code": 400,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"error\": \"publicationId is required and must be a non-empty string\"\n}"
+            },
+            {
+              "name": "400 \u2014 Bad Request",
+              "status": "Bad Request",
+              "code": 400,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"error\": \"Invalid JSON in request body\"\n}"
+            },
+            {
+              "name": "401 \u2014 Unauthorized",
+              "status": "Unauthorized",
+              "code": 401,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"error\": \"Unauthorized\"\n}"
+            },
+            {
+              "name": "403 \u2014 Forbidden",
+              "status": "Forbidden",
+              "code": 403,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"error\": \"User account not found\"\n}"
+            },
+            {
+              "name": "404 \u2014 Not Found",
+              "status": "Not Found",
+              "code": 404,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"error\": \"Publication not found\"\n}"
+            },
+            {
+              "name": "500 \u2014 Internal Server Error",
+              "status": "Internal Server Error",
+              "code": 500,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"error\": \"Internal server error\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "Delete All Ideas Across Publications",
+          "description": "action (required): \"dismiss\" or \"delete\". publicationId (optional): nonempty string identifying an owned publication. Omit publicationId to target all owned publications; null/empty/non-string values are rejected. No query/path parameters. Dismiss changes New/Reviewed ideas only; delete permanently removes all statuses, preserving sessions and drafts. Returns affected (number of idea rows changed/deleted), including 0 for no matches. Scope is authorized before any writes. Database mutation is atomic; no automatic retry. Dashboard-only Clerk auth; unavailable through API keys or MCP.",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{CLERK_JWT_TOKEN}}",
+                "description": "Required Clerk JWT for the authenticated publication owner."
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "description": "JSON object body."
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"action\": \"delete\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{WEB_BASE_URL}}/api/ideas/bulk",
+              "host": [
+                "{{WEB_BASE_URL}}"
+              ],
+              "path": [
+                "api",
+                "ideas",
+                "bulk"
+              ]
+            },
+            "description": "action (required): \"dismiss\" or \"delete\". publicationId (optional): nonempty string identifying an owned publication. Omit publicationId to target all owned publications; null/empty/non-string values are rejected. No query/path parameters. Dismiss changes New/Reviewed ideas only; delete permanently removes all statuses, preserving sessions and drafts. Returns affected (number of idea rows changed/deleted), including 0 for no matches. Scope is authorized before any writes. Database mutation is atomic; no automatic retry. Dashboard-only Clerk auth; unavailable through API keys or MCP."
+          },
+          "response": [
+            {
+              "name": "200 \u2014 OK",
+              "status": "OK",
+              "code": 200,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"affected\": 12\n}"
+            },
+            {
+              "name": "200 \u2014 OK (no matches)",
+              "status": "OK",
+              "code": 200,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"affected\": 0\n}"
+            },
+            {
+              "name": "400 \u2014 Bad Request",
+              "status": "Bad Request",
+              "code": 400,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"error\": \"action must be dismiss or delete\"\n}"
+            },
+            {
+              "name": "400 \u2014 Bad Request",
+              "status": "Bad Request",
+              "code": 400,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"error\": \"publicationId is required and must be a non-empty string\"\n}"
+            },
+            {
+              "name": "400 \u2014 Bad Request",
+              "status": "Bad Request",
+              "code": 400,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"error\": \"Invalid JSON in request body\"\n}"
+            },
+            {
+              "name": "401 \u2014 Unauthorized",
+              "status": "Unauthorized",
+              "code": 401,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"error\": \"Unauthorized\"\n}"
+            },
+            {
+              "name": "403 \u2014 Forbidden",
+              "status": "Forbidden",
+              "code": 403,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"error\": \"User account not found\"\n}"
+            },
+            {
+              "name": "404 \u2014 Not Found",
+              "status": "Not Found",
+              "code": 404,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"error\": \"Publication not found\"\n}"
+            },
+            {
+              "name": "500 \u2014 Internal Server Error",
+              "status": "Internal Server Error",
+              "code": 500,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"error\": \"Internal server error\"\n}"
+            }
+          ]
         }
       ]
     },

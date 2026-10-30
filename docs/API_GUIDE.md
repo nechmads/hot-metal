@@ -545,3 +545,53 @@ their publication/idea links are cleared as needed in the same database batch.
 A database failure rolls back those link changes. The dashboard displays failures
 inside its confirmation dialog and allows retry. EmDash infrastructure teardown
 precedes the database batch and cannot be rolled back by it.
+
+
+## Dashboard bulk idea management
+
+`POST /api/ideas/bulk` is a dashboard endpoint authenticated with the Clerk JWT
+in `Authorization: Bearer <token>`. It is not exposed through the API-key REST
+or MCP tool surfaces. Send `Content-Type: application/json`; no URL or query
+parameters are used.
+
+JSON body fields:
+
+| Field | Required | Type | Meaning |
+|---|---|---|---|
+| `action` | Yes | `"dismiss"` or `"delete"` | Dismiss New/Reviewed ideas, or permanently delete all statuses. |
+| `publicationId` | No | Nonempty string | Restrict to one owned publication. Omit to target all owned publications. `null` and empty strings are invalid. |
+
+The server derives the user from authentication and checks the entire scope
+before mutating it. The action affects all matching database rows, not just
+cards currently rendered. Delete clears session idea references atomically,
+preserving writing sessions, drafts, and publication links. Dismiss leaves
+Promoted and Dismissed ideas unchanged. No matching ideas returns `affected: 0`.
+
+```sh
+curl -X POST 'https://hotmetalapp.com/api/ideas/bulk' \
+  -H 'Authorization: Bearer <clerk-jwt>' \
+  -H 'Content-Type: application/json' \
+  -d '{"action":"dismiss","publicationId":"pub_123"}'
+
+# Delete every idea across all owned publications:
+curl -X POST 'https://hotmetalapp.com/api/ideas/bulk' \
+  -H 'Authorization: Bearer <clerk-jwt>' \
+  -H 'Content-Type: application/json' \
+  -d '{"action":"delete"}'
+```
+
+Success: HTTP 200 `{"affected":12}` where `affected` is the number of idea rows
+changed or deleted. Errors use `{ "error": "message" }`:
+
+- 400 for invalid JSON, a non-object body, an invalid action or publication ID.
+- 401 for missing or invalid authentication.
+- 403 when the authenticated account is unavailable or not authorized.
+- 404 `{"error":"Publication not found"}` for a missing or foreign publication.
+- 500 `{"error":"Internal server error"}` for an unexpected failure; an atomic
+  database failure leaves ideas and session references unchanged.
+
+The request is safe to repeat against an unchanged scope: it affects zero rows
+once everything has been dismissed/deleted. Ideas created between attempts are
+new matching rows and will be affected. The dashboard asks for confirmation for
+both actions and does not automatically retry. Deploy the data-layer Worker
+before the web Worker; no schema migration is required.

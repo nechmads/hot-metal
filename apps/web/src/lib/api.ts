@@ -436,6 +436,14 @@ export async function updateIdeaStatus(id: string, status: IdeaStatus): Promise<
   })
 }
 
+export async function bulkIdeaAction(action: 'dismiss' | 'delete', publicationId?: string): Promise<{ affected: number }> {
+  return request<{ affected: number }>('/api/ideas/bulk', {
+    method: 'POST',
+    headers: JSON_HEADERS,
+    body: JSON.stringify({ action, publicationId }),
+  })
+}
+
 export async function promoteIdea(id: string): Promise<Session> {
   return request<Session>(`/api/ideas/${id}/promote`, {
     method: 'POST',

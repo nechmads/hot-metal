@@ -132,6 +132,8 @@ export function fixture() {
       countByPublication: vi.fn(async () => 0),
       recentByPublications: vi.fn(async () => []),
       updateStatus: vi.fn(async () => null),
+      dismissByPublications: vi.fn(async (_ids: string[]) => 2),
+      deleteByPublications: vi.fn(async (_ids: string[]) => 4),
       promote: vi.fn(async () => null),
     },
     styles: {

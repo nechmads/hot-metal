@@ -55,6 +55,8 @@ export function createContentDependencies(
       recentByPublications: (ids, limit) =>
         dal.listRecentIdeasForUser(ids, limit),
       updateStatus: (id, status) => dal.updateIdeaStatus(id, status),
+      dismissByPublications: (ids) => dal.dismissIdeasByPublications(ids),
+      deleteByPublications: (ids) => dal.deleteIdeasByPublications(ids),
       promote: (id, sessionId) => dal.promoteIdea(id, sessionId),
     },
     styles: { listByUser: (id) => dal.listWritingStylesByUser(id) },
