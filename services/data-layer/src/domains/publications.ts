@@ -452,9 +452,14 @@ export async function updatePublication(
 }
 
 export async function deletePublication(db: D1Database, id: string): Promise<void> {
-	// Detach sessions first — sessions.publication_id has no ON DELETE CASCADE
-	await db.prepare('UPDATE sessions SET publication_id = NULL WHERE publication_id = ?').bind(id).run()
-	await db.prepare('DELETE FROM publications WHERE id = ?').bind(id).run()
+	// Preserve writing sessions, but detach both foreign keys before ideas cascade.
+	// Match ideas by their publication: sessions may already be detached or moved.
+	// A single batch rolls back detachment if any part of deletion fails.
+	await db.batch([
+		db.prepare('UPDATE sessions SET idea_id = NULL WHERE idea_id IN (SELECT id FROM ideas WHERE publication_id = ?)').bind(id),
+		db.prepare('UPDATE sessions SET publication_id = NULL WHERE publication_id = ?').bind(id),
+		db.prepare('DELETE FROM publications WHERE id = ?').bind(id),
+	])
 }
 
 export async function getDuePublications(

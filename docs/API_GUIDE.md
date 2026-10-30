@@ -277,7 +277,7 @@ EmDash instance — see `docs/emdash-integration-guide.md` for that split.
 | `POST` | `/publications` | Create one. Metered by `publicationsPerUser`. |
 | `GET` | `/publications/{id}` | One publication, with its topics. |
 | `PATCH` | `/publications/{id}` | Update name, branding, schedule, auto-publish mode. |
-| `DELETE` | `/publications/{id}` | Delete it (deprovisions a dedicated EmDash instance). |
+| `DELETE` | `/publications/{id}` | Delete it and its topics/ideas, preserving writing sessions (deprovisions a dedicated EmDash instance). |
 | `GET` | `/publications/{pubId}/topics` | List topics. |
 | `POST` | `/publications/{pubId}/topics` | Create one. Metered by `topicsPerPublication`. |
 | `PATCH` / `DELETE` | `/topics/{id}` | Update or delete a topic. |
@@ -529,3 +529,19 @@ The dashboard HTTP routes retain their existing contracts and now call shared BL
 - `POST /api/sessions/{id}/chat`: Clerk Bearer token, JSON `{"message":"Suggest an outline before drafting."}`; returns 200 `{text,finishReason,usage}` (model metadata when available), through the same persisted writer engine.
 
 Both require `Content-Type: application/json`; missing/invalid credentials return 401, invalid input 400, inaccessible session/publication/style 404, writer busy 429, and upstream/model failures use the established safe errors. No new API-key REST conversation/history endpoint is added. Full MCP schemas and HTTP examples are in [the companion OpenAPI](mcp-openapi.json), [MCP Postman](../postman/Hot_Metal_MCP.postman_collection.json) and [Web Postman](../postman/Hot_Metal_Web.postman_collection.json).
+
+### Dashboard publication deletion
+
+`DELETE /api/publications/{id}` requires `Authorization: Bearer <Clerk JWT>`.
+`id` is the owned publication UUID. There are no query parameters or request body.
+Send `Accept: application/json`. Success is `200 {"deleted":true}`; a missing or
+inaccessible publication returns `404 {"error":"Publication not found"}`. Missing
+or invalid authentication returns 401. EmDash teardown failure returns
+`502 {"error":"Failed to tear down the EmDash instance. Publication not deleted — please try again."}`.
+Other internal failures return `500 {"error":"Internal server error"}`.
+
+Deletion cascades to topics and ideas. Writing sessions and their drafts remain;
+their publication/idea links are cleared as needed in the same database batch.
+A database failure rolls back those link changes. The dashboard displays failures
+inside its confirmation dialog and allows retry. EmDash infrastructure teardown
+precedes the database batch and cannot be rolled back by it.

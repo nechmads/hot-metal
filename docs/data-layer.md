@@ -92,6 +92,17 @@ const publications = await env.DAL.listPublicationsByUser(userId)
 await env.DAL.createIdea({ id, publicationId, title, angle, summary })
 ```
 
+## Publication deletion
+
+`deletePublication` preserves writing sessions. It clears session links to ideas
+owned by the deleted publication (including sessions already detached or moved),
+clears links to the publication, and deletes the publication in one atomic D1
+batch. Topics and ideas then cascade; a database failure rolls back all session
+changes. Both session foreign keys must be detached before the cascade.
+
+Regression coverage: `apps/web/test/publication-deletion-dal.spec.ts` applies the
+real migrations with foreign keys enabled and checks deletion and rollback.
+
 ## Database
 
 The DAL owns the consolidated D1 database `hotmetal-writer-db` with these tables:

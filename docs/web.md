@@ -41,6 +41,15 @@ Two-panel layout for the AI writing conversation:
 
 A draggable divider allows resizing (clamped at 30-70%, persisted in localStorage). On mobile (< 768px), panels stack vertically with a tab toggle.
 
+### Publication deletion
+
+The publication settings confirmation dialog displays deletion failures inline
+and allows retry. While deletion is running, the confirmation buttons and modal
+dismissal are blocked. Successful deletion returns to the publications list.
+Writing sessions are preserved; their links to the deleted publication and its
+ideas are cleared atomically by the DAL. Dedicated EmDash instances are torn down
+before their publication is deleted; teardown failures keep the publication.
+
 ## Streaming Chat
 
 Chat uses the Cloudflare Agents SDK's WebSocket protocol for real-time streaming:
